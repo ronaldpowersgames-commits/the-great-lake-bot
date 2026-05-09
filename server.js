@@ -20,6 +20,7 @@ const nicknameRoutes = require('./routes/nicknames');
 const groupRoutes = require('./routes/groups');
 const updateRoutes = require('./routes/updates');
 const app = express();
+app.set('trust proxy', 1);
 app.use(helmet());
 app.use(cors({
   origin: config.nodeEnv === 'production' ? ['https://thegreatlakebot.example'] : '*',
