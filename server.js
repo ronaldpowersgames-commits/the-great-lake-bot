@@ -1,5 +1,5 @@
 /**
- * The Great Lake Bot - Main Server
+ * 🌊 The Great Lake Bot - Main Server
  * Production-grade Express server with full governance enforcement (Rules 1-27).
  */
 const express = require('express');
@@ -32,6 +32,7 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrcAttr: ["'unsafe-inline'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", "data:", "blob:"],
       connectSrc: ["'self'"],
@@ -44,28 +45,32 @@ app.use(helmet({
 }));
 
 app.use(cors({
-  origin: config.nodeEnv === 'production' ? ['https://thegreatlakebot.example'] : '*',
+  origin: config.nodeEnv === 'production'
+    ? ['https://the-great-lake-bot.onrender.com']
+    : '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
+
 app.use(morgan(config.nodeEnv === 'production' ? 'combined' : 'dev'));
-app.use(express.json({ limit: '1mb' }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(globalLimiter);
 
 // ============================================
 // PUBLIC ROUTES (no auth required)
 // ============================================
 
-// Serve The Lake frontend (no auth required)
+// Serve The Lake frontend static files
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Prevent favicon 401 error
 app.get('/favicon.ico', (req, res) => res.status(204).end());
 
-// Chat endpoint (public, no auth)
+// Chat endpoint (public — The Lake core experience)
 app.use('/chat', chatRoutes);
 
-// Health check (unauthenticated)
+// Health check
 app.get('/health', function(req, res) {
   res.status(200).json({
     name: config.appName,
@@ -73,10 +78,11 @@ app.get('/health', function(req, res) {
     version: '1.3.0',
     timestamp: new Date().toISOString(),
     governance: 'Rules 1-27 active',
+    lake: 'Still waters — ready to reflect',
   });
 });
 
-// Status check (unauthenticated)
+// Status check
 app.get('/status', function(req, res) {
   res.status(200).json({ ok: true });
 });
@@ -90,17 +96,21 @@ if (config.nodeEnv !== 'production') {
     var token = jwt.sign(
       { sub: sub, email: email, roles: ['user'] },
       config.jwt.secret,
-      { issuer: config.jwt.issuer, audience: config.jwt.audience, expiresIn: config.jwt.expiry }
+      {
+        issuer: config.jwt.issuer,
+        audience: config.jwt.audience,
+        expiresIn: config.jwt.expiry
+      }
     );
-    res.json({ 
-      message: 'Welcome to ' + config.appName + '. Here is your dev token.', 
-      token: token, 
-      expiresIn: config.jwt.expiry 
+    res.json({
+      message: 'Welcome to ' + config.appName + '. Here is your dev token.',
+      token: token,
+      expiresIn: config.jwt.expiry
     });
   });
 }
 
-// Serve The Lake frontend for any unknown page route
+// Serve frontend for root
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
@@ -120,6 +130,16 @@ app.use('/groups', groupRoutes);
 app.use('/updates', updateRoutes);
 
 // ============================================
+// 404 HANDLER
+// ============================================
+app.use(function(req, res) {
+  res.status(404).json({
+    error: 'Endpoint not found',
+    details: req.method + ' ' + req.path + ' is not a valid The Great Lake Bot endpoint.',
+  });
+});
+
+// ============================================
 // ERROR HANDLING
 // ============================================
 app.use(errorHandler);
@@ -130,12 +150,13 @@ app.use(errorHandler);
 app.listen(config.port, function() {
   console.log('');
   console.log('========================================================');
-  console.log('  The Great Lake Bot  v1.3.0');
+  console.log('  🌊 The Great Lake Bot  v1.3.0');
   console.log('========================================================');
   console.log('  Environment : ' + config.nodeEnv);
   console.log('  Port        : ' + config.port);
   console.log('  Governance  : Rules 1-27 ACTIVE');
-  console.log('  Status      : Ready to serve clarity');
+  console.log('  Model       : claude-haiku-4-5');
+  console.log('  Status      : Still waters — ready to reflect');
   console.log('========================================================');
   console.log('');
 });
