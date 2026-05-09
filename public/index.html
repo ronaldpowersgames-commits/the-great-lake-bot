@@ -1066,6 +1066,114 @@ body {
 }
 .crew-modal-delete:hover { background: rgba(239,83,80,0.2); }
 
+/* ============================================
+   CREW PROFILE CARD
+   ============================================ */
+.crew-card-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 600;
+  align-items: flex-end;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+  padding: 20px;
+}
+.crew-card-overlay.show { display: flex; }
+.crew-card {
+  background: var(--dock-bg);
+  border: 1px solid var(--dock-border);
+  border-radius: 24px 24px 16px 16px;
+  padding: 28px 24px 32px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 -8px 48px rgba(0,0,0,0.5);
+  animation: slideUpCard 0.3s ease-out;
+}
+@keyframes slideUpCard {
+  from { transform: translateY(40px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.crew-card-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.crew-card-avatar {
+  width: 56px; height: 56px;
+  border-radius: 18px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; font-weight: 800;
+  color: white; flex-shrink: 0;
+}
+.crew-card-info { flex: 1; min-width: 0; }
+.crew-card-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+.crew-card-nickname {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.crew-card-codename {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 3px 10px;
+  background: rgba(79,195,247,0.1);
+  border: 1px solid rgba(79,195,247,0.2);
+  border-radius: 20px;
+  font-size: 12px;
+  color: var(--lake-light);
+  font-style: italic;
+}
+.crew-card-context {
+  padding: 14px 16px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--dock-border);
+  border-radius: 12px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 20px;
+  font-style: italic;
+}
+.crew-card-context.empty {
+  color: var(--text-dim);
+}
+.crew-card-actions {
+  display: flex;
+  gap: 10px;
+}
+.crew-card-ask {
+  flex: 1; padding: 13px;
+  background: linear-gradient(135deg, var(--lake-glow), var(--lake-light));
+  border: none; border-radius: 12px;
+  color: var(--lake-deep); font-size: 14px; font-weight: 700;
+  cursor: pointer; transition: all 0.2s;
+}
+.crew-card-ask:hover { transform: translateY(-1px); }
+.crew-card-edit {
+  padding: 13px 16px;
+  background: transparent;
+  border: 1px solid var(--dock-border);
+  border-radius: 12px;
+  color: var(--text-secondary); font-size: 14px;
+  cursor: pointer; transition: all 0.2s;
+}
+.crew-card-edit:hover { background: var(--lake-mid); }
+.crew-card-close {
+  padding: 13px 16px;
+  background: transparent;
+  border: 1px solid var(--dock-border);
+  border-radius: 12px;
+  color: var(--text-dim); font-size: 14px;
+  cursor: pointer; transition: all 0.2s;
+}
+.crew-card-close:hover { background: var(--lake-mid); }
+
 </style>
 </head>
 <body>
@@ -1775,7 +1883,7 @@ function renderCrew() {
     const displayName = member.nickname || member.name;
     const codename = member.codename ? `"${escapeHTML(member.codename)}"` : '<span style="color:var(--text-dim);font-style:italic">No codename</span>';
     return `
-      <div class="crew-item" onclick="openCrewModal('edit', ${idx})">
+      <div class="crew-item" onclick="openCrewProfile(${idx})">
         <div class="crew-avatar" style="background:linear-gradient(135deg,${color})">${initial}</div>
         <div style="flex:1;min-width:0">
           <div class="crew-name">${escapeHTML(displayName)}</div>
@@ -1889,14 +1997,63 @@ function removeCrew(e, idx) {
   }
 }
 
-function openCrewProfile(name) {
-  const member = crewMembers.find(m => m.name.toLowerCase() === name.toLowerCase());
-  let prompt = `Tell me what I should know about ${name}`;
-  if (member?.codename) prompt += ` (also known as "${member.codename}")`;
-  if (member?.context) prompt += `. Context: ${member.context}`;
-  prompt += ` — their patterns, influence style, and what to watch for.`;
-  sendPrompt(prompt);
-  if (window.innerWidth <= 768) toggleDock();
+let crewCardIndex = -1;
+
+function openCrewProfile(idx) {
+  const member = crewMembers[idx];
+  if (!member) return;
+  crewCardIndex = idx;
+
+  const colors = [
+    '#4fc3f7,#0288d1','#ce93d8,#7b1fa2','#ffb74d,#f57c00',
+    '#81c784,#388e3c','#ff8a80,#d32f2f','#80cbc4,#00796b'
+  ];
+  const color = colors[idx % colors.length];
+  const initial = member.name.trim()[0].toUpperCase();
+
+  document.getElementById('crewCardAvatar').style.background = `linear-gradient(135deg,${color})`;
+  document.getElementById('crewCardAvatar').textContent = initial;
+  document.getElementById('crewCardName').textContent = member.name;
+  document.getElementById('crewCardNickname').textContent = member.nickname || '';
+
+  const codenameEl = document.getElementById('crewCardCodename');
+  if (member.codename) {
+    codenameEl.textContent = `"${member.codename}"`;
+    codenameEl.style.display = 'inline-block';
+  } else {
+    codenameEl.style.display = 'none';
+  }
+
+  const contextEl = document.getElementById('crewCardContext');
+  if (member.context) {
+    contextEl.textContent = member.context;
+    contextEl.classList.remove('empty');
+  } else {
+    contextEl.textContent = 'No context note yet — tap Edit to add one.';
+    contextEl.classList.add('empty');
+  }
+
+  document.getElementById('crewCardAsk').onclick = () => {
+    let prompt = `Tell me what I should know about ${member.name}`;
+    if (member.codename) prompt += ` (codename: "${member.codename}")`;
+    if (member.context) prompt += `. Context: ${member.context}`;
+    prompt += ` — their patterns, influence style, and what to watch for.`;
+    closeCrewCard();
+    sendPrompt(prompt);
+    if (window.innerWidth <= 768) toggleDock();
+  };
+
+  document.getElementById('crewCardOverlay').classList.add('show');
+}
+
+function closeCrewCard(e) {
+  if (e && e.target !== document.getElementById('crewCardOverlay')) return;
+  document.getElementById('crewCardOverlay').classList.remove('show');
+}
+
+function editFromCard() {
+  closeCrewCard();
+  setTimeout(() => openCrewModal('edit', crewCardIndex), 150);
 }
 
 function addCrew() {
@@ -2170,6 +2327,25 @@ if ('visualViewport' in window) {
       <button class="crew-modal-cancel" onclick="closeCrewModal()">Cancel</button>
       <button class="crew-modal-delete" id="crewModalDelete" style="display:none" onclick="deleteCrewFromModal()">🗑</button>
       <button class="crew-modal-save" onclick="saveCrewFromModal()">🌊 Save</button>
+    </div>
+  </div>
+</div>
+  <!-- Crew Profile Card -->
+<div class="crew-card-overlay" id="crewCardOverlay" onclick="closeCrewCard(event)">
+  <div class="crew-card">
+    <div class="crew-card-header">
+      <div class="crew-card-avatar" id="crewCardAvatar"></div>
+      <div class="crew-card-info">
+        <div class="crew-card-name" id="crewCardName"></div>
+        <div class="crew-card-nickname" id="crewCardNickname"></div>
+        <div class="crew-card-codename" id="crewCardCodename" style="display:none"></div>
+      </div>
+    </div>
+    <div class="crew-card-context" id="crewCardContext"></div>
+    <div class="crew-card-actions">
+      <button class="crew-card-ask" id="crewCardAsk">🌊 Ask The Lake</button>
+      <button class="crew-card-edit" onclick="editFromCard()">✏️ Edit</button>
+      <button class="crew-card-close" onclick="closeCrewCard()">✕</button>
     </div>
   </div>
 </div>
