@@ -63,7 +63,7 @@ if (config.nodeEnv !== 'production') {
   });
 }
 // Catch-all: serve The Lake frontend for any unknown route
-app.get('*', (req, res) => {
+app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 // ============================================
