@@ -23,7 +23,6 @@ const groupRoutes = require('./routes/groups');
 const updateRoutes = require('./routes/updates');
 
 const app = express();
-app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(helmet());
 app.use(cors({
@@ -34,6 +33,13 @@ app.use(cors({
 app.use(morgan(config.nodeEnv === 'production' ? 'combined' : 'dev'));
 app.use(express.json({ limit: '1mb' }));
 app.use(globalLimiter);
+
+// ============================================
+// PUBLIC ROUTES (no auth required)
+// ============================================
+
+// Serve The Lake frontend (no auth required)
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Health check (unauthenticated)
 app.get('/health', function(req, res) {
@@ -66,7 +72,9 @@ if (config.nodeEnv !== 'production') {
   });
 }
 
-// Authenticated routes
+// ============================================
+// AUTHENTICATED ROUTES (auth required)
+// ============================================
 app.use(authenticate);
 app.use(safetyFilter);
 
@@ -78,21 +86,19 @@ app.use('/nicknames', nicknameRoutes);
 app.use('/groups', groupRoutes);
 app.use('/updates', updateRoutes);
 
-// 404 handler
-app.use(function(req, res) {
-  res.status(404).json({
-    error: 'Endpoint not found',
-    details: req.method + ' ' + req.path + ' is not a valid ' + config.appName + ' API endpoint.',
-  });
-});
-
+// ============================================
+// ERROR HANDLING
+// ============================================
 app.use(errorHandler);
 
-// Serve The Lake frontend for all other routes
+// Catch-all: serve The Lake frontend for any unknown route
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// ============================================
+// START SERVER
+// ============================================
 app.listen(config.port, function() {
   console.log('');
   console.log('========================================================');
