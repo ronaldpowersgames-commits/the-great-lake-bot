@@ -3,6 +3,7 @@
  * Production-grade Express server with full governance enforcement (Rules 1-27).
  */
 const express = require('express');
+const path = require('path');
 const helmet = require('helmet');
 const cors = require('cors');
 const morgan = require('morgan');
@@ -22,6 +23,7 @@ const groupRoutes = require('./routes/groups');
 const updateRoutes = require('./routes/updates');
 
 const app = express();
+app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(helmet());
 app.use(cors({
@@ -85,6 +87,11 @@ app.use(function(req, res) {
 });
 
 app.use(errorHandler);
+
+// Serve The Lake frontend for all other routes
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
 app.listen(config.port, function() {
   console.log('');
