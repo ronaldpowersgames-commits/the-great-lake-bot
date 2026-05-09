@@ -1,0 +1,1858 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Great Lake</title>
+<style>
+/* ============================================
+   THE GREAT LAKE — V2 Full Experience
+   ============================================ */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --lake-deep: #0a1628;
+  --lake-mid: #0d1f3c;
+  --lake-surface: #132844;
+  --lake-shimmer: #1a3a5c;
+  --lake-glow: #2d8cf0;
+  --lake-light: #64b5f6;
+  --lake-foam: #b3e5fc;
+  --lake-white: #e1f5fe;
+  --dock-bg: #091420;
+  --dock-border: #1a3050;
+  --sand: #c8a96e;
+  --driftwood: #8b7355;
+  --calm: #4fc3f7;
+  --analytical: #7c4dff;
+  --stormy: #ff6e40;
+  --text-primary: #e1f5fe;
+  --text-secondary: #80b4d8;
+  --text-dim: #4a6d8c;
+  --danger: #ef5350;
+  --success: #66bb6a;
+}
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--lake-deep);
+  color: var(--text-primary);
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+}
+
+/* ============================================
+   WATER BACKGROUND ANIMATION
+   ============================================ */
+.water-bg {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.water-bg::before {
+  content: '';
+  position: absolute;
+  top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(45,140,240,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(100,181,246,0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 80%, rgba(45,140,240,0.05) 0%, transparent 50%);
+  animation: waterDrift 20s ease-in-out infinite;
+}
+
+@keyframes waterDrift {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(-20px, 10px) rotate(1deg); }
+  50% { transform: translate(10px, -15px) rotate(-0.5deg); }
+  75% { transform: translate(-10px, 5px) rotate(0.5deg); }
+}
+
+/* ============================================
+   THE DOCK — LEFT SIDEBAR
+   ============================================ */
+.dock {
+  width: 280px;
+  min-width: 280px;
+  background: var(--dock-bg);
+  border-right: 1px solid var(--dock-border);
+  display: flex;
+  flex-direction: column;
+  z-index: 10;
+  position: relative;
+  transition: transform 0.3s ease;
+}
+
+.dock-header {
+  padding: 20px;
+  border-bottom: 1px solid var(--dock-border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dock-logo {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.dock-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--lake-light);
+  letter-spacing: 0.5px;
+}
+
+.dock-subtitle {
+  font-size: 10px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+}
+
+/* New Session Button */
+.new-session-btn {
+  margin: 16px 16px 8px;
+  padding: 12px;
+  background: linear-gradient(135deg, var(--lake-glow), var(--lake-light));
+  border: none;
+  border-radius: 12px;
+  color: var(--lake-deep);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.new-session-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(45,140,240,0.3);
+}
+
+/* Dock Sections */
+.dock-section {
+  padding: 8px 0;
+}
+
+.dock-section-title {
+  padding: 8px 20px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text-dim);
+}
+
+/* Sonar Search */
+.sonar-wrap {
+  padding: 0 16px 8px;
+}
+
+.sonar-input {
+  width: 100%;
+  padding: 10px 14px 10px 36px;
+  background: var(--lake-mid);
+  border: 1px solid var(--dock-border);
+  border-radius: 10px;
+  color: var(--text-primary);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.sonar-input:focus {
+  border-color: var(--lake-glow);
+}
+
+.sonar-wrap {
+  position: relative;
+}
+
+.sonar-icon {
+  position: absolute;
+  left: 28px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  color: var(--text-dim);
+  pointer-events: none;
+}
+
+/* Past Tides — Chat History */
+.past-tides {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 8px;
+}
+
+.tide-item {
+  padding: 10px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  transition: background 0.15s;
+  margin-bottom: 2px;
+}
+
+.tide-item:hover {
+  background: rgba(45,140,240,0.08);
+}
+
+.tide-item.active {
+  background: rgba(45,140,240,0.12);
+  border: 1px solid rgba(45,140,240,0.2);
+}
+
+.tide-icon {
+  font-size: 16px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.tide-info {
+  overflow: hidden;
+  flex: 1;
+}
+
+.tide-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tide-preview {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+.tide-time {
+  font-size: 10px;
+  color: var(--text-dim);
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+
+/* The Crew — Contacts */
+.crew-list {
+  padding: 4px 8px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.crew-item {
+  padding: 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: background 0.15s;
+  margin-bottom: 2px;
+}
+
+.crew-item:hover {
+  background: rgba(45,140,240,0.08);
+}
+
+.crew-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.crew-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.crew-nickname {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+/* Dock Footer */
+.dock-footer {
+  padding: 12px 16px;
+  border-top: 1px solid var(--dock-border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dock-footer-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--dock-border);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: all 0.15s;
+}
+
+.dock-footer-btn:hover {
+  background: var(--lake-mid);
+  color: var(--lake-light);
+}
+
+.dock-user {
+  flex: 1;
+  overflow: hidden;
+}
+
+.dock-user-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.dock-user-status {
+  font-size: 10px;
+  color: var(--success);
+}
+
+/* Mobile Dock Toggle */
+.dock-toggle {
+  display: none;
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 100;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--lake-mid);
+  border: 1px solid var(--dock-border);
+  color: var(--text-primary);
+  font-size: 18px;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ============================================
+   LAKE WINDOW — MAIN CHAT
+   ============================================ */
+.lake-window {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 5;
+}
+
+/* Lake Header */
+.lake-header {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--dock-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(9,20,32,0.8);
+  backdrop-filter: blur(20px);
+}
+
+.lake-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.lake-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--lake-glow), var(--lake-light));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.lake-header-info h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.lake-header-status {
+  font-size: 11px;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--success);
+  display: inline-block;
+}
+
+.lake-header-right {
+  display: flex;
+  gap: 8px;
+}
+
+.header-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--dock-border);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.header-btn:hover {
+  background: var(--lake-mid);
+  color: var(--lake-light);
+}
+
+/* Lake Mood Selector */
+.mood-selector {
+  display: none;
+  position: absolute;
+  top: 70px;
+  right: 24px;
+  background: var(--dock-bg);
+  border: 1px solid var(--dock-border);
+  border-radius: 14px;
+  padding: 8px;
+  z-index: 50;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+
+.mood-selector.show {
+  display: block;
+}
+
+.mood-option {
+  padding: 10px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  transition: background 0.15s;
+}
+
+.mood-option:hover {
+  background: rgba(45,140,240,0.1);
+}
+
+.mood-option.active {
+  background: rgba(45,140,240,0.15);
+  color: var(--lake-light);
+}
+
+.mood-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+/* Currents Bar — Active Topics */
+.currents-bar {
+  padding: 10px 24px;
+  border-bottom: 1px solid rgba(26,48,80,0.5);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  background: rgba(13,31,60,0.4);
+}
+
+.currents-bar::-webkit-scrollbar { height: 0; }
+
+.currents-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+  flex-shrink: 0;
+  font-weight: 600;
+}
+
+.current-chip {
+  padding: 5px 12px;
+  background: rgba(45,140,240,0.1);
+  border: 1px solid rgba(45,140,240,0.2);
+  border-radius: 20px;
+  font-size: 11px;
+  color: var(--lake-light);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.current-chip:hover {
+  background: rgba(45,140,240,0.2);
+}
+
+.current-chip .chip-icon {
+  margin-right: 4px;
+}
+
+/* ============================================
+   WAVES — MESSAGE AREA
+   ============================================ */
+.waves-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  scroll-behavior: smooth;
+}
+
+.waves-container::-webkit-scrollbar { width: 4px; }
+.waves-container::-webkit-scrollbar-track { background: transparent; }
+.waves-container::-webkit-scrollbar-thumb {
+  background: var(--lake-shimmer);
+  border-radius: 4px;
+}
+
+/* Welcome Screen */
+.welcome-screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px;
+}
+
+.welcome-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  animation: gentleFloat 4s ease-in-out infinite;
+}
+
+@keyframes gentleFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.welcome-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--lake-light);
+  margin-bottom: 8px;
+}
+
+.welcome-sub {
+  font-size: 14px;
+  color: var(--text-dim);
+  max-width: 400px;
+  line-height: 1.6;
+  margin-bottom: 32px;
+}
+
+.welcome-prompts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  max-width: 600px;
+}
+
+.welcome-prompt {
+  padding: 10px 18px;
+  background: rgba(45,140,240,0.08);
+  border: 1px solid rgba(45,140,240,0.15);
+  border-radius: 14px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.welcome-prompt:hover {
+  background: rgba(45,140,240,0.15);
+  border-color: rgba(45,140,240,0.3);
+  color: var(--lake-light);
+  transform: translateY(-2px);
+}
+
+/* Individual Wave (Message) */
+.wave {
+  display: flex;
+  gap: 12px;
+  max-width: 80%;
+  animation: waveIn 0.4s ease-out;
+}
+
+@keyframes waveIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.wave.user-wave {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.wave-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+.wave.lake-wave .wave-avatar {
+  background: linear-gradient(135deg, var(--lake-glow), var(--lake-light));
+}
+
+.wave.user-wave .wave-avatar {
+  background: linear-gradient(135deg, var(--sand), var(--driftwood));
+}
+
+.wave-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wave-sender {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.lake-wave .wave-sender { color: var(--lake-light); }
+.user-wave .wave-sender { color: var(--sand); text-align: right; }
+
+.wave-bubble {
+  padding: 14px 18px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.6;
+  word-wrap: break-word;
+}
+
+.lake-wave .wave-bubble {
+  background: var(--lake-surface);
+  border: 1px solid var(--dock-border);
+  border-top-left-radius: 4px;
+  color: var(--text-primary);
+}
+
+.user-wave .wave-bubble {
+  background: linear-gradient(135deg, rgba(45,140,240,0.2), rgba(45,140,240,0.1));
+  border: 1px solid rgba(45,140,240,0.2);
+  border-top-right-radius: 4px;
+  color: var(--text-primary);
+}
+
+.wave-time {
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.user-wave .wave-time { text-align: right; }
+
+/* File Attachment in Wave */
+.wave-file {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: rgba(45,140,240,0.08);
+  border: 1px solid rgba(45,140,240,0.15);
+  border-radius: 12px;
+  margin-top: 6px;
+  cursor: pointer;
+}
+
+.wave-file-icon { font-size: 20px; }
+
+.wave-file-info {
+  flex: 1;
+}
+
+.wave-file-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--lake-light);
+}
+
+.wave-file-size {
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+/* Ripple — Typing Indicator */
+.ripple {
+  display: none;
+  align-self: flex-start;
+  padding: 14px 18px;
+  background: var(--lake-surface);
+  border: 1px solid var(--dock-border);
+  border-radius: 18px;
+  border-top-left-radius: 4px;
+  margin-left: 46px;
+}
+
+.ripple.show { display: flex; gap: 6px; align-items: center; }
+
+.ripple-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--lake-light);
+  opacity: 0.3;
+  animation: rippleAnim 1.4s ease-in-out infinite;
+}
+
+.ripple-dot:nth-child(2) { animation-delay: 0.2s; }
+.ripple-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes rippleAnim {
+  0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
+  30% { opacity: 1; transform: translateY(-6px); }
+}
+
+/* ============================================
+   SHORE DOCK — INPUT AREA
+   ============================================ */
+.shore-dock {
+  padding: 16px 24px 20px;
+  border-top: 1px solid var(--dock-border);
+  background: rgba(9,20,32,0.9);
+  backdrop-filter: blur(20px);
+}
+
+/* Quick Actions Bar */
+.quick-actions {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.quick-actions::-webkit-scrollbar { height: 0; }
+
+.quick-action-btn {
+  padding: 6px 14px;
+  background: rgba(45,140,240,0.06);
+  border: 1px solid rgba(45,140,240,0.12);
+  border-radius: 20px;
+  color: var(--text-dim);
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.quick-action-btn:hover {
+  background: rgba(45,140,240,0.12);
+  color: var(--lake-light);
+  border-color: rgba(45,140,240,0.25);
+}
+
+/* Input Row */
+.input-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.input-wrap {
+  flex: 1;
+  position: relative;
+}
+
+.lake-input {
+  width: 100%;
+  min-height: 48px;
+  max-height: 160px;
+  padding: 14px 48px 14px 18px;
+  background: var(--lake-mid);
+  border: 1px solid var(--dock-border);
+  border-radius: 16px;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: inherit;
+  resize: none;
+  outline: none;
+  line-height: 1.4;
+  transition: border-color 0.2s;
+}
+
+.lake-input:focus {
+  border-color: var(--lake-glow);
+  box-shadow: 0 0 0 3px rgba(45,140,240,0.1);
+}
+
+.lake-input::placeholder {
+  color: var(--text-dim);
+}
+
+/* Attach Button (inside input) */
+.attach-btn {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.attach-btn:hover {
+  color: var(--lake-light);
+  background: rgba(45,140,240,0.1);
+}
+
+/* Send Button */
+.send-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  border: none;
+  background: linear-gradient(135deg, var(--lake-glow), var(--lake-light));
+  color: var(--lake-deep);
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.send-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(45,140,240,0.3);
+}
+
+.send-btn:active {
+  transform: translateY(0);
+}
+
+/* File Preview */
+.file-preview {
+  display: none;
+  padding: 10px 14px;
+  background: rgba(45,140,240,0.08);
+  border: 1px solid rgba(45,140,240,0.15);
+  border-radius: 12px;
+  margin-bottom: 10px;
+  align-items: center;
+  gap: 10px;
+}
+
+.file-preview.show { display: flex; }
+
+.file-preview-icon { font-size: 24px; }
+
+.file-preview-info { flex: 1; }
+
+.file-preview-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--lake-light);
+}
+
+.file-preview-size {
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.file-preview-remove {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: none;
+  background: rgba(239,83,80,0.1);
+  color: var(--danger);
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.file-preview-remove:hover {
+  background: rgba(239,83,80,0.2);
+}
+
+/* Input hint */
+.input-hint {
+  text-align: center;
+  padding-top: 6px;
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+/* Hidden file input */
+#fileInput { display: none; }
+
+/* ============================================
+   SETTINGS PANEL (Depths)
+   ============================================ */
+.depths-panel {
+  display: none;
+  position: fixed;
+  top: 0; right: 0; bottom: 0;
+  width: 320px;
+  background: var(--dock-bg);
+  border-left: 1px solid var(--dock-border);
+  z-index: 100;
+  flex-direction: column;
+  box-shadow: -8px 0 32px rgba(0,0,0,0.4);
+}
+
+.depths-panel.show {
+  display: flex;
+}
+
+.depths-header {
+  padding: 20px;
+  border-bottom: 1px solid var(--dock-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.depths-header h3 {
+  font-size: 16px;
+  color: var(--lake-light);
+}
+
+.depths-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--dock-border);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.depths-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.depths-section {
+  margin-bottom: 24px;
+}
+
+.depths-section h4 {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+}
+
+.depths-option {
+  padding: 10px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+  transition: background 0.15s;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.depths-option:hover {
+  background: rgba(45,140,240,0.08);
+}
+
+.depths-option.active {
+  background: rgba(45,140,240,0.12);
+  color: var(--lake-light);
+}
+
+/* ============================================
+   MOBILE RESPONSIVE
+   ============================================ */
+@media (max-width: 768px) {
+  .dock {
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    transform: translateX(-100%);
+    z-index: 200;
+    box-shadow: 8px 0 32px rgba(0,0,0,0.5);
+  }
+
+  .dock.open {
+    transform: translateX(0);
+  }
+
+  .dock-toggle {
+    display: flex;
+  }
+
+  .lake-header {
+    padding-left: 64px;
+  }
+
+  .wave { max-width: 92%; }
+
+  .welcome-prompts {
+    flex-direction: column;
+  }
+
+  .depths-panel { width: 100%; }
+
+  .currents-bar { padding: 10px 16px; }
+
+  .waves-container { padding: 16px; }
+
+  .shore-dock { padding: 12px 16px 16px; }
+}
+
+/* Scrollbar for dock */
+.past-tides::-webkit-scrollbar { width: 3px; }
+.past-tides::-webkit-scrollbar-track { background: transparent; }
+.past-tides::-webkit-scrollbar-thumb { background: var(--dock-border); border-radius: 3px; }
+
+.crew-list::-webkit-scrollbar { width: 3px; }
+.crew-list::-webkit-scrollbar-track { background: transparent; }
+.crew-list::-webkit-scrollbar-thumb { background: var(--dock-border); border-radius: 3px; }
+
+/* Overlay for mobile */
+.dock-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 150;
+}
+
+.dock-overlay.show { display: block; }
+</style>
+</head>
+<body>
+
+<!-- Water Background -->
+<div class="water-bg"></div>
+
+<!-- Mobile Dock Toggle -->
+<button class="dock-toggle" onclick="toggleDock()">🛶</button>
+
+<!-- Mobile Overlay -->
+<div class="dock-overlay" onclick="toggleDock()"></div>
+
+<!-- ================================
+     THE DOCK — LEFT SIDEBAR
+     ================================ -->
+<aside class="dock" id="dock">
+
+  <!-- Dock Header -->
+  <div class="dock-header">
+    <div class="dock-logo">🌊</div>
+    <div>
+      <div class="dock-title">The Great Lake</div>
+      <div class="dock-subtitle">Leadership Clarity Engine</div>
+    </div>
+  </div>
+
+  <!-- New Session -->
+  <button class="new-session-btn" onclick="newSession()">
+    🎣 Cast a New Line
+  </button>
+
+  <!-- Sonar Search -->
+  <div class="sonar-wrap">
+    <span class="sonar-icon">🔍</span>
+    <input type="text" class="sonar-input" placeholder="Sonar — search the depths..." oninput="filterTides(this.value)">
+  </div>
+
+  <!-- Past Tides — Chat History -->
+  <div class="dock-section">
+    <div class="dock-section-title">🌙 Past Tides</div>
+  </div>
+  <div class="past-tides" id="pastTides">
+    <div class="tide-item active" onclick="loadTide(0)">
+      <span class="tide-icon">🌊</span>
+      <div class="tide-info">
+        <div class="tide-name">Team dynamics clarity</div>
+        <div class="tide-preview">Help me see the real dynamic between...</div>
+      </div>
+      <span class="tide-time">Now</span>
+    </div>
+    <div class="tide-item" onclick="loadTide(1)">
+      <span class="tide-icon">📄</span>
+      <div class="tide-info">
+        <div class="tide-name">Transcript: Q2 Review</div>
+        <div class="tide-preview">Dropped a log for analysis...</div>
+      </div>
+      <span class="tide-time">2h</span>
+    </div>
+    <div class="tide-item" onclick="loadTide(2)">
+      <span class="tide-icon">👥</span>
+      <div class="tide-info">
+        <div class="tide-name">Player breakdown</div>
+        <div class="tide-preview">The three key players here are...</div>
+      </div>
+      <span class="tide-time">1d</span>
+    </div>
+    <div class="tide-item" onclick="loadTide(3)">
+      <span class="tide-icon">🔥</span>
+      <div class="tide-info">
+        <div class="tide-name">Red flags in meeting</div>
+        <div class="tide-preview">Something feels off about...</div>
+      </div>
+      <span class="tide-time">3d</span>
+    </div>
+  </div>
+
+  <!-- The Crew — Contacts/Characters -->
+  <div class="dock-section">
+    <div class="dock-section-title">👥 The Crew</div>
+  </div>
+  <div class="crew-list" id="crewList">
+    <div class="crew-item" onclick="openCrewProfile('Marcus')">
+      <div class="crew-avatar" style="background:linear-gradient(135deg,#4fc3f7,#0288d1)">M</div>
+      <div>
+        <div class="crew-name">Marcus T.</div>
+        <div class="crew-nickname">"The Architect"</div>
+      </div>
+    </div>
+    <div class="crew-item" onclick="openCrewProfile('Diana')">
+      <div class="crew-avatar" style="background:linear-gradient(135deg,#ce93d8,#7b1fa2)">D</div>
+      <div>
+        <div class="crew-name">Diana R.</div>
+        <div class="crew-nickname">"The Current"</div>
+      </div>
+    </div>
+    <div class="crew-item" onclick="openCrewProfile('James')">
+      <div class="crew-avatar" style="background:linear-gradient(135deg,#ffb74d,#f57c00)">J</div>
+      <div>
+        <div class="crew-name">James K.</div>
+        <div class="crew-nickname">"Driftwood"</div>
+      </div>
+    </div>
+    <div class="crew-item" onclick="addCrew()" style="justify-content:center;color:var(--text-dim);">
+      + Add to The Crew
+    </div>
+  </div>
+
+  <!-- Dock Footer -->
+  <div class="dock-footer">
+    <div class="dock-user">
+      <div class="dock-user-name">Ronnie</div>
+      <div class="dock-user-status">● On the water</div>
+    </div>
+    <button class="dock-footer-btn" onclick="toggleDepths()" title="Depths (Settings)">⚙️</button>
+  </div>
+
+</aside>
+
+<!-- ================================
+     LAKE WINDOW — MAIN CHAT
+     ================================ -->
+<main class="lake-window">
+
+  <!-- Lake Header -->
+  <div class="lake-header">
+    <div class="lake-header-left">
+      <div class="lake-avatar">🌊</div>
+      <div class="lake-header-info">
+        <h2>The Lake</h2>
+        <div class="lake-header-status">
+          <span class="status-dot"></span>
+          <span id="lakeStatus">Still waters — ready to reflect</span>
+        </div>
+      </div>
+    </div>
+    <div class="lake-header-right">
+      <button class="header-btn" onclick="toggleMoodSelector()" title="Lake Mood">🎭</button>
+      <button class="header-btn" onclick="toggleDepths()" title="Depths (Settings)">⚙️</button>
+    </div>
+
+    <!-- Mood Selector Dropdown -->
+    <div class="mood-selector" id="moodSelector">
+      <div class="mood-option active" onclick="setMood('calm')">
+        <span class="mood-dot" style="background:var(--calm)"></span>
+        🌊 Calm — gentle, reflective
+      </div>
+      <div class="mood-option" onclick="setMood('analytical')">
+        <span class="mood-dot" style="background:var(--analytical)"></span>
+        🔍 Analytical — precise, structured
+      </div>
+      <div class="mood-option" onclick="setMood('stormy')">
+        <span class="mood-dot" style="background:var(--stormy)"></span>
+        ⛈️ Stormy — direct, no-filter
+      </div>
+    </div>
+  </div>
+
+  <!-- Currents Bar — Active Topics -->
+  <div class="currents-bar" id="currentsBar">
+    <span class="currents-label">🧭 Currents:</span>
+    <span class="current-chip"><span class="chip-icon">👥</span> Team Dynamics</span>
+    <span class="current-chip"><span class="chip-icon">🎯</span> Leadership Patterns</span>
+    <span class="current-chip"><span class="chip-icon">📊</span> Influence Mapping</span>
+  </div>
+
+  <!-- Waves Container — Messages -->
+  <div class="waves-container" id="wavesContainer">
+
+    <!-- Welcome Screen -->
+    <div class="welcome-screen" id="welcomeScreen">
+      <div class="welcome-icon">🌊</div>
+      <div class="welcome-title">The Lake is Still</div>
+      <div class="welcome-sub">
+        Drop a wave, cast a line, or let a log drift in.<br>
+        I'll reflect back what the water reveals.
+      </div>
+      <div class="welcome-prompts">
+        <div class="welcome-prompt" onclick="sendPrompt('Read a situation for me')">
+          🧭 Read a situation for me
+        </div>
+        <div class="welcome-prompt" onclick="sendPrompt('Help me see the real dynamic')">
+          🎯 Help me see the real dynamic
+        </div>
+        <div class="welcome-prompt" onclick="sendPrompt('I have a transcript to drop in')">
+          📄 Drop a log for analysis
+        </div>
+        <div class="welcome-prompt" onclick="sendPrompt('Something feels off — help me see why')">
+          🔥 Something feels off
+        </div>
+        <div class="welcome-prompt" onclick="sendPrompt('Break down the players involved')">
+          👥 Break down the players
+        </div>
+        <div class="welcome-prompt" onclick="sendPrompt('What should I be watching for?')">
+          🌊 What should I watch for?
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Ripple — Typing Indicator -->
+  <div class="ripple" id="ripple">
+    <div class="ripple-dot"></div>
+    <div class="ripple-dot"></div>
+    <div class="ripple-dot"></div>
+  </div>
+
+  <!-- Shore Dock — Input Area -->
+  <div class="shore-dock">
+
+    <!-- File Preview -->
+    <div class="file-preview" id="filePreview">
+      <span class="file-preview-icon">📄</span>
+      <div class="file-preview-info">
+        <div class="file-preview-name" id="filePreviewName">document.pdf</div>
+        <div class="file-preview-size" id="filePreviewSize">2.4 MB</div>
+      </div>
+      <button class="file-preview-remove" onclick="removeFile()">✕</button>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+      <button class="quick-action-btn" onclick="document.getElementById('fileInput').click()">📎 Drop a Log</button>
+      <button class="quick-action-btn" onclick="sendPrompt('Tag the key players in this')">🏷️ Tag Players</button>
+      <button class="quick-action-btn" onclick="sendPrompt('Summarize what we have so far')">📋 Summarize</button>
+      <button class="quick-action-btn" onclick="sendPrompt('Map the influence dynamics')">🗺️ Map Influence</button>
+      <button class="quick-action-btn" onclick="sendPrompt('What are the undercurrents here?')">🌀 Undercurrents</button>
+    </div>
+
+    <!-- Input Row -->
+    <div class="input-row">
+      <div class="input-wrap">
+        <textarea class="lake-input" id="lakeInput"
+          placeholder="Send a wave into The Lake..."
+          rows="1"
+          onkeydown="handleKey(event)"
+          oninput="autoResize(this)"></textarea>
+        <button class="attach-btn" onclick="document.getElementById('fileInput').click()" title="Drop a log (upload file)">📎</button>
+      </div>
+      <button class="send-btn" onclick="sendWave()" title="Send wave">🌊</button>
+    </div>
+
+    <div class="input-hint">Press Enter to send a wave · Shift+Enter for new line · 📎 for files up to 50MB</div>
+
+    <input type="file" id="fileInput" onchange="handleFileSelect(event)"
+      accept=".txt,.pdf,.doc,.docx,.csv,.json,.md,.rtf,.xlsx,.xls,.pptx">
+  </div>
+
+</main>
+
+<!-- ================================
+     DEPTHS PANEL — SETTINGS
+     ================================ -->
+<div class="depths-panel" id="depthsPanel">
+  <div class="depths-header">
+    <h3>⚙️ Depths</h3>
+    <button class="depths-close" onclick="toggleDepths()">✕</button>
+  </div>
+  <div class="depths-content">
+
+    <div class="depths-section">
+      <h4>🌊 Lake Mood</h4>
+      <div class="depths-option active" onclick="setMood('calm')">
+        🌊 Calm — gentle, reflective clarity
+      </div>
+      <div class="depths-option" onclick="setMood('analytical')">
+        🔍 Analytical — precise, structured breakdowns
+      </div>
+      <div class="depths-option" onclick="setMood('stormy')">
+        ⛈️ Stormy — direct, unfiltered truth
+      </div>
+    </div>
+
+    <div class="depths-section">
+      <h4>📏 Governance</h4>
+      <div class="depths-option">
+        🛡️ Rules 1–27: Active
+      </div>
+      <div class="depths-option">
+        🔒 Safety Filters: On
+      </div>
+      <div class="depths-option">
+        📐 Domain-Agnostic: Enforced
+      </div>
+    </div>
+
+    <div class="depths-section">
+      <h4>🎨 Appearance</h4>
+      <div class="depths-option active">
+        🌙 Deep Waters (Dark)
+      </div>
+      <div class="depths-option">
+        🌅 Twilight Shore (Coming soon)
+      </div>
+    </div>
+
+    <div class="depths-section">
+      <h4>ℹ️ About</h4>
+      <div class="depths-option">
+        The Great Lake Bot v1.3.0
+      </div>
+      <div class="depths-option">
+        Leadership Clarity Platform
+      </div>
+      <div class="depths-option">
+        Governance: Rules 1–27 Active
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ================================
+     JAVASCRIPT
+     ================================ -->
+<script>
+// ============================================
+// STATE
+// ============================================
+let currentMood = 'calm';
+let selectedFile = null;
+let chatHistory = [];
+let currentSessionId = 0;
+const API_BASE = ''; // Will be set to your Render URL
+
+// ============================================
+// DOCK (SIDEBAR)
+// ============================================
+function toggleDock() {
+  const dock = document.getElementById('dock');
+  const overlay = document.querySelector('.dock-overlay');
+  dock.classList.toggle('open');
+  overlay.classList.toggle('show');
+}
+
+function filterTides(query) {
+  const items = document.querySelectorAll('.tide-item');
+  items.forEach(item => {
+    const name = item.querySelector('.tide-name').textContent.toLowerCase();
+    const preview = item.querySelector('.tide-preview').textContent.toLowerCase();
+    const match = name.includes(query.toLowerCase()) || preview.includes(query.toLowerCase());
+    item.style.display = match ? 'flex' : 'none';
+  });
+}
+
+function loadTide(index) {
+  document.querySelectorAll('.tide-item').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tide-item')[index]?.classList.add('active');
+  // In production, load the actual conversation
+  if (window.innerWidth <= 768) toggleDock();
+}
+
+// ============================================
+// NEW SESSION
+// ============================================
+function newSession() {
+  const container = document.getElementById('wavesContainer');
+  container.innerHTML = '';
+
+  const welcome = document.createElement('div');
+  welcome.className = 'welcome-screen';
+  welcome.id = 'welcomeScreen';
+  welcome.innerHTML = `
+    <div class="welcome-icon">🌊</div>
+    <div class="welcome-title">The Lake is Still</div>
+    <div class="welcome-sub">
+      Drop a wave, cast a line, or let a log drift in.<br>
+      I'll reflect back what the water reveals.
+    </div>
+    <div class="welcome-prompts">
+      <div class="welcome-prompt" onclick="sendPrompt('Read a situation for me')">🧭 Read a situation for me</div>
+      <div class="welcome-prompt" onclick="sendPrompt('Help me see the real dynamic')">🎯 Help me see the real dynamic</div>
+      <div class="welcome-prompt" onclick="sendPrompt('I have a transcript to drop in')">📄 Drop a log for analysis</div>
+      <div class="welcome-prompt" onclick="sendPrompt('Something feels off — help me see why')">🔥 Something feels off</div>
+      <div class="welcome-prompt" onclick="sendPrompt('Break down the players involved')">👥 Break down the players</div>
+      <div class="welcome-prompt" onclick="sendPrompt('What should I be watching for?')">🌊 What should I watch for?</div>
+    </div>
+  `;
+  container.appendChild(welcome);
+
+  chatHistory = [];
+  if (window.innerWidth <= 768) toggleDock();
+}
+
+// ============================================
+// CREW (CONTACTS)
+// ============================================
+function openCrewProfile(name) {
+  sendPrompt(`Tell me what I should know about ${name} — their patterns, influence style, and what to watch for.`);
+  if (window.innerWidth <= 768) toggleDock();
+}
+
+function addCrew() {
+  const name = prompt('🪶 Who do you want to add to The Crew? (Enter their name)');
+  if (name && name.trim()) {
+    const list = document.getElementById('crewList');
+    const addBtn = list.lastElementChild;
+    const div = document.createElement('div');
+    div.className = 'crew-item';
+    div.onclick = () => openCrewProfile(name.trim());
+    const initial = name.trim()[0].toUpperCase();
+    const colors = ['#4fc3f7,#0288d1', '#ce93d8,#7b1fa2', '#ffb74d,#f57c00', '#81c784,#388e3c', '#ff8a80,#d32f2f'];
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    div.innerHTML = `
+      <div class="crew-avatar" style="background:linear-gradient(135deg,${color})">${initial}</div>
+      <div>
+        <div class="crew-name">${name.trim()}</div>
+        <div class="crew-nickname">"New addition"</div>
+      </div>
+    `;
+    list.insertBefore(div, addBtn);
+  }
+}
+
+// ============================================
+// MOOD SELECTOR
+// ============================================
+function toggleMoodSelector() {
+  document.getElementById('moodSelector').classList.toggle('show');
+}
+
+function setMood(mood) {
+  currentMood = mood;
+  const statusEl = document.getElementById('lakeStatus');
+  const moods = {
+    calm: 'Still waters — ready to reflect',
+    analytical: 'Deep scan mode — precision active',
+    stormy: 'Rough waters — no filter, full truth'
+  };
+  statusEl.textContent = moods[mood] || moods.calm;
+
+  // Update mood selectors
+  document.querySelectorAll('.mood-option').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.depths-option').forEach(el => el.classList.remove('active'));
+  event?.target?.closest?.('.mood-option')?.classList.add('active');
+
+  document.getElementById('moodSelector').classList.remove('show');
+}
+
+// ============================================
+// DEPTHS (SETTINGS)
+// ============================================
+function toggleDepths() {
+  document.getElementById('depthsPanel').classList.toggle('show');
+}
+
+// ============================================
+// FILE HANDLING
+// ============================================
+function handleFileSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  if (file.size > 50 * 1024 * 1024) {
+    alert('🌊 That log is too heavy — max 50MB. Try breaking it into smaller pieces.');
+    return;
+  }
+
+  selectedFile = file;
+  const preview = document.getElementById('filePreview');
+  document.getElementById('filePreviewName').textContent = file.name;
+  document.getElementById('filePreviewSize').textContent = formatFileSize(file.size);
+  preview.classList.add('show');
+}
+
+function removeFile() {
+  selectedFile = null;
+  document.getElementById('filePreview').classList.remove('show');
+  document.getElementById('fileInput').value = '';
+}
+
+function formatFileSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+// ============================================
+// SENDING WAVES (MESSAGES)
+// ============================================
+function sendPrompt(text) {
+  document.getElementById('lakeInput').value = text;
+  sendWave();
+}
+
+function sendWave() {
+  const input = document.getElementById('lakeInput');
+  const text = input.value.trim();
+  if (!text && !selectedFile) return;
+
+  // Remove welcome screen
+  const welcome = document.getElementById('welcomeScreen');
+  if (welcome) welcome.remove();
+
+  const container = document.getElementById('wavesContainer');
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  // Add user wave
+  const userWave = document.createElement('div');
+  userWave.className = 'wave user-wave';
+
+  let fileHTML = '';
+  if (selectedFile) {
+    fileHTML = `
+      <div class="wave-file">
+        <span class="wave-file-icon">📄</span>
+        <div class="wave-file-info">
+          <div class="wave-file-name">${selectedFile.name}</div>
+          <div class="wave-file-size">${formatFileSize(selectedFile.size)} — Log dropped into The Lake</div>
+        </div>
+      </div>
+    `;
+  }
+
+  userWave.innerHTML = `
+    <div class="wave-avatar">🪶</div>
+    <div class="wave-content">
+      <div class="wave-sender">You</div>
+      <div class="wave-bubble">${escapeHTML(text)}${fileHTML}</div>
+      <div class="wave-time">${timeStr}</div>
+    </div>
+  `;
+  container.appendChild(userWave);
+
+  // Play ripple sound cue (visual only for now)
+  playRippleEffect();
+
+  // Save to history
+  chatHistory.push({ role: 'user', content: text, file: selectedFile?.name, time: timeStr });
+
+  // Clear input
+  input.value = '';
+  input.style.height = 'auto';
+  removeFile();
+
+  // Scroll to bottom
+  container.scrollTop = container.scrollHeight;
+
+  // Show ripple (typing indicator)
+  showRipple();
+
+  // Simulate lake response
+  setTimeout(() => {
+    hideRipple();
+    addLakeReflection(text, timeStr);
+  }, 1500 + Math.random() * 1500);
+}
+
+function addLakeReflection(userText, timeStr) {
+  const container = document.getElementById('wavesContainer');
+  const now = new Date();
+  const reflectionTime = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  // Generate contextual response based on mood
+  const response = generateReflection(userText);
+
+  const lakeWave = document.createElement('div');
+  lakeWave.className = 'wave lake-wave';
+  lakeWave.innerHTML = `
+    <div class="wave-avatar">🌊</div>
+    <div class="wave-content">
+      <div class="wave-sender">The Lake</div>
+      <div class="wave-bubble">${response}</div>
+      <div class="wave-time">${reflectionTime}</div>
+    </div>
+  `;
+  container.appendChild(lakeWave);
+  container.scrollTop = container.scrollHeight;
+
+  // Update currents
+  updateCurrents(userText);
+
+  chatHistory.push({ role: 'lake', content: response, time: reflectionTime });
+}
+
+function generateReflection(input) {
+  const lower = input.toLowerCase();
+
+  // Mood-influenced responses
+  const moodPrefix = {
+    calm: '',
+    analytical: '<strong>📐 Analysis:</strong><br><br>',
+    stormy: '<strong>⛈️ Straight up:</strong><br><br>'
+  };
+
+  const prefix = moodPrefix[currentMood] || '';
+
+  if (lower.includes('transcript') || lower.includes('log') || lower.includes('drop')) {
+    return prefix + "The log has settled into the water. I can see the patterns forming beneath the surface.<br><br>" +
+      "Here's what the ripples are telling me:<br><br>" +
+      "• <strong>Power dynamics</strong> — there's a clear hierarchy in how people are responding<br>" +
+      "• <strong>Undercurrent</strong> — watch who's staying silent. That's where the real story is<br>" +
+      "• <strong>Surface tension</strong> — the polite language is masking something deeper<br><br>" +
+      "Want me to go deeper on any of these currents? 🌊";
+  }
+
+  if (lower.includes('player') || lower.includes('crew') || lower.includes('people') || lower.includes('who')) {
+    return prefix + "Let me map the waters for you.<br><br>" +
+      "In any situation, there are three types of players:<br><br>" +
+      "🏊 <strong>Swimmers</strong> — actively moving, driving the current<br>" +
+      "🪵 <strong>Driftwood</strong> — going wherever the flow takes them<br>" +
+      "⚓ <strong>Anchors</strong> — holding position, resisting change<br><br>" +
+      "Tell me more about the situation and I'll sort them for you.";
+  }
+
+  if (lower.includes('feel') || lower.includes('off') || lower.includes('wrong') || lower.includes('something')) {
+    return prefix + "When the water feels off, it usually is.<br><br>" +
+      "Your instinct is catching something before your logic can name it. That's not paranoia — that's pattern recognition.<br><br>" +
+      "Let's name it together. Tell me:<br><br>" +
+      "• What shifted? When did the water change?<br>" +
+      "• Who was present when it changed?<br>" +
+      "• What's being said vs. what's being done?<br><br>" +
+      "The gap between words and actions is where the truth swims. 🌊";
+  }
+
+  if (lower.includes('dynamic') || lower.includes('situation') || lower.includes('read')) {
+    return prefix + "I'm reading the surface. Drop me the details — who's involved, what happened, and what you're seeing.<br><br>" +
+      "The more context you give me, the deeper I can dive.<br><br>" +
+      "Think of it like this: you're standing on the shore describing what you see. I'm underneath, seeing what's really moving. 🌊";
+  }
+
+  if (lower.includes('watch') || lower.includes('look for') || lower.includes('flag')) {
+    return prefix + "Here's what experienced water-readers watch for:<br><br>" +
+      "🚩 <strong>Sudden calm</strong> — when someone who was vocal goes quiet<br>" +
+      "🚩 <strong>Redirected currents</strong> — conversation keeps getting steered away from certain topics<br>" +
+      "🚩 <strong>Echo patterns</strong> — one person's words start coming out of everyone else's mouth<br>" +
+      "🚩 <strong>Surface ripples</strong> — small passive-aggressive comments that hint at deeper issues<br><br>" +
+      "Which of these are you seeing? 🌊";
+  }
+
+  if (lower.includes('summarize') || lower.includes('summary') || lower.includes('so far')) {
+    return prefix + "Let me pull up from the depths what we've covered so far.<br><br>" +
+      "📋 <strong>Session Summary:</strong><br><br>" +
+      "We've been mapping the waters around your situation. The key themes that keep surfacing are:<br><br>" +
+      "1. The dynamics between players — who's driving vs. who's drifting<br>" +
+      "2. The gap between what's being said and what's actually happening<br>" +
+      "3. Your instincts — which are sharp and worth trusting<br><br>" +
+      "Want me to go deeper on any of these? 🌊";
+  }
+
+  if (lower.includes('influence') || lower.includes('map')) {
+    return prefix + "Let's map the influence currents.<br><br>" +
+      "🗺️ <strong>Influence flows like water</strong> — it follows the path of least resistance.<br><br>" +
+      "To map it, I need to know:<br>" +
+      "• Who do people look at before they speak?<br>" +
+      "• Who sets the tone in meetings?<br>" +
+      "• Who gets cc'd on emails that aren't their business?<br>" +
+      "• Whose opinion gets sought after the meeting?<br><br>" +
+      "These invisible currents are where the real power flows. Give me the details and I'll draw you the map. 🌊";
+  }
+
+  // Default reflection
+  const defaults = [
+    "The water is receiving your wave. Let me sit with this for a moment.<br><br>What I'm seeing beneath the surface is a situation that has more layers than what's visible. Tell me more — the details are where the clarity lives. 🌊",
+    "Interesting ripple pattern here.<br><br>There's something in what you're saying that goes deeper than the words. Let me reflect this back:<br><br>The situation you're describing has a current running through it. Let's follow it together. What happened next? 🌊",
+    "I can feel the weight of that hitting the water.<br><br>Before I dive deeper, let me make sure I'm reading this right. You're sensing something in the dynamic that others might be missing. Trust that instinct — it's your clarity engine working. Tell me more. 🌊"
+  ];
+
+  return prefix + defaults[Math.floor(Math.random() * defaults.length)];
+}
+
+// ============================================
+// TYPING INDICATOR (RIPPLES)
+// ============================================
+function showRipple() {
+  document.getElementById('ripple').classList.add('show');
+  document.getElementById('lakeStatus').textContent = 'The Lake is reflecting...';
+}
+
+function hideRipple() {
+  document.getElementById('ripple').classList.remove('show');
+  const moods = {
+    calm: 'Still waters — ready to reflect',
+    analytical: 'Deep scan mode — precision active',
+    stormy: 'Rough waters — no filter, full truth'
+  };
+  document.getElementById('lakeStatus').textContent = moods[currentMood];
+}
+
+// ============================================
+// VISUAL RIPPLE EFFECT
+// ============================================
+function playRippleEffect() {
+  // Subtle visual pulse on send
+  const sendBtn = document.querySelector('.send-btn');
+  sendBtn.style.transform = 'scale(0.9)';
+  setTimeout(() => { sendBtn.style.transform = ''; }, 150);
+}
+
+// ============================================
+// UPDATE CURRENTS
+// ============================================
+function updateCurrents(text) {
+  const lower = text.toLowerCase();
+  const bar = document.getElementById('currentsBar');
+  const chips = bar.querySelectorAll('.current-chip');
+
+  // Add new current based on topic
+  let newTopic = null;
+  if (lower.includes('transcript') || lower.includes('log')) newTopic = '📄 Transcript Analysis';
+  else if (lower.includes('influence')) newTopic = '🗺️ Influence Mapping';
+  else if (lower.includes('player') || lower.includes('crew')) newTopic = '👥 Player Breakdown';
+  else if (lower.includes('flag') || lower.includes('off')) newTopic = '🚩 Red Flag Detection';
+  else if (lower.includes('meeting')) newTopic = '🏢 Meeting Analysis';
+
+  if (newTopic) {
+    // Check if already exists
+    const exists = Array.from(chips).some(c => c.textContent.includes(newTopic.slice(2)));
+    if (!exists && chips.length < 6) {
+      const chip = document.createElement('span');
+      chip.className = 'current-chip';
+      chip.innerHTML = newTopic;
+      bar.appendChild(chip);
+    }
+  }
+}
+
+// ============================================
+// INPUT HANDLING
+// ============================================
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendWave();
+  }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 160) + 'px';
+}
+
+function escapeHTML(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML.replace(/\n/g, '<br>');
+}
+
+// ============================================
+// CLOSE DROPDOWNS ON OUTSIDE CLICK
+// ============================================
+document.addEventListener('click', (e) => {
+  const mood = document.getElementById('moodSelector');
+  if (!e.target.closest('.header-btn') && !e.target.closest('.mood-selector')) {
+    mood.classList.remove('show');
+  }
+});
+
+// ============================================
+// FOCUS INPUT ON LOAD
+// ============================================
+window.addEventListener('load', () => {
+  document.getElementById('lakeInput').focus();
+});
+</script>
+
+</body>
+</html>
