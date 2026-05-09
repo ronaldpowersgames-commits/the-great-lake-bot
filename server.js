@@ -20,9 +20,29 @@ const nicknameRoutes = require('./routes/nicknames');
 const groupRoutes = require('./routes/groups');
 const updateRoutes = require('./routes/updates');
 const chatRoutes = require('./routes/chat');
+
 const app = express();
 app.set('trust proxy', 1);
-app.use(helmet());
+
+// ============================================
+// SECURITY MIDDLEWARE
+// ============================================
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "blob:"],
+      connectSrc: ["'self'"],
+      fontSrc: ["'self'", "data:"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      frameSrc: ["'none'"],
+    },
+  },
+}));
+
 app.use(cors({
   origin: config.nodeEnv === 'production' ? ['https://thegreatlakebot.example'] : '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
@@ -31,13 +51,20 @@ app.use(cors({
 app.use(morgan(config.nodeEnv === 'production' ? 'combined' : 'dev'));
 app.use(express.json({ limit: '1mb' }));
 app.use(globalLimiter);
+
 // ============================================
 // PUBLIC ROUTES (no auth required)
 // ============================================
+
 // Serve The Lake frontend (no auth required)
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Prevent favicon 401 error
+app.get('/favicon.ico', (req, res) => res.status(204).end());
+
 // Chat endpoint (public, no auth)
 app.use('/chat', chatRoutes);
+
 // Health check (unauthenticated)
 app.get('/health', function(req, res) {
   res.status(200).json({
@@ -48,10 +75,12 @@ app.get('/health', function(req, res) {
     governance: 'Rules 1-27 active',
   });
 });
+
 // Status check (unauthenticated)
 app.get('/status', function(req, res) {
   res.status(200).json({ ok: true });
 });
+
 // Dev token generator (non-production only)
 if (config.nodeEnv !== 'production') {
   var jwt = require('jsonwebtoken');
@@ -63,18 +92,25 @@ if (config.nodeEnv !== 'production') {
       config.jwt.secret,
       { issuer: config.jwt.issuer, audience: config.jwt.audience, expiresIn: config.jwt.expiry }
     );
-    res.json({ message: 'Welcome to ' + config.appName + '. Here is your dev token.', token: token, expiresIn: config.jwt.expiry });
+    res.json({ 
+      message: 'Welcome to ' + config.appName + '. Here is your dev token.', 
+      token: token, 
+      expiresIn: config.jwt.expiry 
+    });
   });
 }
+
 // Serve The Lake frontend for any unknown page route
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
+
 // ============================================
 // AUTHENTICATED ROUTES (auth required)
 // ============================================
 app.use(authenticate);
 app.use(safetyFilter);
+
 app.use('/onboarding', onboardingRoutes);
 app.use('/template', templateRoutes);
 app.use('/engine', engineRoutes);
@@ -82,10 +118,12 @@ app.use('/characters', characterRoutes);
 app.use('/nicknames', nicknameRoutes);
 app.use('/groups', groupRoutes);
 app.use('/updates', updateRoutes);
+
 // ============================================
 // ERROR HANDLING
 // ============================================
 app.use(errorHandler);
+
 // ============================================
 // START SERVER
 // ============================================
@@ -101,4 +139,5 @@ app.listen(config.port, function() {
   console.log('========================================================');
   console.log('');
 });
+
 module.exports = app;
