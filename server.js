@@ -1,6 +1,6 @@
 /**
  * 🌊 The Great Lake Bot - Main Server
- * Production-grade Express server with full governance enforcement (Rules 1-27).
+ * Production-grade Express server with full governance enforcement (Rules 1–27).
  */
 
 const express = require('express');
@@ -79,8 +79,13 @@ app.use(globalLimiter);
 // PUBLIC ROUTES (no auth required)
 // ============================================
 
-// Serve frontend static files
+// ✅ Serve frontend static files FIRST
 app.use(express.static(path.join(__dirname, 'public')));
+
+// ✅ Safeguard for .js files (prevents HTML fallback)
+app.get('/*.js', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', req.path));
+});
 
 // Prevent favicon 401
 app.get('/favicon.ico', (req, res) => res.status(204).end());
@@ -98,7 +103,7 @@ app.get('/health', (req, res) => {
     status: 'healthy',
     version: '1.3.0',
     timestamp: new Date().toISOString(),
-    governance: 'Rules 1-27 active',
+    governance: 'Rules 1–27 active',
     lake: 'Still waters — ready to reflect',
   });
 });
@@ -135,7 +140,7 @@ if (config.nodeEnv !== 'production') {
   });
 }
 
-// Serve frontend root
+// ✅ Serve frontend root AFTER static middleware
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
@@ -179,7 +184,7 @@ app.listen(config.port, () => {
   console.log('========================================================');
   console.log('  Environment : ' + config.nodeEnv);
   console.log('  Port        : ' + config.port);
-  console.log('  Governance  : Rules 1-27 ACTIVE');
+  console.log('  Governance  : Rules 1–27 ACTIVE');
   console.log('  Model       : claude-haiku-4-5');
   console.log('  Status      : Still waters — ready to reflect');
   console.log('========================================================');
