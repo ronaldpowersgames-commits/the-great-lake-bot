@@ -19,6 +19,7 @@ const characterRoutes = require('./routes/characters');
 const nicknameRoutes = require('./routes/nicknames');
 const groupRoutes = require('./routes/groups');
 const updateRoutes = require('./routes/updates');
+const chatRoutes = require('./routes/chat');
 const app = express();
 app.set('trust proxy', 1);
 app.use(helmet());
@@ -35,6 +36,8 @@ app.use(globalLimiter);
 // ============================================
 // Serve The Lake frontend (no auth required)
 app.use(express.static(path.join(__dirname, 'public')));
+// Chat endpoint (public, no auth)
+app.use('/chat', chatRoutes);
 // Health check (unauthenticated)
 app.get('/health', function(req, res) {
   res.status(200).json({
@@ -63,7 +66,7 @@ if (config.nodeEnv !== 'production') {
     res.json({ message: 'Welcome to ' + config.appName + '. Here is your dev token.', token: token, expiresIn: config.jwt.expiry });
   });
 }
-// Catch-all: serve The Lake frontend for any unknown route
+// Serve The Lake frontend for any unknown page route
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
