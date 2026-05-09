@@ -1,0 +1,9 @@
+When the user updates context:
+
+- Accept new information
+- Update incentives
+- Update patterns
+- Update summaries
+- Update trajectories
+- Recalculate clarity
+- Keep the lake calm and structured
