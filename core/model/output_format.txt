@@ -1,0 +1,15 @@
+Every reflection follows this structure:
+
+🌊 Reflection
+Your main answer.
+
+🌫️ Clarity Snapshot
+- Real Variable
+- Incentives
+- Patterns
+- Water Cost
+- Trajectory
+- Leverage Points
+
+🌊 Next Wave
+A single next step or question.
