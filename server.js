@@ -2,16 +2,20 @@
  * 🌊 The Great Lake Bot - Main Server
  * Production-grade Express server with full governance enforcement (Rules 1-27).
  */
+
 const express = require('express');
 const path = require('path');
 const helmet = require('helmet');
 const cors = require('cors');
 const morgan = require('morgan');
 const config = require('./config');
+
 const { authenticate } = require('./middleware/auth');
 const { globalLimiter } = require('./middleware/rateLimiter');
 const { safetyFilter } = require('./middleware/governanceEnforcement');
 const { errorHandler } = require('./middleware/errorHandler');
+
+// Route imports
 const onboardingRoutes = require('./routes/onboarding');
 const templateRoutes = require('./routes/template');
 const engineRoutes = require('./routes/engine');
@@ -21,7 +25,6 @@ const groupRoutes = require('./routes/groups');
 const updateRoutes = require('./routes/updates');
 const chatRoutes = require('./routes/chat');
 const crewRoutes = require('./routes/crew');
-app.use('/crew', crewRoutes);
 
 const app = express();
 app.set('trust proxy', 1);
@@ -29,51 +32,67 @@ app.set('trust proxy', 1);
 // ============================================
 // SECURITY MIDDLEWARE
 // ============================================
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrcAttr: ["'unsafe-inline'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", "data:", "blob:"],
-      connectSrc: ["'self'"],
-      fontSrc: ["'self'", "data:"],
-      objectSrc: ["'none'"],
-      mediaSrc: ["'self'"],
-      frameSrc: ["'none'"],
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrcAttr: ["'unsafe-inline'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:", "blob:"],
+        connectSrc: ["'self'"],
+        fontSrc: ["'self'", "data:"],
+        objectSrc: ["'none'"],
+        mediaSrc: ["'self'"],
+        frameSrc: ["'none'"],
+      },
     },
-  },
-}));
+  })
+);
 
-app.use(cors({
-  origin: config.nodeEnv === 'production'
-    ? ['https://the-great-lake-bot.onrender.com']
-    : '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-}));
+app.use(
+  cors({
+    origin:
+      config.nodeEnv === 'production'
+        ? ['https://the-great-lake-bot.onrender.com']
+        : '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  })
+);
 
 app.use(morgan(config.nodeEnv === 'production' ? 'combined' : 'dev'));
+
+// ============================================
+// BODY PARSERS (THIS IS STEP 3)
+// ============================================
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// ============================================
+// RATE LIMITER
+// ============================================
 app.use(globalLimiter);
 
 // ============================================
 // PUBLIC ROUTES (no auth required)
 // ============================================
 
-// Serve The Lake frontend static files
+// Serve frontend static files
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Prevent favicon 401 error
+// Prevent favicon 401
 app.get('/favicon.ico', (req, res) => res.status(204).end());
 
-// Chat endpoint (public — The Lake core experience)
+// Public chat endpoint
 app.use('/chat', chatRoutes);
 
+// Crew management (public or semi-public depending on your design)
+app.use('/crew', crewRoutes);
+
 // Health check
-app.get('/health', function(req, res) {
+app.get('/health', (req, res) => {
   res.status(200).json({
     name: config.appName,
     status: 'healthy',
@@ -85,40 +104,44 @@ app.get('/health', function(req, res) {
 });
 
 // Status check
-app.get('/status', function(req, res) {
+app.get('/status', (req, res) => {
   res.status(200).json({ ok: true });
 });
 
-// Dev token generator (non-production only)
+// Dev token generator
 if (config.nodeEnv !== 'production') {
-  var jwt = require('jsonwebtoken');
-  app.post('/dev/token', function(req, res) {
-    var sub = (req.body && req.body.sub) || 'dev-user-001';
-    var email = (req.body && req.body.email) || 'ronnie@thegreatlakebot.example';
-    var token = jwt.sign(
-      { sub: sub, email: email, roles: ['user'] },
+  const jwt = require('jsonwebtoken');
+  app.post('/dev/token', (req, res) => {
+    const sub = (req.body && req.body.sub) || 'dev-user-001';
+    const email =
+      (req.body && req.body.email) ||
+      'ronnie@thegreatlakebot.example';
+
+    const token = jwt.sign(
+      { sub, email, roles: ['user'] },
       config.jwt.secret,
       {
         issuer: config.jwt.issuer,
         audience: config.jwt.audience,
-        expiresIn: config.jwt.expiry
+        expiresIn: config.jwt.expiry,
       }
     );
+
     res.json({
-      message: 'Welcome to ' + config.appName + '. Here is your dev token.',
-      token: token,
-      expiresIn: config.jwt.expiry
+      message: `Welcome to ${config.appName}. Here is your dev token.`,
+      token,
+      expiresIn: config.jwt.expiry,
     });
   });
 }
 
-// Serve frontend for root
+// Serve frontend root
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // ============================================
-// AUTHENTICATED ROUTES (auth required)
+// AUTHENTICATED ROUTES
 // ============================================
 app.use(authenticate);
 app.use(safetyFilter);
@@ -134,10 +157,10 @@ app.use('/updates', updateRoutes);
 // ============================================
 // 404 HANDLER
 // ============================================
-app.use(function(req, res) {
+app.use((req, res) => {
   res.status(404).json({
     error: 'Endpoint not found',
-    details: req.method + ' ' + req.path + ' is not a valid The Great Lake Bot endpoint.',
+    details: `${req.method} ${req.path} is not a valid The Great Lake Bot endpoint.`,
   });
 });
 
@@ -149,7 +172,7 @@ app.use(errorHandler);
 // ============================================
 // START SERVER
 // ============================================
-app.listen(config.port, function() {
+app.listen(config.port, () => {
   console.log('');
   console.log('========================================================');
   console.log('  🌊 The Great Lake Bot  v1.3.0');
