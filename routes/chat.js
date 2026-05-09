@@ -1,21 +1,45 @@
 /**
  * 🌊 The Great Lake Bot - Chat Route
  * The core Lake experience — waves in, reflections out.
- * Powered by Claude with full governance enforcement (Rules 1-27).
+ * Powered by Claude Sonnet with full governance enforcement (Rules 1-27).
+ * Supports: text messages, file attachments, conversation history, mood context.
  */
 const express = require('express');
 const Anthropic = require('@anthropic-ai/sdk');
 const fs = require('fs');
 const path = require('path');
+const multer = require('multer');
 const router = express.Router();
 
 // ============================================
-// API KEY SAFETY CHECK
+// FILE UPLOAD — multer (memory storage)
+// ============================================
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB max
+  fileFilter: (req, file, cb) => {
+    const allowed = [
+      'text/plain', 'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/csv', 'application/json',
+      'text/markdown', 'text/rtf',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+    ];
+    cb(null, true); // Accept all — let Claude handle it
+  }
+});
+
+// ============================================
+// ANTHROPIC CLIENT
 // ============================================
 if (!process.env.ANTHROPIC_API_KEY) {
-  console.error('❌ ANTHROPIC_API_KEY is missing from environment variables!');
+  console.error('❌ ANTHROPIC_API_KEY is missing!');
 } else {
-  console.log('✅ Anthropic API key loaded successfully');
+  console.log('✅ Anthropic API key loaded');
 }
 
 const client = new Anthropic({
@@ -28,6 +52,7 @@ const client = new Anthropic({
 function loadSystemPrompt() {
   const modelDir = path.join(__dirname, '..', 'core', 'model');
   const files = [
+    'master_doc.txt',       // Master doc first — highest priority
     'identity.txt',
     'tone.txt',
     'metaphors.txt',
@@ -46,7 +71,6 @@ function loadSystemPrompt() {
 
   let systemPrompt = '';
 
-  // Check if model directory exists
   if (!fs.existsSync(modelDir)) {
     console.warn('⚠️  core/model/ directory not found — using fallback prompt');
     return getFallbackPrompt();
@@ -67,6 +91,13 @@ function loadSystemPrompt() {
     return getFallbackPrompt();
   }
 
+  // Safety trim for context window
+  const MAX_PROMPT_CHARS = 150000;
+  if (systemPrompt.length > MAX_PROMPT_CHARS) {
+    systemPrompt = systemPrompt.substring(0, MAX_PROMPT_CHARS);
+    console.warn('⚠️  System prompt trimmed to fit context window');
+  }
+
   return systemPrompt;
 }
 
@@ -82,7 +113,7 @@ You operate under Governance Rules 1-27 at all times.
 You always produce a structured Clarity Snapshot containing:
 - Real Variable: The true governing factor
 - Incentives: What each party is actually moving toward
-- Patterns: The recurring loops shaping the situation  
+- Patterns: The recurring loops shaping the situation
 - Water Cost: Where energy and attention are being drained
 - Trajectory: The direction things are heading if nothing changes
 - Leverage Points: Small moves that create outsized impact
@@ -90,55 +121,118 @@ Keep responses grounded, strategic, and leadership-aligned.`;
 }
 
 // ============================================
+// MOOD CONTEXT INJECTION
+// ============================================
+function getMoodContext(mood) {
+  const moods = {
+    calm: `
+CURRENT LAKE MOOD: CALM
+Respond with gentleness and depth. Take your time. Be reflective and thoughtful.
+Use water metaphors naturally. Guide the user gently toward clarity.`,
+    analytical: `
+CURRENT LAKE MOOD: ANALYTICAL
+Respond with precision and structure. Use clear headers, bullet points, and frameworks.
+Be systematic. Map everything. Leave no variable unexamined.
+Lead with data and pattern recognition over emotion.`,
+    stormy: `
+CURRENT LAKE MOOD: STORMY
+Respond with directness and zero filter. Say exactly what you see.
+No softening, no padding, no diplomatic evasion.
+Cut straight to the truth. Be sharp but not cruel.`
+  };
+  return moods[mood] || moods.calm;
+}
+
+// ============================================
 // POST /chat — The Lake Core Experience
 // ============================================
-router.post('/', async function(req, res) {
+router.post('/', upload.single('file'), async function(req, res) {
   try {
 
-    // 1. Validate incoming message (the "wave")
-    var message = req.body && req.body.message;
-    if (!message || typeof message !== 'string' || message.trim() === '') {
+    // 1. Extract message and mood
+    let message = (req.body && req.body.message) ? req.body.message.trim() : '';
+    const mood = (req.body && req.body.mood) || 'calm';
+
+    // 2. Handle file attachment
+    if (req.file) {
+      let fileContent = '';
+      try {
+        fileContent = req.file.buffer.toString('utf-8');
+      } catch (e) {
+        fileContent = '[Binary file — text extraction not supported. Please upload .txt, .md, .csv, or .json files for best results.]';
+      }
+
+      const fileHeader = `\n\n📄 ATTACHED FILE: ${req.file.originalname} (${formatBytes(req.file.size)})\n${'─'.repeat(50)}\n`;
+      const fileFooter = `\n${'─'.repeat(50)}\n[End of attached file]\n`;
+
+      message = message
+        ? message + fileHeader + fileContent + fileFooter
+        : `Please analyse this attached file:` + fileHeader + fileContent + fileFooter;
+
+      console.log('📎 File attached:', req.file.originalname, formatBytes(req.file.size));
+    }
+
+    // 3. Validate — need either message or file
+    if (!message) {
       return res.status(400).json({
         error: 'No wave received',
-        details: 'Send a message to The Lake.',
+        details: 'Send a message or attach a file to The Lake.',
       });
     }
 
-    // 2. Validate API key at request time
+    // 4. Check API key
     if (!process.env.ANTHROPIC_API_KEY) {
       return res.status(500).json({
         error: 'The Lake is not configured',
-        details: 'ANTHROPIC_API_KEY is missing from environment.',
+        details: 'ANTHROPIC_API_KEY is missing.',
       });
     }
 
-    // 3. Load system prompt
-    var systemPrompt = loadSystemPrompt();
+    // 5. Load system prompt + inject mood
+    let systemPrompt = loadSystemPrompt();
+    systemPrompt += getMoodContext(mood);
 
-    // 4. Build conversation history if provided
-    var conversationHistory = [];
-    if (req.body.history && Array.isArray(req.body.history)) {
-      conversationHistory = req.body.history.slice(-10); // Keep last 10 exchanges
+    // 6. Build conversation history
+    let conversationHistory = [];
+    if (req.body.history) {
+      try {
+        const history = typeof req.body.history === 'string'
+          ? JSON.parse(req.body.history)
+          : req.body.history;
+        if (Array.isArray(history)) {
+          conversationHistory = history
+            .slice(-10)
+            .filter(m => m.role && m.content)
+            .map(m => ({
+              role: m.role === 'user' ? 'user' : 'assistant',
+              content: String(m.content)
+            }));
+        }
+      } catch (e) {
+        console.warn('⚠️  Could not parse history:', e.message);
+      }
     }
 
-    // 5. Add current message
+    // 7. Add current message
     conversationHistory.push({
       role: 'user',
-      content: message.trim()
+      content: message
     });
 
-    // 6. Call Claude — The Lake Engine
-    var response = await client.messages.create({
-      model: 'claude-haiku-4-5',
-      max_tokens: 2048,
+    // 8. Call Claude Sonnet
+    console.log('🌊 Sending to Claude Sonnet — mood:', mood, '| messages:', conversationHistory.length);
+
+    const response = await client.messages.create({
+      model: 'claude-sonnet-4-5',
+      max_tokens: 4096,
       system: systemPrompt,
       messages: conversationHistory,
     });
 
-    // 7. Extract reflection
-    var reply = response.content &&
-                response.content[0] &&
-                response.content[0].text;
+    // 9. Extract reflection
+    const reply = response.content &&
+                  response.content[0] &&
+                  response.content[0].text;
 
     if (!reply) {
       return res.status(500).json({
@@ -147,43 +241,41 @@ router.post('/', async function(req, res) {
       });
     }
 
-    // 8. Send the reflection back
+    console.log('✅ Reflection sent — tokens in:', response.usage?.input_tokens, '| out:', response.usage?.output_tokens);
+
+    // 10. Send response
     res.json({
       reflection: reply,
-      model: 'claude-haiku-4-5',
+      model: 'claude-sonnet-4-5',
       governance: 'Rules 1-27 active',
+      mood: mood,
       usage: {
-        input_tokens: response.usage && response.usage.input_tokens,
-        output_tokens: response.usage && response.usage.output_tokens,
+        input_tokens: response.usage?.input_tokens,
+        output_tokens: response.usage?.output_tokens,
       },
     });
 
   } catch (err) {
     console.error('❌ Lake Engine Error:', err.message);
-    console.error('❌ Full error:', err);
 
-    // Handle specific Anthropic API errors
     if (err.status === 401) {
       return res.status(500).json({
         error: 'The Lake cannot authenticate',
-        details: 'Invalid ANTHROPIC_API_KEY — check Render environment variables.',
+        details: 'Invalid ANTHROPIC_API_KEY.',
       });
     }
-
     if (err.status === 429) {
       return res.status(429).json({
         error: 'The Lake is overwhelmed',
-        details: 'Rate limit exceeded. The waters need a moment. Try again shortly.',
+        details: 'Rate limit exceeded. Try again shortly.',
       });
     }
-
     if (err.status === 404) {
       return res.status(500).json({
         error: 'Model not found',
-        details: 'Claude model name is invalid or unavailable on your plan.',
+        details: 'Claude model name is invalid.',
       });
     }
-
     if (err.status === 400) {
       return res.status(400).json({
         error: 'The wave was malformed',
@@ -197,5 +289,14 @@ router.post('/', async function(req, res) {
     });
   }
 });
+
+// ============================================
+// HELPER
+// ============================================
+function formatBytes(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
 
 module.exports = router;
