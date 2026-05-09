@@ -266,8 +266,8 @@ router.post('/', upload.single('file'), async function(req, res) {
     }
     if (err.status === 429) {
       return res.status(429).json({
-        error: 'The Lake is overwhelmed',
-        details: 'Rate limit exceeded. Try again shortly.',
+        error: 'The Lake needs a moment',
+        details: 'Too many waves at once — wait 30 seconds and try again.',
       });
     }
     if (err.status === 404) {
