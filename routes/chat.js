@@ -25,8 +25,9 @@ function loadSystemPrompt() {
     'behavior_rules.txt',
     'onboarding.txt',
     'update_syntax.txt',
+    'lake_score.txt',
   ];
-
+  
   let systemPrompt = '';
   for (const file of files) {
     const filePath = path.join(modelDir, file);
