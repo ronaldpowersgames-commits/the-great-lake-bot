@@ -65,7 +65,7 @@ app.use(
 app.use(morgan(config.nodeEnv === 'production' ? 'combined' : 'dev'));
 
 // ============================================
-// BODY PARSERS (THIS IS STEP 3)
+// BODY PARSERS
 // ============================================
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -88,7 +88,7 @@ app.get('/favicon.ico', (req, res) => res.status(204).end());
 // Public chat endpoint
 app.use('/chat', chatRoutes);
 
-// Crew management (public or semi-public depending on your design)
+// Public crew endpoint
 app.use('/crew', crewRoutes);
 
 // Health check
@@ -141,7 +141,7 @@ app.get('/', (req, res) => {
 });
 
 // ============================================
-// AUTHENTICATED ROUTES
+// AUTHENTICATED ROUTES (auth required)
 // ============================================
 app.use(authenticate);
 app.use(safetyFilter);
