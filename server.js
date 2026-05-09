@@ -79,7 +79,7 @@ app.use(globalLimiter);
 // PUBLIC ROUTES (no auth required)
 // ============================================
 
-// ✅ Serve frontend static files FIRST
+// ✅ Serve static files FIRST
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ✅ Safeguard for .js files (prevents HTML fallback)
