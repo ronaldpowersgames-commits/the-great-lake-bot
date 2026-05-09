@@ -20,6 +20,8 @@ const nicknameRoutes = require('./routes/nicknames');
 const groupRoutes = require('./routes/groups');
 const updateRoutes = require('./routes/updates');
 const chatRoutes = require('./routes/chat');
+const crewRoutes = require('./routes/crew');
+app.use('/crew', crewRoutes);
 
 const app = express();
 app.set('trust proxy', 1);
