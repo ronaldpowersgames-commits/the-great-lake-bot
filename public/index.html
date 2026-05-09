@@ -925,6 +925,147 @@ body {
 .past-tides::-webkit-scrollbar { width: 3px; }
 .past-tides::-webkit-scrollbar-track { background: transparent; }
 .past-tides::-webkit-scrollbar-thumb { background: var(--dock-border); border-radius: 3px; }
+
+/* ============================================
+   CREW SUGGESTIONS + MODAL
+   ============================================ */
+.suggested-crew-section {
+  padding: 4px 8px 0;
+}
+.suggested-title {
+  padding: 8px 12px 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--sand);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.suggested-item {
+  padding: 8px 12px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 2px;
+  background: rgba(200,169,110,0.06);
+  border: 1px solid rgba(200,169,110,0.12);
+}
+.suggested-name {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+.suggested-approve {
+  width: 26px; height: 26px;
+  border-radius: 8px; border: none;
+  background: rgba(102,187,106,0.15);
+  color: var(--success);
+  cursor: pointer; font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.suggested-approve:hover { background: rgba(102,187,106,0.3); }
+.suggested-dismiss {
+  width: 26px; height: 26px;
+  border-radius: 8px; border: none;
+  background: rgba(239,83,80,0.1);
+  color: var(--danger);
+  cursor: pointer; font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.suggested-dismiss:hover { background: rgba(239,83,80,0.25); }
+.crew-modal-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 600;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+  padding: 20px;
+}
+.crew-modal-overlay.show { display: flex; }
+.crew-modal {
+  background: var(--dock-bg);
+  border: 1px solid var(--dock-border);
+  border-radius: 20px;
+  padding: 24px;
+  width: 100%;
+  max-width: 360px;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.6);
+  animation: waveIn 0.3s ease-out;
+}
+.crew-modal h3 {
+  font-size: 16px;
+  color: var(--lake-light);
+  margin-bottom: 20px;
+  text-align: center;
+}
+.crew-modal-field {
+  margin-bottom: 14px;
+}
+.crew-modal-field label {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+.crew-modal-field input,
+.crew-modal-field textarea {
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--lake-mid);
+  border: 1px solid var(--dock-border);
+  border-radius: 10px;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s;
+  -webkit-appearance: none;
+}
+.crew-modal-field input:focus,
+.crew-modal-field textarea:focus { border-color: var(--lake-glow); }
+.crew-modal-field textarea { resize: none; height: 70px; line-height: 1.5; }
+.crew-modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+.crew-modal-save {
+  flex: 1; padding: 12px;
+  background: linear-gradient(135deg, var(--lake-glow), var(--lake-light));
+  border: none; border-radius: 12px;
+  color: var(--lake-deep); font-size: 14px; font-weight: 700;
+  cursor: pointer; transition: all 0.2s;
+}
+.crew-modal-save:hover { transform: translateY(-1px); }
+.crew-modal-cancel {
+  padding: 12px 18px;
+  background: transparent;
+  border: 1px solid var(--dock-border);
+  border-radius: 12px;
+  color: var(--text-secondary); font-size: 14px;
+  cursor: pointer; transition: all 0.2s;
+}
+.crew-modal-cancel:hover { background: var(--lake-mid); }
+.crew-modal-delete {
+  padding: 12px;
+  background: rgba(239,83,80,0.1);
+  border: 1px solid rgba(239,83,80,0.2);
+  border-radius: 12px;
+  color: var(--danger); font-size: 14px;
+  cursor: pointer; transition: all 0.2s;
+}
+.crew-modal-delete:hover { background: rgba(239,83,80,0.2); }
+
 </style>
 </head>
 <body>
@@ -1016,23 +1157,7 @@ body {
     <div class="dock-section">
       <div class="dock-section-title">👥 The Crew</div>
     </div>
-    <div class="crew-list" id="crewList">
-      <div class="crew-item" onclick="openCrewProfile('Marcus')">
-        <div class="crew-avatar" style="background:linear-gradient(135deg,#4fc3f7,#0288d1)">M</div>
-        <div><div class="crew-name">Marcus T.</div><div class="crew-nickname">"The Architect"</div></div>
-      </div>
-      <div class="crew-item" onclick="openCrewProfile('Diana')">
-        <div class="crew-avatar" style="background:linear-gradient(135deg,#ce93d8,#7b1fa2)">D</div>
-        <div><div class="crew-name">Diana R.</div><div class="crew-nickname">"The Current"</div></div>
-      </div>
-      <div class="crew-item" onclick="openCrewProfile('James')">
-        <div class="crew-avatar" style="background:linear-gradient(135deg,#ffb74d,#f57c00)">J</div>
-        <div><div class="crew-name">James K.</div><div class="crew-nickname">"Driftwood"</div></div>
-      </div>
-      <div class="crew-item" onclick="addCrew()" style="justify-content:center;color:var(--text-dim);">
-        + Add to The Crew
-      </div>
-    </div>
+      <div class="crew-list" id="crewList"></div>
 
     <div class="dock-footer">
       <div class="dock-user-area" onclick="toggleDepths()">
@@ -1609,30 +1734,174 @@ function toggleDock() {
 // ============================================
 // CREW
 // ============================================
+let crewModalMode = null;
+let crewModalIndex = -1;
+
+function loadCrew() {
+  try {
+    crewMembers = JSON.parse(localStorage.getItem('lakeCrew') || '[]');
+  } catch(e) { crewMembers = []; }
+  renderCrew();
+}
+
+function saveCrew() {
+  localStorage.setItem('lakeCrew', JSON.stringify(crewMembers));
+}
+
+function renderCrew() {
+  const list = document.getElementById('crewList');
+  const colors = [
+    '#4fc3f7,#0288d1','#ce93d8,#7b1fa2','#ffb74d,#f57c00',
+    '#81c784,#388e3c','#ff8a80,#d32f2f','#80cbc4,#00796b'
+  ];
+  let suggestedHTML = '';
+  if (suggestedCrew.length > 0) {
+    suggestedHTML = `
+      <div class="suggested-crew-section">
+        <div class="suggested-title">⚡ Spotted</div>
+        ${suggestedCrew.map((member, idx) => `
+          <div class="suggested-item">
+            <span class="suggested-name">👤 ${escapeHTML(member.name)}</span>
+            <button class="suggested-approve" onclick="approveSuggested(${idx})" title="Add to Crew">✓</button>
+            <button class="suggested-dismiss" onclick="dismissSuggested(${idx})" title="Dismiss">✕</button>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+  const crewHTML = crewMembers.map((member, idx) => {
+    const color = colors[idx % colors.length];
+    const initial = member.name.trim()[0].toUpperCase();
+    const displayName = member.nickname || member.name;
+    const codename = member.codename ? `"${escapeHTML(member.codename)}"` : '<span style="color:var(--text-dim);font-style:italic">No codename</span>';
+    return `
+      <div class="crew-item" onclick="openCrewModal('edit', ${idx})">
+        <div class="crew-avatar" style="background:linear-gradient(135deg,${color})">${initial}</div>
+        <div style="flex:1;min-width:0">
+          <div class="crew-name">${escapeHTML(displayName)}</div>
+          <div class="crew-nickname">${codename}</div>
+        </div>
+        <button class="tide-delete" onclick="removeCrew(event,${idx})" title="Remove">🗑</button>
+      </div>
+    `;
+  }).join('');
+  list.innerHTML = suggestedHTML + crewHTML + `
+    <div class="crew-item" onclick="openCrewModal('add')" style="justify-content:center;color:var(--text-dim);">
+      + Add to The Crew
+    </div>
+  `;
+}
+
+function approveSuggested(idx) {
+  const member = suggestedCrew[idx];
+  openCrewModal('approve', idx, member.name);
+}
+
+function dismissSuggested(idx) {
+  suggestedCrew.splice(idx, 1);
+  saveSuggestedCrew();
+  renderCrew();
+}
+
+function openCrewModal(mode, idx = -1, prefillName = '') {
+  crewModalMode = mode;
+  crewModalIndex = idx;
+  const title = document.getElementById('crewModalTitle');
+  const nameInput = document.getElementById('crewModalName');
+  const nicknameInput = document.getElementById('crewModalNickname');
+  const codenameInput = document.getElementById('crewModalCodename');
+  const contextInput = document.getElementById('crewModalContext');
+  const deleteBtn = document.getElementById('crewModalDelete');
+  if (mode === 'edit' && idx >= 0) {
+    const m = crewMembers[idx];
+    title.textContent = '✏️ Edit Crew Member';
+    nameInput.value = m.name || '';
+    nicknameInput.value = m.nickname || '';
+    codenameInput.value = m.codename || '';
+    contextInput.value = m.context || '';
+    deleteBtn.style.display = 'block';
+  } else if (mode === 'approve') {
+    title.textContent = '⚡ Add to The Crew';
+    nameInput.value = prefillName || '';
+    nicknameInput.value = '';
+    codenameInput.value = '';
+    contextInput.value = '';
+    deleteBtn.style.display = 'none';
+  } else {
+    title.textContent = '🪶 Add to The Crew';
+    nameInput.value = '';
+    nicknameInput.value = '';
+    codenameInput.value = '';
+    contextInput.value = '';
+    deleteBtn.style.display = 'none';
+  }
+  document.getElementById('crewModalOverlay').classList.add('show');
+  setTimeout(() => nameInput.focus(), 100);
+}
+
+function closeCrewModal(e) {
+  if (e && e.target !== document.getElementById('crewModalOverlay')) return;
+  document.getElementById('crewModalOverlay').classList.remove('show');
+}
+
+function saveCrewFromModal() {
+  const name = document.getElementById('crewModalName').value.trim();
+  if (!name) {
+    document.getElementById('crewModalName').style.borderColor = 'var(--danger)';
+    setTimeout(() => document.getElementById('crewModalName').style.borderColor = '', 1500);
+    return;
+  }
+  const member = {
+    name,
+    nickname: document.getElementById('crewModalNickname').value.trim(),
+    codename: document.getElementById('crewModalCodename').value.trim(),
+    context: document.getElementById('crewModalContext').value.trim()
+  };
+  if (crewModalMode === 'edit' && crewModalIndex >= 0) {
+    crewMembers[crewModalIndex] = member;
+  } else if (crewModalMode === 'approve' && crewModalIndex >= 0) {
+    suggestedCrew.splice(crewModalIndex, 1);
+    saveSuggestedCrew();
+    crewMembers.push(member);
+  } else {
+    crewMembers.push(member);
+  }
+  saveCrew();
+  renderCrew();
+  document.getElementById('crewModalOverlay').classList.remove('show');
+}
+
+function deleteCrewFromModal() {
+  if (crewModalIndex >= 0 && confirm(`Remove ${crewMembers[crewModalIndex].name} from The Crew?`)) {
+    crewMembers.splice(crewModalIndex, 1);
+    saveCrew();
+    renderCrew();
+    document.getElementById('crewModalOverlay').classList.remove('show');
+  }
+}
+
+function removeCrew(e, idx) {
+  e.stopPropagation();
+  if (confirm(`Remove ${crewMembers[idx].name} from The Crew?`)) {
+    crewMembers.splice(idx, 1);
+    saveCrew();
+    renderCrew();
+  }
+}
+
 function openCrewProfile(name) {
-  sendPrompt(`Tell me what I should know about ${name} — their patterns, influence style, and what to watch for.`);
+  const member = crewMembers.find(m => m.name.toLowerCase() === name.toLowerCase());
+  let prompt = `Tell me what I should know about ${name}`;
+  if (member?.codename) prompt += ` (also known as "${member.codename}")`;
+  if (member?.context) prompt += `. Context: ${member.context}`;
+  prompt += ` — their patterns, influence style, and what to watch for.`;
+  sendPrompt(prompt);
   if (window.innerWidth <= 768) toggleDock();
 }
 
 function addCrew() {
-  const name = prompt('🪶 Who do you want to add to The Crew?');
-  if (name && name.trim()) {
-    const list = document.getElementById('crewList');
-    const addBtn = list.lastElementChild;
-    const div = document.createElement('div');
-    div.className = 'crew-item';
-    div.onclick = () => openCrewProfile(name.trim());
-    const initial = name.trim()[0].toUpperCase();
-    const colors = ['#4fc3f7,#0288d1','#ce93d8,#7b1fa2','#ffb74d,#f57c00','#81c784,#388e3c','#ff8a80,#d32f2f'];
-    const color = colors[Math.floor(Math.random() * colors.length)];
-    div.innerHTML = `
-      <div class="crew-avatar" style="background:linear-gradient(135deg,${color})">${initial}</div>
-      <div><div class="crew-name">${escapeHTML(name.trim())}</div><div class="crew-nickname">"New addition"</div></div>
-    `;
-    list.insertBefore(div, addBtn);
-  }
+  openCrewModal('add');
 }
-
 // ============================================
 // MOOD
 // ============================================
@@ -1877,6 +2146,33 @@ if ('visualViewport' in window) {
   });
 }
 </script>
+<!-- Crew Modal -->
+<div class="crew-modal-overlay" id="crewModalOverlay" onclick="closeCrewModal(event)">
+  <div class="crew-modal">
+    <h3 id="crewModalTitle">🪶 Add to The Crew</h3>
+    <div class="crew-modal-field">
+      <label>Real Name</label>
+      <input type="text" id="crewModalName" placeholder="How you know them...">
+    </div>
+    <div class="crew-modal-field">
+      <label>Nickname</label>
+      <input type="text" id="crewModalNickname" placeholder="e.g. Marcus T.">
+    </div>
+    <div class="crew-modal-field">
+      <label>🎭 Codename</label>
+      <input type="text" id="crewModalCodename" placeholder="e.g. The Architect, Driftwood...">
+    </div>
+    <div class="crew-modal-field">
+      <label>📝 Context Note</label>
+      <textarea id="crewModalContext" placeholder="e.g. Tends to deflect in group settings, key decision maker..."></textarea>
+    </div>
+    <div class="crew-modal-actions">
+      <button class="crew-modal-cancel" onclick="closeCrewModal()">Cancel</button>
+      <button class="crew-modal-delete" id="crewModalDelete" style="display:none" onclick="deleteCrewFromModal()">🗑</button>
+      <button class="crew-modal-save" onclick="saveCrewFromModal()">🌊 Save</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
 
