@@ -1201,7 +1201,98 @@ let currentUser = null;
 let currentProfilePic = null;
 let deferredInstallPrompt = null;
 let allSessions = [];
+let crewMembers = [];
+let suggestedCrew = [];
 
+// ============================================
+// NAME DETECTION ENGINE
+// ============================================
+const IGNORE_WORDS = new Set([
+  'The','This','That','They','Their','There','These','Those','Then','Than',
+  'When','What','Where','Which','Who','Why','How','Yes','No','Not','But',
+  'And','For','With','From','Have','Has','Had','Will','Would','Could',
+  'Should','May','Might','Must','Shall','Are','Was','Were','Been','Being',
+  'His','Her','Him','She','He','It','Its','Our','Your','My','We','You',
+  'All','Any','Each','Every','Some','More','Most','Other','Into','Over',
+  'Also','Just','Like','Even','Very','Well','Back','Here','Still','Now',
+  'Let','Get','Got','See','Say','Said','Make','Made','Take','Come','Know',
+  'Lake','Great','Leadership','Team','Dynamic','Pattern','Analysis',
+  'Clarity','Engine','Wave','Tide','Crew','Dock','Sonar','Current',
+  'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday',
+  'January','February','March','April','June','July','August','September',
+  'October','November','December','AI','CEO','CFO','COO','HR','VP','GM'
+]);
+
+function detectNamesFromText(text) {
+  if (!text) return [];
+
+  const found = new Map();
+
+  // Pattern 1: Quoted names e.g. "Marcus said..." or "...according to Diana"
+  const contextPatterns = [
+    /\b([A-Z][a-z]{1,20})\s+(?:said|says|told|mentioned|suggested|argued|asked|replied|noted|added|agreed|disagreed|pushed|deflected|responded)/g,
+    /(?:told|asked|with|about|from|by|for)\s+([A-Z][a-z]{1,20})\b/g,
+    /\b([A-Z][a-z]{1,20})(?:'s|'s)\s+(?:approach|style|pattern|behavior|response|role|position|team|idea)/g,
+  ];
+
+  contextPatterns.forEach(pattern => {
+    let match;
+    while ((match = pattern.exec(text)) !== null) {
+      const name = match[1];
+      if (!IGNORE_WORDS.has(name) && name.length > 2) {
+        found.set(name, (found.get(name) || 0) + 2); // weighted higher
+      }
+    }
+  });
+
+  // Pattern 2: Any capitalized word appearing 2+ times
+  const words = text.match(/\b[A-Z][a-z]{2,20}\b/g) || [];
+  words.forEach(word => {
+    if (!IGNORE_WORDS.has(word)) {
+      found.set(word, (found.get(word) || 0) + 1);
+    }
+  });
+
+  // Only return names that score 2+ (mentioned meaningfully)
+  return Array.from(found.entries())
+    .filter(([name, score]) => score >= 2)
+    .map(([name]) => name);
+}
+
+function processNamesFromResponse(responseText) {
+  const detected = detectNamesFromText(responseText);
+  if (detected.length === 0) return;
+
+  const existingNames = new Set([
+    ...crewMembers.map(m => m.name.toLowerCase()),
+    ...suggestedCrew.map(m => m.name.toLowerCase())
+  ]);
+
+  let newSuggestions = false;
+  detected.forEach(name => {
+    if (!existingNames.has(name.toLowerCase())) {
+      suggestedCrew.push({ name, source: 'auto-detected' });
+      existingNames.add(name.toLowerCase());
+      newSuggestions = true;
+    }
+  });
+
+  if (newSuggestions) {
+    saveSuggestedCrew();
+    renderCrew();
+  }
+}
+
+function saveSuggestedCrew() {
+  localStorage.setItem('lakeSuggestedCrew', JSON.stringify(suggestedCrew));
+}
+
+function loadSuggestedCrew() {
+  try {
+    suggestedCrew = JSON.parse(localStorage.getItem('lakeSuggestedCrew') || '[]');
+  } catch(e) { suggestedCrew = []; }
+}
+  
 // ============================================
 // PWA
 // ============================================
@@ -1365,6 +1456,8 @@ window.addEventListener('load', () => {
     } catch(e) {}
   }
   loadSessionHistory();
+  loadCrew();          // ← ADDED
+  loadSuggestedCrew(); // ← ADDED
 });
 
 // ============================================
@@ -1650,6 +1743,7 @@ async function sendWave() {
       chatHistory.push({ role: 'assistant', content: data.reflection, time: reflectionTime });
       updateCurrents(text);
       saveSession();
+      processNamesFromResponse(data.reflection); // ← ADDED
     } else {
       appendLakeWave('The Lake encountered turbulence: ' + (data.error || 'Unknown error'), timeStr, true);
     }
