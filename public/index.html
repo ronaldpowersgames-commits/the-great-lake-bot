@@ -2023,14 +2023,15 @@ function renderCrew() {
   const crewHTML = crewMembers.map((member, idx) => {
     const color = colors[idx % colors.length];
     const initial = member.name.trim()[0].toUpperCase();
-    const displayName = member.nickname || member.name;
-    const codename = member.codename ? `"${escapeHTML(member.codename)}"` : '<span style="color:var(--text-dim);font-style:italic">No codename</span>';
+    const displayName = member.codename || member.name;
+    const displayName = member.codename || member.name;
+    const nickname = member.nickname ? `<span style="color:var(--text-dim);font-size:11px">${escapeHTML(member.nickname)}</span>` : '';
     return `
       <div class="crew-item" onclick="openCrewProfile(${idx})">
         <div class="crew-avatar" style="background:linear-gradient(135deg,${color})">${initial}</div>
         <div style="flex:1;min-width:0">
           <div class="crew-name">${escapeHTML(displayName)}</div>
-          <div class="crew-nickname">${codename}</div>
+          ${nickname}
         </div>
         <button class="tide-delete" onclick="removeCrew(event,${idx})" title="Remove">🗑</button>
       </div>
