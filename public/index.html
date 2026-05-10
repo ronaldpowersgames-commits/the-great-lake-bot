@@ -1174,6 +1174,102 @@ body {
 }
 .crew-card-close:hover { background: var(--lake-mid); }
 
+/* ============================================
+   HELP SCREEN
+   ============================================ */
+.help-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 700;
+  align-items: flex-start;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+  padding: 20px;
+  overflow-y: auto;
+}
+.help-overlay.show { display: flex; }
+.help-modal {
+  background: var(--dock-bg);
+  border: 1px solid var(--dock-border);
+  border-radius: 24px;
+  padding: 28px 24px 32px;
+  width: 100%;
+  max-width: 480px;
+  margin: auto;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.6);
+  animation: waveIn 0.3s ease-out;
+}
+.help-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+.help-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--lake-light);
+}
+.help-close {
+  width: 32px; height: 32px;
+  border-radius: 10px; border: none;
+  background: var(--lake-mid);
+  color: var(--text-secondary);
+  cursor: pointer; font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.help-close:hover { background: var(--dock-border); }
+.help-section {
+  margin-bottom: 22px;
+}
+.help-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--sand);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.help-item {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 8px;
+  align-items: flex-start;
+}
+.help-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.help-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.help-text strong {
+  color: var(--text-primary);
+}
+.help-divider {
+  height: 1px;
+  background: var(--dock-border);
+  margin: 18px 0;
+}
+.help-tip {
+  padding: 12px 14px;
+  background: rgba(79,195,247,0.06);
+  border: 1px solid rgba(79,195,247,0.15);
+  border-radius: 12px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  font-style: italic;
+}
+
 </style>
 </head>
 <body>
@@ -1297,6 +1393,7 @@ body {
       <div class="lake-header-right">
         <button class="header-btn" onclick="toggleMoodSelector()" title="Lake Mood">🎭</button>
         <button class="header-btn" onclick="toggleDepths()" title="Settings">⚙️</button>
+        <button class="header-btn" onclick="openHelp()" title="How to use The Lake">❓</button>
       </div>
       <div class="mood-selector" id="moodSelector">
         <div class="mood-option active" onclick="setMood('calm',event)">
@@ -2284,6 +2381,16 @@ function escapeHTML(str) {
   div.textContent = str;
   return div.innerHTML;
 }
+// ============================================
+// HELP
+// ============================================
+function openHelp() {
+  document.getElementById('helpOverlay').classList.add('show');
+}
+function closeHelp(e) {
+  if (e && e.target !== document.getElementById('helpOverlay')) return;
+  document.getElementById('helpOverlay').classList.remove('show');
+}
 
 // ============================================
 // CLOSE ON OUTSIDE CLICK
@@ -2347,6 +2454,92 @@ if ('visualViewport' in window) {
       <button class="crew-card-edit" onclick="editFromCard()">✏️ Edit</button>
       <button class="crew-card-close" onclick="closeCrewCard()">✕</button>
     </div>
+  </div>
+</div>
+<!-- Help Screen -->
+<div class="help-overlay" id="helpOverlay" onclick="closeHelp(event)">
+  <div class="help-modal">
+    <div class="help-header">
+      <div class="help-title">🌊 How to use The Lake</div>
+      <button class="help-close" onclick="closeHelp()">✕</button>
+    </div>
+
+    <div class="help-section">
+      <div class="help-section-title">🌊 The Basics</div>
+      <div class="help-item">
+        <span class="help-icon">💬</span>
+        <div class="help-text">Type anything in the box at the bottom — a situation, a question, a feeling. <strong>The Lake reflects back what it sees.</strong></div>
+      </div>
+      <div class="help-item">
+        <span class="help-icon">📄</span>
+        <div class="help-text"><strong>Drop a Log</strong> — attach transcripts, meeting notes, or documents and The Lake will read them in full.</div>
+      </div>
+      <div class="help-item">
+        <span class="help-icon">🧭</span>
+        <div class="help-text">Use the <strong>welcome prompts</strong> to get started fast if you're not sure what to ask.</div>
+      </div>
+    </div>
+
+    <div class="help-divider"></div>
+
+    <div class="help-section">
+      <div class="help-section-title">🗂 The Dock</div>
+      <div class="help-item">
+        <span class="help-icon">🌊</span>
+        <div class="help-text"><strong>Past Tides</strong> — all your saved conversations. Tap any to reload it.</div>
+      </div>
+      <div class="help-item">
+        <span class="help-icon">🔍</span>
+        <div class="help-text"><strong>Sonar</strong> — search through your past conversations by keyword or name.</div>
+      </div>
+      <div class="help-item">
+        <span class="help-icon">👥</span>
+        <div class="help-text"><strong>The Crew</strong> — track the people in your world. Add context, codenames, and notes.</div>
+      </div>
+    </div>
+
+    <div class="help-divider"></div>
+
+    <div class="help-section">
+      <div class="help-section-title">👥 The Crew</div>
+      <div class="help-item">
+        <span class="help-icon">⚡</span>
+        <div class="help-text"><strong>Spotted</strong> — The Lake auto-detects names from conversations and suggests adding them.</div>
+      </div>
+      <div class="help-item">
+        <span class="help-icon">🪶</span>
+        <div class="help-text">Tap <strong>+ Add to The Crew</strong> to manually add someone with their real name, nickname, codename and context note.</div>
+      </div>
+      <div class="help-item">
+        <span class="help-icon">🌊</span>
+        <div class="help-text">Tap any crew member → hit <strong>Ask The Lake</strong> to get a full read on them instantly.</div>
+      </div>
+    </div>
+
+    <div class="help-divider"></div>
+
+    <div class="help-section">
+      <div class="help-section-title">🎭 Moods</div>
+      <div class="help-item">
+        <span class="help-icon">😌</span>
+        <div class="help-text"><strong>Calm</strong> — reflective, deep, gentle. Good for processing and thinking out loud.</div>
+      </div>
+      <div class="help-item">
+        <span class="help-icon">🎯</span>
+        <div class="help-text"><strong>Analytical</strong> — structured, precise, systematic. Good for mapping situations.</div>
+      </div>
+      <div class="help-item">
+        <span class="help-icon">⛈️</span>
+        <div class="help-text"><strong>Stormy</strong> — zero filter, raw truth. Good when you need it straight.</div>
+      </div>
+    </div>
+
+    <div class="help-divider"></div>
+
+    <div class="help-tip">
+      💡 Pro tip — the more context you give The Lake, the deeper the read. Name the people involved, describe the setting, and don't hold back on the details.
+    </div>
+
   </div>
 </div>
 </body>
