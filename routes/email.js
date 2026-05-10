@@ -1,6 +1,3 @@
-**
-
-```javascript
 /**
 * 🌊 The Great Lake Bot - Email Inbound Route
 * Receives forwarded emails via Mailgun webhook
