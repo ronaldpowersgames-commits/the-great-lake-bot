@@ -1,14 +1,14 @@
 /**
  * 🌊 The Great Lake Bot - Chat Route
- * The core Lake experience — waves in, reflections out.
- * Powered by Claude Sonnet with full governance enforcement (Rules 1-27).
- * Supports: text messages, file attachments, images, conversation history, mood context.
+ * Supports: text, images, PDF, DOCX, file attachments, voice, mood context.
  */
 const express = require('express');
 const Anthropic = require('@anthropic-ai/sdk');
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
+const pdfParse = require('pdf-parse');
+const mammoth = require('mammoth');
 const router = express.Router();
 
 // ============================================
@@ -16,18 +16,27 @@ const router = express.Router();
 // ============================================
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB max
+  limits: { fileSize: 50 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    cb(null, true); // Accept all — Claude handles it
+    cb(null, true);
   }
 });
 
 // ============================================
-// IMAGE MIME TYPES Claude can see natively
+// FILE TYPE GROUPS
 // ============================================
 const IMAGE_TYPES = [
   'image/jpeg', 'image/jpg', 'image/png',
   'image/gif', 'image/webp'
+];
+
+const PDF_TYPES = [
+  'application/pdf'
+];
+
+const DOCX_TYPES = [
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/msword'
 ];
 
 // ============================================
@@ -140,15 +149,49 @@ Cut straight to the truth. Be sharp but not cruel.`
 }
 
 // ============================================
+// FILE TEXT EXTRACTION
+// ============================================
+async function extractFileText(file) {
+  const mime = file.mimetype;
+
+  // PDF
+  if (PDF_TYPES.includes(mime)) {
+    try {
+      const data = await pdfParse(file.buffer);
+      return data.text || '[PDF contained no extractable text]';
+    } catch (e) {
+      console.warn('⚠️  PDF parse error:', e.message);
+      return '[Could not extract PDF text — try copy/pasting as .txt]';
+    }
+  }
+
+  // DOCX / DOC
+  if (DOCX_TYPES.includes(mime)) {
+    try {
+      const result = await mammoth.extractRawText({ buffer: file.buffer });
+      return result.value || '[DOCX contained no extractable text]';
+    } catch (e) {
+      console.warn('⚠️  DOCX parse error:', e.message);
+      return '[Could not extract DOCX text — try copy/pasting as .txt]';
+    }
+  }
+
+  // Plain text fallback
+  try {
+    return file.buffer.toString('utf-8');
+  } catch (e) {
+    return '[Binary file — text extraction not supported]';
+  }
+}
+
+// ============================================
 // POST /chat — The Lake Core Experience
 // ============================================
 router.post('/', upload.single('file'), async function(req, res) {
   try {
-    // 1. Extract message and mood
     let message = (req.body && req.body.message) ? req.body.message.trim() : '';
     const mood = (req.body && req.body.mood) || 'calm';
 
-    // 2. Check API key early
     if (!process.env.ANTHROPIC_API_KEY) {
       return res.status(500).json({
         error: 'The Lake is not configured',
@@ -156,11 +199,10 @@ router.post('/', upload.single('file'), async function(req, res) {
       });
     }
 
-    // 3. Load system prompt + inject mood
     let systemPrompt = loadSystemPrompt();
     systemPrompt += getMoodContext(mood);
 
-    // 4. Build conversation history
+    // Build conversation history
     let conversationHistory = [];
     if (req.body.history) {
       try {
@@ -181,14 +223,14 @@ router.post('/', upload.single('file'), async function(req, res) {
       }
     }
 
-    // 5. Build current user message — handle images vs text files
+    // Build user message content
     let userMessageContent;
 
     if (req.file) {
       const isImage = IMAGE_TYPES.includes(req.file.mimetype);
 
       if (isImage) {
-        // 🖼️ Image — send natively to Claude Vision
+        // 🖼️ Image — Claude Vision
         const base64Image = req.file.buffer.toString('base64');
         const mediaType = req.file.mimetype === 'image/jpg'
           ? 'image/jpeg'
@@ -212,14 +254,11 @@ router.post('/', upload.single('file'), async function(req, res) {
               : 'Please analyse this image and give me your full Lake reflection on what you see.',
           }
         ];
+
       } else {
-        // 📄 Text-based file
-        let fileContent = '';
-        try {
-          fileContent = req.file.buffer.toString('utf-8');
-        } catch (e) {
-          fileContent = '[Binary file — text extraction not supported. Please upload .txt, .md, .csv, or .json files for best results.]';
-        }
+        // 📄 PDF / DOCX / TXT — extract text
+        console.log('📎 File attached:', req.file.originalname, formatBytes(req.file.size));
+        const fileContent = await extractFileText(req.file);
 
         const fileHeader = `\n\n📄 ATTACHED FILE: ${req.file.originalname} (${formatBytes(req.file.size)})\n${'─'.repeat(50)}\n`;
         const fileFooter = `\n${'─'.repeat(50)}\n[End of attached file]\n`;
@@ -227,12 +266,10 @@ router.post('/', upload.single('file'), async function(req, res) {
           ? message + fileHeader + fileContent + fileFooter
           : `Please analyse this attached file:` + fileHeader + fileContent + fileFooter;
 
-        console.log('📎 File attached:', req.file.originalname, formatBytes(req.file.size));
-
         userMessageContent = fullMessage;
       }
+
     } else {
-      // 💬 Text only
       if (!message) {
         return res.status(400).json({
           error: 'No wave received',
@@ -242,13 +279,13 @@ router.post('/', upload.single('file'), async function(req, res) {
       userMessageContent = message;
     }
 
-    // 6. Add current message to history
+    // Add to history
     conversationHistory.push({
       role: 'user',
       content: userMessageContent
     });
 
-    // 7. Call Claude Sonnet
+    // Call Claude
     console.log('🌊 Sending to Claude Sonnet — mood:', mood, '| messages:', conversationHistory.length);
 
     const response = await client.messages.create({
@@ -258,7 +295,6 @@ router.post('/', upload.single('file'), async function(req, res) {
       messages: conversationHistory,
     });
 
-    // 8. Extract reflection
     const reply = response.content &&
                   response.content[0] &&
                   response.content[0].text;
@@ -272,7 +308,6 @@ router.post('/', upload.single('file'), async function(req, res) {
 
     console.log('✅ Reflection sent — tokens in:', response.usage?.input_tokens, '| out:', response.usage?.output_tokens);
 
-    // 9. Send response
     res.json({
       reflection: reply,
       model: 'claude-sonnet-4-5',
