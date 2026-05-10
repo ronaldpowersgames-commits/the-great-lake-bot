@@ -2013,12 +2013,12 @@ function renderCrew() {
   }
   const crewHTML = crewMembers.map((member, idx) => {
     const color = colors[idx % colors.length];
-    const initial = member.name.trim()[0].toUpperCase();
+    const initial = member.emoji || member.name.trim()[0].toUpperCase();
     const displayName = member.codename || member.name;
     const nickname = member.nickname ? `<span style="color:var(--text-dim);font-size:11px">${escapeHTML(member.nickname)}</span>` : '';
     return `
       <div class="crew-item" onclick="openCrewProfile(${idx})">
-        <div class="crew-avatar" style="background:linear-gradient(135deg,${color})">${initial}</div>
+        <div class="crew-avatar" style="background:${member.emoji ? 'none' : `linear-gradient(135deg,${color})`}">${initial}</div>
         <div style="flex:1;min-width:0">
           <div class="crew-name">${escapeHTML(displayName)}</div>
           ${nickname}
@@ -2051,6 +2051,7 @@ function openCrewModal(mode, idx = -1, prefillName = '') {
   const title = document.getElementById('crewModalTitle');
   const nameInput = document.getElementById('crewModalName');
   const nicknameInput = document.getElementById('crewModalNickname');
+  const emojiInput = document.getElementById('crewModalEmoji');
   const codenameInput = document.getElementById('crewModalCodename');
   const contextInput = document.getElementById('crewModalContext');
   const deleteBtn = document.getElementById('crewModalDelete');
@@ -2060,11 +2061,13 @@ function openCrewModal(mode, idx = -1, prefillName = '') {
     nameInput.value = m.name || '';
     nicknameInput.value = m.nickname || '';
     codenameInput.value = m.codename || '';
+    emojiInput.value = m.emoji || '';
     contextInput.value = m.context || '';
     deleteBtn.style.display = 'block';
   } else if (mode === 'approve') {
     title.textContent = '⚡ Add to The Crew';
     nameInput.value = prefillName || '';
+    emojiInput.value = '';
     nicknameInput.value = '';
     codenameInput.value = '';
     contextInput.value = '';
@@ -2072,6 +2075,7 @@ function openCrewModal(mode, idx = -1, prefillName = '') {
   } else {
     title.textContent = '🪶 Add to The Crew';
     nameInput.value = '';
+    emojiInput.value = '';
     nicknameInput.value = '';
     codenameInput.value = '';
     contextInput.value = '';
@@ -2097,6 +2101,7 @@ function saveCrewFromModal() {
     name,
     nickname: document.getElementById('crewModalNickname').value.trim(),
     codename: document.getElementById('crewModalCodename').value.trim(),
+    emoji: document.getElementById('crewModalEmoji').value.trim(),
     context: document.getElementById('crewModalContext').value.trim()
   };
   if (crewModalMode === 'edit' && crewModalIndex >= 0) {
@@ -2143,9 +2148,9 @@ function openCrewProfile(idx) {
     '#81c784,#388e3c','#ff8a80,#d32f2f','#80cbc4,#00796b'
   ];
   const color = colors[idx % colors.length];
-  const initial = member.name.trim()[0].toUpperCase();
+  const initial = member.emoji || member.name.trim()[0].toUpperCase();
 
-  document.getElementById('crewCardAvatar').style.background = `linear-gradient(135deg,${color})`;
+  document.getElementById('crewCardAvatar').style.background = member.emoji ? 'none' : `linear-gradient(135deg,${color})`;
   document.getElementById('crewCardAvatar').textContent = initial;
   document.getElementById('crewCardName').textContent = member.name;
   document.getElementById('crewCardNickname').textContent = member.nickname || '';
@@ -2531,8 +2536,8 @@ function exportConversation() {
       <input type="text" id="crewModalName" placeholder="How you know them...">
     </div>
     <div class="crew-modal-field">
-      <label>Nickname <span style="color:var(--text-dim);font-weight:normal;font-size:11px">*optional</span></label>
-      <input type="text" id="crewModalNickname" placeholder="e.g. Marcus T.">
+      <label>Avatar Emoji <span style="color:var(--text-dim);font-weight:normal;font-size:11px">*optional</span></label>
+      <input type="text" id="crewModalEmoji" placeholder="e.g. 🦈 🌊 🔥 🦊">
     </div>
     <div class="crew-modal-field">
       <label>🎭 Codename</label>
