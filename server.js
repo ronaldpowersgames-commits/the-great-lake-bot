@@ -185,7 +185,7 @@ app.listen(config.port, () => {
   console.log('  Environment : ' + config.nodeEnv);
   console.log('  Port        : ' + config.port);
   console.log('  Governance  : Rules 1–27 ACTIVE');
-  console.log('  Model       : claude-haiku-4-5');
+  console.log('  Model       : claude-sonnet-4-5');
   console.log('  Status      : Still waters — ready to reflect');
   console.log('========================================================');
   console.log('');
