@@ -2024,7 +2024,6 @@ function renderCrew() {
     const color = colors[idx % colors.length];
     const initial = member.name.trim()[0].toUpperCase();
     const displayName = member.codename || member.name;
-    const displayName = member.codename || member.name;
     const nickname = member.nickname ? `<span style="color:var(--text-dim);font-size:11px">${escapeHTML(member.nickname)}</span>` : '';
     return `
       <div class="crew-item" onclick="openCrewProfile(${idx})">
