@@ -668,6 +668,14 @@ function loadSuggestedCrew() {
     suggestedCrew = JSON.parse(localStorage.getItem('lakeSuggestedCrew') || '[]');
   } catch(e) { suggestedCrew = []; }
 }
+function copyLakeEmail() {
+  navigator.clipboard.writeText('lake@sandbox753d92b50bf48a580b75e13c1d32b85.mailgun.org')
+    .then(() => {
+      const btn = document.getElementById('copyEmailBtn');
+      btn.textContent = '✅ Copied!';
+      setTimeout(() => btn.textContent = '📋 Copy', 2000);
+    });
+}
 // ============================================
 // PWA
 // ============================================
@@ -1527,35 +1535,104 @@ function shareAsGroupSession() {
       <div class="help-title">🌊 How to use The Lake</div>
       <button class="help-close" onclick="closeHelp()">✕</button>
     </div>
+
+    <!-- THE BASICS -->
     <div class="help-section">
       <div class="help-section-title">🌊 The Basics</div>
       <div class="help-item"><span class="help-icon">💬</span><div class="help-text">Type anything in the box at the bottom. <strong>The Lake reflects back what it sees.</strong></div></div>
-      <div class="help-item"><span class="help-icon">📄</span><div class="help-text"><strong>Drop a Log</strong> — attach transcripts, meeting notes, or documents.</div></div>
+      <div class="help-item"><span class="help-icon">📄</span><div class="help-text"><strong>Drop a Log</strong> — attach transcripts, meeting notes, screenshots, or chat exports. The Lake reads the room.</div></div>
       <div class="help-item"><span class="help-icon">🧭</span><div class="help-text">Use the <strong>welcome prompts</strong> to get started fast.</div></div>
     </div>
     <div class="help-divider"></div>
+
+    <!-- INTERPERSONAL DYNAMICS -->
+    <div class="help-section">
+      <div class="help-section-title">🧠 Reading People & Dynamics</div>
+      <div class="help-item"><span class="help-icon">💬</span><div class="help-text"><strong>Paste a chat thread</strong> — The Lake decodes tone, intent, power plays, and what's really being said between the lines.</div></div>
+      <div class="help-item"><span class="help-icon">🖼️</span><div class="help-text"><strong>Drop a screenshot</strong> — text message, email, Slack thread. The Lake reads the behavior, not just the words.</div></div>
+      <div class="help-item"><span class="help-icon">🎙️</span><div class="help-text"><strong>Paste a transcript</strong> — meeting notes, call recordings, interview summaries. The Lake surfaces what the data is really saying.</div></div>
+      <div class="help-item"><span class="help-icon">🔥</span><div class="help-text"><strong>Something feels off?</strong> Describe the situation. The Lake maps the hidden dynamics — who holds power, who's deflecting, what's driving the behavior.</div></div>
+      <div class="help-item"><span class="help-icon">🎯</span><div class="help-text"><strong>Before a hard conversation</strong> — drop the context and ask The Lake what to watch for, how to position yourself, and what moves are available.</div></div>
+    </div>
+    <div class="help-divider"></div>
+
+    <!-- PROMPT SUGGESTIONS -->
+    <div class="help-section">
+      <div class="help-section-title">🧭 Prompt Suggestions</div>
+      <div class="help-item"><span class="help-icon">💡</span><div class="help-text">Tap the <strong>⚡ Suggestions</strong> button above the input bar to expand 17 ready-to-use prompts:</div></div>
+      <div class="help-item"><span class="help-icon">🧭</span><div class="help-text"><strong>Read the Currents</strong> — overall read of the situation or person.</div></div>
+      <div class="help-item"><span class="help-icon">🔍</span><div class="help-text"><strong>Surface the Truth</strong> — what's really going on beneath the surface.</div></div>
+      <div class="help-item"><span class="help-icon">🪨</span><div class="help-text"><strong>Drop the Full Logbook</strong> — deep dive into everything you've shared.</div></div>
+      <div class="help-item"><span class="help-icon">🧩</span><div class="help-text"><strong>Connect the Dots</strong> — find patterns across people and events.</div></div>
+      <div class="help-item"><span class="help-icon">🔥</span><div class="help-text"><strong>Red Flags</strong> — what should you be worried about right now.</div></div>
+      <div class="help-item"><span class="help-icon">🎭</span><div class="help-text"><strong>Mask & Motive</strong> — what's the person hiding and why.</div></div>
+      <div class="help-item"><span class="help-icon">📈</span><div class="help-text"><strong>Momentum Check</strong> — is this moving forward or stalling.</div></div>
+      <div class="help-item"><span class="help-icon">🧊</span><div class="help-text"><strong>Iceberg View</strong> — what's visible vs. what's lurking below.</div></div>
+      <div class="help-item"><span class="help-icon">🧵</span><div class="help-text"><strong>Thread the Story</strong> — pull the narrative together from all the pieces.</div></div>
+      <div class="help-item"><span class="help-icon">⚓</span><div class="help-text"><strong>Anchor Points</strong> — what are the fixed truths in this situation.</div></div>
+      <div class="help-item"><span class="help-icon">🌫️</span><div class="help-text"><strong>Fog Index</strong> — how much clarity do you actually have right now.</div></div>
+      <div class="help-item"><span class="help-icon">🎯</span><div class="help-text"><strong>Intent Scan</strong> — what does this person actually want.</div></div>
+      <div class="help-item"><span class="help-icon">🧨</span><div class="help-text"><strong>Pressure Test</strong> — where does this break under stress.</div></div>
+      <div class="help-item"><span class="help-icon">🪞</span><div class="help-text"><strong>Mirror Back</strong> — show me how I'm coming across in this.</div></div>
+      <div class="help-item"><span class="help-icon">🌪️</span><div class="help-text"><strong>Storm Warning</strong> — what's about to blow up if nothing changes.</div></div>
+      <div class="help-item"><span class="help-icon">🧮</span><div class="help-text"><strong>Odds & Outcomes</strong> — what are the likely scenarios from here.</div></div>
+      <div class="help-item"><span class="help-icon">📌</span><div class="help-text"><strong>Followups & Commitments</strong> — what was promised, agreed, or left hanging.</div></div>
+    </div>
+    <div class="help-divider"></div>
+
+    <!-- THE DOCK -->
     <div class="help-section">
       <div class="help-section-title">🗂 The Dock</div>
-      <div class="help-item"><span class="help-icon">🌊</span><div class="help-text"><strong>Past Tides</strong> — all your saved conversations.</div></div>
+      <div class="help-item"><span class="help-icon">🌊</span><div class="help-text"><strong>Past Tides</strong> — all your saved conversations, including forwarded emails.</div></div>
       <div class="help-item"><span class="help-icon">🔍</span><div class="help-text"><strong>Sonar</strong> — search through past conversations.</div></div>
       <div class="help-item"><span class="help-icon">👥</span><div class="help-text"><strong>The Crew</strong> — track the people in your world.</div></div>
     </div>
     <div class="help-divider"></div>
+
+    <!-- THE CREW -->
     <div class="help-section">
       <div class="help-section-title">👥 The Crew</div>
-      <div class="help-item"><span class="help-icon">⚡</span><div class="help-text"><strong>Spotted</strong> — The Lake auto-detects names from conversations.</div></div>
-      <div class="help-item"><span class="help-icon">🪶</span><div class="help-text">Tap <strong>+ Add to The Crew</strong> to manually add someone.</div></div>
-      <div class="help-item"><span class="help-icon">🌊</span><div class="help-text">Tap any crew member → <strong>Ask The Lake</strong> for a full read.</div></div>
+      <div class="help-item"><span class="help-icon">⚡</span><div class="help-text"><strong>Spotted</strong> — The Lake auto-detects names from conversations and adds them to your Crew.</div></div>
+      <div class="help-item"><span class="help-icon">🪶</span><div class="help-text">Tap <strong>+ Add to The Crew</strong> to manually add someone. Give them an emoji avatar to make them easy to spot.</div></div>
+      <div class="help-item"><span class="help-icon">🌊</span><div class="help-text">Tap any crew member → <strong>Ask The Lake</strong> for a full behavioral read on that person.</div></div>
+      <div class="help-item"><span class="help-icon">🎭</span><div class="help-text"><strong>Emoji Avatars</strong> — assign an emoji to any crew member (e.g. 🦊 for a cunning colleague, 🧊 for someone who runs cold). Makes your Crew instantly readable at a glance.</div></div>
     </div>
     <div class="help-divider"></div>
+
+    <!-- MOODS -->
     <div class="help-section">
       <div class="help-section-title">🎭 Moods</div>
-      <div class="help-item"><span class="help-icon">😌</span><div class="help-text"><strong>Calm</strong> — reflective, deep, gentle.</div></div>
-      <div class="help-item"><span class="help-icon">🎯</span><div class="help-text"><strong>Analytical</strong> — structured, precise, systematic.</div></div>
-      <div class="help-item"><span class="help-icon">⛈️</span><div class="help-text"><strong>Stormy</strong> — zero filter, raw truth.</div></div>
+      <div class="help-item"><span class="help-icon">😌</span><div class="help-text"><strong>Calm</strong> — reflective, deep, gentle. Best for processing emotions and long-form situations.</div></div>
+      <div class="help-item"><span class="help-icon">🎯</span><div class="help-text"><strong>Analytical</strong> — structured, precise, systematic. Best for transcripts, data, and decision-making.</div></div>
+      <div class="help-item"><span class="help-icon">⛈️</span><div class="help-text"><strong>Stormy</strong> — zero filter, raw truth. Use when you need The Lake to stop being polite and just tell you what it sees.</div></div>
     </div>
     <div class="help-divider"></div>
-    <div class="help-tip">💡 Pro tip — the more context you give The Lake, the deeper the read.</div>
+
+    <!-- SCORE CARDS -->
+    <div class="help-section">
+      <div class="help-section-title">🃏 Score Cards</div>
+      <div class="help-item"><span class="help-icon">🃏</span><div class="help-text"><strong>Score Cards</strong> give you a structured behavioral snapshot of any person or situation — trust level, influence, risk, alignment, and more.</div></div>
+      <div class="help-item"><span class="help-icon">📊</span><div class="help-text">Tap <strong>🃏 Score Cards</strong> in the quick actions bar to generate one from your current conversation.</div></div>
+      <div class="help-item"><span class="help-icon">💡</span><div class="help-text">Best used <strong>after dropping a transcript or chat thread</strong> — the more data The Lake has, the sharper the card.</div></div>
+    </div>
+    <div class="help-divider"></div>
+
+    <!-- EMAIL DROP -->
+    <div class="help-section">
+      <div class="help-section-title">📧 Email Drop</div>
+      <div class="help-item"><span class="help-icon">📨</span><div class="help-text">Forward any email to The Lake — it appears automatically in <strong>Past Tides</strong> within 30 seconds.</div></div>
+      <div class="help-item"><span class="help-icon">📋</span><div class="help-text">Forward to this address:
+        <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
+          <code id="lakeEmail" style="font-size:11px;background:rgba(255,255,255,0.08);padding:6px 10px;border-radius:6px;color:#7dd3fc;flex:1;word-break:break-all;">lake@sandbox753d92b50bf48a580b75e13c1d32b85.mailgun.org</code>
+          <button onclick="copyLakeEmail()" style="background:rgba(255,255,255,0.1);border:none;border-radius:6px;padding:6px 10px;color:white;cursor:pointer;font-size:12px;white-space:nowrap;" id="copyEmailBtn">📋 Copy</button>
+        </div>
+      </div></div>
+      <div class="help-item"><span class="help-icon">⚡</span><div class="help-text">Email threads, meeting notes, Slack exports — forward anything in, then open it from Past Tides and ask The Lake to read it.</div></div>
+      <div class="help-item"><span class="help-icon">🎯</span><div class="help-text"><strong>Pro move:</strong> Forward a tense email chain → open it in The Lake → ask <em>"What's really going on here and what's my best next move?"</em></div></div>
+    </div>
+    <div class="help-divider"></div>
+
+    <div class="help-tip">💡 Pro tip — the more context you give The Lake, the deeper the read. Drop the full thread, not just the headline.</div>
   </div>
 </div>
 </body>
