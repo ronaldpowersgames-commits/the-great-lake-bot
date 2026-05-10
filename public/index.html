@@ -771,6 +771,19 @@ body {
 }
 .send-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(45,140,240,0.3); }
 .send-btn:active { transform: scale(0.92); }
+.mic-btn {
+  width: 46px; height: 46px; border-radius: 13px; border: none;
+  background: var(--lake-mid);
+  border: 1px solid var(--dock-border);
+  color: var(--text-secondary); font-size: 20px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s; flex-shrink: 0;
+}
+.mic-btn.listening {
+  background: rgba(239,83,80,0.2);
+  border-color: var(--danger);
+  animation: pulse 1s ease-in-out infinite;
+}
 .input-hint { text-align: center; padding-top: 6px; font-size: 10px; color: var(--text-dim); }
 #fileInput { display: none; }
 
@@ -1475,6 +1488,7 @@ body {
             oninput="autoResize(this)"></textarea>
           <button class="attach-btn" onclick="document.getElementById('fileInput').click()">📎</button>
         </div>
+        <button class="mic-btn" id="micBtn" onclick="toggleMic()">🎤</button>
         <button class="send-btn" onclick="sendWave()">🌊</button>
       </div>
       <div class="input-hint">Enter to send · Shift+Enter for new line · 📎 files up to 50MB</div>
@@ -2420,6 +2434,54 @@ if ('visualViewport' in window) {
   window.visualViewport.addEventListener('resize', () => {
     document.getElementById('wavesContainer').scrollTop = document.getElementById('wavesContainer').scrollHeight;
   });
+}
+// ============================================
+// VOICE INPUT
+// ============================================
+let recognition = null;
+let isListening = false;
+
+function toggleMic() {
+  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    alert('Your browser doesn\'t support voice input. Try Chrome!');
+    return;
+  }
+  if (isListening) {
+    recognition.stop();
+    return;
+  }
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SpeechRecognition();
+  recognition.continuous = false;
+  recognition.interimResults = true;
+  recognition.lang = 'en-US';
+
+  recognition.onstart = () => {
+    isListening = true;
+    document.getElementById('micBtn').classList.add('listening');
+    document.getElementById('micBtn').textContent = '🔴';
+  };
+
+  recognition.onresult = (event) => {
+    const transcript = Array.from(event.results)
+      .map(r => r[0].transcript).join('');
+    document.getElementById('lakeInput').value = transcript;
+    autoResize(document.getElementById('lakeInput'));
+  };
+
+  recognition.onend = () => {
+    isListening = false;
+    document.getElementById('micBtn').classList.remove('listening');
+    document.getElementById('micBtn').textContent = '🎤';
+  };
+
+  recognition.onerror = () => {
+    isListening = false;
+    document.getElementById('micBtn').classList.remove('listening');
+    document.getElementById('micBtn').textContent = '🎤';
+  };
+
+  recognition.start();
 }
 </script>
 <!-- Crew Modal -->
