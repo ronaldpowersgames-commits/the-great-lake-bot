@@ -1589,10 +1589,9 @@ const IGNORE_WORDS = new Set([
 
 function detectNamesFromText(text) {
   if (!text) return [];
-
   const found = new Map();
 
-  // Pattern 1: Quoted names e.g. "Marcus said..." or "...according to Diana"
+  // ONLY use context patterns — must appear next to name-indicating words
   const contextPatterns = [
     /\b([A-Z][a-z]{1,20})\s+(?:said|says|told|mentioned|suggested|argued|asked|replied|noted|added|agreed|disagreed|pushed|deflected|responded)/g,
     /(?:told|asked|with|about|from|by|for)\s+([A-Z][a-z]{1,20})\b/g,
@@ -1604,20 +1603,12 @@ function detectNamesFromText(text) {
     while ((match = pattern.exec(text)) !== null) {
       const name = match[1];
       if (!IGNORE_WORDS.has(name) && name.length > 2) {
-        found.set(name, (found.get(name) || 0) + 2); // weighted higher
+        found.set(name, (found.get(name) || 0) + 1);
       }
     }
   });
 
-  // Pattern 2: Any capitalized word appearing 2+ times
-  const words = text.match(/\b[A-Z][a-z]{2,20}\b/g) || [];
-  words.forEach(word => {
-    if (!IGNORE_WORDS.has(word)) {
-      found.set(word, (found.get(word) || 0) + 1);
-    }
-  });
-
-  // Only return names that score 2+ (mentioned meaningfully)
+  // Must appear in context patterns AT LEAST TWICE to be suggested
   return Array.from(found.entries())
     .filter(([name, score]) => score >= 2)
     .map(([name]) => name);
