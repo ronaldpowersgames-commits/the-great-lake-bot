@@ -191,4 +191,10 @@ app.listen(config.port, () => {
   console.log('');
 });
 
+// Keep alive — prevent Render from sleeping
+setInterval(() => {
+  fetch('https://the-great-lake-bot.onrender.com/health')
+    .catch(() => {});
+}, 14 * 60 * 1000);
+
 module.exports = app;
