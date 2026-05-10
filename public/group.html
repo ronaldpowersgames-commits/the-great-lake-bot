@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0a1628">
+<title>The Great Lake — Group Session</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+:root {
+  --lake-deep: #0a1628; --lake-mid: #0d1f3c; --lake-surface: #132844;
+  --lake-shimmer: #1a3a5c; --lake-glow: #2d8cf0; --lake-light: #64b5f6;
+  --dock-bg: #091420; --dock-border: #1a3050; --sand: #c8a96e;
+  --driftwood: #8b7355; --text-primary: #e1f5fe; --text-secondary: #80b4d8;
+  --text-dim: #4a6d8c; --danger: #ef5350; --success: #66bb6a;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
+}
+html, body { height: 100%; overflow: hidden; background: var(--lake-deep); color: var(--text-primary); font-family: 'Segoe UI', system-ui, sans-serif; }
+.header { padding: 14px 20px; padding-top: calc(14px + var(--safe-top)); border-bottom: 1px solid var(--dock-border); display: flex; align-items: center; justify-content: space-between; background: rgba(9,20,32,0.95); }
+.header-left { display: flex; align-items: center; gap: 10px; }
+.header-avatar { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #2d8cf0, #64b5f6); display: flex; align-items: center; justify-content: center; font-size: 18px; }
+.header-info h2 { font-size: 15px; font-weight: 600; }
+.header-sub { font-size: 11px; color: var(--text-dim); }
+.share-btn { padding: 8px 16px; background: rgba(45,140,240,0.15); border: 1px solid rgba(45,140,240,0.3); border-radius: 20px; color: var(--lake-light); font-size: 12px; cursor: pointer; }
+.share-btn:hover { background: rgba(45,140,240,0.25); }
+.join-bar { padding: 12px 20px; background: rgba(45,140,240,0.06); border-bottom: 1px solid var(--dock-border); display: flex; align-items: center; gap: 10px; }
+.join-bar input { flex: 1; padding: 8px 14px; background: var(--lake-mid); border: 1px solid var(--dock-border); border-radius: 10px; color: var(--text-primary); font-size: 14px; outline: none; }
+.join-bar input:focus { border-color: var(--lake-glow); }
+.join-btn { padding: 8px 16px; background: linear-gradient(135deg, var(--lake-glow), var(--lake-light)); border: none; border-radius: 10px; color: var(--lake-deep); font-size: 13px; font-weight: 600; cursor: pointer; }
+.participants { padding: 8px 20px; display: flex; gap: 8px; align-items: center; border-bottom: 1px solid rgba(26,48,80,0.5); overflow-x: auto; }
+.participant-chip { display: flex; align-items: center; gap: 6px; padding: 4px 10px; background: rgba(45,140,240,0.1); border: 1px solid rgba(45,140,240,0.2); border-radius: 20px; font-size: 11px; color: var(--lake-light); white-space: nowrap; }
+.participant-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); }
+.messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; height: calc(100vh - 280px); }
+.msg { display: flex; gap: 10px; max-width: 85%; animation: fadeIn 0.3s ease-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.msg.mine { align-self: flex-end; flex-direction: row-reverse; }
+.msg.lake { align-self: flex-start; }
+.msg-avatar { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; margin-top: 4px; }
+.msg.lake .msg-avatar { background: linear-gradient(135deg, #2d8cf0, #64b5f6); }
+.msg.mine .msg-avatar { background: linear-gradient(135deg, var(--sand), var(--driftwood)); }
+.msg-body { display: flex; flex-direction: column; gap: 2px; }
+.msg-name { font-size: 10px; font-weight: 600; text-transform: uppercase; color: var(--text-dim); }
+.msg.mine .msg-name { text-align: right; color: var(--sand); }
+.msg-bubble { padding: 10px 14px; border-radius: 16px; font-size: 14px; line-height: 1.5; word-break: break-word; }
+.msg.lake .msg-bubble { background: var(--lake-surface); border: 1px solid var(--dock-border); border-top-left-radius: 4px; }
+.msg.mine .msg-bubble { background: rgba(45,140,240,0.2); border: 1px solid rgba(45,140,240,0.25); border-top-right-radius: 4px; }
+.msg.other .msg-bubble { background: rgba(200,169,110,0.1); border: 1px solid rgba(200,169,110,0.2); border-top-left-radius: 4px; }
+.msg.other .msg-avatar { background: linear-gradient(135deg, #ce93d8, #7b1fa2); }
+.msg-time { font-size: 10px; color: var(--text-dim); }
+.msg.mine .msg-time { text-align: right; }
+.ripple { display: none; align-self: flex-start; padding: 12px 16px; background: var(--lake-surface); border: 1px solid var(--dock-border); border-radius: 16px; border-top-left-radius: 4px; margin-left: 40px; }
+.ripple.show { display: flex; gap: 5px; align-items: center; }
+.ripple-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--lake-light); opacity: 0.3; animation: rippleAnim 1.4s ease-in-out infinite; }
+.ripple-dot:nth-child(2) { animation-delay: 0.2s; }
+.ripple-dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes rippleAnim { 0%, 60%, 100% { opacity: 0.3; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-4px); } }
+.input-area { padding: 10px 14px; padding-bottom: calc(10px + var(--safe-bottom)); border-top: 1px solid var(--dock-border); background: rgba(9,20,32,0.95); display: flex; gap: 8px; align-items: flex-end; }
+.input-wrap { flex: 1; position: relative; }
+.group-input { width: 100%; min-height: 44px; max-height: 100px; padding: 11px 16px; background: var(--lake-mid); border: 1px solid var(--dock-border); border-radius: 14px; color: var(--text-primary); font-size: 15px; font-family: inherit; resize: none; outline: none; line-height: 1.4; }
+.group-input:focus { border-color: var(--lake-glow); }
+.send-btn { width: 44px; height: 44px; border-radius: 12px; border: none; background: linear-gradient(135deg, #2d8cf0, #64b5f6); color: #0a1628; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.send-btn:active { transform: scale(0.92); }
+.session-banner { padding: 10px 20px; background: rgba(45,140,240,0.06); border-bottom: 1px solid var(--dock-border); font-size: 12px; color: var(--text-dim); text-align: center; }
+.session-banner strong { color: var(--lake-light); }
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-left">
+    <div class="header-avatar">🌊</div>
+    <div class="header-info">
+      <h2>The Lake — Group Session</h2>
+      <div class="header-sub" id="sessionLabel">Loading...</div>
+    </div>
+  </div>
+  <button class="share-btn" onclick="copyInviteLink()">🔗 Invite</button>
+</div>
+
+<div class="join-bar">
+  <input type="text" id="nameInput" placeholder="Your name to join..." maxlength="30">
+  <button class="join-btn" onclick="joinSession()">🌊 Join</button>
+</div>
+
+<div class="participants" id="participants">
+  <div class="participant-chip"><span class="participant-dot"></span>🌊 The Lake</div>
+</div>
+
+<div class="session-banner" id="sessionBanner" style="display:none">
+  📋 Session loaded — <strong id="sessionTitle"></strong>
+</div>
+
+<div class="messages" id="messages"></div>
+
+<div class="ripple" id="ripple">
+  <div class="ripple-dot"></div>
+  <div class="ripple-dot"></div>
+  <div class="ripple-dot"></div>
+</div>
+
+<div class="input-area">
+  <div class="input-wrap">
+    <textarea class="group-input" id="groupInput"
+      placeholder="Send a wave..."
+      rows="1"
+      onkeydown="handleKey(event)"
+      oninput="autoResize(this)"></textarea>
+  </div>
+  <button class="send-btn" onclick="sendMessage()">🌊</button>
+</div>
+
+<script>
+let myName = '';
+let sessionId = null;
+let chatHistory = [];
+let participants = ['🌊 The Lake'];
+let pollingInterval = null;
+let lastMessageCount = 0;
+
+// Get session ID and name from URL
+const urlParams = new URLSearchParams(window.location.search);
+sessionId = urlParams.get('session');
+const urlName = urlParams.get('name');
+
+if (urlName) {
+  document.getElementById('nameInput').value = decodeURIComponent(urlName);
+}
+
+// Load session from URL if provided
+window.addEventListener('load', async () => {
+  if (sessionId) {
+    document.getElementById('sessionLabel').textContent = 'Session: ' + sessionId.substring(0, 12) + '...';
+    await loadExistingSession();
+  } else {
+    // New group session
+    sessionId = 'group_' + Date.now();
+    document.getElementById('sessionLabel').textContent = 'New group session';
+    window.history.replaceState({}, '', '/group.html?session=' + sessionId);
+  }
+});
+
+async function loadExistingSession() {
+  try {
+    // Try to load from email sessions first
+    const res = await fetch('/email/session/' + sessionId);
+    if (res.ok) {
+      const session = await res.json();
+      const banner = document.getElementById('sessionBanner');
+      banner.style.display = 'block';
+      document.getElementById('sessionTitle').textContent = session.subject || session.name || 'Shared session';
+
+      // Load history into chat
+      chatHistory = session.history || [];
+      chatHistory.forEach(msg => {
+        appendMessage(
+          msg.role === 'user' ? 'You' : '🌊 The Lake',
+          msg.content,
+          msg.role === 'assistant' ? 'lake' : 'other',
+          msg.time
+        );
+      });
+      scrollToBottom();
+    }
+  } catch(e) {
+    console.log('No existing session to load');
+  }
+}
+
+function joinSession() {
+  const name = document.getElementById('nameInput').value.trim();
+  if (!name) {
+    document.getElementById('nameInput').style.borderColor = '#ef5350';
+    setTimeout(() => document.getElementById('nameInput').style.borderColor = '', 1500);
+    return;
+  }
+  myName = name;
+  document.getElementById('nameInput').disabled = true;
+  document.querySelector('.join-btn').disabled = true;
+  document.querySelector('.join-btn').textContent = '✅ Joined';
+  document.getElementById('groupInput').focus();
+
+  // Add to participants display
+  if (!participants.includes(name)) {
+    participants.push(name);
+    renderParticipants();
+  }
+
+  appendMessage('🌊 The Lake', `${name} has joined the session. Welcome to the water. 🌊`, 'lake', now());
+  scrollToBottom();
+}
+
+function renderParticipants() {
+  const container = document.getElementById('participants');
+  container.innerHTML = participants.map(p => `
+    <div class="participant-chip">
+      <span class="participant-dot"></span>${escapeHTML(p)}
+    </div>
+  `).join('');
+}
+
+async function sendMessage() {
+  if (!myName) {
+    document.getElementById('nameInput').focus();
+    return;
+  }
+  const input = document.getElementById('groupInput');
+  const text = input.value.trim();
+  if (!text) return;
+
+  input.value = '';
+  input.style.height = 'auto';
+
+  appendMessage(myName, text, 'mine', now());
+  chatHistory.push({ role: 'user', content: `${myName}: ${text}`, time: now() });
+  scrollToBottom();
+
+  showRipple();
+
+  try {
+    const formData = new FormData();
+    formData.append('message', `[Group session — ${myName} says]: ${text}`);
+    formData.append('mood', 'calm');
+    formData.append('history', JSON.stringify(
+      chatHistory.slice(-10).map(m => ({ role: m.role, content: m.content }))
+    ));
+
+    const res = await fetch('/chat', { method: 'POST', body: formData });
+    const data = await res.json();
+    hideRipple();
+
+    if (data.reflection) {
+      appendMessage('🌊 The Lake', data.reflection, 'lake', now());
+      chatHistory.push({ role: 'assistant', content: data.reflection, time: now() });
+      scrollToBottom();
+    }
+  } catch(e) {
+    hideRipple();
+    appendMessage('🌊 The Lake', 'Could not reach The Lake — check your connection.', 'lake', now());
+  }
+}
+
+function appendMessage(name, text, type, time) {
+  const container = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'msg ' + type;
+  const emoji = type === 'lake' ? '🌊' : type === 'mine' ? '🪶' : '🌀';
+  div.innerHTML = `
+    <div class="msg-avatar">${emoji}</div>
+    <div class="msg-body">
+      <div class="msg-name">${escapeHTML(name)}</div>
+      <div class="msg-bubble">${formatText(text)}</div>
+      <div class="msg-time">${time}</div>
+    </div>
+  `;
+  container.appendChild(div);
+}
+
+function formatText(text) {
+  return escapeHTML(text)
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n\n/g, '<br><br>')
+    .replace(/\n/g, '<br>');
+}
+
+function copyInviteLink() {
+  const link = window.location.origin + '/group.html?session=' + sessionId;
+  navigator.clipboard.writeText(link).then(() => {
+    const btn = document.querySelector('.share-btn');
+    btn.textContent = '✅ Copied!';
+    setTimeout(() => btn.textContent = '🔗 Invite', 2000);
+  });
+}
+
+function showRipple() { document.getElementById('ripple').classList.add('show'); }
+function hideRipple() { document.getElementById('ripple').classList.remove('show'); }
+function scrollToBottom() {
+  const m = document.getElementById('messages');
+  m.scrollTop = m.scrollHeight;
+}
+function now() {
+  return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+}
+function escapeHTML(str) {
+  if (!str) return '';
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+</script>
+</body>
+</html>
+```
