@@ -787,6 +787,7 @@ window.addEventListener('load', () => {
   loadCrew();
   loadSuggestedCrew();
   loadEmailSessions();
+  setInterval(loadEmailSessions, 30000);
 });
 // ============================================
 // SESSION HISTORY
