@@ -95,8 +95,8 @@ app.use('/chat', chatRoutes);
 
 // Public crew endpoint
 app.use('/crew', crewRoutes);
-  const emailRoutes = require('./routes/email');
-  app.use('/email', emailRoutes);
+const emailRoutes = require('./routes/email');
+app.use('/email', emailRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
