@@ -461,7 +461,7 @@ body {
       <div class="lake-header-right">
         <button class="header-btn" onclick="toggleMoodSelector()" title="Lake Mood">🎭</button>
         <button class="header-btn" onclick="toggleDepths()" title="Settings">⚙️</button>
-        <button class="header-btn" onclick="exportConversation()" title="Share conversation">🔗</button>
+        <button class="header-btn" onclick="shareAsGroupSession()" title="Share as group session">🔗</button>
         <button class="header-btn" onclick="openHelp()" title="How to use The Lake">❓</button>
       </div>
       <div class="mood-selector" id="moodSelector">
@@ -786,6 +786,7 @@ window.addEventListener('load', () => {
   loadSessionHistory();
   loadCrew();
   loadSuggestedCrew();
+  loadEmailSessions();
 });
 // ============================================
 // SESSION HISTORY
@@ -900,6 +901,38 @@ function filterTides(query) {
     const preview = item.querySelector('.tide-preview')?.textContent.toLowerCase() || '';
     item.style.display = (name.includes(query.toLowerCase()) || preview.includes(query.toLowerCase())) ? 'flex' : 'none';
   });
+}
+// ============================================
+// EMAIL SESSIONS — load from server
+// ============================================
+async function loadEmailSessions() {
+  try {
+    const res = await fetch('/email/sessions');
+    if (!res.ok) return;
+    const emailSessions = await res.json();
+    if (!emailSessions.length) return;
+
+    // Merge email sessions into allSessions
+    emailSessions.forEach(es => {
+      const exists = allSessions.find(s => s.id === es.id);
+      if (!exists) {
+        allSessions.unshift({
+          id: es.id,
+          name: '📧 ' + (es.subject || 'Email'),
+          preview: 'From: ' + es.from,
+          time: es.time,
+          history: es.history,
+          mood: 'analytical',
+          type: 'email'
+        });
+      }
+    });
+
+    allSessions = allSessions.slice(0, 50);
+    renderTides();
+  } catch(e) {
+    console.log('No email sessions available');
+  }
 }
 // ============================================
 // NEW SESSION
@@ -1414,6 +1447,24 @@ function exportConversation() {
       alert('Copied to clipboard — paste anywhere to share!');
     }).catch(() => {
       alert('Share not supported on this browser. Try Chrome or Safari on mobile!');
+    });
+  }
+}
+function shareAsGroupSession() {
+  if (!currentSessionId) {
+    alert('Start a conversation first!');
+    return;
+  }
+  const groupUrl = window.location.origin + '/group.html?session=' + currentSessionId;
+  if (navigator.share) {
+    navigator.share({
+      title: '🌊 Join my Lake session',
+      text: 'Join me in The Great Lake for a group reflection:',
+      url: groupUrl
+    });
+  } else {
+    navigator.clipboard.writeText(groupUrl).then(() => {
+      alert('Group link copied! Share it with your friend 🌊');
     });
   }
 }
