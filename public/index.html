@@ -391,6 +391,13 @@ body {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
+ .tide-rename {
+  background: none; border: none; cursor: pointer;
+  font-size: 13px; padding: 4px; opacity: 0.5;
+  transition: opacity 0.2s; flex-shrink: 0;
+}
+.tide-rename:hover { opacity: 1; }
+  
 .crew-item {
   padding: 8px 12px;
   border-radius: 10px;
@@ -1863,17 +1870,18 @@ function renderTides() {
   container.innerHTML = allSessions.map((s) => {
     const timeAgo = getTimeAgo(s.time);
     const isActive = s.id === currentSessionId;
-    return `
-      <div class="tide-item ${isActive ? 'active' : ''}" onclick="loadTide('${s.id}')">
-        <span class="tide-icon">🌊</span>
-        <div class="tide-info">
-          <div class="tide-name">${escapeHTML(s.name)}</div>
-          <div class="tide-preview">${escapeHTML(s.preview)}</div>
-        </div>
-        <span class="tide-time">${timeAgo}</span>
-        <button class="tide-delete" onclick="deleteSession(event,'${s.id}')">🗑</button>
+  return `
+    <div class="tide-item ${isActive ? 'active' : ''}" onclick="loadTide('${s.id}')">
+      <span class="tide-icon">🌊</span>
+      <div class="tide-info">
+        <div class="tide-name">${escapeHTML(s.name)}</div>
+        <div class="tide-preview">${escapeHTML(s.preview)}</div>
       </div>
-    `;
+      <span class="tide-time">${timeAgo}</span>
+      <button class="tide-rename" onclick="renameSession(event,'${s.id}')">✏️</button>
+      <button class="tide-delete" onclick="deleteSession(event,'${s.id}')">🗑</button>
+    </div>
+  `;
   }).join('');
 }
 
@@ -1912,6 +1920,17 @@ function deleteSession(e, sessionId) {
   else renderTides();
 }
 
+function renameSession(e, sessionId) {
+  e.stopPropagation();
+  const session = allSessions.find(s => s.id === sessionId);
+  if (!session) return;
+  const newName = prompt('Rename this tide:', session.name);
+  if (!newName || !newName.trim()) return;
+  session.name = newName.trim();
+  localStorage.setItem('lakeSessions', JSON.stringify(allSessions));
+  renderTides();
+}
+  
 function clearHistory() {
   if (confirm('Clear all past tides? This cannot be undone.')) {
     allSessions = [];
