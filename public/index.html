@@ -1,5 +1,4 @@
-
-                        <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -50,10 +49,6 @@ body {
   flex-direction: column;
   overscroll-behavior: none;
 }
-
-/* ============================================
-   LOGIN SCREEN
-   ============================================ */
 .login-screen {
   position: fixed;
   inset: 0;
@@ -68,308 +63,56 @@ body {
   overflow-y: auto;
 }
 .login-screen.hidden { display: none; }
-.login-logo {
-  font-size: 72px;
-  margin-bottom: 16px;
-  animation: gentleFloat 4s ease-in-out infinite;
-}
-.login-title {
-  font-size: 32px;
-  font-weight: 700;
-  color: var(--lake-light);
-  margin-bottom: 6px;
-  text-align: center;
-}
-.login-sub {
-  font-size: 13px;
-  color: var(--text-dim);
-  text-align: center;
-  margin-bottom: 32px;
-  letter-spacing: 0.5px;
-}
-.login-card {
-  width: 100%;
-  max-width: 380px;
-  background: var(--lake-surface);
-  border: 1px solid var(--dock-border);
-  border-radius: 20px;
-  padding: 28px;
-}
-.login-card h3 {
-  font-size: 18px;
-  color: var(--text-primary);
-  margin-bottom: 20px;
-  text-align: center;
-}
-
-/* Profile Pic Upload */
-.profile-pic-upload {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-bottom: 20px;
-  cursor: pointer;
-}
-.profile-pic-preview {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--lake-glow), var(--lake-light));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 36px;
-  margin-bottom: 8px;
-  overflow: hidden;
-  border: 2px solid var(--dock-border);
-  transition: border-color 0.2s;
-  position: relative;
-}
-.profile-pic-preview:hover {
-  border-color: var(--lake-glow);
-}
-.profile-pic-preview img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 50%;
-}
-.profile-pic-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(0,0,0,0.4);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  opacity: 0;
-  transition: opacity 0.2s;
-}
+.login-logo { font-size: 72px; margin-bottom: 16px; animation: gentleFloat 4s ease-in-out infinite; }
+.login-title { font-size: 32px; font-weight: 700; color: var(--lake-light); margin-bottom: 6px; text-align: center; }
+.login-sub { font-size: 13px; color: var(--text-dim); text-align: center; margin-bottom: 32px; letter-spacing: 0.5px; }
+.login-card { width: 100%; max-width: 380px; background: var(--lake-surface); border: 1px solid var(--dock-border); border-radius: 20px; padding: 28px; }
+.login-card h3 { font-size: 18px; color: var(--text-primary); margin-bottom: 20px; text-align: center; }
+.profile-pic-upload { display: flex; flex-direction: column; align-items: center; margin-bottom: 20px; cursor: pointer; }
+.profile-pic-preview { width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, var(--lake-glow), var(--lake-light)); display: flex; align-items: center; justify-content: center; font-size: 36px; margin-bottom: 8px; overflow: hidden; border: 2px solid var(--dock-border); transition: border-color 0.2s; position: relative; }
+.profile-pic-preview:hover { border-color: var(--lake-glow); }
+.profile-pic-preview img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.profile-pic-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.4); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; opacity: 0; transition: opacity 0.2s; }
 .profile-pic-preview:hover .profile-pic-overlay { opacity: 1; }
-.profile-pic-hint {
-  font-size: 11px;
-  color: var(--text-dim);
-}
+.profile-pic-hint { font-size: 11px; color: var(--text-dim); }
 #profilePicInput { display: none; }
-
 .login-field { margin-bottom: 16px; }
-.login-field label {
-  display: block;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: var(--text-dim);
-  margin-bottom: 6px;
-}
-.login-field input {
-  width: 100%;
-  padding: 14px 16px;
-  background: var(--lake-mid);
-  border: 1px solid var(--dock-border);
-  border-radius: 12px;
-  color: var(--text-primary);
-  font-size: 16px;
-  outline: none;
-  transition: border-color 0.2s;
-  -webkit-appearance: none;
-}
-.login-field input:focus {
-  border-color: var(--lake-glow);
-  box-shadow: 0 0 0 3px rgba(45,140,240,0.1);
-}
+.login-field label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 6px; }
+.login-field input { width: 100%; padding: 14px 16px; background: var(--lake-mid); border: 1px solid var(--dock-border); border-radius: 12px; color: var(--text-primary); font-size: 16px; outline: none; transition: border-color 0.2s; -webkit-appearance: none; }
+.login-field input:focus { border-color: var(--lake-glow); box-shadow: 0 0 0 3px rgba(45,140,240,0.1); }
 .login-field input::placeholder { color: var(--text-dim); }
-.login-btn {
-  width: 100%;
-  padding: 16px;
-  background: linear-gradient(135deg, var(--lake-glow), var(--lake-light));
-  border: none;
-  border-radius: 14px;
-  color: var(--lake-deep);
-  font-size: 16px;
-  font-weight: 700;
-  cursor: pointer;
-  margin-top: 8px;
-  transition: all 0.2s;
-}
+.login-btn { width: 100%; padding: 16px; background: linear-gradient(135deg, var(--lake-glow), var(--lake-light)); border: none; border-radius: 14px; color: var(--lake-deep); font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 8px; transition: all 0.2s; }
 .login-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(45,140,240,0.3); }
 .login-btn:active { transform: translateY(0); }
-.login-divider {
-  text-align: center;
-  color: var(--text-dim);
-  font-size: 12px;
-  margin: 16px 0;
-  position: relative;
-}
-.login-divider::before, .login-divider::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  width: 40%;
-  height: 1px;
-  background: var(--dock-border);
-}
+.login-divider { text-align: center; color: var(--text-dim); font-size: 12px; margin: 16px 0; position: relative; }
+.login-divider::before, .login-divider::after { content: ''; position: absolute; top: 50%; width: 40%; height: 1px; background: var(--dock-border); }
 .login-divider::before { left: 0; }
 .login-divider::after { right: 0; }
-.login-guest-btn {
-  width: 100%;
-  padding: 14px;
-  background: transparent;
-  border: 1px solid var(--dock-border);
-  border-radius: 14px;
-  color: var(--text-secondary);
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
+.login-guest-btn { width: 100%; padding: 14px; background: transparent; border: 1px solid var(--dock-border); border-radius: 14px; color: var(--text-secondary); font-size: 14px; cursor: pointer; transition: all 0.2s; }
 .login-guest-btn:hover { background: var(--lake-mid); color: var(--lake-light); }
-.login-install-hint {
-  margin-top: 24px;
-  padding: 14px 20px;
-  background: rgba(45,140,240,0.08);
-  border: 1px solid rgba(45,140,240,0.15);
-  border-radius: 14px;
-  text-align: center;
-  font-size: 12px;
-  color: var(--text-dim);
-  max-width: 380px;
-  width: 100%;
-}
+.login-install-hint { margin-top: 24px; padding: 14px 20px; background: rgba(45,140,240,0.08); border: 1px solid rgba(45,140,240,0.15); border-radius: 14px; text-align: center; font-size: 12px; color: var(--text-dim); max-width: 380px; width: 100%; }
 .login-install-hint strong { color: var(--lake-light); }
-
-/* ============================================
-   WATER BACKGROUND
-   ============================================ */
-.water-bg {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  overflow: hidden;
-  pointer-events: none;
-}
-.water-bg::before {
-  content: '';
-  position: absolute;
-  top: -50%; left: -50%;
-  width: 200%; height: 200%;
-  background:
-    radial-gradient(ellipse at 20% 50%, rgba(45,140,240,0.06) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 20%, rgba(100,181,246,0.04) 0%, transparent 50%),
-    radial-gradient(ellipse at 50% 80%, rgba(45,140,240,0.05) 0%, transparent 50%);
-  animation: waterDrift 20s ease-in-out infinite;
-}
-@keyframes waterDrift {
-  0%, 100% { transform: translate(0,0) rotate(0deg); }
-  25% { transform: translate(-20px,10px) rotate(1deg); }
-  50% { transform: translate(10px,-15px) rotate(-0.5deg); }
-  75% { transform: translate(-10px,5px) rotate(0.5deg); }
-}
-@keyframes gentleFloat {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
-}
-
-/* ============================================
-   APP LAYOUT
-   ============================================ */
-.app-layout {
-  display: flex;
-  height: 100%;
-  height: -webkit-fill-available;
-  position: relative;
-  z-index: 1;
-}
-
-/* ============================================
-   DOCK — SIDEBAR
-   ============================================ */
-.dock {
-  width: 280px;
-  min-width: 280px;
-  background: var(--dock-bg);
-  border-right: 1px solid var(--dock-border);
-  display: flex;
-  flex-direction: column;
-  z-index: 200;
-  transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
-}
-.dock-header {
-  padding: 20px;
-  padding-top: calc(20px + var(--safe-top));
-  border-bottom: 1px solid var(--dock-border);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
+.water-bg { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.water-bg::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(ellipse at 20% 50%, rgba(45,140,240,0.06) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(100,181,246,0.04) 0%, transparent 50%), radial-gradient(ellipse at 50% 80%, rgba(45,140,240,0.05) 0%, transparent 50%); animation: waterDrift 20s ease-in-out infinite; }
+@keyframes waterDrift { 0%, 100% { transform: translate(0,0) rotate(0deg); } 25% { transform: translate(-20px,10px) rotate(1deg); } 50% { transform: translate(10px,-15px) rotate(-0.5deg); } 75% { transform: translate(-10px,5px) rotate(0.5deg); } }
+@keyframes gentleFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+.app-layout { display: flex; height: 100%; height: -webkit-fill-available; position: relative; z-index: 1; }
+.dock { width: 280px; min-width: 280px; background: var(--dock-bg); border-right: 1px solid var(--dock-border); display: flex; flex-direction: column; z-index: 200; transition: transform 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dock-header { padding: 20px; padding-top: calc(20px + var(--safe-top)); border-bottom: 1px solid var(--dock-border); display: flex; align-items: center; gap: 12px; }
 .dock-logo { font-size: 28px; line-height: 1; }
 .dock-title { font-size: 18px; font-weight: 700; color: var(--lake-light); letter-spacing: 0.5px; }
 .dock-subtitle { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1.5px; }
-.new-session-btn {
-  margin: 16px 16px 8px;
-  padding: 12px;
-  background: linear-gradient(135deg, var(--lake-glow), var(--lake-light));
-  border: none;
-  border-radius: 12px;
-  color: var(--lake-deep);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: all 0.2s;
-}
+.new-session-btn { margin: 16px 16px 8px; padding: 12px; background: linear-gradient(135deg, var(--lake-glow), var(--lake-light)); border: none; border-radius: 12px; color: var(--lake-deep); font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; }
 .new-session-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(45,140,240,0.3); }
 .new-session-btn:active { transform: translateY(0); }
 .dock-section { padding: 8px 0; }
-.dock-section-title {
-  padding: 8px 20px;
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  color: var(--text-dim);
-}
+.dock-section-title { padding: 8px 20px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-dim); }
 .sonar-wrap { padding: 0 16px 8px; position: relative; }
-.sonar-icon {
-  position: absolute;
-  left: 28px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 14px;
-  color: var(--text-dim);
-  pointer-events: none;
-}
-.sonar-input {
-  width: 100%;
-  padding: 10px 14px 10px 36px;
-  background: var(--lake-mid);
-  border: 1px solid var(--dock-border);
-  border-radius: 10px;
-  color: var(--text-primary);
-  font-size: 13px;
-  outline: none;
-  transition: border-color 0.2s;
-  -webkit-appearance: none;
-}
+.sonar-icon { position: absolute; left: 28px; top: 50%; transform: translateY(-50%); font-size: 14px; color: var(--text-dim); pointer-events: none; }
+.sonar-input { width: 100%; padding: 10px 14px 10px 36px; background: var(--lake-mid); border: 1px solid var(--dock-border); border-radius: 10px; color: var(--text-primary); font-size: 13px; outline: none; transition: border-color 0.2s; -webkit-appearance: none; }
 .sonar-input:focus { border-color: var(--lake-glow); }
-.past-tides {
-  flex: 1;
-  overflow-y: auto;
-  padding: 4px 8px;
-  -webkit-overflow-scrolling: touch;
-}
-.tide-item {
-  padding: 10px 12px;
-  border-radius: 10px;
-  cursor: pointer;
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  transition: background 0.15s;
-  margin-bottom: 2px;
-}
+.past-tides { flex: 1; overflow-y: auto; padding: 4px 8px; -webkit-overflow-scrolling: touch; }
+.tide-item { padding: 10px 12px; border-radius: 10px; cursor: pointer; display: flex; align-items: flex-start; gap: 10px; transition: background 0.15s; margin-bottom: 2px; }
 .tide-item:hover, .tide-item:active { background: rgba(45,140,240,0.08); }
 .tide-item.active { background: rgba(45,140,240,0.12); border: 1px solid rgba(45,140,240,0.2); }
 .tide-icon { font-size: 16px; margin-top: 2px; flex-shrink: 0; }
@@ -377,275 +120,65 @@ body {
 .tide-name { font-size: 13px; font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tide-preview { font-size: 11px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
 .tide-time { font-size: 10px; color: var(--text-dim); flex-shrink: 0; margin-top: 3px; }
-.tide-delete {
-  width: 24px; height: 24px;
-  border-radius: 6px; border: none;
-  background: transparent; color: var(--text-dim);
-  cursor: pointer; font-size: 12px;
-  display: none; align-items: center; justify-content: center; flex-shrink: 0;
-}
+.tide-delete { width: 24px; height: 24px; border-radius: 6px; border: none; background: transparent; color: var(--text-dim); cursor: pointer; font-size: 12px; display: none; align-items: center; justify-content: center; flex-shrink: 0; }
 .tide-item:hover .tide-delete { display: flex; }
-.crew-list {
-  padding: 4px 8px;
-  max-height: 180px;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-}
- .tide-rename {
-  background: none; border: none; cursor: pointer;
-  font-size: 13px; padding: 4px; opacity: 0.5;
-  transition: opacity 0.2s; flex-shrink: 0;
-}
+.crew-list { padding: 4px 8px; max-height: 180px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.tide-rename { background: none; border: none; cursor: pointer; font-size: 13px; padding: 4px; opacity: 0.5; transition: opacity 0.2s; flex-shrink: 0; }
 .tide-rename:hover { opacity: 1; }
-  
-.crew-item {
-  padding: 8px 12px;
-  border-radius: 10px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  transition: background 0.15s;
-  margin-bottom: 2px;
-}
+.crew-item { padding: 8px 12px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: background 0.15s; margin-bottom: 2px; }
 .crew-item:hover, .crew-item:active { background: rgba(45,140,240,0.08); }
-.crew-avatar {
-  width: 32px; height: 32px;
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 14px; font-weight: 600; flex-shrink: 0;
-  overflow: hidden;
-}
+.crew-avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; flex-shrink: 0; overflow: hidden; }
 .crew-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 .crew-name { font-size: 13px; font-weight: 500; color: var(--text-primary); }
 .crew-nickname { font-size: 11px; color: var(--text-dim); }
-.dock-footer {
-  padding: 12px 16px;
-  padding-bottom: calc(12px + var(--safe-bottom));
-  border-top: 1px solid var(--dock-border);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.dock-footer-btn {
-  width: 36px; height: 36px;
-  border-radius: 10px;
-  border: 1px solid var(--dock-border);
-  background: transparent;
-  color: var(--text-secondary);
-  cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 16px;
-  transition: all 0.15s;
-}
+.dock-footer { padding: 12px 16px; padding-bottom: calc(12px + var(--safe-bottom)); border-top: 1px solid var(--dock-border); display: flex; align-items: center; gap: 12px; }
+.dock-footer-btn { width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--dock-border); background: transparent; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; transition: all 0.15s; }
 .dock-footer-btn:hover { background: var(--lake-mid); color: var(--lake-light); }
-
-/* User area in dock footer */
-.dock-user-area {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  overflow: hidden;
-  cursor: pointer;
-}
-.dock-user-avatar {
-  width: 34px; height: 34px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--sand), var(--driftwood));
-  display: flex; align-items: center; justify-content: center;
-  font-size: 16px; flex-shrink: 0;
-  overflow: hidden;
-  border: 2px solid var(--dock-border);
-  transition: border-color 0.2s;
-}
+.dock-user-area { flex: 1; display: flex; align-items: center; gap: 10px; overflow: hidden; cursor: pointer; }
+.dock-user-avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, var(--sand), var(--driftwood)); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; overflow: hidden; border: 2px solid var(--dock-border); transition: border-color 0.2s; }
 .dock-user-avatar:hover { border-color: var(--lake-glow); }
 .dock-user-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 .dock-user { overflow: hidden; }
 .dock-user-name { font-size: 13px; font-weight: 500; color: var(--text-primary); }
 .dock-user-status { font-size: 10px; color: var(--success); }
-
-/* Mobile Dock Toggle */
-.dock-toggle {
-  display: none;
-  position: fixed;
-  top: calc(14px + var(--safe-top));
-  left: 14px;
-  z-index: 300;
-  width: 42px; height: 42px;
-  border-radius: 12px;
-  background: rgba(9,20,32,0.95);
-  border: 1px solid var(--dock-border);
-  color: var(--text-primary);
-  font-size: 18px;
-  cursor: pointer;
-  align-items: center; justify-content: center;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 2px 12px rgba(0,0,0,0.3);
-}
-
-/* ============================================
-   LAKE WINDOW
-   ============================================ */
-.lake-window {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  z-index: 5;
-  min-width: 0;
-  height: 100%;
-}
-.lake-header {
-  padding: 14px 20px;
-  padding-top: calc(14px + var(--safe-top));
-  border-bottom: 1px solid var(--dock-border);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: rgba(9,20,32,0.9);
-  backdrop-filter: none;
-  flex-shrink: 0;
-  position: relative;
-}
+.dock-toggle { display: none; position: fixed; top: calc(14px + var(--safe-top)); left: 14px; z-index: 300; width: 42px; height: 42px; border-radius: 12px; background: rgba(9,20,32,0.95); border: 1px solid var(--dock-border); color: var(--text-primary); font-size: 18px; cursor: pointer; align-items: center; justify-content: center; backdrop-filter: blur(10px); box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
+.lake-window { flex: 1; display: flex; flex-direction: column; position: relative; z-index: 5; min-width: 0; height: 100%; }
+.lake-header { padding: 14px 20px; padding-top: calc(14px + var(--safe-top)); border-bottom: 1px solid var(--dock-border); display: flex; align-items: center; justify-content: space-between; background: rgba(9,20,32,0.9); flex-shrink: 0; position: relative; }
 .lake-header-left { display: flex; align-items: center; gap: 10px; }
-.lake-avatar {
-  width: 38px; height: 38px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--lake-glow), var(--lake-light));
-  display: flex; align-items: center; justify-content: center;
-  font-size: 18px; flex-shrink: 0;
-}
+.lake-avatar { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, var(--lake-glow), var(--lake-light)); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
 .lake-header-info h2 { font-size: 15px; font-weight: 600; color: var(--text-primary); }
 .lake-header-status { font-size: 11px; color: var(--text-dim); display: flex; align-items: center; gap: 4px; }
-.status-dot {
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: var(--success);
-  display: inline-block;
-  animation: pulse 2s ease-in-out infinite;
-}
+.status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); display: inline-block; animation: pulse 2s ease-in-out infinite; }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 .lake-header-right { display: flex; gap: 6px; }
-.header-btn {
-  width: 36px; height: 36px;
-  border-radius: 10px;
-  border: 1px solid var(--dock-border);
-  background: transparent;
-  color: var(--text-secondary);
-  cursor: pointer; font-size: 15px;
-  display: flex; align-items: center; justify-content: center;
-  transition: all 0.15s;
-}
+.header-btn { width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--dock-border); background: transparent; color: var(--text-secondary); cursor: pointer; font-size: 15px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
 .header-btn:hover, .header-btn:active { background: var(--lake-mid); color: var(--lake-light); }
-.mood-selector {
-  display: none;
-  position: absolute;
-  top: calc(100% + 8px); right: 16px;
-  background: var(--dock-bg);
-  border: 1px solid var(--dock-border);
-  border-radius: 14px;
-  padding: 8px;
-  z-index: 50;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-  min-width: 220px;
-}
+.mood-selector { display: none; position: absolute; top: calc(100% + 8px); right: 16px; background: var(--dock-bg); border: 1px solid var(--dock-border); border-radius: 14px; padding: 8px; z-index: 50; box-shadow: 0 8px 32px rgba(0,0,0,0.5); min-width: 220px; }
 .mood-selector.show { display: block; }
-.mood-option {
-  padding: 10px 14px; border-radius: 10px;
-  cursor: pointer; display: flex; align-items: center; gap: 10px;
-  font-size: 13px; color: var(--text-secondary); transition: background 0.15s;
-}
+.mood-option { padding: 10px 14px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-secondary); transition: background 0.15s; }
 .mood-option:hover, .mood-option:active { background: rgba(45,140,240,0.1); }
 .mood-option.active { background: rgba(45,140,240,0.15); color: var(--lake-light); }
 .mood-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-.currents-bar {
-  padding: 8px 16px;
-  border-bottom: 1px solid rgba(26,48,80,0.5);
-  display: flex; align-items: center; gap: 8px;
-  overflow-x: auto;
-  background: rgba(13,31,60,0.4);
-  flex-shrink: 0;
-  -webkit-overflow-scrolling: touch;
-}
+.currents-bar { padding: 8px 16px; border-bottom: 1px solid rgba(26,48,80,0.5); display: flex; align-items: center; gap: 8px; overflow-x: auto; background: rgba(13,31,60,0.4); flex-shrink: 0; -webkit-overflow-scrolling: touch; }
 .currents-bar::-webkit-scrollbar { height: 0; }
 .currents-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); flex-shrink: 0; font-weight: 600; }
-.current-chip {
-  padding: 4px 10px;
-  background: rgba(45,140,240,0.1);
-  border: 1px solid rgba(45,140,240,0.2);
-  border-radius: 20px;
-  font-size: 11px; color: var(--lake-light);
-  white-space: nowrap; cursor: pointer;
-  transition: all 0.15s; flex-shrink: 0;
-}
+.current-chip { padding: 4px 10px; background: rgba(45,140,240,0.1); border: 1px solid rgba(45,140,240,0.2); border-radius: 20px; font-size: 11px; color: var(--lake-light); white-space: nowrap; cursor: pointer; transition: all 0.15s; flex-shrink: 0; }
 .current-chip:hover { background: rgba(45,140,240,0.2); }
-
-/* ============================================
-   WAVES — MESSAGES
-   ============================================ */
-.waves-container {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  scroll-behavior: smooth;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
-}
+.waves-container { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 14px; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
 .waves-container::-webkit-scrollbar { width: 3px; }
 .waves-container::-webkit-scrollbar-track { background: transparent; }
 .waves-container::-webkit-scrollbar-thumb { background: var(--lake-shimmer); border-radius: 4px; }
-.welcome-screen {
-  flex: 1;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  text-align: center;
-  padding: 24px 16px;
-  min-height: 60vh;
-}
+.welcome-screen { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 24px 16px; min-height: 60vh; }
 .welcome-icon { font-size: 56px; margin-bottom: 14px; animation: gentleFloat 4s ease-in-out infinite; }
 .welcome-title { font-size: 24px; font-weight: 700; color: var(--lake-light); margin-bottom: 8px; }
 .welcome-sub { font-size: 13px; color: var(--text-dim); max-width: 340px; line-height: 1.6; margin-bottom: 28px; }
-.welcome-prompts {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  width: 100%; max-width: 500px;
-}
-.welcome-prompt {
-  padding: 12px 14px;
-  background: rgba(45,140,240,0.08);
-  border: 1px solid rgba(45,140,240,0.15);
-  border-radius: 14px;
-  color: var(--text-secondary);
-  font-size: 12px; cursor: pointer;
-  transition: all 0.2s;
-  display: flex; align-items: center; gap: 6px;
-  text-align: left; line-height: 1.3;
-}
-.welcome-prompt:hover, .welcome-prompt:active {
-  background: rgba(45,140,240,0.15);
-  border-color: rgba(45,140,240,0.3);
-  color: var(--lake-light);
-  transform: translateY(-2px);
-}
-.wave {
-  display: flex; gap: 10px;
-  max-width: 85%;
-  animation: waveIn 0.35s ease-out;
-}
+.welcome-prompts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; max-width: 500px; }
+.welcome-prompt { padding: 12px 14px; background: rgba(45,140,240,0.08); border: 1px solid rgba(45,140,240,0.15); border-radius: 14px; color: var(--text-secondary); font-size: 12px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; text-align: left; line-height: 1.3; }
+.welcome-prompt:hover, .welcome-prompt:active { background: rgba(45,140,240,0.15); border-color: rgba(45,140,240,0.3); color: var(--lake-light); transform: translateY(-2px); }
+.wave { display: flex; gap: 10px; max-width: 85%; animation: waveIn 0.35s ease-out; }
 @keyframes waveIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 .wave.user-wave { align-self: flex-end; flex-direction: row-reverse; }
-.wave-avatar {
-  width: 32px; height: 32px;
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 15px; flex-shrink: 0;
-  margin-top: 4px; overflow: hidden;
-}
+.wave-avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; margin-top: 4px; overflow: hidden; }
 .wave-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 .wave.lake-wave .wave-avatar { background: linear-gradient(135deg, var(--lake-glow), var(--lake-light)); }
 .wave.user-wave .wave-avatar { background: linear-gradient(135deg, var(--sand), var(--driftwood)); }
@@ -653,305 +186,111 @@ body {
 .wave-sender { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
 .lake-wave .wave-sender { color: var(--lake-light); }
 .user-wave .wave-sender { color: var(--sand); text-align: right; }
-.wave-bubble {
-  padding: 12px 16px;
-  border-radius: 18px;
-  font-size: 14px; line-height: 1.6;
-  word-wrap: break-word; word-break: break-word;
-}
-.lake-wave .wave-bubble {
-  background: var(--lake-surface);
-  border: 1px solid var(--dock-border);
-  border-top-left-radius: 4px;
-  color: var(--text-primary);
-}
-.user-wave .wave-bubble {
-  background: linear-gradient(135deg, rgba(45,140,240,0.2), rgba(45,140,240,0.1));
-  border: 1px solid rgba(45,140,240,0.2);
-  border-top-right-radius: 4px;
-  color: var(--text-primary);
-}
+.wave-bubble { padding: 12px 16px; border-radius: 18px; font-size: 14px; line-height: 1.6; word-wrap: break-word; word-break: break-word; }
+.lake-wave .wave-bubble { background: var(--lake-surface); border: 1px solid var(--dock-border); border-top-left-radius: 4px; color: var(--text-primary); }
+.user-wave .wave-bubble { background: linear-gradient(135deg, rgba(45,140,240,0.2), rgba(45,140,240,0.1)); border: 1px solid rgba(45,140,240,0.2); border-top-right-radius: 4px; color: var(--text-primary); }
 .wave-time { font-size: 10px; color: var(--text-dim); }
 .user-wave .wave-time { text-align: right; }
-
-/* Ripple */
-.ripple {
-  display: none;
-  align-self: flex-start;
-  padding: 14px 18px;
-  background: var(--lake-surface);
-  border: 1px solid var(--dock-border);
-  border-radius: 18px; border-top-left-radius: 4px;
-  margin-left: 42px;
-}
+.ripple { display: none; align-self: flex-start; padding: 14px 18px; background: var(--lake-surface); border: 1px solid var(--dock-border); border-radius: 18px; border-top-left-radius: 4px; margin-left: 42px; }
 .ripple.show { display: flex; gap: 6px; align-items: center; }
-.ripple-dot {
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  background: var(--lake-light);
-  opacity: 0.3;
-  animation: rippleAnim 1.4s ease-in-out infinite;
-}
+.ripple-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--lake-light); opacity: 0.3; animation: rippleAnim 1.4s ease-in-out infinite; }
 .ripple-dot:nth-child(2) { animation-delay: 0.2s; }
 .ripple-dot:nth-child(3) { animation-delay: 0.4s; }
 @keyframes rippleAnim { 0%, 60%, 100% { opacity: 0.3; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-5px); } }
-
-/* ============================================
-   SHORE DOCK — INPUT
-   ============================================ */
-.shore-dock {
-  padding: 10px 14px;
-  padding-bottom: calc(10px + var(--safe-bottom));
-  border-top: 1px solid var(--dock-border);
-  background: rgba(9,20,32,0.95);
-  backdrop-filter: none;
-  flex-shrink: 0;
-}
-.quick-actions {
-  display: flex; gap: 6px;
-  margin-bottom: 10px;
-  overflow-x: auto; padding-bottom: 2px;
-  -webkit-overflow-scrolling: touch;
-}
-.quick-actions::-webkit-scrollbar { height: 0; }
-.quick-action-btn {
-.prompt-suggestions {
-  padding: 4px 0;
-}
-
+/* SHORE DOCK */
+.shore-dock { padding: 10px 14px; padding-bottom: calc(10px + var(--safe-bottom)); border-top: 1px solid var(--dock-border); background: rgba(9,20,32,0.95); flex-shrink: 0; }
+/* PROMPT SUGGESTIONS — FIXED */
+.prompt-suggestions { padding: 4px 0 6px; }
 .suggestions-toggle {
-  background: var(--surface2);
-  border: 1px solid var(--border);
+  background: rgba(45,140,240,0.06);
+  border: 1px solid rgba(45,140,240,0.15);
   color: var(--text-dim);
   border-radius: 20px;
   padding: 6px 14px;
   font-size: 12px;
   cursor: pointer;
   margin-bottom: 6px;
+  transition: all 0.15s;
 }
-
-.suggestions-toggle:hover {
-  color: var(--text);
-  border-color: var(--accent);
-}
-
+.suggestions-toggle:hover { color: var(--lake-light); border-color: rgba(45,140,240,0.3); }
 .suggestions-list {
   display: none;
   flex-wrap: wrap;
   gap: 6px;
-  padding: 8px 0;
-  max-height: 200px;
+  padding: 6px 0;
+  max-height: 160px;
   overflow-y: auto;
 }
-
-.suggestions-list.open {
-  display: flex;
-}
+.suggestions-list.open { display: flex; }
+/* QUICK ACTIONS */
+.quick-actions { display: flex; gap: 6px; margin-bottom: 10px; overflow-x: auto; padding-bottom: 2px; -webkit-overflow-scrolling: touch; }
+.quick-actions::-webkit-scrollbar { height: 0; }
+.quick-action-btn {
   padding: 6px 12px;
   background: rgba(45,140,240,0.06);
   border: 1px solid rgba(45,140,240,0.12);
   border-radius: 20px;
-  color: var(--text-dim); font-size: 11px;
-  cursor: pointer; white-space: nowrap;
+  color: var(--text-dim);
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
   transition: all 0.15s;
-  display: flex; align-items: center; gap: 4px; flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
 }
 .quick-action-btn:hover, .quick-action-btn:active { background: rgba(45,140,240,0.12); color: var(--lake-light); border-color: rgba(45,140,240,0.25); }
-.file-preview {
-  display: none; padding: 8px 12px;
-  background: rgba(45,140,240,0.08);
-  border: 1px solid rgba(45,140,240,0.15);
-  border-radius: 10px; margin-bottom: 8px;
-  align-items: center; gap: 10px;
-}
+.file-preview { display: none; padding: 8px 12px; background: rgba(45,140,240,0.08); border: 1px solid rgba(45,140,240,0.15); border-radius: 10px; margin-bottom: 8px; align-items: center; gap: 10px; }
 .file-preview.show { display: flex; }
 .file-preview-icon { font-size: 20px; }
 .file-preview-info { flex: 1; }
 .file-preview-name { font-size: 12px; font-weight: 500; color: var(--lake-light); }
 .file-preview-size { font-size: 10px; color: var(--text-dim); }
-.file-preview-remove {
-  width: 24px; height: 24px; border-radius: 6px; border: none;
-  background: rgba(239,83,80,0.1); color: var(--danger);
-  cursor: pointer; font-size: 14px;
-  display: flex; align-items: center; justify-content: center;
-}
+.file-preview-remove { width: 24px; height: 24px; border-radius: 6px; border: none; background: rgba(239,83,80,0.1); color: var(--danger); cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; }
 .input-row { display: flex; align-items: flex-end; gap: 8px; }
 .input-wrap { flex: 1; position: relative; }
-.lake-input {
-  width: 100%;
-  min-height: 46px; max-height: 120px;
-  padding: 13px 44px 13px 16px;
-  background: var(--lake-mid);
-  border: 1px solid var(--dock-border);
-  border-radius: 14px;
-  color: var(--text-primary);
-  font-size: 16px; font-family: inherit;
-  resize: none; outline: none; line-height: 1.4;
-  transition: border-color 0.2s;
-  -webkit-appearance: none;
-}
+.lake-input { width: 100%; min-height: 46px; max-height: 120px; padding: 13px 44px 13px 16px; background: var(--lake-mid); border: 1px solid var(--dock-border); border-radius: 14px; color: var(--text-primary); font-size: 16px; font-family: inherit; resize: none; outline: none; line-height: 1.4; transition: border-color 0.2s; -webkit-appearance: none; }
 .lake-input:focus { border-color: var(--lake-glow); box-shadow: 0 0 0 3px rgba(45,140,240,0.1); }
 .lake-input::placeholder { color: var(--text-dim); }
-.attach-btn {
-  position: absolute; right: 10px; bottom: 10px;
-  width: 28px; height: 28px; border-radius: 8px;
-  border: none; background: transparent;
-  color: var(--text-dim); cursor: pointer; font-size: 16px;
-  display: flex; align-items: center; justify-content: center;
-  transition: all 0.15s;
-}
+.attach-btn { position: absolute; right: 10px; bottom: 10px; width: 28px; height: 28px; border-radius: 8px; border: none; background: transparent; color: var(--text-dim); cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
 .attach-btn:hover, .attach-btn:active { color: var(--lake-light); background: rgba(45,140,240,0.1); }
-.send-btn {
-  width: 46px; height: 46px; border-radius: 13px; border: none;
-  background: linear-gradient(135deg, var(--lake-glow), var(--lake-light));
-  color: var(--lake-deep); font-size: 18px; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  transition: all 0.2s; flex-shrink: 0;
-}
+.send-btn { width: 46px; height: 46px; border-radius: 13px; border: none; background: linear-gradient(135deg, var(--lake-glow), var(--lake-light)); color: var(--lake-deep); font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; }
 .send-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(45,140,240,0.3); }
 .send-btn:active { transform: scale(0.92); }
-.mic-btn {
-  width: 46px; height: 46px; border-radius: 13px; border: none;
-  background: var(--lake-mid);
-  border: 1px solid var(--dock-border);
-  color: var(--text-secondary); font-size: 20px; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  transition: all 0.2s; flex-shrink: 0;
-}
-.mic-btn.listening {
-  background: rgba(239,83,80,0.2);
-  border-color: var(--danger);
-  animation: pulse 1s ease-in-out infinite;
-}
+.mic-btn { width: 46px; height: 46px; border-radius: 13px; border: none; background: var(--lake-mid); border: 1px solid var(--dock-border); color: var(--text-secondary); font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; }
+.mic-btn.listening { background: rgba(239,83,80,0.2); border-color: var(--danger); animation: pulse 1s ease-in-out infinite; }
 .input-hint { text-align: center; padding-top: 6px; font-size: 10px; color: var(--text-dim); }
 #fileInput { display: none; }
-
-/* ============================================
-   INSTALL BANNER
-   ============================================ */
-.install-banner {
-  display: none;
-  position: fixed;
-  bottom: calc(20px + var(--safe-bottom));
-  left: 50%; transform: translateX(-50%);
-  background: var(--lake-surface);
-  border: 1px solid var(--lake-glow);
-  border-radius: 16px;
-  padding: 14px 20px;
-  z-index: 500;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-  width: calc(100% - 32px); max-width: 380px;
-  align-items: center; gap: 12px;
-  animation: slideUp 0.4s ease-out;
-}
+.install-banner { display: none; position: fixed; bottom: calc(20px + var(--safe-bottom)); left: 50%; transform: translateX(-50%); background: var(--lake-surface); border: 1px solid var(--lake-glow); border-radius: 16px; padding: 14px 20px; z-index: 500; box-shadow: 0 8px 32px rgba(0,0,0,0.4); width: calc(100% - 32px); max-width: 380px; align-items: center; gap: 12px; animation: slideUp 0.4s ease-out; }
 .install-banner.show { display: flex; }
 @keyframes slideUp { from { opacity: 0; transform: translateX(-50%) translateY(20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
 .install-banner-text { flex: 1; font-size: 13px; color: var(--text-primary); }
 .install-banner-text strong { color: var(--lake-light); }
 .install-banner-text small { display: block; color: var(--text-dim); font-size: 11px; margin-top: 2px; }
-.install-banner-btn {
-  padding: 8px 16px;
-  background: linear-gradient(135deg, var(--lake-glow), var(--lake-light));
-  border: none; border-radius: 10px;
-  color: var(--lake-deep); font-size: 13px; font-weight: 600;
-  cursor: pointer; white-space: nowrap;
-}
-.install-banner-close {
-  width: 28px; height: 28px; border-radius: 8px;
-  border: none; background: transparent;
-  color: var(--text-dim); cursor: pointer; font-size: 16px;
-  display: flex; align-items: center; justify-content: center;
-}
-
-/* ============================================
-   DEPTHS PANEL — SETTINGS
-   ============================================ */
-.depths-panel {
-  display: none;
-  position: fixed;
-  top: 0; right: 0; bottom: 0;
-  width: 300px;
-  background: var(--dock-bg);
-  border-left: 1px solid var(--dock-border);
-  z-index: 400;
-  flex-direction: column;
-  box-shadow: -8px 0 32px rgba(0,0,0,0.4);
-}
+.install-banner-btn { padding: 8px 16px; background: linear-gradient(135deg, var(--lake-glow), var(--lake-light)); border: none; border-radius: 10px; color: var(--lake-deep); font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.install-banner-close { width: 28px; height: 28px; border-radius: 8px; border: none; background: transparent; color: var(--text-dim); cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; }
+.depths-panel { display: none; position: fixed; top: 0; right: 0; bottom: 0; width: 300px; background: var(--dock-bg); border-left: 1px solid var(--dock-border); z-index: 400; flex-direction: column; box-shadow: -8px 0 32px rgba(0,0,0,0.4); }
 .depths-panel.show { display: flex; }
-.depths-header {
-  padding: 20px;
-  padding-top: calc(20px + var(--safe-top));
-  border-bottom: 1px solid var(--dock-border);
-  display: flex; align-items: center; justify-content: space-between;
-}
+.depths-header { padding: 20px; padding-top: calc(20px + var(--safe-top)); border-bottom: 1px solid var(--dock-border); display: flex; align-items: center; justify-content: space-between; }
 .depths-header h3 { font-size: 16px; color: var(--lake-light); }
-.depths-close {
-  width: 32px; height: 32px; border-radius: 8px;
-  border: 1px solid var(--dock-border);
-  background: transparent; color: var(--text-secondary);
-  cursor: pointer; font-size: 16px;
-  display: flex; align-items: center; justify-content: center;
-}
+.depths-close { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--dock-border); background: transparent; color: var(--text-secondary); cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; }
 .depths-content { flex: 1; overflow-y: auto; padding: 20px; -webkit-overflow-scrolling: touch; }
 .depths-section { margin-bottom: 24px; }
 .depths-section h4 { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 10px; }
-
-/* Profile section in settings */
-.depths-profile {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 16px;
-  background: var(--lake-surface);
-  border-radius: 14px;
-  margin-bottom: 16px;
-  cursor: pointer;
-  transition: background 0.15s;
-}
+.depths-profile { display: flex; flex-direction: column; align-items: center; padding: 16px; background: var(--lake-surface); border-radius: 14px; margin-bottom: 16px; cursor: pointer; transition: background 0.15s; }
 .depths-profile:hover { background: var(--lake-shimmer); }
-.depths-profile-pic {
-  width: 64px; height: 64px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--sand), var(--driftwood));
-  display: flex; align-items: center; justify-content: center;
-  font-size: 28px; overflow: hidden;
-  border: 2px solid var(--dock-border);
-  margin-bottom: 8px;
-}
+.depths-profile-pic { width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, var(--sand), var(--driftwood)); display: flex; align-items: center; justify-content: center; font-size: 28px; overflow: hidden; border: 2px solid var(--dock-border); margin-bottom: 8px; }
 .depths-profile-pic img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 .depths-profile-name { font-size: 15px; font-weight: 600; color: var(--text-primary); }
 .depths-profile-hint { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
-
-.depths-option {
-  padding: 10px 14px; border-radius: 10px;
-  cursor: pointer; display: flex; align-items: center; gap: 10px;
-  margin-bottom: 4px; transition: background 0.15s;
-  font-size: 13px; color: var(--text-secondary);
-}
+.depths-option { padding: 10px 14px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 10px; margin-bottom: 4px; transition: background 0.15s; font-size: 13px; color: var(--text-secondary); }
 .depths-option:hover, .depths-option:active { background: rgba(45,140,240,0.08); }
 .depths-option.active { background: rgba(45,140,240,0.12); color: var(--lake-light); }
-.logout-btn {
-  width: 100%; padding: 12px;
-  background: rgba(239,83,80,0.1);
-  border: 1px solid rgba(239,83,80,0.2);
-  border-radius: 12px;
-  color: var(--danger); font-size: 14px; font-weight: 500;
-  cursor: pointer; margin-top: 8px; transition: all 0.2s;
-}
+.logout-btn { width: 100%; padding: 12px; background: rgba(239,83,80,0.1); border: 1px solid rgba(239,83,80,0.2); border-radius: 12px; color: var(--danger); font-size: 14px; font-weight: 500; cursor: pointer; margin-top: 8px; transition: all 0.2s; }
 .logout-btn:hover { background: rgba(239,83,80,0.2); }
-
-/* ============================================
-   MOBILE RESPONSIVE
-   ============================================ */
 @media (max-width: 768px) {
-  .dock {
-    position: fixed;
-    top: 0; left: 0; bottom: 0;
-    transform: translateX(-100%);
-    z-index: 200;
-    box-shadow: 8px 0 32px rgba(0,0,0,0.6);
-    width: 80vw; max-width: 300px; min-width: unset;
-  }
+  .dock { position: fixed; top: 0; left: 0; bottom: 0; transform: translateX(-100%); z-index: 200; box-shadow: 8px 0 32px rgba(0,0,0,0.6); width: 80vw; max-width: 300px; min-width: unset; }
   .dock.open { transform: translateX(0); }
   .dock-toggle { display: flex; }
   .lake-header { padding-left: 66px; }
@@ -966,392 +305,80 @@ body {
   .header-btn { width: 32px; height: 32px; font-size: 14px; }
   .wave-bubble { font-size: 13px; padding: 10px 14px; }
 }
-.dock-overlay {
-  display: none;
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,0.6);
-  z-index: 150;
-  backdrop-filter: none;
-  pointer-events: none;
-}
-.dock-overlay.show {
-  display: block;
-  pointer-events: auto;
-  left: 80vw;
-  width: 20vw;
-}
+.dock-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 150; pointer-events: none; }
+.dock-overlay.show { display: block; pointer-events: auto; left: 80vw; width: 20vw; }
 .past-tides::-webkit-scrollbar { width: 3px; }
 .past-tides::-webkit-scrollbar-track { background: transparent; }
 .past-tides::-webkit-scrollbar-thumb { background: var(--dock-border); border-radius: 3px; }
-
-/* ============================================
-   CREW SUGGESTIONS + MODAL
-   ============================================ */
-.suggested-crew-section {
-  padding: 4px 8px 0;
-}
-.suggested-title {
-  padding: 8px 12px 4px;
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  color: var(--sand);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.suggested-item {
-  padding: 8px 12px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 2px;
-  background: rgba(200,169,110,0.06);
-  border: 1px solid rgba(200,169,110,0.12);
-}
-.suggested-name {
-  flex: 1;
-  font-size: 13px;
-  color: var(--text-secondary);
-  font-style: italic;
-}
-.suggested-approve {
-  width: 26px; height: 26px;
-  border-radius: 8px; border: none;
-  background: rgba(102,187,106,0.15);
-  color: var(--success);
-  cursor: pointer; font-size: 14px;
-  display: flex; align-items: center; justify-content: center;
-  transition: all 0.15s;
-}
+.suggested-crew-section { padding: 4px 8px 0; }
+.suggested-title { padding: 8px 12px 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--sand); display: flex; align-items: center; gap: 6px; }
+.suggested-item { padding: 8px 12px; border-radius: 10px; display: flex; align-items: center; gap: 8px; margin-bottom: 2px; background: rgba(200,169,110,0.06); border: 1px solid rgba(200,169,110,0.12); }
+.suggested-name { flex: 1; font-size: 13px; color: var(--text-secondary); font-style: italic; }
+.suggested-approve { width: 26px; height: 26px; border-radius: 8px; border: none; background: rgba(102,187,106,0.15); color: var(--success); cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
 .suggested-approve:hover { background: rgba(102,187,106,0.3); }
-.suggested-dismiss {
-  width: 26px; height: 26px;
-  border-radius: 8px; border: none;
-  background: rgba(239,83,80,0.1);
-  color: var(--danger);
-  cursor: pointer; font-size: 14px;
-  display: flex; align-items: center; justify-content: center;
-  transition: all 0.15s;
-}
+.suggested-dismiss { width: 26px; height: 26px; border-radius: 8px; border: none; background: rgba(239,83,80,0.1); color: var(--danger); cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
 .suggested-dismiss:hover { background: rgba(239,83,80,0.25); }
-.crew-modal-overlay {
-  display: none;
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,0.7);
-  z-index: 600;
-  align-items: center;
-  justify-content: center;
-  backdrop-filter: blur(4px);
-  padding: 20px;
-}
+.crew-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 600; align-items: center; justify-content: center; backdrop-filter: blur(4px); padding: 20px; }
 .crew-modal-overlay.show { display: flex; }
-.crew-modal {
-  background: var(--dock-bg);
-  border: 1px solid var(--dock-border);
-  border-radius: 20px;
-  padding: 24px;
-  width: 100%;
-  max-width: 360px;
-  box-shadow: 0 16px 48px rgba(0,0,0,0.6);
-  animation: waveIn 0.3s ease-out;
-}
-.crew-modal h3 {
-  font-size: 16px;
-  color: var(--lake-light);
-  margin-bottom: 20px;
-  text-align: center;
-}
-.crew-modal-field {
-  margin-bottom: 14px;
-}
-.crew-modal-field label {
-  display: block;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: var(--text-dim);
-  margin-bottom: 6px;
-}
-.crew-modal-field input,
-.crew-modal-field textarea {
-  width: 100%;
-  padding: 12px 14px;
-  background: var(--lake-mid);
-  border: 1px solid var(--dock-border);
-  border-radius: 10px;
-  color: var(--text-primary);
-  font-size: 14px;
-  font-family: inherit;
-  outline: none;
-  transition: border-color 0.2s;
-  -webkit-appearance: none;
-}
-.crew-modal-field input:focus,
-.crew-modal-field textarea:focus { border-color: var(--lake-glow); }
+.crew-modal { background: var(--dock-bg); border: 1px solid var(--dock-border); border-radius: 20px; padding: 24px; width: 100%; max-width: 360px; box-shadow: 0 16px 48px rgba(0,0,0,0.6); animation: waveIn 0.3s ease-out; }
+.crew-modal h3 { font-size: 16px; color: var(--lake-light); margin-bottom: 20px; text-align: center; }
+.crew-modal-field { margin-bottom: 14px; }
+.crew-modal-field label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 6px; }
+.crew-modal-field input, .crew-modal-field textarea { width: 100%; padding: 12px 14px; background: var(--lake-mid); border: 1px solid var(--dock-border); border-radius: 10px; color: var(--text-primary); font-size: 14px; font-family: inherit; outline: none; transition: border-color 0.2s; -webkit-appearance: none; }
+.crew-modal-field input:focus, .crew-modal-field textarea:focus { border-color: var(--lake-glow); }
 .crew-modal-field textarea { resize: none; height: 70px; line-height: 1.5; }
-.crew-modal-actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 20px;
-}
-.crew-modal-save {
-  flex: 1; padding: 12px;
-  background: linear-gradient(135deg, var(--lake-glow), var(--lake-light));
-  border: none; border-radius: 12px;
-  color: var(--lake-deep); font-size: 14px; font-weight: 700;
-  cursor: pointer; transition: all 0.2s;
-}
+.crew-modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+.crew-modal-save { flex: 1; padding: 12px; background: linear-gradient(135deg, var(--lake-glow), var(--lake-light)); border: none; border-radius: 12px; color: var(--lake-deep); font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
 .crew-modal-save:hover { transform: translateY(-1px); }
-.crew-modal-cancel {
-  padding: 12px 18px;
-  background: transparent;
-  border: 1px solid var(--dock-border);
-  border-radius: 12px;
-  color: var(--text-secondary); font-size: 14px;
-  cursor: pointer; transition: all 0.2s;
-}
+.crew-modal-cancel { padding: 12px 18px; background: transparent; border: 1px solid var(--dock-border); border-radius: 12px; color: var(--text-secondary); font-size: 14px; cursor: pointer; transition: all 0.2s; }
 .crew-modal-cancel:hover { background: var(--lake-mid); }
-.crew-modal-delete {
-  padding: 12px;
-  background: rgba(239,83,80,0.1);
-  border: 1px solid rgba(239,83,80,0.2);
-  border-radius: 12px;
-  color: var(--danger); font-size: 14px;
-  cursor: pointer; transition: all 0.2s;
-}
+.crew-modal-delete { padding: 12px; background: rgba(239,83,80,0.1); border: 1px solid rgba(239,83,80,0.2); border-radius: 12px; color: var(--danger); font-size: 14px; cursor: pointer; transition: all 0.2s; }
 .crew-modal-delete:hover { background: rgba(239,83,80,0.2); }
-
-/* ============================================
-   CREW PROFILE CARD
-   ============================================ */
-.crew-card-overlay {
-  display: none;
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,0.7);
-  z-index: 600;
-  align-items: flex-end;
-  justify-content: center;
-  backdrop-filter: blur(4px);
-  padding: 20px;
-}
+.crew-card-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 600; align-items: flex-end; justify-content: center; backdrop-filter: blur(4px); padding: 20px; }
 .crew-card-overlay.show { display: flex; }
-.crew-card {
-  background: var(--dock-bg);
-  border: 1px solid var(--dock-border);
-  border-radius: 24px 24px 16px 16px;
-  padding: 28px 24px 32px;
-  width: 100%;
-  max-width: 420px;
-  box-shadow: 0 -8px 48px rgba(0,0,0,0.5);
-  animation: slideUpCard 0.3s ease-out;
-}
-@keyframes slideUpCard {
-  from { transform: translateY(40px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
-.crew-card-header {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 20px;
-}
-.crew-card-avatar {
-  width: 56px; height: 56px;
-  border-radius: 18px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 22px; font-weight: 800;
-  color: white; flex-shrink: 0;
-}
+.crew-card { background: var(--dock-bg); border: 1px solid var(--dock-border); border-radius: 24px 24px 16px 16px; padding: 28px 24px 32px; width: 100%; max-width: 420px; box-shadow: 0 -8px 48px rgba(0,0,0,0.5); animation: slideUpCard 0.3s ease-out; }
+@keyframes slideUpCard { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.crew-card-header { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+.crew-card-avatar { width: 56px; height: 56px; border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 800; color: white; flex-shrink: 0; }
 .crew-card-info { flex: 1; min-width: 0; }
-.crew-card-name {
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 2px;
-}
-.crew-card-nickname {
-  font-size: 13px;
-  color: var(--text-secondary);
-}
-.crew-card-codename {
-  display: inline-block;
-  margin-top: 6px;
-  padding: 3px 10px;
-  background: rgba(79,195,247,0.1);
-  border: 1px solid rgba(79,195,247,0.2);
-  border-radius: 20px;
-  font-size: 12px;
-  color: var(--lake-light);
-  font-style: italic;
-}
-.crew-card-context {
-  padding: 14px 16px;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid var(--dock-border);
-  border-radius: 12px;
-  font-size: 13px;
-  color: var(--text-secondary);
-  line-height: 1.6;
-  margin-bottom: 20px;
-  font-style: italic;
-}
-.crew-card-context.empty {
-  color: var(--text-dim);
-}
-.crew-card-actions {
-  display: flex;
-  gap: 10px;
-}
-.crew-card-ask {
-  flex: 1; padding: 13px;
-  background: linear-gradient(135deg, var(--lake-glow), var(--lake-light));
-  border: none; border-radius: 12px;
-  color: var(--lake-deep); font-size: 14px; font-weight: 700;
-  cursor: pointer; transition: all 0.2s;
-}
+.crew-card-name { font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 2px; }
+.crew-card-nickname { font-size: 13px; color: var(--text-secondary); }
+.crew-card-codename { display: inline-block; margin-top: 6px; padding: 3px 10px; background: rgba(79,195,247,0.1); border: 1px solid rgba(79,195,247,0.2); border-radius: 20px; font-size: 12px; color: var(--lake-light); font-style: italic; }
+.crew-card-context { padding: 14px 16px; background: rgba(255,255,255,0.03); border: 1px solid var(--dock-border); border-radius: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 20px; font-style: italic; }
+.crew-card-context.empty { color: var(--text-dim); }
+.crew-card-actions { display: flex; gap: 10px; }
+.crew-card-ask { flex: 1; padding: 13px; background: linear-gradient(135deg, var(--lake-glow), var(--lake-light)); border: none; border-radius: 12px; color: var(--lake-deep); font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
 .crew-card-ask:hover { transform: translateY(-1px); }
-.crew-card-edit {
-  padding: 13px 16px;
-  background: transparent;
-  border: 1px solid var(--dock-border);
-  border-radius: 12px;
-  color: var(--text-secondary); font-size: 14px;
-  cursor: pointer; transition: all 0.2s;
-}
+.crew-card-edit { padding: 13px 16px; background: transparent; border: 1px solid var(--dock-border); border-radius: 12px; color: var(--text-secondary); font-size: 14px; cursor: pointer; transition: all 0.2s; }
 .crew-card-edit:hover { background: var(--lake-mid); }
-.crew-card-close {
-  padding: 13px 16px;
-  background: transparent;
-  border: 1px solid var(--dock-border);
-  border-radius: 12px;
-  color: var(--text-dim); font-size: 14px;
-  cursor: pointer; transition: all 0.2s;
-}
+.crew-card-close { padding: 13px 16px; background: transparent; border: 1px solid var(--dock-border); border-radius: 12px; color: var(--text-dim); font-size: 14px; cursor: pointer; transition: all 0.2s; }
 .crew-card-close:hover { background: var(--lake-mid); }
-
-/* ============================================
-   HELP SCREEN
-   ============================================ */
-.help-overlay {
-  display: none;
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,0.7);
-  z-index: 700;
-  align-items: flex-start;
-  justify-content: center;
-  backdrop-filter: blur(4px);
-  padding: 20px;
-  overflow-y: auto;
-}
+.help-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 700; align-items: flex-start; justify-content: center; backdrop-filter: blur(4px); padding: 20px; overflow-y: auto; }
 .help-overlay.show { display: flex; }
-.help-modal {
-  background: var(--dock-bg);
-  border: 1px solid var(--dock-border);
-  border-radius: 24px;
-  padding: 28px 24px 32px;
-  width: 100%;
-  max-width: 480px;
-  margin: auto;
-  box-shadow: 0 16px 48px rgba(0,0,0,0.6);
-  animation: waveIn 0.3s ease-out;
-}
-.help-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 24px;
-}
-.help-title {
-  font-size: 20px;
-  font-weight: 800;
-  color: var(--lake-light);
-}
-.help-close {
-  width: 32px; height: 32px;
-  border-radius: 10px; border: none;
-  background: var(--lake-mid);
-  color: var(--text-secondary);
-  cursor: pointer; font-size: 16px;
-  display: flex; align-items: center; justify-content: center;
-  transition: all 0.2s;
-}
+.help-modal { background: var(--dock-bg); border: 1px solid var(--dock-border); border-radius: 24px; padding: 28px 24px 32px; width: 100%; max-width: 480px; margin: auto; box-shadow: 0 16px 48px rgba(0,0,0,0.6); animation: waveIn 0.3s ease-out; }
+.help-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+.help-title { font-size: 20px; font-weight: 800; color: var(--lake-light); }
+.help-close { width: 32px; height: 32px; border-radius: 10px; border: none; background: var(--lake-mid); color: var(--text-secondary); cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
 .help-close:hover { background: var(--dock-border); }
-.help-section {
-  margin-bottom: 22px;
-}
-.help-section-title {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  color: var(--sand);
-  margin-bottom: 10px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.help-item {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 8px;
-  align-items: flex-start;
-}
-.help-icon {
-  font-size: 16px;
-  flex-shrink: 0;
-  margin-top: 1px;
-}
-.help-text {
-  font-size: 13px;
-  color: var(--text-secondary);
-  line-height: 1.6;
-}
-.help-text strong {
-  color: var(--text-primary);
-}
-.help-divider {
-  height: 1px;
-  background: var(--dock-border);
-  margin: 18px 0;
-}
-.help-tip {
-  padding: 12px 14px;
-  background: rgba(79,195,247,0.06);
-  border: 1px solid rgba(79,195,247,0.15);
-  border-radius: 12px;
-  font-size: 12px;
-  color: var(--text-secondary);
-  line-height: 1.6;
-  font-style: italic;
-}
-.depths-info {
-  padding: 8px 12px;
-  font-size: 13px;
-  color: var(--text-dim);
-  cursor: default;
-}
-
+.help-section { margin-bottom: 22px; }
+.help-section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--sand); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+.help-item { display: flex; gap: 10px; margin-bottom: 8px; align-items: flex-start; }
+.help-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+.help-text { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+.help-text strong { color: var(--text-primary); }
+.help-divider { height: 1px; background: var(--dock-border); margin: 18px 0; }
+.help-tip { padding: 12px 14px; background: rgba(79,195,247,0.06); border: 1px solid rgba(79,195,247,0.15); border-radius: 12px; font-size: 12px; color: var(--text-secondary); line-height: 1.6; font-style: italic; }
+.depths-info { padding: 8px 12px; font-size: 13px; color: var(--text-dim); cursor: default; }
 </style>
 </head>
 <body>
-
 <div class="water-bg"></div>
-
-<!-- ================================
-     LOGIN SCREEN
-     ================================ -->
 <div class="login-screen" id="loginScreen">
   <div class="login-logo">🌊</div>
   <div class="login-title">The Great Lake</div>
   <div class="login-sub">Leadership Clarity Engine</div>
-
   <div class="login-card">
     <h3>🪶 Enter the Water</h3>
-
-    <!-- Profile Pic Upload -->
     <div class="profile-pic-upload" onclick="document.getElementById('profilePicInput').click()">
       <div class="profile-pic-preview" id="loginProfilePreview">
         <span id="loginProfileEmoji">🪶</span>
@@ -1360,7 +387,6 @@ body {
       <div class="profile-pic-hint">Tap to add photo (optional)</div>
     </div>
     <input type="file" id="profilePicInput" accept="image/*" onchange="handleProfilePic(event)">
-
     <div class="login-field">
       <label>Your Name</label>
       <input type="text" id="loginName" placeholder="Enter your name..." autocomplete="name">
@@ -1373,13 +399,10 @@ body {
     <div class="login-divider">or</div>
     <button class="login-guest-btn" onclick="doGuestLogin()">👤 Continue as Guest</button>
   </div>
-
   <div class="login-install-hint" id="installHint" style="display:none">
     📱 <strong>Install as App:</strong> Tap your browser's share button → "Add to Home Screen"
   </div>
 </div>
-
-<!-- Install Banner -->
 <div class="install-banner" id="installBanner">
   <div class="install-banner-text">
     <strong>📱 Install The Great Lake</strong>
@@ -1388,19 +411,9 @@ body {
   <button class="install-banner-btn" onclick="installApp()">Install</button>
   <button class="install-banner-close" onclick="dismissInstall()">✕</button>
 </div>
-
-<!-- Mobile Dock Toggle -->
 <button class="dock-toggle" id="dockToggle" onclick="toggleDock()">🛶</button>
-
-<!-- Mobile Overlay -->
 <div class="dock-overlay" onclick="toggleDock()"></div>
-
-<!-- App Layout -->
 <div class="app-layout">
-
-  <!-- ================================
-       THE DOCK
-       ================================ -->
   <aside class="dock" id="dock">
     <div class="dock-header">
       <div class="dock-logo">🌊</div>
@@ -1409,24 +422,19 @@ body {
         <div class="dock-subtitle">Leadership Clarity Engine</div>
       </div>
     </div>
-
     <button class="new-session-btn" onclick="newSession()">🎣 Cast a New Line</button>
-
     <div class="sonar-wrap">
       <span class="sonar-icon">🔍</span>
       <input type="text" class="sonar-input" placeholder="Sonar — search the depths..." oninput="filterTides(this.value)">
     </div>
-
     <div class="dock-section">
       <div class="dock-section-title">🌙 Past Tides</div>
     </div>
     <div class="past-tides" id="pastTides"></div>
-
     <div class="dock-section">
       <div class="dock-section-title">👥 The Crew</div>
     </div>
-      <div class="crew-list" id="crewList"></div>
-
+    <div class="crew-list" id="crewList"></div>
     <div class="dock-footer">
       <div class="dock-user-area" onclick="toggleDepths()">
         <div class="dock-user-avatar" id="dockUserAvatar">🪶</div>
@@ -1438,10 +446,6 @@ body {
       <button class="dock-footer-btn" onclick="toggleDepths()" title="Settings">⚙️</button>
     </div>
   </aside>
-
-  <!-- ================================
-       LAKE WINDOW
-       ================================ -->
   <main class="lake-window">
     <div class="lake-header">
       <div class="lake-header-left">
@@ -1461,24 +465,16 @@ body {
         <button class="header-btn" onclick="openHelp()" title="How to use The Lake">❓</button>
       </div>
       <div class="mood-selector" id="moodSelector">
-        <div class="mood-option active" onclick="setMood('calm',event)">
-          <span class="mood-dot" style="background:var(--calm)"></span>🌊 Calm — gentle, reflective
-        </div>
-        <div class="mood-option" onclick="setMood('analytical',event)">
-          <span class="mood-dot" style="background:var(--analytical)"></span>🔍 Analytical — precise
-        </div>
-        <div class="mood-option" onclick="setMood('stormy',event)">
-          <span class="mood-dot" style="background:var(--stormy)"></span>⛈️ Stormy — no filter
-        </div>
+        <div class="mood-option active" onclick="setMood('calm',event)"><span class="mood-dot" style="background:var(--calm)"></span>🌊 Calm — gentle, reflective</div>
+        <div class="mood-option" onclick="setMood('analytical',event)"><span class="mood-dot" style="background:var(--analytical)"></span>🔍 Analytical — precise</div>
+        <div class="mood-option" onclick="setMood('stormy',event)"><span class="mood-dot" style="background:var(--stormy)"></span>⛈️ Stormy — no filter</div>
       </div>
     </div>
-
     <div class="currents-bar" id="currentsBar">
       <span class="currents-label">🧭 Currents:</span>
       <span class="current-chip">👥 Team Dynamics</span>
       <span class="current-chip">🎯 Leadership Patterns</span>
     </div>
-
     <div class="waves-container" id="wavesContainer">
       <div class="welcome-screen" id="welcomeScreen">
         <div class="welcome-icon">🌊</div>
@@ -1494,13 +490,11 @@ body {
         </div>
       </div>
     </div>
-
     <div class="ripple" id="ripple">
       <div class="ripple-dot"></div>
       <div class="ripple-dot"></div>
       <div class="ripple-dot"></div>
     </div>
-
     <div class="shore-dock">
       <div class="file-preview" id="filePreview">
         <span class="file-preview-icon">📄</span>
@@ -1510,47 +504,28 @@ body {
         </div>
         <button class="file-preview-remove" onclick="removeFile()">✕</button>
       </div>
-
       <div class="prompt-suggestions">
-  <button class="suggestions-toggle" onclick="toggleSuggestions()">💡 Prompt Suggestions ▾</button>
-  <div class="suggestions-list" id="suggestionsList">
-
-    <button class="quick-action-btn" onclick="sendPrompt('Read the currents — what is the real vibe here, not just the words?')">🧭 Read the Currents</button>
-
-    <button class="quick-action-btn" onclick="sendPrompt('Surface the truth — cut through the noise and tell me what is really going on.')">🔍 Surface the Truth</button>
-
-    <button class="quick-action-btn" onclick="sendPrompt('I am dropping the full logbook — read everything and give me the full picture.')">🪨 Drop the Full Logbook</button>
-
-    <button class="quick-action-btn" onclick="sendPrompt('Connect the dots — find the patterns and links across everything shared.')">🧩 Connect the Dots</button>
-
-    <button class="quick-action-btn" onclick="sendPrompt('What are the red flags here? Do not hold back.')">🔥 Red Flags</button>
-
-    <button class="quick-action-btn" onclick="sendPrompt('Read the mask and the motive — what is each person showing versus what they actually want?')">🎭 Mask & Motive</button>
-
-    <button class="quick-action-btn" onclick="sendPrompt('Run a momentum check — where is the energy building and where is it stalling?')">📈 Momentum Check</button>
-
-    <button class="quick-action-btn" onclick="sendPrompt('Give me the iceberg view — what is visible on the surface and what is hidden underneath?')">🧊 Iceberg View</button>
-
-    <button class="quick-action-btn" onclick="sendPrompt('Thread the story — turn this chaos into a clear narrative with a beginning, middle, and what comes next.')">🧵 Thread the Story</button>
-
-    <button class="quick-action-btn" onclick="sendPrompt('Find the anchor points — what are the key facts, decisions, or moments everything else hangs on?')">⚓ Anchor Points</button>
-
-    <button class="quick-action-btn" onclick="sendPrompt('Give me the fog index — how much clarity versus confusion and politics is in this situation?')">🌫️ Fog Index</button>
-
-    <button class="quick-action-btn" onclick="sendPrompt('Run an intent scan — what does each person actually want and what are they steering toward?')">🎯 Intent Scan</button>
-
-    <button class="quick-action-btn" onclick="sendPrompt('Pressure test this — what breaks, who folds, and what holds up under real pressure?')">🧨 Pressure Test</button>
-
-    <button class="quick-action-btn" onclick="sendPrompt('Mirror back what I just said — reflect it clearly so I can see it from the outside.')">🪞 Mirror Back</button>
-
-    <button class="quick-action-btn" onclick="sendPrompt('Storm warning — what is coming if nothing changes? Give me the predictive read.')">🌪️ Storm Warning</button>
-
-    <button class="quick-action-btn" onclick="sendPrompt('Odds and outcomes — what are the most likely scenarios and what should I be betting on?')">🧮 Odds & Outcomes</button>
-
-    <button class="quick-action-btn" onclick="sendPrompt('Read this and identify all followups and commitments made — list them clearly.')">📌 Followups & Commitments</button>
-
-  </div>
-</div>
+        <button class="suggestions-toggle" onclick="toggleSuggestions()">💡 Prompt Suggestions ▾</button>
+        <div class="suggestions-list" id="suggestionsList">
+          <button class="quick-action-btn" onclick="sendPrompt('Read the currents — what is the real vibe here, not just the words?')">🧭 Read the Currents</button>
+          <button class="quick-action-btn" onclick="sendPrompt('Surface the truth — cut through the noise and tell me what is really going on.')">🔍 Surface the Truth</button>
+          <button class="quick-action-btn" onclick="sendPrompt('I am dropping the full logbook — read everything and give me the full picture.')">🪨 Drop the Full Logbook</button>
+          <button class="quick-action-btn" onclick="sendPrompt('Connect the dots — find the patterns and links across everything shared.')">🧩 Connect the Dots</button>
+          <button class="quick-action-btn" onclick="sendPrompt('What are the red flags here? Do not hold back.')">🔥 Red Flags</button>
+          <button class="quick-action-btn" onclick="sendPrompt('Read the mask and the motive — what is each person showing versus what they actually want?')">🎭 Mask & Motive</button>
+          <button class="quick-action-btn" onclick="sendPrompt('Run a momentum check — where is the energy building and where is it stalling?')">📈 Momentum Check</button>
+          <button class="quick-action-btn" onclick="sendPrompt('Give me the iceberg view — what is visible on the surface and what is hidden underneath?')">🧊 Iceberg View</button>
+          <button class="quick-action-btn" onclick="sendPrompt('Thread the story — turn this chaos into a clear narrative with a beginning, middle, and what comes next.')">🧵 Thread the Story</button>
+          <button class="quick-action-btn" onclick="sendPrompt('Find the anchor points — what are the key facts, decisions, or moments everything else hangs on?')">⚓ Anchor Points</button>
+          <button class="quick-action-btn" onclick="sendPrompt('Give me the fog index — how much clarity versus confusion and politics is in this situation?')">🌫️ Fog Index</button>
+          <button class="quick-action-btn" onclick="sendPrompt('Run an intent scan — what does each person actually want and what are they steering toward?')">🎯 Intent Scan</button>
+          <button class="quick-action-btn" onclick="sendPrompt('Pressure test this — what breaks, who folds, and what holds up under real pressure?')">🧨 Pressure Test</button>
+          <button class="quick-action-btn" onclick="sendPrompt('Mirror back what I just said — reflect it clearly so I can see it from the outside.')">🪞 Mirror Back</button>
+          <button class="quick-action-btn" onclick="sendPrompt('Storm warning — what is coming if nothing changes? Give me the predictive read.')">🌪️ Storm Warning</button>
+          <button class="quick-action-btn" onclick="sendPrompt('Odds and outcomes — what are the most likely scenarios and what should I be betting on?')">🧮 Odds & Outcomes</button>
+          <button class="quick-action-btn" onclick="sendPrompt('Read this and identify all followups and commitments made — list them clearly.')">📌 Followups & Commitments</button>
+        </div>
+      </div>
       <div class="quick-actions">
         <button class="quick-action-btn" onclick="document.getElementById('fileInput').click()">📎 Drop a Log</button>
         <button class="quick-action-btn" onclick="sendPrompt('Tag the key players in this')">🏷️ Tag Players</button>
@@ -1558,9 +533,7 @@ body {
         <button class="quick-action-btn" onclick="sendPrompt('Summarize what we have so far')">📋 Summarize</button>
         <button class="quick-action-btn" onclick="sendPrompt('Map the influence dynamics')">🗺️ Map Influence</button>
         <button class="quick-action-btn" onclick="sendPrompt('What are the undercurrents here?')">🌀 Undercurrents</button>
-
       </div>
-
       <div class="input-row">
         <div class="input-wrap">
           <textarea class="lake-input" id="lakeInput"
@@ -1574,59 +547,46 @@ body {
         <button class="send-btn" onclick="sendWave()">🌊</button>
       </div>
       <div class="input-hint">Enter to send · Shift+Enter for new line · 📎 files up to 50MB</div>
-      <input type="file" id="fileInput" onchange="handleFileSelect(event)"
-        accept=".txt,.pdf,.doc,.docx,.csv,.json,.md,.rtf,.xlsx,.xls,.pptx">
+      <input type="file" id="fileInput" onchange="handleFileSelect(event)" accept=".txt,.pdf,.doc,.docx,.csv,.json,.md,.rtf,.xlsx,.xls,.pptx">
     </div>
   </main>
 </div>
-
-<!-- ================================
-     DEPTHS PANEL — SETTINGS
-     ================================ -->
 <div class="depths-panel" id="depthsPanel">
   <div class="depths-header">
     <h3>⚙️ Depths</h3>
     <button class="depths-close" onclick="toggleDepths()">✕</button>
   </div>
   <div class="depths-content">
-
-    <!-- Profile Section -->
     <div class="depths-profile" onclick="document.getElementById('profilePicInput').click()">
       <div class="depths-profile-pic" id="depthsProfilePic">🪶</div>
       <div class="depths-profile-name" id="depthsProfileName">Guest</div>
       <div class="depths-profile-hint">Tap to change photo</div>
     </div>
-
     <div class="depths-section">
       <h4>🌊 Lake Mood</h4>
       <div class="depths-option active" onclick="setMood('calm',event)">🌊 Calm — gentle, reflective</div>
       <div class="depths-option" onclick="setMood('analytical',event)">🔍 Analytical — precise breakdowns</div>
       <div class="depths-option" onclick="setMood('stormy',event)">⛈️ Stormy — direct, unfiltered</div>
     </div>
-
     <div class="depths-section">
       <h4>📱 App</h4>
       <div class="depths-option" onclick="showInstallBanner()">📲 Install as App</div>
       <div class="depths-option" onclick="clearHistory()">🗑️ Clear All History</div>
     </div>
-
     <div class="depths-section">
       <h4>📏 Governance</h4>
       <div class="depths-info">🛡 Rules 1-27: Active</div>
       <div class="depths-info">🔒 Safety Filters: On</div>
       <div class="depths-info">🤖 Model: Claude Sonnet</div>
     </div>
-
     <div class="depths-section">
       <h4>ℹ️ About</h4>
       <div class="depths-info">The Great Lake Bot v1.3.0</div>
       <div class="depths-info">Leadership Clarity Platform</div>
     </div>
-
     <button class="logout-btn" onclick="doLogout()">🚪 Leave The Lake</button>
   </div>
 </div>
-
 <script>
 // ============================================
 // STATE
@@ -1641,7 +601,6 @@ let deferredInstallPrompt = null;
 let allSessions = [];
 let crewMembers = [];
 let suggestedCrew = [];
-
 // ============================================
 // NAME DETECTION ENGINE
 // ============================================
@@ -1660,18 +619,14 @@ const IGNORE_WORDS = new Set([
   'January','February','March','April','June','July','August','September',
   'October','November','December','AI','CEO','CFO','COO','HR','VP','GM'
 ]);
-
 function detectNamesFromText(text) {
   if (!text) return [];
   const found = new Map();
-
-  // ONLY use context patterns — must appear next to name-indicating words
   const contextPatterns = [
     /\b([A-Z][a-z]{1,20})\s+(?:said|says|told|mentioned|suggested|argued|asked|replied|noted|added|agreed|disagreed|pushed|deflected|responded)/g,
     /(?:told|asked|with|about|from|by|for)\s+([A-Z][a-z]{1,20})\b/g,
     /\b([A-Z][a-z]{1,20})(?:'s|'s)\s+(?:approach|style|pattern|behavior|response|role|position|team|idea)/g,
   ];
-
   contextPatterns.forEach(pattern => {
     let match;
     while ((match = pattern.exec(text)) !== null) {
@@ -1681,22 +636,17 @@ function detectNamesFromText(text) {
       }
     }
   });
-
-  // Must appear in context patterns AT LEAST TWICE to be suggested
   return Array.from(found.entries())
     .filter(([name, score]) => score >= 2)
     .map(([name]) => name);
 }
-
 function processNamesFromResponse(responseText) {
   const detected = detectNamesFromText(responseText);
   if (detected.length === 0) return;
-
   const existingNames = new Set([
     ...crewMembers.map(m => m.name.toLowerCase()),
     ...suggestedCrew.map(m => m.name.toLowerCase())
   ]);
-
   let newSuggestions = false;
   detected.forEach(name => {
     if (!existingNames.has(name.toLowerCase())) {
@@ -1705,23 +655,19 @@ function processNamesFromResponse(responseText) {
       newSuggestions = true;
     }
   });
-
   if (newSuggestions) {
     saveSuggestedCrew();
     renderCrew();
   }
 }
-
 function saveSuggestedCrew() {
   localStorage.setItem('lakeSuggestedCrew', JSON.stringify(suggestedCrew));
 }
-
 function loadSuggestedCrew() {
   try {
     suggestedCrew = JSON.parse(localStorage.getItem('lakeSuggestedCrew') || '[]');
   } catch(e) { suggestedCrew = []; }
 }
-  
 // ============================================
 // PWA
 // ============================================
@@ -1730,13 +676,11 @@ window.addEventListener('beforeinstallprompt', (e) => {
   deferredInstallPrompt = e;
   if (currentUser) showInstallBanner();
 });
-
 function showInstallBanner() {
   if (deferredInstallPrompt) {
     document.getElementById('installBanner').classList.add('show');
   }
 }
-
 function installApp() {
   if (deferredInstallPrompt) {
     deferredInstallPrompt.prompt();
@@ -1746,17 +690,14 @@ function installApp() {
     });
   }
 }
-
 function dismissInstall() {
   document.getElementById('installBanner').classList.remove('show');
 }
-
 const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
 const isInStandaloneMode = window.matchMedia('(display-mode: standalone)').matches;
 if (isIOS && !isInStandaloneMode) {
   document.getElementById('installHint').style.display = 'block';
 }
-
 // ============================================
 // PROFILE PIC
 // ============================================
@@ -1771,56 +712,30 @@ function handleProfilePic(event) {
   };
   reader.readAsDataURL(file);
 }
-
 function updateAllProfilePics(src) {
-  // Login screen preview
   const loginPreview = document.getElementById('loginProfilePreview');
   const loginEmoji = document.getElementById('loginProfileEmoji');
   if (src) {
     loginEmoji.style.display = 'none';
     const existingImg = loginPreview.querySelector('img');
-    if (existingImg) {
-      existingImg.src = src;
-    } else {
-      const img = document.createElement('img');
-      img.src = src;
-      loginPreview.appendChild(img);
-    }
+    if (existingImg) { existingImg.src = src; }
+    else { const img = document.createElement('img'); img.src = src; loginPreview.appendChild(img); }
   }
-
-  // Dock footer avatar
   const dockAvatar = document.getElementById('dockUserAvatar');
-  if (src) {
-    dockAvatar.innerHTML = `<img src="${src}" alt="Profile">`;
-  } else {
-    dockAvatar.innerHTML = '🪶';
-  }
-
-  // Depths panel profile pic
+  if (src) { dockAvatar.innerHTML = `<img src="${src}" alt="Profile">`; }
+  else { dockAvatar.innerHTML = '🪶'; }
   const depthsPic = document.getElementById('depthsProfilePic');
-  if (src) {
-    depthsPic.innerHTML = `<img src="${src}" alt="Profile">`;
-  } else {
-    depthsPic.innerHTML = '🪶';
-  }
-
-  // All existing user wave avatars
+  if (src) { depthsPic.innerHTML = `<img src="${src}" alt="Profile">`; }
+  else { depthsPic.innerHTML = '🪶'; }
   document.querySelectorAll('.wave.user-wave .wave-avatar').forEach(el => {
-    if (src) {
-      el.innerHTML = `<img src="${src}" alt="Profile">`;
-    } else {
-      el.innerHTML = '🪶';
-    }
+    if (src) { el.innerHTML = `<img src="${src}" alt="Profile">`; }
+    else { el.innerHTML = '🪶'; }
   });
 }
-
 function getUserAvatarHTML() {
-  if (currentProfilePic) {
-    return `<img src="${currentProfilePic}" alt="Profile">`;
-  }
+  if (currentProfilePic) return `<img src="${currentProfilePic}" alt="Profile">`;
   return '🪶';
 }
-
 // ============================================
 // LOGIN
 // ============================================
@@ -1837,31 +752,20 @@ function doLogin() {
   localStorage.setItem('lakeUser', JSON.stringify(currentUser));
   enterLake();
 }
-
 function doGuestLogin() {
   currentUser = { name: 'Guest', guest: true };
   enterLake();
 }
-
 function enterLake() {
   document.getElementById('loginScreen').classList.add('hidden');
   document.getElementById('dockUserName').textContent = currentUser.name;
   document.getElementById('depthsProfileName').textContent = currentUser.name;
-
-  // Load saved profile pic
   const savedPic = localStorage.getItem('lakeProfilePic');
-  if (savedPic) {
-    currentProfilePic = savedPic;
-    updateAllProfilePics(savedPic);
-  }
-
+  if (savedPic) { currentProfilePic = savedPic; updateAllProfilePics(savedPic); }
   loadSessionHistory();
   if (deferredInstallPrompt) showInstallBanner();
-  setTimeout(() => {
-    if (window.innerWidth > 768) document.getElementById('lakeInput').focus();
-  }, 300);
+  setTimeout(() => { if (window.innerWidth > 768) document.getElementById('lakeInput').focus(); }, 300);
 }
-
 function doLogout() {
   localStorage.removeItem('lakeUser');
   currentUser = null;
@@ -1874,35 +778,28 @@ function doLogout() {
   document.getElementById('loginPass').value = '';
   newSession();
 }
-
-// Auto-login if saved
 window.addEventListener('load', () => {
   const saved = localStorage.getItem('lakeUser');
   if (saved) {
-    try {
-      currentUser = JSON.parse(saved);
-      enterLake();
-    } catch(e) {}
+    try { currentUser = JSON.parse(saved); enterLake(); } catch(e) {}
   }
   loadSessionHistory();
-  loadCrew();          // ← ADDED
-  loadSuggestedCrew(); // ← ADDED
+  loadCrew();
+  loadSuggestedCrew();
 });
-
 // ============================================
 // SESSION HISTORY
 // ============================================
 function loadSessionHistory() {
-  try {
-    allSessions = JSON.parse(localStorage.getItem('lakeSessions') || '[]');
-  } catch(e) { allSessions = []; }
+  try { allSessions = JSON.parse(localStorage.getItem('lakeSessions') || '[]'); }
+  catch(e) { allSessions = []; }
   renderTides();
 }
-
 function saveSession() {
   if (!currentSessionId || chatHistory.length === 0) return;
   const existingIdx = allSessions.findIndex(s => s.id === currentSessionId);
-  const sessionData = {
+  const session
+  Data = {
     id: currentSessionId,
     name: getSessionName(),
     preview: chatHistory[0]?.content?.substring(0, 60) || '',
@@ -1919,13 +816,11 @@ function saveSession() {
   localStorage.setItem('lakeSessions', JSON.stringify(allSessions));
   renderTides();
 }
-
 function getSessionName() {
   const first = chatHistory.find(m => m.role === 'user');
   if (first && first.content) return first.content.substring(0, 40) + (first.content.length > 40 ? '...' : '');
   return 'New Session';
 }
-
 function renderTides() {
   const container = document.getElementById('pastTides');
   if (allSessions.length === 0) {
@@ -1935,21 +830,20 @@ function renderTides() {
   container.innerHTML = allSessions.map((s) => {
     const timeAgo = getTimeAgo(s.time);
     const isActive = s.id === currentSessionId;
-  return `
-    <div class="tide-item ${isActive ? 'active' : ''}" onclick="loadTide('${s.id}')">
-      <span class="tide-icon">🌊</span>
-      <div class="tide-info">
-        <div class="tide-name">${escapeHTML(s.name)}</div>
-        <div class="tide-preview">${escapeHTML(s.preview)}</div>
+    return `
+      <div class="tide-item ${isActive ? 'active' : ''}" onclick="loadTide('${s.id}')">
+        <span class="tide-icon">🌊</span>
+        <div class="tide-info">
+          <div class="tide-name">${escapeHTML(s.name)}</div>
+          <div class="tide-preview">${escapeHTML(s.preview)}</div>
+        </div>
+        <span class="tide-time">${timeAgo}</span>
+        <button class="tide-rename" onclick="renameSession(event,'${s.id}')">✏️</button>
+        <button class="tide-delete" onclick="deleteSession(event,'${s.id}')">🗑</button>
       </div>
-      <span class="tide-time">${timeAgo}</span>
-      <button class="tide-rename" onclick="renameSession(event,'${s.id}')">✏️</button>
-      <button class="tide-delete" onclick="deleteSession(event,'${s.id}')">🗑</button>
-    </div>
-  `;
+    `;
   }).join('');
 }
-
 function getTimeAgo(isoStr) {
   const diff = Date.now() - new Date(isoStr).getTime();
   const mins = Math.floor(diff / 60000);
@@ -1959,7 +853,6 @@ function getTimeAgo(isoStr) {
   if (hrs < 24) return hrs + 'h';
   return Math.floor(hrs / 24) + 'd';
 }
-
 function loadTide(sessionId) {
   const session = allSessions.find(s => s.id === sessionId);
   if (!session) return;
@@ -1976,7 +869,6 @@ function loadTide(sessionId) {
   renderTides();
   if (window.innerWidth <= 768) toggleDock();
 }
-
 function deleteSession(e, sessionId) {
   e.stopPropagation();
   allSessions = allSessions.filter(s => s.id !== sessionId);
@@ -1984,7 +876,6 @@ function deleteSession(e, sessionId) {
   if (currentSessionId === sessionId) newSession();
   else renderTides();
 }
-
 function renameSession(e, sessionId) {
   e.stopPropagation();
   const session = allSessions.find(s => s.id === sessionId);
@@ -1995,7 +886,6 @@ function renameSession(e, sessionId) {
   localStorage.setItem('lakeSessions', JSON.stringify(allSessions));
   renderTides();
 }
-  
 function clearHistory() {
   if (confirm('Clear all past tides? This cannot be undone.')) {
     allSessions = [];
@@ -2005,7 +895,6 @@ function clearHistory() {
     toggleDepths();
   }
 }
-
 function filterTides(query) {
   document.querySelectorAll('.tide-item').forEach(item => {
     const name = item.querySelector('.tide-name')?.textContent.toLowerCase() || '';
@@ -2013,7 +902,6 @@ function filterTides(query) {
     item.style.display = (name.includes(query.toLowerCase()) || preview.includes(query.toLowerCase())) ? 'flex' : 'none';
   });
 }
-
 // ============================================
 // NEW SESSION
 // ============================================
@@ -2038,7 +926,6 @@ function newSession() {
   renderTides();
   if (window.innerWidth <= 768) toggleDock();
 }
-
 // ============================================
 // DOCK
 // ============================================
@@ -2046,24 +933,30 @@ function toggleDock() {
   document.getElementById('dock').classList.toggle('open');
   document.querySelector('.dock-overlay').classList.toggle('show');
 }
-
+// ============================================
+// SUGGESTIONS TOGGLE — FIXED
+// ============================================
+function toggleSuggestions() {
+  const list = document.getElementById('suggestionsList');
+  const btn = document.querySelector('.suggestions-toggle');
+  list.classList.toggle('open');
+  btn.textContent = list.classList.contains('open')
+    ? '💡 Prompt Suggestions ▴'
+    : '💡 Prompt Suggestions ▾';
+}
 // ============================================
 // CREW
 // ============================================
 let crewModalMode = null;
 let crewModalIndex = -1;
-
 function loadCrew() {
-  try {
-    crewMembers = JSON.parse(localStorage.getItem('lakeCrew') || '[]');
-  } catch(e) { crewMembers = []; }
+  try { crewMembers = JSON.parse(localStorage.getItem('lakeCrew') || '[]'); }
+  catch(e) { crewMembers = []; }
   renderCrew();
 }
-
 function saveCrew() {
   localStorage.setItem('lakeCrew', JSON.stringify(crewMembers));
 }
-
 function renderCrew() {
   const list = document.getElementById('crewList');
   const colors = [
@@ -2087,12 +980,12 @@ function renderCrew() {
   }
   const crewHTML = crewMembers.map((member, idx) => {
     const color = colors[idx % colors.length];
-    const initial = member.name.trim()[0].toUpperCase();
+    const initial = member.emoji || member.name.trim()[0].toUpperCase();
     const displayName = member.codename || member.name;
     const nickname = member.nickname ? `<span style="color:var(--text-dim);font-size:11px">${escapeHTML(member.nickname)}</span>` : '';
     return `
       <div class="crew-item" onclick="openCrewProfile(${idx})">
-        <div class="crew-avatar" style="background:linear-gradient(135deg,${color})">${initial}</div>
+        <div class="crew-avatar" style="background:${member.emoji ? 'none' : `linear-gradient(135deg,${color})`}">${initial}</div>
         <div style="flex:1;min-width:0">
           <div class="crew-name">${escapeHTML(displayName)}</div>
           ${nickname}
@@ -2107,24 +1000,22 @@ function renderCrew() {
     </div>
   `;
 }
-
 function approveSuggested(idx) {
   const member = suggestedCrew[idx];
   openCrewModal('approve', idx, member.name);
 }
-
 function dismissSuggested(idx) {
   suggestedCrew.splice(idx, 1);
   saveSuggestedCrew();
   renderCrew();
 }
-
 function openCrewModal(mode, idx = -1, prefillName = '') {
   crewModalMode = mode;
   crewModalIndex = idx;
   const title = document.getElementById('crewModalTitle');
   const nameInput = document.getElementById('crewModalName');
   const nicknameInput = document.getElementById('crewModalNickname');
+  const emojiInput = document.getElementById('crewModalEmoji');
   const codenameInput = document.getElementById('crewModalCodename');
   const contextInput = document.getElementById('crewModalContext');
   const deleteBtn = document.getElementById('crewModalDelete');
@@ -2134,11 +1025,13 @@ function openCrewModal(mode, idx = -1, prefillName = '') {
     nameInput.value = m.name || '';
     nicknameInput.value = m.nickname || '';
     codenameInput.value = m.codename || '';
+    emojiInput.value = m.emoji || '';
     contextInput.value = m.context || '';
     deleteBtn.style.display = 'block';
   } else if (mode === 'approve') {
     title.textContent = '⚡ Add to The Crew';
     nameInput.value = prefillName || '';
+    emojiInput.value = '';
     nicknameInput.value = '';
     codenameInput.value = '';
     contextInput.value = '';
@@ -2146,6 +1039,7 @@ function openCrewModal(mode, idx = -1, prefillName = '') {
   } else {
     title.textContent = '🪶 Add to The Crew';
     nameInput.value = '';
+    emojiInput.value = '';
     nicknameInput.value = '';
     codenameInput.value = '';
     contextInput.value = '';
@@ -2154,12 +1048,10 @@ function openCrewModal(mode, idx = -1, prefillName = '') {
   document.getElementById('crewModalOverlay').classList.add('show');
   setTimeout(() => nameInput.focus(), 100);
 }
-
 function closeCrewModal(e) {
   if (e && e.target !== document.getElementById('crewModalOverlay')) return;
   document.getElementById('crewModalOverlay').classList.remove('show');
 }
-
 function saveCrewFromModal() {
   const name = document.getElementById('crewModalName').value.trim();
   if (!name) {
@@ -2171,6 +1063,7 @@ function saveCrewFromModal() {
     name,
     nickname: document.getElementById('crewModalNickname').value.trim(),
     codename: document.getElementById('crewModalCodename').value.trim(),
+    emoji: document.getElementById('crewModalEmoji').value.trim(),
     context: document.getElementById('crewModalContext').value.trim()
   };
   if (crewModalMode === 'edit' && crewModalIndex >= 0) {
@@ -2186,7 +1079,6 @@ function saveCrewFromModal() {
   renderCrew();
   document.getElementById('crewModalOverlay').classList.remove('show');
 }
-
 function deleteCrewFromModal() {
   if (crewModalIndex >= 0 && confirm(`Remove ${crewMembers[crewModalIndex].name} from The Crew?`)) {
     crewMembers.splice(crewModalIndex, 1);
@@ -2195,7 +1087,6 @@ function deleteCrewFromModal() {
     document.getElementById('crewModalOverlay').classList.remove('show');
   }
 }
-
 function removeCrew(e, idx) {
   e.stopPropagation();
   if (confirm(`Remove ${crewMembers[idx].name} from The Crew?`)) {
@@ -2204,26 +1095,21 @@ function removeCrew(e, idx) {
     renderCrew();
   }
 }
-
 let crewCardIndex = -1;
-
 function openCrewProfile(idx) {
   const member = crewMembers[idx];
   if (!member) return;
   crewCardIndex = idx;
-
   const colors = [
     '#4fc3f7,#0288d1','#ce93d8,#7b1fa2','#ffb74d,#f57c00',
     '#81c784,#388e3c','#ff8a80,#d32f2f','#80cbc4,#00796b'
   ];
   const color = colors[idx % colors.length];
-  const initial = member.name.trim()[0].toUpperCase();
-
-  document.getElementById('crewCardAvatar').style.background = `linear-gradient(135deg,${color})`;
+  const initial = member.emoji || member.name.trim()[0].toUpperCase();
+  document.getElementById('crewCardAvatar').style.background = member.emoji ? 'none' : `linear-gradient(135deg,${color})`;
   document.getElementById('crewCardAvatar').textContent = initial;
   document.getElementById('crewCardName').textContent = member.name;
   document.getElementById('crewCardNickname').textContent = member.nickname || '';
-
   const codenameEl = document.getElementById('crewCardCodename');
   if (member.codename) {
     codenameEl.textContent = `"${member.codename}"`;
@@ -2231,7 +1117,6 @@ function openCrewProfile(idx) {
   } else {
     codenameEl.style.display = 'none';
   }
-
   const contextEl = document.getElementById('crewCardContext');
   if (member.context) {
     contextEl.textContent = member.context;
@@ -2240,7 +1125,6 @@ function openCrewProfile(idx) {
     contextEl.textContent = 'No context note yet — tap Edit to add one.';
     contextEl.classList.add('empty');
   }
-
   document.getElementById('crewCardAsk').onclick = () => {
     let prompt = `Tell me what I should know about ${member.name}`;
     if (member.codename) prompt += ` (codename: "${member.codename}")`;
@@ -2250,30 +1134,23 @@ function openCrewProfile(idx) {
     sendPrompt(prompt);
     if (window.innerWidth <= 768) toggleDock();
   };
-
   document.getElementById('crewCardOverlay').classList.add('show');
 }
-
 function closeCrewCard(e) {
   if (e && e.target !== document.getElementById('crewCardOverlay')) return;
   document.getElementById('crewCardOverlay').classList.remove('show');
 }
-
 function editFromCard() {
   closeCrewCard();
   setTimeout(() => openCrewModal('edit', crewCardIndex), 150);
 }
-
-function addCrew() {
-  openCrewModal('add');
-}
+function addCrew() { openCrewModal('add'); }
 // ============================================
 // MOOD
 // ============================================
 function toggleMoodSelector() {
   document.getElementById('moodSelector').classList.toggle('show');
 }
-
 function setMood(mood, e) {
   if (e) e.stopPropagation();
   currentMood = mood;
@@ -2286,22 +1163,12 @@ function setMood(mood, e) {
   document.querySelectorAll('.mood-option, .depths-option').forEach(el => el.classList.remove('active'));
   document.getElementById('moodSelector').classList.remove('show');
 }
-
 // ============================================
 // DEPTHS
 // ============================================
 function toggleDepths() {
-  function toggleSuggestions() {
-  const list = document.getElementById('suggestionsList');
-  const btn = document.querySelector('.suggestions-toggle');
-  list.classList.toggle('open');
-  btn.textContent = list.classList.contains('open') 
-    ? '💡 Prompt Suggestions ▴' 
-    : '💡 Prompt Suggestions ▾';
-}
   document.getElementById('depthsPanel').classList.toggle('show');
 }
-
 // ============================================
 // FILE HANDLING
 // ============================================
@@ -2317,19 +1184,16 @@ function handleFileSelect(event) {
   document.getElementById('filePreviewSize').textContent = formatFileSize(file.size);
   document.getElementById('filePreview').classList.add('show');
 }
-
 function removeFile() {
   selectedFile = null;
   document.getElementById('filePreview').classList.remove('show');
   document.getElementById('fileInput').value = '';
 }
-
 function formatFileSize(bytes) {
   if (bytes < 1024) return bytes + ' B';
   if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
   return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
 }
-
 // ============================================
 // SENDING WAVES
 // ============================================
@@ -2337,66 +1201,49 @@ function sendPrompt(text) {
   document.getElementById('lakeInput').value = text;
   sendWave();
 }
-
 async function sendWave() {
   const input = document.getElementById('lakeInput');
   const text = input.value.trim();
   if (!text && !selectedFile) return;
-
   const welcome = document.getElementById('welcomeScreen');
   if (welcome) welcome.remove();
   if (!currentSessionId) currentSessionId = 'session_' + Date.now();
-
   const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   appendUserWave(text || '📎 ' + selectedFile?.name, timeStr, true);
   chatHistory.push({ role: 'user', content: text, time: timeStr });
-
   input.value = '';
   input.style.height = 'auto';
   showRipple();
-
   try {
-    // Build FormData for file support
     const formData = new FormData();
     formData.append('message', text);
     formData.append('mood', currentMood);
-
-    // Send last 10 history items
     const historyToSend = chatHistory.slice(-11, -1).map(m => ({
       role: m.role === 'user' ? 'user' : 'assistant',
       content: m.content
     }));
     formData.append('history', JSON.stringify(historyToSend));
-
     if (selectedFile) formData.append('file', selectedFile);
     removeFile();
-
-    const response = await fetch('/chat', {
-      method: 'POST',
-      body: formData
-    });
-
+    const response = await fetch('/chat', { method: 'POST', body: formData });
     const data = await response.json();
     hideRipple();
-
     if (data.reflection) {
       const reflectionTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       appendLakeWave(data.reflection, reflectionTime, true);
       chatHistory.push({ role: 'assistant', content: data.reflection, time: reflectionTime });
       updateCurrents(text);
       saveSession();
-      processNamesFromResponse(data.reflection); // ← ADDED
+      processNamesFromResponse(data.reflection);
     } else {
       appendLakeWave('The Lake encountered turbulence: ' + (data.error || 'Unknown error'), timeStr, true);
     }
-
   } catch (err) {
     hideRipple();
     appendLakeWave('🌊 Could not reach The Lake — check your connection.', timeStr, true);
     console.error('Lake error:', err);
   }
 }
-
 function appendUserWave(text, timeStr, scroll) {
   const container = document.getElementById('wavesContainer');
   const div = document.createElement('div');
@@ -2412,7 +1259,6 @@ function appendUserWave(text, timeStr, scroll) {
   container.appendChild(div);
   if (scroll) container.scrollTop = container.scrollHeight;
 }
-
 function appendLakeWave(text, timeStr, scroll) {
   const container = document.getElementById('wavesContainer');
   const div = document.createElement('div');
@@ -2428,14 +1274,12 @@ function appendLakeWave(text, timeStr, scroll) {
   container.appendChild(div);
   if (scroll) container.scrollTop = container.scrollHeight;
 }
-
 function formatReflection(text) {
   return escapeHTML(text)
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/\n\n/g, '<br><br>')
     .replace(/\n/g, '<br>');
 }
-
 // ============================================
 // RIPPLE
 // ============================================
@@ -2444,7 +1288,6 @@ function showRipple() {
   document.getElementById('lakeStatus').textContent = 'The Lake is reflecting...';
   document.getElementById('wavesContainer').scrollTop = document.getElementById('wavesContainer').scrollHeight;
 }
-
 function hideRipple() {
   document.getElementById('ripple').classList.remove('show');
   const moods = {
@@ -2454,7 +1297,6 @@ function hideRipple() {
   };
   document.getElementById('lakeStatus').textContent = moods[currentMood];
 }
-
 // ============================================
 // CURRENTS
 // ============================================
@@ -2478,22 +1320,16 @@ function updateCurrents(text) {
     }
   }
 }
-
 // ============================================
 // INPUT
 // ============================================
 function handleKey(e) {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
-    sendWave();
-  }
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendWave(); }
 }
-
 function autoResize(el) {
   el.style.height = 'auto';
   el.style.height = Math.min(el.scrollHeight, 120) + 'px';
 }
-
 function escapeHTML(str) {
   if (!str) return '';
   const div = document.createElement('div');
@@ -2503,14 +1339,11 @@ function escapeHTML(str) {
 // ============================================
 // HELP
 // ============================================
-function openHelp() {
-  document.getElementById('helpOverlay').classList.add('show');
-}
+function openHelp() { document.getElementById('helpOverlay').classList.add('show'); }
 function closeHelp(e) {
   if (e && e.target !== document.getElementById('helpOverlay')) return;
   document.getElementById('helpOverlay').classList.remove('show');
 }
-
 // ============================================
 // CLOSE ON OUTSIDE CLICK
 // ============================================
@@ -2519,7 +1352,6 @@ document.addEventListener('click', (e) => {
     document.getElementById('moodSelector').classList.remove('show');
   }
 });
-
 // ============================================
 // MOBILE KEYBOARD FIX
 // ============================================
@@ -2533,47 +1365,37 @@ if ('visualViewport' in window) {
 // ============================================
 let recognition = null;
 let isListening = false;
-
 function toggleMic() {
   if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
     alert('Your browser doesn\'t support voice input. Try Chrome!');
     return;
   }
-  if (isListening) {
-    recognition.stop();
-    return;
-  }
+  if (isListening) { recognition.stop(); return; }
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   recognition = new SpeechRecognition();
   recognition.continuous = false;
   recognition.interimResults = true;
   recognition.lang = 'en-US';
-
   recognition.onstart = () => {
     isListening = true;
     document.getElementById('micBtn').classList.add('listening');
     document.getElementById('micBtn').textContent = '🔴';
   };
-
   recognition.onresult = (event) => {
-    const transcript = Array.from(event.results)
-      .map(r => r[0].transcript).join('');
+    const transcript = Array.from(event.results).map(r => r[0].transcript).join('');
     document.getElementById('lakeInput').value = transcript;
     autoResize(document.getElementById('lakeInput'));
   };
-
   recognition.onend = () => {
     isListening = false;
     document.getElementById('micBtn').classList.remove('listening');
     document.getElementById('micBtn').textContent = '🎤';
   };
-
   recognition.onerror = () => {
     isListening = false;
     document.getElementById('micBtn').classList.remove('listening');
     document.getElementById('micBtn').textContent = '🎤';
   };
-
   recognition.start();
 }
 function exportConversation() {
@@ -2583,19 +1405,12 @@ function exportConversation() {
   }
   const lines = chatHistory
     .filter(m => m.content)
-    .map(m =>
-      `${m.role === 'user' ? '👤 YOU' : '🌊 THE LAKE'} — ${m.time || ''}\n${m.content}`
-    ).join('\n\n─────────────────────────\n\n');
-
-  console.log('Share available:', !!navigator.share);
-
+    .map(m => `${m.role === 'user' ? '👤 YOU' : '🌊 THE LAKE'} — ${m.time || ''}\n${m.content}`)
+    .join('\n\n─────────────────────────\n\n');
   if (navigator.share) {
-    navigator.share({
-      title: '🌊 Lake Reflection',
-      text: lines,
-    }).catch(err => console.log('Share failed:', err));
+    navigator.share({ title: '🌊 Lake Reflection', text: lines })
+      .catch(err => console.log('Share failed:', err));
   } else {
-    console.log('navigator.share not available — browser:', navigator.userAgent);
     navigator.clipboard.writeText(lines).then(() => {
       alert('Copied to clipboard — paste anywhere to share!');
     }).catch(() => {
@@ -2617,6 +1432,10 @@ function exportConversation() {
       <input type="text" id="crewModalNickname" placeholder="e.g. Marcus T.">
     </div>
     <div class="crew-modal-field">
+      <label>Avatar Emoji <span style="color:var(--text-dim);font-weight:normal;font-size:11px">*optional</span></label>
+      <input type="text" id="crewModalEmoji" placeholder="e.g. 🦈 🌊 🔥 🦊">
+    </div>
+    <div class="crew-modal-field">
       <label>🎭 Codename</label>
       <input type="text" id="crewModalCodename" placeholder="e.g. The Architect, Driftwood...">
     </div>
@@ -2631,7 +1450,7 @@ function exportConversation() {
     </div>
   </div>
 </div>
-  <!-- Crew Profile Card -->
+<!-- Crew Profile Card -->
 <div class="crew-card-overlay" id="crewCardOverlay" onclick="closeCrewCard(event)">
   <div class="crew-card">
     <div class="crew-card-header">
@@ -2657,83 +1476,35 @@ function exportConversation() {
       <div class="help-title">🌊 How to use The Lake</div>
       <button class="help-close" onclick="closeHelp()">✕</button>
     </div>
-
     <div class="help-section">
       <div class="help-section-title">🌊 The Basics</div>
-      <div class="help-item">
-        <span class="help-icon">💬</span>
-        <div class="help-text">Type anything in the box at the bottom — a situation, a question, a feeling. <strong>The Lake reflects back what it sees.</strong></div>
-      </div>
-      <div class="help-item">
-        <span class="help-icon">📄</span>
-        <div class="help-text"><strong>Drop a Log</strong> — attach transcripts, meeting notes, or documents and The Lake will read them in full.</div>
-      </div>
-      <div class="help-item">
-        <span class="help-icon">🧭</span>
-        <div class="help-text">Use the <strong>welcome prompts</strong> to get started fast if you're not sure what to ask.</div>
-      </div>
+      <div class="help-item"><span class="help-icon">💬</span><div class="help-text">Type anything in the box at the bottom. <strong>The Lake reflects back what it sees.</strong></div></div>
+      <div class="help-item"><span class="help-icon">📄</span><div class="help-text"><strong>Drop a Log</strong> — attach transcripts, meeting notes, or documents.</div></div>
+      <div class="help-item"><span class="help-icon">🧭</span><div class="help-text">Use the <strong>welcome prompts</strong> to get started fast.</div></div>
     </div>
-
     <div class="help-divider"></div>
-
     <div class="help-section">
       <div class="help-section-title">🗂 The Dock</div>
-      <div class="help-item">
-        <span class="help-icon">🌊</span>
-        <div class="help-text"><strong>Past Tides</strong> — all your saved conversations. Tap any to reload it.</div>
-      </div>
-      <div class="help-item">
-        <span class="help-icon">🔍</span>
-        <div class="help-text"><strong>Sonar</strong> — search through your past conversations by keyword or name.</div>
-      </div>
-      <div class="help-item">
-        <span class="help-icon">👥</span>
-        <div class="help-text"><strong>The Crew</strong> — track the people in your world. Add context, codenames, and notes.</div>
-      </div>
+      <div class="help-item"><span class="help-icon">🌊</span><div class="help-text"><strong>Past Tides</strong> — all your saved conversations.</div></div>
+      <div class="help-item"><span class="help-icon">🔍</span><div class="help-text"><strong>Sonar</strong> — search through past conversations.</div></div>
+      <div class="help-item"><span class="help-icon">👥</span><div class="help-text"><strong>The Crew</strong> — track the people in your world.</div></div>
     </div>
-
     <div class="help-divider"></div>
-
     <div class="help-section">
       <div class="help-section-title">👥 The Crew</div>
-      <div class="help-item">
-        <span class="help-icon">⚡</span>
-        <div class="help-text"><strong>Spotted</strong> — The Lake auto-detects names from conversations and suggests adding them.</div>
-      </div>
-      <div class="help-item">
-        <span class="help-icon">🪶</span>
-        <div class="help-text">Tap <strong>+ Add to The Crew</strong> to manually add someone with their real name, nickname, codename and context note.</div>
-      </div>
-      <div class="help-item">
-        <span class="help-icon">🌊</span>
-        <div class="help-text">Tap any crew member → hit <strong>Ask The Lake</strong> to get a full read on them instantly.</div>
-      </div>
+      <div class="help-item"><span class="help-icon">⚡</span><div class="help-text"><strong>Spotted</strong> — The Lake auto-detects names from conversations.</div></div>
+      <div class="help-item"><span class="help-icon">🪶</span><div class="help-text">Tap <strong>+ Add to The Crew</strong> to manually add someone.</div></div>
+      <div class="help-item"><span class="help-icon">🌊</span><div class="help-text">Tap any crew member → <strong>Ask The Lake</strong> for a full read.</div></div>
     </div>
-
     <div class="help-divider"></div>
-
     <div class="help-section">
       <div class="help-section-title">🎭 Moods</div>
-      <div class="help-item">
-        <span class="help-icon">😌</span>
-        <div class="help-text"><strong>Calm</strong> — reflective, deep, gentle. Good for processing and thinking out loud.</div>
-      </div>
-      <div class="help-item">
-        <span class="help-icon">🎯</span>
-        <div class="help-text"><strong>Analytical</strong> — structured, precise, systematic. Good for mapping situations.</div>
-      </div>
-      <div class="help-item">
-        <span class="help-icon">⛈️</span>
-        <div class="help-text"><strong>Stormy</strong> — zero filter, raw truth. Good when you need it straight.</div>
-      </div>
+      <div class="help-item"><span class="help-icon">😌</span><div class="help-text"><strong>Calm</strong> — reflective, deep, gentle.</div></div>
+      <div class="help-item"><span class="help-icon">🎯</span><div class="help-text"><strong>Analytical</strong> — structured, precise, systematic.</div></div>
+      <div class="help-item"><span class="help-icon">⛈️</span><div class="help-text"><strong>Stormy</strong> — zero filter, raw truth.</div></div>
     </div>
-
     <div class="help-divider"></div>
-
-    <div class="help-tip">
-      💡 Pro tip — the more context you give The Lake, the deeper the read. Name the people involved, describe the setting, and don't hold back on the details.
-    </div>
-
+    <div class="help-tip">💡 Pro tip — the more context you give The Lake, the deeper the read.</div>
   </div>
 </div>
 </body>
