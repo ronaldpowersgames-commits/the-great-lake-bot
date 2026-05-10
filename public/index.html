@@ -798,8 +798,7 @@ function loadSessionHistory() {
 function saveSession() {
   if (!currentSessionId || chatHistory.length === 0) return;
   const existingIdx = allSessions.findIndex(s => s.id === currentSessionId);
-  const session
-  Data = {
+  const sessionData = {
     id: currentSessionId,
     name: getSessionName(),
     preview: chatHistory[0]?.content?.substring(0, 60) || '',
