@@ -669,7 +669,7 @@ function loadSuggestedCrew() {
   } catch(e) { suggestedCrew = []; }
 }
 function copyLakeEmail() {
-  navigator.clipboard.writeText('lake@sandbox753d92b50bf48a580b75e13c1d32b85.mailgun.org')
+  navigator.clipboard.writeText('drop@thelakeapp.app')
     .then(() => {
       const btn = document.getElementById('copyEmailBtn');
       btn.textContent = '✅ Copied!';
@@ -1623,7 +1623,7 @@ function shareAsGroupSession() {
       <div class="help-item"><span class="help-icon">📨</span><div class="help-text">Forward any email to The Lake — it appears automatically in <strong>Past Tides</strong> within 30 seconds.</div></div>
       <div class="help-item"><span class="help-icon">📋</span><div class="help-text">Forward to this address:
         <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
-          <code id="lakeEmail" style="font-size:11px;background:rgba(255,255,255,0.08);padding:6px 10px;border-radius:6px;color:#7dd3fc;flex:1;word-break:break-all;">lake@sandbox753d92b50bf48a580b75e13c1d32b85.mailgun.org</code>
+          <code id="lakeEmail" style="font-size:11px;background:rgba(255,255,255,0.08);padding:6px 10px;border-radius:6px;color:#7dd3fc;flex:1;word-break:break-all;">drop@thelakeapp.app</code>
           <button onclick="copyLakeEmail()" style="background:rgba(255,255,255,0.1);border:none;border-radius:6px;padding:6px 10px;color:white;cursor:pointer;font-size:12px;white-space:nowrap;" id="copyEmailBtn">📋 Copy</button>
         </div>
       </div></div>
