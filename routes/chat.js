@@ -2,7 +2,7 @@
  * 🌊 The Great Lake Bot - Chat Route
  * The core Lake experience — waves in, reflections out.
  * Powered by Claude Sonnet with full governance enforcement (Rules 1-27).
- * Supports: text messages, file attachments, conversation history, mood context.
+ * Supports: text messages, file attachments, images, conversation history, mood context.
  */
 const express = require('express');
 const Anthropic = require('@anthropic-ai/sdk');
@@ -18,20 +18,17 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 50 * 1024 * 1024 }, // 50MB max
   fileFilter: (req, file, cb) => {
-    const allowed = [
-      'text/plain', 'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'text/csv', 'application/json',
-      'text/markdown', 'text/rtf',
-      'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'application/vnd.ms-powerpoint',
-      'application/vnd.openxmlformats-officedocument.presentationml.presentation'
-    ];
-    cb(null, true); // Accept all — let Claude handle it
+    cb(null, true); // Accept all — Claude handles it
   }
 });
+
+// ============================================
+// IMAGE MIME TYPES Claude can see natively
+// ============================================
+const IMAGE_TYPES = [
+  'image/jpeg', 'image/jpg', 'image/png',
+  'image/gif', 'image/webp'
+];
 
 // ============================================
 // ANTHROPIC CLIENT
@@ -52,7 +49,7 @@ const client = new Anthropic({
 function loadSystemPrompt() {
   const modelDir = path.join(__dirname, '..', 'core', 'model');
   const files = [
-    'master_doc.txt',       // Master doc first — highest priority
+    'master_doc.txt',
     'identity.txt',
     'tone.txt',
     'metaphors.txt',
@@ -91,7 +88,6 @@ function loadSystemPrompt() {
     return getFallbackPrompt();
   }
 
-  // Safety trim for context window
   const MAX_PROMPT_CHARS = 150000;
   if (systemPrompt.length > MAX_PROMPT_CHARS) {
     systemPrompt = systemPrompt.substring(0, MAX_PROMPT_CHARS);
@@ -148,39 +144,11 @@ Cut straight to the truth. Be sharp but not cruel.`
 // ============================================
 router.post('/', upload.single('file'), async function(req, res) {
   try {
-
     // 1. Extract message and mood
     let message = (req.body && req.body.message) ? req.body.message.trim() : '';
     const mood = (req.body && req.body.mood) || 'calm';
 
-    // 2. Handle file attachment
-    if (req.file) {
-      let fileContent = '';
-      try {
-        fileContent = req.file.buffer.toString('utf-8');
-      } catch (e) {
-        fileContent = '[Binary file — text extraction not supported. Please upload .txt, .md, .csv, or .json files for best results.]';
-      }
-
-      const fileHeader = `\n\n📄 ATTACHED FILE: ${req.file.originalname} (${formatBytes(req.file.size)})\n${'─'.repeat(50)}\n`;
-      const fileFooter = `\n${'─'.repeat(50)}\n[End of attached file]\n`;
-
-      message = message
-        ? message + fileHeader + fileContent + fileFooter
-        : `Please analyse this attached file:` + fileHeader + fileContent + fileFooter;
-
-      console.log('📎 File attached:', req.file.originalname, formatBytes(req.file.size));
-    }
-
-    // 3. Validate — need either message or file
-    if (!message) {
-      return res.status(400).json({
-        error: 'No wave received',
-        details: 'Send a message or attach a file to The Lake.',
-      });
-    }
-
-    // 4. Check API key
+    // 2. Check API key early
     if (!process.env.ANTHROPIC_API_KEY) {
       return res.status(500).json({
         error: 'The Lake is not configured',
@@ -188,11 +156,11 @@ router.post('/', upload.single('file'), async function(req, res) {
       });
     }
 
-    // 5. Load system prompt + inject mood
+    // 3. Load system prompt + inject mood
     let systemPrompt = loadSystemPrompt();
     systemPrompt += getMoodContext(mood);
 
-    // 6. Build conversation history
+    // 4. Build conversation history
     let conversationHistory = [];
     if (req.body.history) {
       try {
@@ -213,13 +181,74 @@ router.post('/', upload.single('file'), async function(req, res) {
       }
     }
 
-    // 7. Add current message
+    // 5. Build current user message — handle images vs text files
+    let userMessageContent;
+
+    if (req.file) {
+      const isImage = IMAGE_TYPES.includes(req.file.mimetype);
+
+      if (isImage) {
+        // 🖼️ Image — send natively to Claude Vision
+        const base64Image = req.file.buffer.toString('base64');
+        const mediaType = req.file.mimetype === 'image/jpg'
+          ? 'image/jpeg'
+          : req.file.mimetype;
+
+        console.log('🖼️ Image attached:', req.file.originalname, formatBytes(req.file.size));
+
+        userMessageContent = [
+          {
+            type: 'image',
+            source: {
+              type: 'base64',
+              media_type: mediaType,
+              data: base64Image,
+            },
+          },
+          {
+            type: 'text',
+            text: message
+              ? message
+              : 'Please analyse this image and give me your full Lake reflection on what you see.',
+          }
+        ];
+      } else {
+        // 📄 Text-based file
+        let fileContent = '';
+        try {
+          fileContent = req.file.buffer.toString('utf-8');
+        } catch (e) {
+          fileContent = '[Binary file — text extraction not supported. Please upload .txt, .md, .csv, or .json files for best results.]';
+        }
+
+        const fileHeader = `\n\n📄 ATTACHED FILE: ${req.file.originalname} (${formatBytes(req.file.size)})\n${'─'.repeat(50)}\n`;
+        const fileFooter = `\n${'─'.repeat(50)}\n[End of attached file]\n`;
+        const fullMessage = message
+          ? message + fileHeader + fileContent + fileFooter
+          : `Please analyse this attached file:` + fileHeader + fileContent + fileFooter;
+
+        console.log('📎 File attached:', req.file.originalname, formatBytes(req.file.size));
+
+        userMessageContent = fullMessage;
+      }
+    } else {
+      // 💬 Text only
+      if (!message) {
+        return res.status(400).json({
+          error: 'No wave received',
+          details: 'Send a message or attach a file to The Lake.',
+        });
+      }
+      userMessageContent = message;
+    }
+
+    // 6. Add current message to history
     conversationHistory.push({
       role: 'user',
-      content: message
+      content: userMessageContent
     });
 
-    // 8. Call Claude Sonnet
+    // 7. Call Claude Sonnet
     console.log('🌊 Sending to Claude Sonnet — mood:', mood, '| messages:', conversationHistory.length);
 
     const response = await client.messages.create({
@@ -229,7 +258,7 @@ router.post('/', upload.single('file'), async function(req, res) {
       messages: conversationHistory,
     });
 
-    // 9. Extract reflection
+    // 8. Extract reflection
     const reply = response.content &&
                   response.content[0] &&
                   response.content[0].text;
@@ -243,7 +272,7 @@ router.post('/', upload.single('file'), async function(req, res) {
 
     console.log('✅ Reflection sent — tokens in:', response.usage?.input_tokens, '| out:', response.usage?.output_tokens);
 
-    // 10. Send response
+    // 9. Send response
     res.json({
       reflection: reply,
       model: 'claude-sonnet-4-5',
