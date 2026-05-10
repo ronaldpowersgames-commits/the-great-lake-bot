@@ -2,14 +2,12 @@
  * 🌊 The Great Lake Bot - Main Server
  * Production-grade Express server with full governance enforcement (Rules 1–27).
  */
-
 const express = require('express');
 const path = require('path');
 const helmet = require('helmet');
 const cors = require('cors');
 const morgan = require('morgan');
 const config = require('./config');
-
 const { authenticate } = require('./middleware/auth');
 const { globalLimiter } = require('./middleware/rateLimiter');
 const { safetyFilter } = require('./middleware/governanceEnforcement');
@@ -25,6 +23,7 @@ const groupRoutes = require('./routes/groups');
 const updateRoutes = require('./routes/updates');
 const chatRoutes = require('./routes/chat');
 const crewRoutes = require('./routes/crew');
+const emailRoutes = require('./routes/email');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -95,8 +94,10 @@ app.use('/chat', chatRoutes);
 
 // Public crew endpoint
 app.use('/crew', crewRoutes);
-const emailRoutes = require('./routes/email');
+
+// ✅ Email webhook - PUBLIC - both paths covered
 app.use('/email', emailRoutes);
+app.use('/api/email', emailRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
@@ -123,7 +124,6 @@ if (config.nodeEnv !== 'production') {
     const email =
       (req.body && req.body.email) ||
       'ronnie@thegreatlakebot.example';
-
     const token = jwt.sign(
       { sub, email, roles: ['user'] },
       config.jwt.secret,
@@ -133,7 +133,6 @@ if (config.nodeEnv !== 'production') {
         expiresIn: config.jwt.expiry,
       }
     );
-
     res.json({
       message: `Welcome to ${config.appName}. Here is your dev token.`,
       token,
@@ -152,7 +151,6 @@ app.get('/', (req, res) => {
 // ============================================
 app.use(authenticate);
 app.use(safetyFilter);
-
 app.use('/onboarding', onboardingRoutes);
 app.use('/template', templateRoutes);
 app.use('/engine', engineRoutes);
