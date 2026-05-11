@@ -234,7 +234,7 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
 /* ── INPUT ROW ── */
 .input-row { display: flex; align-items: flex-end; gap: 7px; }
 .input-wrap { flex: 1; position: relative; }
-.lake-input { width: 100%; min-height: 44px; max-height: 116px; padding: 12px 42px 12px 14px; background: var(--lake-mid); border: 1px solid var(--dock-border); border-radius: 13px; color: var(--text-primary); font-size: 16px; font-family: inherit; resize: none; outline: none; line-height: 1.4; transition: border-color 0.2s; -webkit-appearance: none; }
+.lake-input { width: 100%; min-height: 58px; max-height: 116px; padding: 12px 42px 12px 14px; background: var(--lake-mid); border: 1px solid var(--dock-border); border-radius: 13px; color: var(--text-primary); font-size: 16px; font-family: inherit; resize: none; outline: none; line-height: 1.4; transition: border-color 0.2s; -webkit-appearance: none; }
 .lake-input:focus { border-color: var(--lake-glow); box-shadow: 0 0 0 3px rgba(45,140,240,0.1); }
 .lake-input::placeholder { color: var(--text-dim); }
 .attach-btn { position: absolute; right: 9px; bottom: 9px; width: 26px; height: 26px; border-radius: 7px; border: none; background: transparent; color: var(--text-dim); cursor: pointer; font-size: 15px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
@@ -1889,6 +1889,17 @@ async function shareAsGroupSession() {
     alert('Could not create share link. Try again.');
   }
 }
+
+// ============================================
+// MOBILE BACK BUTTON
+// ============================================
+history.pushState({ lake: true }, '');
+window.addEventListener('popstate', (e) => {
+  if (document.getElementById('welcomeScreen')) return; // already home
+  newSession();
+  history.pushState({ lake: true }, '');
+});
+  
 </script>
 </body>
 </html>
