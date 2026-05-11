@@ -18,6 +18,7 @@ router.post('/inbound', express.json(), (req, res) => {
       title: subject,
       source: 'email',
       from: from,
+      recipient: req.body.recipient || '', // ✅ must be here
       date: timestamp,
       preview: bodyPlain.substring(0, 100),
       attachments: attachments, // ✅ stored on session level
