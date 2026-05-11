@@ -420,6 +420,7 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
     <div class="login-field">
       <label>Your Name</label>
       <input type="text" id="loginName" placeholder="Enter your name..." autocomplete="name">
+      <input type="email" id="loginEmail" placeholder="Your email address" />
     </div>
     <div class="login-field">
       <label>Passphrase (optional)</label>
@@ -1045,6 +1046,7 @@ function getUserAvatarHTML() {
 // ============================================
 function doLogin() {
   const name = document.getElementById('loginName').value.trim();
+  const email = document.getElementById('loginEmail').value.trim().toLowerCase();
   if (!name) {
     const input = document.getElementById('loginName');
     input.focus();
@@ -1052,7 +1054,14 @@ function doLogin() {
     setTimeout(() => input.style.borderColor = '', 1500);
     return;
   }
-  currentUser = { name, guest: false };
+  if (!email) {
+    const input = document.getElementById('loginEmail');
+    input.focus();
+    input.style.borderColor = 'var(--danger)';
+    setTimeout(() => input.style.borderColor = '', 1500);
+    return;
+  }
+  currentUser = { name, email, guest: false };
   localStorage.setItem('lakeUser', JSON.stringify(currentUser));
   enterLake();
 }
@@ -1214,8 +1223,20 @@ async function loadEmailSessions() {
     if (!res.ok) return;
     const emailSessions = await res.json();
     if (!emailSessions.length) return;
+
+    // ✅ ONLY show emails sent FROM the logged-in user's email address
+    const myEmail = currentUser?.email?.toLowerCase() || '';
+    const mySessions = myEmail
+      ? emailSessions.filter(es => {
+          const sender = (es.from || '').toLowerCase();
+          return sender.includes(myEmail);
+        })
+      : [];
+
+    if (!mySessions.length) return;
+
     let changed = false;
-    emailSessions.forEach(es => {
+    mySessions.forEach(es => {
       const localKey = 'lakeEmail_' + es.id;
       if (!localStorage.getItem(localKey)) {
         localStorage.setItem(localKey, JSON.stringify(es));
@@ -1237,7 +1258,7 @@ async function loadEmailSessions() {
             role: 'user',
             content: emailBody,
             time: es.date || new Date().toISOString(),
-            attachments: es.attachments || []  // ✅ ADD THIS
+            attachments: es.attachments || []
           }],
           mood: 'analytical'
         });
