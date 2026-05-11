@@ -1481,6 +1481,7 @@ async function sendWave() {
     const formData = new FormData();
     formData.append('message', text);
     formData.append('mood', currentMood);
+    formData.append('userName', currentUser?.name || currentUser?.displayName || '');
     const historyToSend = chatHistory.slice(-11, -1).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.content }));
     formData.append('history', JSON.stringify(historyToSend));
     filesToSend.forEach(file => formData.append('file', file));
