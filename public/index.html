@@ -234,7 +234,7 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
 /* ── INPUT ROW ── */
 .input-row { display: flex; align-items: flex-end; gap: 7px; }
 .input-wrap { flex: 1; position: relative; }
-.lake-input { width: 100%; min-height: 58px; max-height: 116px; padding: 12px 42px 12px 14px; background: var(--lake-mid); border: 1px solid var(--dock-border); border-radius: 13px; color: var(--text-primary); font-size: 16px; font-family: inherit; resize: none; outline: none; line-height: 1.4; transition: border-color 0.2s; -webkit-appearance: none; }
+.lake-input { width: 100%; min-height: 70px; max-height: 116px; padding: 12px 42px 12px 14px; background: var(--lake-mid); border: 1px solid var(--dock-border); border-radius: 13px; color: var(--text-primary); font-size: 16px; font-family: inherit; resize: none; outline: none; line-height: 1.4; transition: border-color 0.2s; -webkit-appearance: none; }
 .lake-input:focus { border-color: var(--lake-glow); box-shadow: 0 0 0 3px rgba(45,140,240,0.1); }
 .lake-input::placeholder { color: var(--text-dim); }
 .attach-btn { position: absolute; right: 9px; bottom: 9px; width: 26px; height: 26px; border-radius: 7px; border: none; background: transparent; color: var(--text-dim); cursor: pointer; font-size: 15px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
@@ -474,6 +474,16 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
   display: flex; align-items: center; justify-content: center;
   transition: all 0.2s; flex-shrink: 0; align-self: stretch;
 }
+
+.suggestions-top-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+.suggestions-top-row::-webkit-scrollbar { height: 0; }
   
 </style>
 </head>
@@ -625,7 +635,12 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
     <div class="shore-dock">
       <div class="files-preview-container" id="filesPreviewContainer"></div>
       <div class="prompt-suggestions">
-        <button class="suggestions-toggle" onclick="toggleSuggestions()">💡 Prompt Suggestions ▾</button>
+        <div class="suggestions-top-row">
+          <button class="suggestions-toggle" onclick="toggleSuggestions()">💡 Prompt Suggestions ▾</button>
+          <button class="quick-action-btn" onclick="sendPrompt('Tag the key players in this')">🏷️ Tag Players</button>
+          <button class="quick-action-btn" onclick="sendPrompt('Map the influence dynamics')">🗺️ Map Influence</button>
+          <button class="quick-action-btn" onclick="sendPrompt('What are the undercurrents here?')">🌀 Undercurrents</button>
+        </div>
         <div class="suggestions-list" id="suggestionsList">
           <button class="quick-action-btn" onclick="sendPrompt('Read the currents — what is the real vibe here, not just the words?')">🧭 Read the Currents</button>
           <button class="quick-action-btn" onclick="sendPrompt('Surface the truth — cut through the noise and tell me what is really going on.')">🔍 Surface the Truth</button>
@@ -649,11 +664,8 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
       <div class="quick-actions">
         <button class="quick-action-btn" onclick="triggerFileInput()">📎 Drop a Log</button>
         <button class="quick-action-btn" onclick="triggerCamera()">📷 Take Photo</button>
-        <button class="quick-action-btn" onclick="sendPrompt('Tag the key players in this')">🏷️ Tag Players</button>
         <button class="quick-action-btn" onclick="sendPrompt('Summarize what we have so far')">📋 Summarize</button>
         <button class="quick-action-btn" onclick="sendPrompt('Generate a Lake Score Card for every crew member — rate each person on influence, transparency, reliability, and hidden agenda. Score each out of 10 with a one-line read.')">🃏 Score Cards</button>
-        <button class="quick-action-btn" onclick="sendPrompt('Map the influence dynamics')">🗺️ Map Influence</button>
-        <button class="quick-action-btn" onclick="sendPrompt('What are the undercurrents here?')">🌀 Undercurrents</button>
       </div>
       <div class="input-row">
         <div class="input-wrap">
