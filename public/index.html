@@ -38,6 +38,8 @@
 }
 html, body { height: 100%; height: -webkit-fill-available; overflow: hidden; }
 body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--lake-deep); color: var(--text-primary); display: flex; flex-direction: column; overscroll-behavior: none; }
+
+/* ── LOGIN ── */
 .login-screen { position: fixed; inset: 0; z-index: 1000; background: var(--lake-deep); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; padding-top: calc(24px + var(--safe-top)); overflow-y: auto; }
 .login-screen.hidden { display: none; }
 .login-logo { font-size: 72px; margin-bottom: 16px; animation: gentleFloat 4s ease-in-out infinite; }
@@ -60,7 +62,6 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
 .login-field input::placeholder { color: var(--text-dim); }
 .login-btn { width: 100%; padding: 16px; background: linear-gradient(135deg, var(--lake-glow), var(--lake-light)); border: none; border-radius: 14px; color: var(--lake-deep); font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 8px; transition: all 0.2s; }
 .login-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(45,140,240,0.3); }
-.login-btn:active { transform: translateY(0); }
 .login-divider { text-align: center; color: var(--text-dim); font-size: 12px; margin: 16px 0; position: relative; }
 .login-divider::before, .login-divider::after { content: ''; position: absolute; top: 50%; width: 40%; height: 1px; background: var(--dock-border); }
 .login-divider::before { left: 0; }
@@ -69,178 +70,186 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
 .login-guest-btn:hover { background: var(--lake-mid); color: var(--lake-light); }
 .login-install-hint { margin-top: 24px; padding: 14px 20px; background: rgba(45,140,240,0.08); border: 1px solid rgba(45,140,240,0.15); border-radius: 14px; text-align: center; font-size: 12px; color: var(--text-dim); max-width: 380px; width: 100%; }
 .login-install-hint strong { color: var(--lake-light); }
+
+/* ── WATER BG ── */
 .water-bg { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
 .water-bg::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(ellipse at 20% 50%, rgba(45,140,240,0.06) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(100,181,246,0.04) 0%, transparent 50%), radial-gradient(ellipse at 50% 80%, rgba(45,140,240,0.05) 0%, transparent 50%); animation: waterDrift 20s ease-in-out infinite; }
 @keyframes waterDrift { 0%, 100% { transform: translate(0,0) rotate(0deg); } 25% { transform: translate(-20px,10px) rotate(1deg); } 50% { transform: translate(10px,-15px) rotate(-0.5deg); } 75% { transform: translate(-10px,5px) rotate(0.5deg); } }
 @keyframes gentleFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+/* ── LAYOUT ── */
 .app-layout { display: flex; height: 100%; height: -webkit-fill-available; position: relative; z-index: 1; }
-.dock { width: 280px; min-width: 280px; background: var(--dock-bg); border-right: 1px solid var(--dock-border); display: flex; flex-direction: column; z-index: 200; transition: transform 0.3s cubic-bezier(0.4,0,0.2,1); }
-.dock-header { padding: 20px; padding-top: calc(20px + var(--safe-top)); border-bottom: 1px solid var(--dock-border); display: flex; align-items: center; gap: 12px; }
-.dock-logo { font-size: 28px; line-height: 1; }
-.dock-title { font-size: 18px; font-weight: 700; color: var(--lake-light); letter-spacing: 0.5px; }
-.dock-subtitle { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1.5px; }
-.new-session-btn { margin: 16px 16px 8px; padding: 12px; background: linear-gradient(135deg, var(--lake-glow), var(--lake-light)); border: none; border-radius: 12px; color: var(--lake-deep); font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; }
+
+/* ── DOCK ── */
+.dock { width: 272px; min-width: 272px; background: var(--dock-bg); border-right: 1px solid var(--dock-border); display: flex; flex-direction: column; z-index: 200; transition: transform 0.3s cubic-bezier(0.4,0,0.2,1); }
+.dock-header { padding: 16px 18px; padding-top: calc(16px + var(--safe-top)); border-bottom: 1px solid var(--dock-border); display: flex; align-items: center; gap: 10px; }
+.dock-logo { font-size: 26px; line-height: 1; }
+.dock-title { font-size: 17px; font-weight: 700; color: var(--lake-light); letter-spacing: 0.3px; }
+.dock-subtitle { font-size: 9px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1.5px; }
+.new-session-btn { margin: 12px 12px 6px; padding: 10px; background: linear-gradient(135deg, var(--lake-glow), var(--lake-light)); border: none; border-radius: 11px; color: var(--lake-deep); font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px; transition: all 0.2s; }
 .new-session-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(45,140,240,0.3); }
-.new-session-btn:active { transform: translateY(0); }
-.dock-section { padding: 8px 0; }
-.dock-section-title { padding: 8px 20px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-dim); }
-.sonar-wrap { padding: 0 16px 8px; position: relative; }
-.sonar-icon { position: absolute; left: 28px; top: 50%; transform: translateY(-50%); font-size: 14px; color: var(--text-dim); pointer-events: none; }
-.sonar-input { width: 100%; padding: 10px 14px 10px 36px; background: var(--lake-mid); border: 1px solid var(--dock-border); border-radius: 10px; color: var(--text-primary); font-size: 13px; outline: none; transition: border-color 0.2s; -webkit-appearance: none; }
+.dock-section { padding: 6px 0 2px; }
+.dock-section-title { padding: 6px 18px; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-dim); }
+.sonar-wrap { padding: 0 12px 6px; position: relative; }
+.sonar-icon { position: absolute; left: 24px; top: 50%; transform: translateY(-50%); font-size: 13px; color: var(--text-dim); pointer-events: none; }
+.sonar-input { width: 100%; padding: 9px 12px 9px 34px; background: var(--lake-mid); border: 1px solid var(--dock-border); border-radius: 9px; color: var(--text-primary); font-size: 12px; outline: none; transition: border-color 0.2s; -webkit-appearance: none; }
 .sonar-input:focus { border-color: var(--lake-glow); }
-.past-tides { flex: 1; overflow-y: auto; padding: 4px 8px; -webkit-overflow-scrolling: touch; }
-.tide-item { padding: 10px 12px; border-radius: 10px; cursor: pointer; display: flex; align-items: flex-start; gap: 10px; transition: background 0.15s; margin-bottom: 2px; }
+.past-tides { flex: 1; overflow-y: auto; padding: 2px 6px; -webkit-overflow-scrolling: touch; }
+.tide-item { padding: 8px 10px; border-radius: 9px; cursor: pointer; display: flex; align-items: flex-start; gap: 8px; transition: background 0.15s; margin-bottom: 1px; }
 .tide-item:hover, .tide-item:active { background: rgba(45,140,240,0.08); }
 .tide-item.active { background: rgba(45,140,240,0.12); border: 1px solid rgba(45,140,240,0.2); }
-.tide-icon { font-size: 16px; margin-top: 2px; flex-shrink: 0; }
+.tide-icon { font-size: 14px; margin-top: 2px; flex-shrink: 0; }
 .tide-info { overflow: hidden; flex: 1; }
-.tide-name { font-size: 13px; font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tide-preview { font-size: 11px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
-.tide-time { font-size: 10px; color: var(--text-dim); flex-shrink: 0; margin-top: 3px; }
-.tide-delete { width: 24px; height: 24px; border-radius: 6px; border: none; background: transparent; color: var(--text-dim); cursor: pointer; font-size: 12px; display: none; align-items: center; justify-content: center; flex-shrink: 0; }
-.tide-item:hover .tide-delete { display: flex; }
-.crew-list { padding: 4px 8px; max-height: 180px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-.tide-rename { 
-  background: none; border: none; cursor: pointer; 
-  font-size: 13px; padding: 4px; opacity: 0.4; 
-  transition: opacity 0.2s; flex-shrink: 0;
-  display: flex; /* always visible */
-}
+.tide-name { font-size: 12px; font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tide-preview { font-size: 10px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+.tide-time { font-size: 9px; color: var(--text-dim); flex-shrink: 0; margin-top: 3px; }
+.tide-rename { background: none; border: none; cursor: pointer; font-size: 12px; padding: 3px; opacity: 0.35; transition: opacity 0.2s; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
 .tide-rename:hover { opacity: 1; }
-
-.tide-delete { 
-  width: 24px; height: 24px; border-radius: 6px; 
-  border: none; background: transparent; 
-  color: var(--danger); cursor: pointer; font-size: 12px; 
-  display: none; /* hidden until hover */
-  align-items: center; justify-content: center; flex-shrink: 0;
-}
+.tide-delete { width: 22px; height: 22px; border-radius: 5px; border: none; background: transparent; color: var(--danger); cursor: pointer; font-size: 11px; display: none; align-items: center; justify-content: center; flex-shrink: 0; }
 .tide-item:hover .tide-delete { display: flex; }
-.crew-item { padding: 8px 12px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: background 0.15s; margin-bottom: 2px; }
+.crew-list { padding: 2px 6px; max-height: 160px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.crew-item { padding: 7px 10px; border-radius: 9px; cursor: pointer; display: flex; align-items: center; gap: 9px; transition: background 0.15s; margin-bottom: 1px; }
 .crew-item:hover, .crew-item:active { background: rgba(45,140,240,0.08); }
-.crew-avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; flex-shrink: 0; overflow: hidden; }
+.crew-avatar { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; overflow: hidden; }
 .crew-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-.crew-name { font-size: 13px; font-weight: 500; color: var(--text-primary); }
-.crew-nickname { font-size: 11px; color: var(--text-dim); }
-.dock-footer { padding: 12px 16px; padding-bottom: calc(12px + var(--safe-bottom)); border-top: 1px solid var(--dock-border); display: flex; align-items: center; gap: 12px; }
-.dock-footer-btn { width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--dock-border); background: transparent; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; transition: all 0.15s; }
+.crew-name { font-size: 12px; font-weight: 500; color: var(--text-primary); }
+.crew-nickname { font-size: 10px; color: var(--text-dim); }
+.dock-footer { padding: 10px 14px; padding-bottom: calc(10px + var(--safe-bottom)); border-top: 1px solid var(--dock-border); display: flex; align-items: center; gap: 10px; }
+.dock-footer-btn { width: 34px; height: 34px; border-radius: 9px; border: 1px solid var(--dock-border); background: transparent; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 15px; transition: all 0.15s; }
 .dock-footer-btn:hover { background: var(--lake-mid); color: var(--lake-light); }
-.dock-user-area { flex: 1; display: flex; align-items: center; gap: 10px; overflow: hidden; cursor: pointer; }
-.dock-user-avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, var(--sand), var(--driftwood)); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; overflow: hidden; border: 2px solid var(--dock-border); transition: border-color 0.2s; }
+.dock-user-area { flex: 1; display: flex; align-items: center; gap: 9px; overflow: hidden; cursor: pointer; }
+.dock-user-avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, var(--sand), var(--driftwood)); display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; overflow: hidden; border: 2px solid var(--dock-border); transition: border-color 0.2s; }
 .dock-user-avatar:hover { border-color: var(--lake-glow); }
 .dock-user-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-.dock-user { overflow: hidden; }
-.dock-user-name { font-size: 13px; font-weight: 500; color: var(--text-primary); }
-.dock-user-status { font-size: 10px; color: var(--success); }
+.dock-user-name { font-size: 12px; font-weight: 500; color: var(--text-primary); }
+.dock-user-status { font-size: 9px; color: var(--success); }
 .dock-toggle { display: none; position: fixed; top: calc(14px + var(--safe-top)); left: 14px; z-index: 300; width: 42px; height: 42px; border-radius: 12px; background: rgba(9,20,32,0.95); border: 1px solid var(--dock-border); color: var(--text-primary); font-size: 18px; cursor: pointer; align-items: center; justify-content: center; backdrop-filter: blur(10px); box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
+
+/* ── MAIN WINDOW ── */
 .lake-window { flex: 1; display: flex; flex-direction: column; position: relative; z-index: 5; min-width: 0; height: 100%; }
-.lake-header { padding: 14px 20px; padding-top: calc(14px + var(--safe-top)); border-bottom: 1px solid var(--dock-border); display: flex; align-items: center; justify-content: space-between; background: rgba(9,20,32,0.9); flex-shrink: 0; position: relative; }
-.lake-header-left { display: flex; align-items: center; gap: 10px; }
-.lake-avatar { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, var(--lake-glow), var(--lake-light)); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
-.lake-header-info h2 { font-size: 15px; font-weight: 600; color: var(--text-primary); }
-.lake-header-status { font-size: 11px; color: var(--text-dim); display: flex; align-items: center; gap: 4px; }
-.status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); display: inline-block; animation: pulse 2s ease-in-out infinite; }
+.lake-header { padding: 11px 16px; padding-top: calc(11px + var(--safe-top)); border-bottom: 1px solid var(--dock-border); display: flex; align-items: center; justify-content: space-between; background: rgba(9,20,32,0.9); flex-shrink: 0; position: relative; }
+.lake-header-left { display: flex; align-items: center; gap: 9px; }
+.lake-avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, var(--lake-glow), var(--lake-light)); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.lake-header-info h2 { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.lake-header-status { font-size: 10px; color: var(--text-dim); display: flex; align-items: center; gap: 4px; }
+.status-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--success); display: inline-block; animation: pulse 2s ease-in-out infinite; }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-.lake-header-right { display: flex; gap: 6px; }
-.header-btn { width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--dock-border); background: transparent; color: var(--text-secondary); cursor: pointer; font-size: 15px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+.lake-header-right { display: flex; gap: 5px; }
+.header-btn { width: 34px; height: 34px; border-radius: 9px; border: 1px solid var(--dock-border); background: transparent; color: var(--text-secondary); cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
 .header-btn:hover, .header-btn:active { background: var(--lake-mid); color: var(--lake-light); }
 .mood-selector { display: none; position: absolute; top: calc(100% + 8px); right: 16px; background: var(--dock-bg); border: 1px solid var(--dock-border); border-radius: 14px; padding: 8px; z-index: 50; box-shadow: 0 8px 32px rgba(0,0,0,0.5); min-width: 220px; }
 .mood-selector.show { display: block; }
-.mood-option { padding: 10px 14px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-secondary); transition: background 0.15s; }
-.mood-option:hover, .mood-option:active { background: rgba(45,140,240,0.1); }
+.mood-option { padding: 9px 13px; border-radius: 9px; cursor: pointer; display: flex; align-items: center; gap: 9px; font-size: 13px; color: var(--text-secondary); transition: background 0.15s; }
+.mood-option:hover { background: rgba(45,140,240,0.1); }
 .mood-option.active { background: rgba(45,140,240,0.15); color: var(--lake-light); }
-.mood-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-.currents-bar { padding: 8px 16px; border-bottom: 1px solid rgba(26,48,80,0.5); display: flex; align-items: center; gap: 8px; overflow-x: auto; background: rgba(13,31,60,0.4); flex-shrink: 0; -webkit-overflow-scrolling: touch; }
+.mood-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── CURRENTS BAR ── */
+.currents-bar { padding: 6px 14px; border-bottom: 1px solid rgba(26,48,80,0.4); display: flex; align-items: center; gap: 6px; overflow-x: auto; background: rgba(13,31,60,0.3); flex-shrink: 0; -webkit-overflow-scrolling: touch; }
 .currents-bar::-webkit-scrollbar { height: 0; }
-.currents-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); flex-shrink: 0; font-weight: 600; }
-.current-chip { padding: 4px 10px; background: rgba(45,140,240,0.1); border: 1px solid rgba(45,140,240,0.2); border-radius: 20px; font-size: 11px; color: var(--lake-light); white-space: nowrap; cursor: pointer; transition: all 0.15s; flex-shrink: 0; }
-.current-chip:hover { background: rgba(45,140,240,0.2); }
-.waves-container { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 14px; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+.currents-label { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); flex-shrink: 0; font-weight: 600; }
+.current-chip { padding: 3px 9px; background: rgba(45,140,240,0.08); border: 1px solid rgba(45,140,240,0.15); border-radius: 20px; font-size: 10px; color: var(--lake-light); white-space: nowrap; cursor: pointer; transition: all 0.15s; flex-shrink: 0; }
+.current-chip:hover { background: rgba(45,140,240,0.18); border-color: rgba(45,140,240,0.35); }
+.current-chip.persona-chip { background: linear-gradient(135deg, rgba(45,140,240,0.15), rgba(100,181,246,0.1)); border-color: rgba(45,140,240,0.3); font-weight: 600; }
+
+/* ── WAVES ── */
+.waves-container { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 12px; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
 .waves-container::-webkit-scrollbar { width: 3px; }
 .waves-container::-webkit-scrollbar-track { background: transparent; }
 .waves-container::-webkit-scrollbar-thumb { background: var(--lake-shimmer); border-radius: 4px; }
-.welcome-screen { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 24px 16px; min-height: 60vh; }
-.welcome-icon { font-size: 56px; margin-bottom: 14px; animation: gentleFloat 4s ease-in-out infinite; }
-.welcome-title { font-size: 24px; font-weight: 700; color: var(--lake-light); margin-bottom: 8px; }
-.welcome-sub { font-size: 13px; color: var(--text-dim); max-width: 340px; line-height: 1.6; margin-bottom: 28px; }
-.welcome-prompts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; max-width: 500px; }
-.welcome-prompt { padding: 12px 14px; background: rgba(45,140,240,0.08); border: 1px solid rgba(45,140,240,0.15); border-radius: 14px; color: var(--text-secondary); font-size: 12px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; text-align: left; line-height: 1.3; }
-.welcome-prompt:hover, .welcome-prompt:active { background: rgba(45,140,240,0.15); border-color: rgba(45,140,240,0.3); color: var(--lake-light); transform: translateY(-2px); }
-.wave { display: flex; gap: 10px; max-width: 85%; animation: waveIn 0.35s ease-out; }
-@keyframes waveIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.welcome-screen { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px 16px; min-height: 60vh; }
+.welcome-icon { font-size: 52px; margin-bottom: 12px; animation: gentleFloat 4s ease-in-out infinite; }
+.welcome-title { font-size: 22px; font-weight: 700; color: var(--lake-light); margin-bottom: 7px; }
+.welcome-sub { font-size: 13px; color: var(--text-dim); max-width: 320px; line-height: 1.6; margin-bottom: 24px; }
+.welcome-prompts { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; width: 100%; max-width: 480px; }
+.welcome-prompt { padding: 11px 13px; background: rgba(45,140,240,0.07); border: 1px solid rgba(45,140,240,0.13); border-radius: 13px; color: var(--text-secondary); font-size: 12px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; text-align: left; line-height: 1.3; }
+.welcome-prompt:hover { background: rgba(45,140,240,0.14); border-color: rgba(45,140,240,0.28); color: var(--lake-light); transform: translateY(-2px); }
+.wave { display: flex; gap: 9px; max-width: 84%; animation: waveIn 0.35s ease-out; }
+@keyframes waveIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 .wave.user-wave { align-self: flex-end; flex-direction: row-reverse; }
-.wave-avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; margin-top: 4px; overflow: hidden; }
+.wave-avatar { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; margin-top: 4px; overflow: hidden; }
 .wave-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 .wave.lake-wave .wave-avatar { background: linear-gradient(135deg, var(--lake-glow), var(--lake-light)); }
 .wave.user-wave .wave-avatar { background: linear-gradient(135deg, var(--sand), var(--driftwood)); }
-.wave-content { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.wave-sender { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.wave-content { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.wave-sender { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
 .lake-wave .wave-sender { color: var(--lake-light); }
 .user-wave .wave-sender { color: var(--sand); text-align: right; }
-.wave-bubble { padding: 12px 16px; border-radius: 18px; font-size: 14px; line-height: 1.6; word-wrap: break-word; word-break: break-word; }
+.wave-bubble { padding: 11px 15px; border-radius: 17px; font-size: 14px; line-height: 1.6; word-wrap: break-word; word-break: break-word; }
 .lake-wave .wave-bubble { background: var(--lake-surface); border: 1px solid var(--dock-border); border-top-left-radius: 4px; color: var(--text-primary); }
 .user-wave .wave-bubble { background: linear-gradient(135deg, rgba(45,140,240,0.2), rgba(45,140,240,0.1)); border: 1px solid rgba(45,140,240,0.2); border-top-right-radius: 4px; color: var(--text-primary); }
-.wave-time { font-size: 10px; color: var(--text-dim); }
+.wave-time { font-size: 9px; color: var(--text-dim); }
 .user-wave .wave-time { text-align: right; }
-/* ATTACHMENT THUMBNAILS IN CHAT */
+
+/* ── ATTACHMENTS ── */
 .wave-attachments { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
-.wave-attachment { display: flex; align-items: center; gap: 6px; padding: 6px 10px; background: rgba(45,140,240,0.1); border: 1px solid rgba(45,140,240,0.2); border-radius: 8px; cursor: pointer; transition: all 0.15s; text-decoration: none; max-width: 200px; }
+.wave-attachment { display: flex; align-items: center; gap: 6px; padding: 5px 9px; background: rgba(45,140,240,0.1); border: 1px solid rgba(45,140,240,0.2); border-radius: 7px; cursor: pointer; transition: all 0.15s; max-width: 200px; }
 .wave-attachment:hover { background: rgba(45,140,240,0.2); }
-.wave-attachment-thumb { width: 48px; height: 48px; border-radius: 6px; object-fit: cover; flex-shrink: 0; }
-.wave-attachment-icon { font-size: 20px; flex-shrink: 0; }
-.wave-attachment-name { font-size: 11px; color: var(--lake-light); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-/* ATTACHMENT LIGHTBOX */
-.attachment-lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; align-items: center; justify-content: center; flex-direction: column; gap: 16px; }
+.wave-attachment-thumb { width: 44px; height: 44px; border-radius: 5px; object-fit: cover; flex-shrink: 0; }
+.wave-attachment-icon { font-size: 18px; flex-shrink: 0; }
+.wave-attachment-name { font-size: 10px; color: var(--lake-light); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.attachment-lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 1000; align-items: center; justify-content: center; flex-direction: column; gap: 14px; }
 .attachment-lightbox.show { display: flex; }
 .attachment-lightbox img { max-width: 90vw; max-height: 80vh; border-radius: 12px; object-fit: contain; }
-.attachment-lightbox-name { color: var(--text-secondary); font-size: 13px; }
-.attachment-lightbox-close { position: absolute; top: 20px; right: 20px; width: 40px; height: 40px; border-radius: 12px; border: 1px solid var(--dock-border); background: var(--dock-bg); color: var(--text-primary); font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-.ripple { display: none; align-self: flex-start; padding: 14px 18px; background: var(--lake-surface); border: 1px solid var(--dock-border); border-radius: 18px; border-top-left-radius: 4px; margin-left: 42px; }
-.ripple.show { display: flex; gap: 6px; align-items: center; }
-.ripple-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--lake-light); opacity: 0.3; animation: rippleAnim 1.4s ease-in-out infinite; }
+.attachment-lightbox-name { color: var(--text-secondary); font-size: 12px; }
+.attachment-lightbox-close { position: absolute; top: 20px; right: 20px; width: 38px; height: 38px; border-radius: 11px; border: 1px solid var(--dock-border); background: var(--dock-bg); color: var(--text-primary); font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+/* ── RIPPLE ── */
+.ripple { display: none; align-self: flex-start; padding: 12px 16px; background: var(--lake-surface); border: 1px solid var(--dock-border); border-radius: 17px; border-top-left-radius: 4px; margin-left: 39px; }
+.ripple.show { display: flex; gap: 5px; align-items: center; }
+.ripple-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--lake-light); opacity: 0.3; animation: rippleAnim 1.4s ease-in-out infinite; }
 .ripple-dot:nth-child(2) { animation-delay: 0.2s; }
 .ripple-dot:nth-child(3) { animation-delay: 0.4s; }
 @keyframes rippleAnim { 0%, 60%, 100% { opacity: 0.3; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-5px); } }
-.shore-dock { padding: 10px 14px; padding-bottom: calc(10px + var(--safe-bottom)); border-top: 1px solid var(--dock-border); background: rgba(9,20,32,0.95); flex-shrink: 0; }
-.prompt-suggestions { padding: 4px 0 6px; }
-.suggestions-toggle { background: rgba(45,140,240,0.06); border: 1px solid rgba(45,140,240,0.15); color: var(--text-dim); border-radius: 20px; padding: 6px 14px; font-size: 12px; cursor: pointer; margin-bottom: 6px; transition: all 0.15s; }
-.suggestions-toggle:hover { color: var(--lake-light); border-color: rgba(45,140,240,0.3); }
-.suggestions-list { display: none; flex-wrap: wrap; gap: 6px; padding: 6px 0; max-height: 160px; overflow-y: auto; }
+
+/* ── SHORE DOCK (input area) — slightly tighter ── */
+.shore-dock { padding: 8px 12px; padding-bottom: calc(8px + var(--safe-bottom)); border-top: 1px solid var(--dock-border); background: rgba(9,20,32,0.95); flex-shrink: 0; }
+.prompt-suggestions { padding: 3px 0 5px; }
+.suggestions-toggle { background: rgba(45,140,240,0.05); border: 1px solid rgba(45,140,240,0.12); color: var(--text-dim); border-radius: 20px; padding: 5px 12px; font-size: 11px; cursor: pointer; margin-bottom: 5px; transition: all 0.15s; }
+.suggestions-toggle:hover { color: var(--lake-light); border-color: rgba(45,140,240,0.28); }
+.suggestions-list { display: none; flex-wrap: wrap; gap: 5px; padding: 5px 0; max-height: 150px; overflow-y: auto; }
 .suggestions-list.open { display: flex; }
-.quick-actions { display: flex; gap: 6px; margin-bottom: 10px; overflow-x: auto; padding-bottom: 2px; -webkit-overflow-scrolling: touch; }
+.quick-actions { display: flex; gap: 5px; margin-bottom: 8px; overflow-x: auto; padding-bottom: 1px; -webkit-overflow-scrolling: touch; }
 .quick-actions::-webkit-scrollbar { height: 0; }
-.quick-action-btn { padding: 6px 12px; background: rgba(45,140,240,0.06); border: 1px solid rgba(45,140,240,0.12); border-radius: 20px; color: var(--text-dim); font-size: 11px; cursor: pointer; white-space: nowrap; transition: all 0.15s; display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+.quick-action-btn { padding: 5px 11px; background: rgba(45,140,240,0.05); border: 1px solid rgba(45,140,240,0.1); border-radius: 20px; color: var(--text-dim); font-size: 11px; cursor: pointer; white-space: nowrap; transition: all 0.15s; display: flex; align-items: center; gap: 3px; flex-shrink: 0; }
 .quick-action-btn:hover, .quick-action-btn:active { background: rgba(45,140,240,0.12); color: var(--lake-light); border-color: rgba(45,140,240,0.25); }
-/* MULTI-FILE PREVIEW */
-.files-preview-container { display: none; flex-wrap: wrap; gap: 8px; padding: 8px 0; margin-bottom: 8px; }
+
+/* ── MULTI-FILE PREVIEW ── */
+.files-preview-container { display: none; flex-wrap: wrap; gap: 7px; padding: 7px 0; margin-bottom: 6px; }
 .files-preview-container.show { display: flex; }
-.file-preview-chip { display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: rgba(45,140,240,0.08); border: 1px solid rgba(45,140,240,0.15); border-radius: 10px; max-width: 200px; }
-.file-preview-chip-thumb { width: 32px; height: 32px; border-radius: 6px; object-fit: cover; flex-shrink: 0; }
-.file-preview-chip-icon { font-size: 20px; flex-shrink: 0; }
+.file-preview-chip { display: flex; align-items: center; gap: 7px; padding: 5px 9px; background: rgba(45,140,240,0.08); border: 1px solid rgba(45,140,240,0.14); border-radius: 9px; max-width: 190px; }
+.file-preview-chip-thumb { width: 28px; height: 28px; border-radius: 5px; object-fit: cover; flex-shrink: 0; }
+.file-preview-chip-icon { font-size: 18px; flex-shrink: 0; }
 .file-preview-chip-info { flex: 1; min-width: 0; }
-.file-preview-chip-name { font-size: 11px; font-weight: 500; color: var(--lake-light); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.file-preview-chip-size { font-size: 10px; color: var(--text-dim); }
-.file-preview-chip-remove { width: 20px; height: 20px; border-radius: 4px; border: none; background: rgba(239,83,80,0.1); color: var(--danger); cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-/* ATTACH MENU */
-.attach-menu { display: none; position: absolute; bottom: calc(100% + 8px); right: 0; background: var(--dock-bg); border: 1px solid var(--dock-border); border-radius: 14px; padding: 8px; z-index: 50; box-shadow: 0 8px 32px rgba(0,0,0,0.5); min-width: 180px; }
+.file-preview-chip-name { font-size: 10px; font-weight: 500; color: var(--lake-light); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.file-preview-chip-size { font-size: 9px; color: var(--text-dim); }
+.file-preview-chip-remove { width: 18px; height: 18px; border-radius: 4px; border: none; background: rgba(239,83,80,0.1); color: var(--danger); cursor: pointer; font-size: 11px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+/* ── ATTACH MENU ── */
+.attach-menu { display: none; position: absolute; bottom: calc(100% + 8px); right: 0; background: var(--dock-bg); border: 1px solid var(--dock-border); border-radius: 13px; padding: 7px; z-index: 50; box-shadow: 0 8px 32px rgba(0,0,0,0.5); min-width: 170px; }
 .attach-menu.show { display: block; }
-.attach-menu-item { padding: 10px 14px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-secondary); transition: background 0.15s; }
+.attach-menu-item { padding: 9px 13px; border-radius: 9px; cursor: pointer; display: flex; align-items: center; gap: 9px; font-size: 13px; color: var(--text-secondary); transition: background 0.15s; }
 .attach-menu-item:hover { background: rgba(45,140,240,0.1); color: var(--lake-light); }
-.input-row { display: flex; align-items: flex-end; gap: 8px; }
+
+/* ── INPUT ROW ── */
+.input-row { display: flex; align-items: flex-end; gap: 7px; }
 .input-wrap { flex: 1; position: relative; }
-.lake-input { width: 100%; min-height: 46px; max-height: 120px; padding: 13px 44px 13px 16px; background: var(--lake-mid); border: 1px solid var(--dock-border); border-radius: 14px; color: var(--text-primary); font-size: 16px; font-family: inherit; resize: none; outline: none; line-height: 1.4; transition: border-color 0.2s; -webkit-appearance: none; }
+.lake-input { width: 100%; min-height: 44px; max-height: 116px; padding: 12px 42px 12px 14px; background: var(--lake-mid); border: 1px solid var(--dock-border); border-radius: 13px; color: var(--text-primary); font-size: 16px; font-family: inherit; resize: none; outline: none; line-height: 1.4; transition: border-color 0.2s; -webkit-appearance: none; }
 .lake-input:focus { border-color: var(--lake-glow); box-shadow: 0 0 0 3px rgba(45,140,240,0.1); }
 .lake-input::placeholder { color: var(--text-dim); }
-.attach-btn { position: absolute; right: 10px; bottom: 10px; width: 28px; height: 28px; border-radius: 8px; border: none; background: transparent; color: var(--text-dim); cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
-.attach-btn:hover, .attach-btn:active { color: var(--lake-light); background: rgba(45,140,240,0.1); }
-.send-btn { width: 46px; height: 46px; border-radius: 13px; border: none; background: linear-gradient(135deg, var(--lake-glow), var(--lake-light)); color: var(--lake-deep); font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; }
+.attach-btn { position: absolute; right: 9px; bottom: 9px; width: 26px; height: 26px; border-radius: 7px; border: none; background: transparent; color: var(--text-dim); cursor: pointer; font-size: 15px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+.attach-btn:hover { color: var(--lake-light); background: rgba(45,140,240,0.1); }
+.send-btn { width: 44px; height: 44px; border-radius: 12px; border: none; background: linear-gradient(135deg, var(--lake-glow), var(--lake-light)); color: var(--lake-deep); font-size: 17px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; }
 .send-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(45,140,240,0.3); }
 .send-btn:active { transform: scale(0.92); }
-.mic-btn { width: 46px; height: 46px; border-radius: 13px; border: none; background: var(--lake-mid); border: 1px solid var(--dock-border); color: var(--text-secondary); font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; }
+.mic-btn { width: 44px; height: 44px; border-radius: 12px; border: none; background: var(--lake-mid); border: 1px solid var(--dock-border); color: var(--text-secondary); font-size: 19px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; }
 .mic-btn.listening { background: rgba(239,83,80,0.2); border-color: var(--danger); animation: pulse 1s ease-in-out infinite; }
-.input-hint { text-align: center; padding-top: 6px; font-size: 10px; color: var(--text-dim); }
+.input-hint { text-align: center; padding-top: 4px; font-size: 10px; color: var(--text-dim); opacity: 0.7; }
 #fileInput { display: none; }
 #cameraInput { display: none; }
+#imageInput { display: none; }
+
+/* ── INSTALL BANNER ── */
 .install-banner { display: none; position: fixed; bottom: calc(20px + var(--safe-bottom)); left: 50%; transform: translateX(-50%); background: var(--lake-surface); border: 1px solid var(--lake-glow); border-radius: 16px; padding: 14px 20px; z-index: 500; box-shadow: 0 8px 32px rgba(0,0,0,0.4); width: calc(100% - 32px); max-width: 380px; align-items: center; gap: 12px; animation: slideUp 0.4s ease-out; }
 .install-banner.show { display: flex; }
 @keyframes slideUp { from { opacity: 0; transform: translateX(-50%) translateY(20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
@@ -249,30 +258,35 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
 .install-banner-text small { display: block; color: var(--text-dim); font-size: 11px; margin-top: 2px; }
 .install-banner-btn { padding: 8px 16px; background: linear-gradient(135deg, var(--lake-glow), var(--lake-light)); border: none; border-radius: 10px; color: var(--lake-deep); font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
 .install-banner-close { width: 28px; height: 28px; border-radius: 8px; border: none; background: transparent; color: var(--text-dim); cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; }
+
+/* ── DEPTHS PANEL ── */
 .depths-panel { display: none; position: fixed; top: 0; right: 0; bottom: 0; width: 300px; background: var(--dock-bg); border-left: 1px solid var(--dock-border); z-index: 400; flex-direction: column; box-shadow: -8px 0 32px rgba(0,0,0,0.4); }
 .depths-panel.show { display: flex; }
-.depths-header { padding: 20px; padding-top: calc(20px + var(--safe-top)); border-bottom: 1px solid var(--dock-border); display: flex; align-items: center; justify-content: space-between; }
-.depths-header h3 { font-size: 16px; color: var(--lake-light); }
-.depths-close { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--dock-border); background: transparent; color: var(--text-secondary); cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; }
-.depths-content { flex: 1; overflow-y: auto; padding: 20px; -webkit-overflow-scrolling: touch; }
-.depths-section { margin-bottom: 24px; }
-.depths-section h4 { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 10px; }
-.depths-profile { display: flex; flex-direction: column; align-items: center; padding: 16px; background: var(--lake-surface); border-radius: 14px; margin-bottom: 16px; cursor: pointer; transition: background 0.15s; }
+.depths-header { padding: 18px; padding-top: calc(18px + var(--safe-top)); border-bottom: 1px solid var(--dock-border); display: flex; align-items: center; justify-content: space-between; }
+.depths-header h3 { font-size: 15px; color: var(--lake-light); }
+.depths-close { width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--dock-border); background: transparent; color: var(--text-secondary); cursor: pointer; font-size: 15px; display: flex; align-items: center; justify-content: center; }
+.depths-content { flex: 1; overflow-y: auto; padding: 18px; -webkit-overflow-scrolling: touch; }
+.depths-section { margin-bottom: 20px; }
+.depths-section h4 { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 8px; }
+.depths-profile { display: flex; flex-direction: column; align-items: center; padding: 14px; background: var(--lake-surface); border-radius: 13px; margin-bottom: 14px; cursor: pointer; transition: background 0.15s; }
 .depths-profile:hover { background: var(--lake-shimmer); }
-.depths-profile-pic { width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, var(--sand), var(--driftwood)); display: flex; align-items: center; justify-content: center; font-size: 28px; overflow: hidden; border: 2px solid var(--dock-border); margin-bottom: 8px; }
+.depths-profile-pic { width: 58px; height: 58px; border-radius: 50%; background: linear-gradient(135deg, var(--sand), var(--driftwood)); display: flex; align-items: center; justify-content: center; font-size: 26px; overflow: hidden; border: 2px solid var(--dock-border); margin-bottom: 7px; }
 .depths-profile-pic img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-.depths-profile-name { font-size: 15px; font-weight: 600; color: var(--text-primary); }
-.depths-profile-hint { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
-.depths-option { padding: 10px 14px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 10px; margin-bottom: 4px; transition: background 0.15s; font-size: 13px; color: var(--text-secondary); }
-.depths-option:hover, .depths-option:active { background: rgba(45,140,240,0.08); }
+.depths-profile-name { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.depths-profile-hint { font-size: 10px; color: var(--text-dim); margin-top: 3px; }
+.depths-option { padding: 9px 13px; border-radius: 9px; cursor: pointer; display: flex; align-items: center; gap: 9px; margin-bottom: 3px; transition: background 0.15s; font-size: 13px; color: var(--text-secondary); }
+.depths-option:hover { background: rgba(45,140,240,0.08); }
 .depths-option.active { background: rgba(45,140,240,0.12); color: var(--lake-light); }
-.logout-btn { width: 100%; padding: 12px; background: rgba(239,83,80,0.1); border: 1px solid rgba(239,83,80,0.2); border-radius: 12px; color: var(--danger); font-size: 14px; font-weight: 500; cursor: pointer; margin-top: 8px; transition: all 0.2s; }
+.depths-info { padding: 7px 11px; font-size: 12px; color: var(--text-dim); cursor: default; }
+.logout-btn { width: 100%; padding: 11px; background: rgba(239,83,80,0.1); border: 1px solid rgba(239,83,80,0.2); border-radius: 11px; color: var(--danger); font-size: 13px; font-weight: 500; cursor: pointer; margin-top: 6px; transition: all 0.2s; }
 .logout-btn:hover { background: rgba(239,83,80,0.2); }
+
+/* ── RESPONSIVE ── */
 @media (max-width: 768px) {
   .dock { position: fixed; top: 0; left: 0; bottom: 0; transform: translateX(-100%); z-index: 200; box-shadow: 8px 0 32px rgba(0,0,0,0.6); width: 80vw; max-width: 300px; min-width: unset; }
   .dock.open { transform: translateX(0); }
   .dock-toggle { display: flex; }
-  .lake-header { padding-left: 66px; }
+  .lake-header { padding-left: 64px; }
   .wave { max-width: 90%; }
   .welcome-prompts { grid-template-columns: 1fr; }
   .welcome-title { font-size: 20px; }
@@ -280,86 +294,94 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
   .input-hint { display: none; }
 }
 @media (max-width: 380px) {
-  .lake-header { padding-left: 60px; padding-right: 10px; }
-  .header-btn { width: 32px; height: 32px; font-size: 14px; }
-  .wave-bubble { font-size: 13px; padding: 10px 14px; }
+  .lake-header { padding-left: 58px; padding-right: 8px; }
+  .header-btn { width: 30px; height: 30px; font-size: 13px; }
+  .wave-bubble { font-size: 13px; padding: 10px 13px; }
 }
 .dock-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 150; pointer-events: none; }
 .dock-overlay.show { display: block; pointer-events: auto; left: 80vw; width: 20vw; }
 .past-tides::-webkit-scrollbar { width: 3px; }
 .past-tides::-webkit-scrollbar-track { background: transparent; }
 .past-tides::-webkit-scrollbar-thumb { background: var(--dock-border); border-radius: 3px; }
-.suggested-crew-section { padding: 4px 8px 0; }
-.suggested-title { padding: 8px 12px 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--sand); display: flex; align-items: center; gap: 6px; }
-.suggested-item { padding: 8px 12px; border-radius: 10px; display: flex; align-items: center; gap: 8px; margin-bottom: 2px; background: rgba(200,169,110,0.06); border: 1px solid rgba(200,169,110,0.12); }
-.suggested-name { flex: 1; font-size: 13px; color: var(--text-secondary); font-style: italic; }
-.suggested-approve { width: 26px; height: 26px; border-radius: 8px; border: none; background: rgba(102,187,106,0.15); color: var(--success); cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+
+/* ── SUGGESTED CREW ── */
+.suggested-crew-section { padding: 3px 6px 0; }
+.suggested-title { padding: 6px 10px 3px; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--sand); display: flex; align-items: center; gap: 5px; }
+.suggested-item { padding: 7px 10px; border-radius: 9px; display: flex; align-items: center; gap: 7px; margin-bottom: 2px; background: rgba(200,169,110,0.06); border: 1px solid rgba(200,169,110,0.12); }
+.suggested-name { flex: 1; font-size: 12px; color: var(--text-secondary); font-style: italic; }
+.suggested-approve { width: 24px; height: 24px; border-radius: 7px; border: none; background: rgba(102,187,106,0.15); color: var(--success); cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
 .suggested-approve:hover { background: rgba(102,187,106,0.3); }
-.suggested-dismiss { width: 26px; height: 26px; border-radius: 8px; border: none; background: rgba(239,83,80,0.1); color: var(--danger); cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+.suggested-dismiss { width: 24px; height: 24px; border-radius: 7px; border: none; background: rgba(239,83,80,0.1); color: var(--danger); cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
 .suggested-dismiss:hover { background: rgba(239,83,80,0.25); }
+
+/* ── CREW MODAL ── */
 .crew-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 600; align-items: center; justify-content: center; backdrop-filter: blur(4px); padding: 20px; }
 .crew-modal-overlay.show { display: flex; }
 .crew-modal { background: var(--dock-bg); border: 1px solid var(--dock-border); border-radius: 20px; padding: 24px; width: 100%; max-width: 360px; box-shadow: 0 16px 48px rgba(0,0,0,0.6); animation: waveIn 0.3s ease-out; }
 .crew-modal h3 { font-size: 16px; color: var(--lake-light); margin-bottom: 20px; text-align: center; }
-.crew-modal-field { margin-bottom: 14px; }
-.crew-modal-field label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 6px; }
-.crew-modal-field input, .crew-modal-field textarea { width: 100%; padding: 12px 14px; background: var(--lake-mid); border: 1px solid var(--dock-border); border-radius: 10px; color: var(--text-primary); font-size: 14px; font-family: inherit; outline: none; transition: border-color 0.2s; -webkit-appearance: none; }
+.crew-modal-field { margin-bottom: 13px; }
+.crew-modal-field label { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 5px; }
+.crew-modal-field input, .crew-modal-field textarea { width: 100%; padding: 11px 13px; background: var(--lake-mid); border: 1px solid var(--dock-border); border-radius: 9px; color: var(--text-primary); font-size: 14px; font-family: inherit; outline: none; transition: border-color 0.2s; -webkit-appearance: none; }
 .crew-modal-field input:focus, .crew-modal-field textarea:focus { border-color: var(--lake-glow); }
-.crew-modal-field textarea { resize: none; height: 70px; line-height: 1.5; }
-.crew-modal-actions { display: flex; gap: 10px; margin-top: 20px; }
-.crew-modal-save { flex: 1; padding: 12px; background: linear-gradient(135deg, var(--lake-glow), var(--lake-light)); border: none; border-radius: 12px; color: var(--lake-deep); font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+.crew-modal-field textarea { resize: none; height: 66px; line-height: 1.5; }
+.crew-modal-actions { display: flex; gap: 9px; margin-top: 18px; }
+.crew-modal-save { flex: 1; padding: 11px; background: linear-gradient(135deg, var(--lake-glow), var(--lake-light)); border: none; border-radius: 11px; color: var(--lake-deep); font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
 .crew-modal-save:hover { transform: translateY(-1px); }
-.crew-modal-cancel { padding: 12px 18px; background: transparent; border: 1px solid var(--dock-border); border-radius: 12px; color: var(--text-secondary); font-size: 14px; cursor: pointer; transition: all 0.2s; }
+.crew-modal-cancel { padding: 11px 16px; background: transparent; border: 1px solid var(--dock-border); border-radius: 11px; color: var(--text-secondary); font-size: 14px; cursor: pointer; }
 .crew-modal-cancel:hover { background: var(--lake-mid); }
-.crew-modal-delete { padding: 12px; background: rgba(239,83,80,0.1); border: 1px solid rgba(239,83,80,0.2); border-radius: 12px; color: var(--danger); font-size: 14px; cursor: pointer; transition: all 0.2s; }
+.crew-modal-delete { padding: 11px; background: rgba(239,83,80,0.1); border: 1px solid rgba(239,83,80,0.2); border-radius: 11px; color: var(--danger); font-size: 14px; cursor: pointer; }
 .crew-modal-delete:hover { background: rgba(239,83,80,0.2); }
+
+/* ── CREW CARD ── */
 .crew-card-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 600; align-items: flex-end; justify-content: center; backdrop-filter: blur(4px); padding: 20px; }
 .crew-card-overlay.show { display: flex; }
-.crew-card { background: var(--dock-bg); border: 1px solid var(--dock-border); border-radius: 24px 24px 16px 16px; padding: 28px 24px 32px; width: 100%; max-width: 420px; box-shadow: 0 -8px 48px rgba(0,0,0,0.5); animation: slideUpCard 0.3s ease-out; }
+.crew-card { background: var(--dock-bg); border: 1px solid var(--dock-border); border-radius: 24px 24px 16px 16px; padding: 26px 22px 30px; width: 100%; max-width: 420px; box-shadow: 0 -8px 48px rgba(0,0,0,0.5); animation: slideUpCard 0.3s ease-out; }
 @keyframes slideUpCard { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-.crew-card-header { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
-.crew-card-avatar { width: 56px; height: 56px; border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 800; color: white; flex-shrink: 0; }
+.crew-card-header { display: flex; align-items: center; gap: 15px; margin-bottom: 18px; }
+.crew-card-avatar { width: 54px; height: 54px; border-radius: 17px; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 800; color: white; flex-shrink: 0; }
 .crew-card-info { flex: 1; min-width: 0; }
-.crew-card-name { font-size: 18px; font-weight: 700; color: var(--text-primary); margin-bottom: 2px; }
-.crew-card-nickname { font-size: 13px; color: var(--text-secondary); }
-.crew-card-codename { display: inline-block; margin-top: 6px; padding: 3px 10px; background: rgba(79,195,247,0.1); border: 1px solid rgba(79,195,247,0.2); border-radius: 20px; font-size: 12px; color: var(--lake-light); font-style: italic; }
-.crew-card-context { padding: 14px 16px; background: rgba(255,255,255,0.03); border: 1px solid var(--dock-border); border-radius: 12px; font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 20px; font-style: italic; }
+.crew-card-name { font-size: 17px; font-weight: 700; color: var(--text-primary); margin-bottom: 2px; }
+.crew-card-nickname { font-size: 12px; color: var(--text-secondary); }
+.crew-card-codename { display: inline-block; margin-top: 5px; padding: 3px 9px; background: rgba(79,195,247,0.1); border: 1px solid rgba(79,195,247,0.2); border-radius: 20px; font-size: 11px; color: var(--lake-light); font-style: italic; }
+.crew-card-context { padding: 12px 14px; background: rgba(255,255,255,0.03); border: 1px solid var(--dock-border); border-radius: 11px; font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 18px; font-style: italic; }
 .crew-card-context.empty { color: var(--text-dim); }
-.crew-card-actions { display: flex; gap: 10px; }
-.crew-card-ask { flex: 1; padding: 13px; background: linear-gradient(135deg, var(--lake-glow), var(--lake-light)); border: none; border-radius: 12px; color: var(--lake-deep); font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+.crew-card-actions { display: flex; gap: 9px; }
+.crew-card-ask { flex: 1; padding: 12px; background: linear-gradient(135deg, var(--lake-glow), var(--lake-light)); border: none; border-radius: 11px; color: var(--lake-deep); font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
 .crew-card-ask:hover { transform: translateY(-1px); }
-.crew-card-edit { padding: 13px 16px; background: transparent; border: 1px solid var(--dock-border); border-radius: 12px; color: var(--text-secondary); font-size: 14px; cursor: pointer; transition: all 0.2s; }
+.crew-card-edit { padding: 12px 15px; background: transparent; border: 1px solid var(--dock-border); border-radius: 11px; color: var(--text-secondary); font-size: 14px; cursor: pointer; }
 .crew-card-edit:hover { background: var(--lake-mid); }
-.crew-card-close { padding: 13px 16px; background: transparent; border: 1px solid var(--dock-border); border-radius: 12px; color: var(--text-dim); font-size: 14px; cursor: pointer; transition: all 0.2s; }
+.crew-card-close { padding: 12px 15px; background: transparent; border: 1px solid var(--dock-border); border-radius: 11px; color: var(--text-dim); font-size: 14px; cursor: pointer; }
 .crew-card-close:hover { background: var(--lake-mid); }
-.help-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 700; align-items: flex-start; justify-content: center; backdrop-filter: blur(4px); padding: 20px; overflow-y: auto; }
+
+/* ── HELP MODAL ── */
+.help-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 700; align-items: flex-start; justify-content: center; backdrop-filter: blur(4px); padding: 20px; overflow-y: auto; }
 .help-overlay.show { display: flex; }
-.help-modal { background: var(--dock-bg); border: 1px solid var(--dock-border); border-radius: 24px; padding: 28px 24px 32px; width: 100%; max-width: 480px; margin: auto; box-shadow: 0 16px 48px rgba(0,0,0,0.6); animation: waveIn 0.3s ease-out; }
-.help-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
-.help-title { font-size: 20px; font-weight: 800; color: var(--lake-light); }
-.help-close { width: 32px; height: 32px; border-radius: 10px; border: none; background: var(--lake-mid); color: var(--text-secondary); cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+.help-modal { background: var(--dock-bg); border: 1px solid var(--dock-border); border-radius: 24px; padding: 26px 22px 30px; width: 100%; max-width: 500px; margin: auto; box-shadow: 0 16px 48px rgba(0,0,0,0.6); animation: waveIn 0.3s ease-out; }
+.help-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; }
+.help-title { font-size: 19px; font-weight: 800; color: var(--lake-light); }
+.help-close { width: 30px; height: 30px; border-radius: 9px; border: none; background: var(--lake-mid); color: var(--text-secondary); cursor: pointer; font-size: 15px; display: flex; align-items: center; justify-content: center; }
 .help-close:hover { background: var(--dock-border); }
-.help-section { margin-bottom: 22px; }
-.help-section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--sand); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
-.help-item { display: flex; gap: 10px; margin-bottom: 8px; align-items: flex-start; }
-.help-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+.help-section { margin-bottom: 20px; }
+.help-section-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--sand); margin-bottom: 9px; display: flex; align-items: center; gap: 6px; }
+.help-item { display: flex; gap: 9px; margin-bottom: 7px; align-items: flex-start; }
+.help-icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
 .help-text { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
 .help-text strong { color: var(--text-primary); }
-.help-divider { height: 1px; background: var(--dock-border); margin: 18px 0; }
-.help-tip { padding: 12px 14px; background: rgba(79,195,247,0.06); border: 1px solid rgba(79,195,247,0.15); border-radius: 12px; font-size: 12px; color: var(--text-secondary); line-height: 1.6; font-style: italic; }
-.depths-info { padding: 8px 12px; font-size: 13px; color: var(--text-dim); cursor: default; }
+.help-divider { height: 1px; background: var(--dock-border); margin: 16px 0; }
+.help-tip { padding: 11px 13px; background: rgba(79,195,247,0.06); border: 1px solid rgba(79,195,247,0.15); border-radius: 11px; font-size: 12px; color: var(--text-secondary); line-height: 1.6; font-style: italic; }
 </style>
 </head>
 <body>
 <div class="water-bg"></div>
 
-<!-- ATTACHMENT LIGHTBOX -->
+<!-- LIGHTBOX -->
 <div class="attachment-lightbox" id="attachmentLightbox" onclick="closeLightbox()">
   <button class="attachment-lightbox-close" onclick="closeLightbox()">✕</button>
   <img id="lightboxImg" src="" alt="">
   <div class="attachment-lightbox-name" id="lightboxName"></div>
 </div>
 
+<!-- LOGIN -->
 <div class="login-screen" id="loginScreen">
   <div class="login-logo">🌊</div>
   <div class="login-title">The Great Lake</div>
@@ -394,7 +416,7 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
 <div class="install-banner" id="installBanner">
   <div class="install-banner-text">
     <strong>📱 Install The Great Lake</strong>
-    <small>Add to your home screen for the full app experience</small>
+    <small>Add to your home screen for the full experience</small>
   </div>
   <button class="install-banner-btn" onclick="installApp()">Install</button>
   <button class="install-banner-close" onclick="dismissInstall()">✕</button>
@@ -452,7 +474,7 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
       <div class="lake-header-right">
         <button class="header-btn" onclick="toggleMoodSelector()" title="Lake Mood">🎭</button>
         <button class="header-btn" onclick="toggleDepths()" title="Settings">⚙️</button>
-        <button class="header-btn" onclick="shareAsGroupSession()" title="Share as group session">🔗</button>
+        <button class="header-btn" onclick="shareAsGroupSession()" title="Share session">🔗</button>
         <button class="header-btn" onclick="openHelp()" title="How to use The Lake">❓</button>
       </div>
       <div class="mood-selector" id="moodSelector">
@@ -464,8 +486,9 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
 
     <div class="currents-bar" id="currentsBar">
       <span class="currents-label">🧭 Currents:</span>
-      <span class="current-chip">👥 Team Dynamics</span>
-      <span class="current-chip">🎯 Leadership Patterns</span>
+      <span class="current-chip" onclick="sendPrompt('Summarize the key themes and patterns from our conversation so far.')">👥 Team Dynamics</span>
+      <span class="current-chip" onclick="sendPrompt('What leadership patterns are you seeing in what I have shared?')">🎯 Leadership Patterns</span>
+      <span class="current-chip persona-chip" onclick="askLakeKnowsYou()">🌊 How The Lake Sees You</span>
     </div>
 
     <div class="waves-container" id="wavesContainer">
@@ -491,9 +514,7 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
     </div>
 
     <div class="shore-dock">
-      <!-- MULTI-FILE PREVIEW -->
       <div class="files-preview-container" id="filesPreviewContainer"></div>
-
       <div class="prompt-suggestions">
         <button class="suggestions-toggle" onclick="toggleSuggestions()">💡 Prompt Suggestions ▾</button>
         <div class="suggestions-list" id="suggestionsList">
@@ -516,7 +537,6 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
           <button class="quick-action-btn" onclick="sendPrompt('Read this and identify all followups and commitments made — list them clearly.')">📌 Followups & Commitments</button>
         </div>
       </div>
-
       <div class="quick-actions">
         <button class="quick-action-btn" onclick="triggerFileInput()">📎 Drop a Log</button>
         <button class="quick-action-btn" onclick="triggerCamera()">📷 Take Photo</button>
@@ -526,7 +546,6 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
         <button class="quick-action-btn" onclick="sendPrompt('Map the influence dynamics')">🗺️ Map Influence</button>
         <button class="quick-action-btn" onclick="sendPrompt('What are the undercurrents here?')">🌀 Undercurrents</button>
       </div>
-
       <div class="input-row">
         <div class="input-wrap">
           <textarea class="lake-input" id="lakeInput"
@@ -547,10 +566,7 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
         <button class="send-btn" onclick="sendWave()">🌊</button>
       </div>
       <div class="input-hint">Enter to send · Shift+Enter for new line · 📎 attach multiple files</div>
-
-      <!-- FILE INPUTS -->
-      <input type="file" id="fileInput" multiple onchange="handleFileSelect(event)"
-        accept=".txt,.pdf,.doc,.docx,.csv,.json,.md,.rtf,.xlsx,.xls,.pptx,.png,.jpg,.jpeg,.gif,.webp">
+      <input type="file" id="fileInput" multiple onchange="handleFileSelect(event)" accept=".txt,.pdf,.doc,.docx,.csv,.json,.md,.rtf,.xlsx,.xls,.pptx,.png,.jpg,.jpeg,.gif,.webp">
       <input type="file" id="cameraInput" accept="image/*" capture="environment" onchange="handleFileSelect(event)">
       <input type="file" id="imageInput" accept="image/*" multiple onchange="handleFileSelect(event)">
     </div>
@@ -599,26 +615,11 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
 <div class="crew-modal-overlay" id="crewModalOverlay" onclick="closeCrewModal(event)">
   <div class="crew-modal">
     <h3 id="crewModalTitle">🪶 Add to The Crew</h3>
-    <div class="crew-modal-field">
-      <label>Real Name</label>
-      <input type="text" id="crewModalName" placeholder="How you know them...">
-    </div>
-    <div class="crew-modal-field">
-      <label>Nickname <span style="color:var(--text-dim);font-weight:normal;font-size:11px">*optional</span></label>
-      <input type="text" id="crewModalNickname" placeholder="e.g. Marcus T.">
-    </div>
-    <div class="crew-modal-field">
-      <label>Avatar Emoji <span style="color:var(--text-dim);font-weight:normal;font-size:11px">*optional</span></label>
-      <input type="text" id="crewModalEmoji" placeholder="e.g. 🦈 🌊 🔥 🦊">
-    </div>
-    <div class="crew-modal-field">
-      <label>🎭 Codename</label>
-      <input type="text" id="crewModalCodename" placeholder="e.g. The Architect, Driftwood...">
-    </div>
-    <div class="crew-modal-field">
-      <label>📝 Context Note</label>
-      <textarea id="crewModalContext" placeholder="e.g. Tends to deflect in group settings, key decision maker..."></textarea>
-    </div>
+    <div class="crew-modal-field"><label>Real Name</label><input type="text" id="crewModalName" placeholder="How you know them..."></div>
+    <div class="crew-modal-field"><label>Nickname <span style="color:var(--text-dim);font-weight:normal;font-size:10px">*optional</span></label><input type="text" id="crewModalNickname" placeholder="e.g. Marcus T."></div>
+    <div class="crew-modal-field"><label>Avatar Emoji <span style="color:var(--text-dim);font-weight:normal;font-size:10px">*optional</span></label><input type="text" id="crewModalEmoji" placeholder="e.g. 🦈 🌊 🔥 🦊"></div>
+    <div class="crew-modal-field"><label>🎭 Codename</label><input type="text" id="crewModalCodename" placeholder="e.g. The Architect, Driftwood..."></div>
+    <div class="crew-modal-field"><label>📝 Context Note</label><textarea id="crewModalContext" placeholder="e.g. Tends to deflect in group settings, key decision maker..."></textarea></div>
     <div class="crew-modal-actions">
       <button class="crew-modal-cancel" onclick="closeCrewModal()">Cancel</button>
       <button class="crew-modal-delete" id="crewModalDelete" style="display:none" onclick="deleteCrewFromModal()">🗑</button>
@@ -647,33 +648,124 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
   </div>
 </div>
 
-<!-- HELP SCREEN -->
+<!-- HELP SCREEN — FULL RESTORED + EXPANDED -->
 <div class="help-overlay" id="helpOverlay" onclick="closeHelp(event)">
   <div class="help-modal">
     <div class="help-header">
       <div class="help-title">🌊 How to use The Lake</div>
       <button class="help-close" onclick="closeHelp()">✕</button>
     </div>
+
     <div class="help-section">
       <div class="help-section-title">🌊 The Basics</div>
       <div class="help-item"><span class="help-icon">💬</span><div class="help-text">Type anything in the box at the bottom. <strong>The Lake reflects back what it sees.</strong></div></div>
-      <div class="help-item"><span class="help-icon">📄</span><div class="help-text"><strong>Drop a Log</strong> — attach transcripts, meeting notes, screenshots, or chat exports.</div></div>
+      <div class="help-item"><span class="help-icon">📄</span><div class="help-text"><strong>Drop a Log</strong> — attach transcripts, meeting notes, screenshots, or chat exports. The Lake reads the room.</div></div>
       <div class="help-item"><span class="help-icon">📷</span><div class="help-text"><strong>Take a Photo</strong> — snap a whiteboard, document, or screenshot directly into chat.</div></div>
-      <div class="help-item"><span class="help-icon">📎</span><div class="help-text"><strong>Multiple attachments</strong> — attach several files at once. All will be sent together.</div></div>
+      <div class="help-item"><span class="help-icon">📎</span><div class="help-text"><strong>Multiple attachments</strong> — attach several files at once. All will be read and analyzed together.</div></div>
+      <div class="help-item"><span class="help-icon">🎤</span><div class="help-text"><strong>Voice input</strong> — tap the mic button and speak your thoughts directly into The Lake.</div></div>
     </div>
+
     <div class="help-divider"></div>
+
+    <div class="help-section">
+      <div class="help-section-title">🧠 Reading People & Dynamics</div>
+      <div class="help-item"><span class="help-icon">💬</span><div class="help-text"><strong>Paste a chat thread</strong> — The Lake decodes tone, intent, power plays, and what's really being said between the lines.</div></div>
+      <div class="help-item"><span class="help-icon">🖼️</span><div class="help-text"><strong>Drop a screenshot</strong> — text message, email, Slack thread. The Lake reads the behavior, not just the words.</div></div>
+      <div class="help-item"><span class="help-icon">🎙️</span><div class="help-text"><strong>Paste a transcript</strong> — meeting notes, call recordings, interview summaries. The Lake surfaces what the data is really saying.</div></div>
+      <div class="help-item"><span class="help-icon">🔥</span><div class="help-text"><strong>Something feels off?</strong> Describe the situation. The Lake maps hidden dynamics — who holds power, who's deflecting, what's driving the behavior.</div></div>
+      <div class="help-item"><span class="help-icon">🎯</span><div class="help-text"><strong>Before a hard conversation</strong> — drop the context and ask The Lake what to watch for, how to position yourself, and what moves are available.</div></div>
+    </div>
+
+    <div class="help-divider"></div>
+
+    <div class="help-section">
+      <div class="help-section-title">🧭 Prompt Suggestions</div>
+      <div class="help-item"><span class="help-icon">💡</span><div class="help-text">Tap <strong>💡 Prompt Suggestions</strong> above the input bar to expand 17 ready-to-use prompts. Every one of them is a different lens The Lake can use to read your situation.</div></div>
+      <div class="help-item"><span class="help-icon">🧭</span><div class="help-text"><strong>Read the Currents</strong> — overall real-time read of the situation.</div></div>
+      <div class="help-item"><span class="help-icon">🔍</span><div class="help-text"><strong>Surface the Truth</strong> — what's really going on beneath the surface.</div></div>
+      <div class="help-item"><span class="help-icon">🧩</span><div class="help-text"><strong>Connect the Dots</strong> — find patterns across people and events.</div></div>
+      <div class="help-item"><span class="help-icon">🎭</span><div class="help-text"><strong>Mask & Motive</strong> — what's the person hiding and why.</div></div>
+      <div class="help-item"><span class="help-icon">🧊</span><div class="help-text"><strong>Iceberg View</strong> — what's visible vs. what's lurking below.</div></div>
+      <div class="help-item"><span class="help-icon">🌪️</span><div class="help-text"><strong>Storm Warning</strong> — what's about to blow up if nothing changes.</div></div>
+      <div class="help-item"><span class="help-icon">📌</span><div class="help-text"><strong>Followups & Commitments</strong> — what was promised, agreed, or left hanging.</div></div>
+    </div>
+
+    <div class="help-divider"></div>
+
+    <div class="help-section">
+      <div class="help-section-title">🧭 Currents Bar</div>
+      <div class="help-item"><span class="help-icon">🧭</span><div class="help-text">The chips at the top are <strong>clickable shortcuts</strong> — tap any to instantly send that read to The Lake.</div></div>
+      <div class="help-item"><span class="help-icon">🌊</span><div class="help-text"><strong>How The Lake Sees You</strong> — tap this chip for a full persona read on you, drawn from everything you've ever shared across all your sessions.</div></div>
+      <div class="help-item"><span class="help-icon">⚡</span><div class="help-text">New chips appear automatically as topics emerge in your conversation — each one is a live shortcut back into that thread.</div></div>
+    </div>
+
+    <div class="help-divider"></div>
+
+    <div class="help-section">
+      <div class="help-section-title">🗂 The Dock</div>
+      <div class="help-item"><span class="help-icon">🌊</span><div class="help-text"><strong>Past Tides</strong> — every conversation saved locally on your device, including forwarded emails.</div></div>
+      <div class="help-item"><span class="help-icon">✏️</span><div class="help-text"><strong>Rename a tide</strong> — tap the pencil icon on any session to give it a meaningful name.</div></div>
+      <div class="help-item"><span class="help-icon">🗑️</span><div class="help-text"><strong>Delete a tide</strong> — hover over a session to reveal the trash icon. It only appears on hover so you can't accidentally delete.</div></div>
+      <div class="help-item"><span class="help-icon">🔍</span><div class="help-text"><strong>Sonar</strong> — search through all your past conversations instantly.</div></div>
+    </div>
+
+    <div class="help-divider"></div>
+
+    <div class="help-section">
+      <div class="help-section-title">👥 The Crew</div>
+      <div class="help-item"><span class="help-icon">⚡</span><div class="help-text"><strong>Spotted</strong> — The Lake auto-detects names from conversations and suggests them for your Crew.</div></div>
+      <div class="help-item"><span class="help-icon">🪶</span><div class="help-text">Tap <strong>+ Add to The Crew</strong> to manually add someone. Give them a codename, emoji avatar, and context note.</div></div>
+      <div class="help-item"><span class="help-icon">🌊</span><div class="help-text">Tap any crew member → <strong>Ask The Lake</strong> for a full behavioral read on that person based on everything you've shared.</div></div>
+      <div class="help-item"><span class="help-icon">🎭</span><div class="help-text"><strong>Emoji Avatars</strong> — assign an emoji to any crew member (e.g. 🦊 cunning, 🧊 cold, 🦈 aggressive). Makes your Crew instantly readable at a glance.</div></div>
+      <div class="help-item"><span class="help-icon">🎯</span><div class="help-text"><strong>Codenames</strong> — give sensitive people a codename so you can reference them without using real names in the chat.</div></div>
+    </div>
+
+    <div class="help-divider"></div>
+
+    <div class="help-section">
+      <div class="help-section-title">🎭 Lake Moods</div>
+      <div class="help-item"><span class="help-icon">🌊</span><div class="help-text"><strong>Calm</strong> — reflective, deep, gentle. Best for processing emotions and long-form situations.</div></div>
+      <div class="help-item"><span class="help-icon">🔍</span><div class="help-text"><strong>Analytical</strong> — structured, precise, systematic. Best for transcripts, data, and decision-making.</div></div>
+      <div class="help-item"><span class="help-icon">⛈️</span><div class="help-text"><strong>Stormy</strong> — zero filter, raw truth. Use when you need The Lake to stop being polite and just tell you what it sees.</div></div>
+    </div>
+
+    <div class="help-divider"></div>
+
+    <div class="help-section">
+      <div class="help-section-title">🃏 Score Cards</div>
+      <div class="help-item"><span class="help-icon">🃏</span><div class="help-text"><strong>Score Cards</strong> give you a structured behavioral snapshot — influence, transparency, reliability, and hidden agenda. Each scored out of 10 with a one-line read.</div></div>
+      <div class="help-item"><span class="help-icon">💡</span><div class="help-text">Best used <strong>after dropping a transcript, chat thread, or screenshot</strong> — the more data The Lake has, the sharper the card.</div></div>
+      <div class="help-item"><span class="help-icon">📊</span><div class="help-text">Tap <strong>🃏 Score Cards</strong> in the quick actions bar to generate one from your current conversation.</div></div>
+    </div>
+
+    <div class="help-divider"></div>
+
     <div class="help-section">
       <div class="help-section-title">📧 Email Drop</div>
-      <div class="help-item"><span class="help-icon">📨</span><div class="help-text">Forward any email to The Lake — it appears automatically in <strong>Past Tides</strong> within 30 seconds.</div></div>
+      <div class="help-item"><span class="help-icon">📨</span><div class="help-text">Forward any email to The Lake — it appears automatically in <strong>Past Tides</strong> within 30 seconds, ready to analyze.</div></div>
       <div class="help-item"><span class="help-icon">📋</span><div class="help-text">Forward to:
         <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
           <code style="font-size:11px;background:rgba(255,255,255,0.08);padding:6px 10px;border-radius:6px;color:#7dd3fc;flex:1;">drop@thelakeapp.app</code>
-          <button onclick="copyLakeEmail()" style="background:rgba(255,255,255,0.1);border:none;border-radius:6px;padding:6px 10px;color:white;cursor:pointer;font-size:12px;" id="copyEmailBtn">📋 Copy</button>
+          <button onclick="copyLakeEmail()" style="background:rgba(255,255,255,0.1);border:none;border-radius:6px;padding:6px 10px;color:white;cursor:pointer;font-size:12px;white-space:nowrap;" id="copyEmailBtn">📋 Copy</button>
         </div>
       </div></div>
+      <div class="help-item"><span class="help-icon">⚡</span><div class="help-text">Forward email threads, meeting notes, Slack exports, screenshots — anything. Open it from Past Tides and ask The Lake to read it.</div></div>
+      <div class="help-item"><span class="help-icon">🎯</span><div class="help-text"><strong>Pro move:</strong> Forward a tense email chain → open it in The Lake → ask <em>"What's really going on here and what's my best next move?"</em></div></div>
+      <div class="help-item"><span class="help-icon">🔒</span><div class="help-text">Emails are stored <strong>locally on your device only</strong> — they are not stored on any server after delivery.</div></div>
     </div>
+
     <div class="help-divider"></div>
-    <div class="help-tip">💡 Pro tip — the more context you give The Lake, the deeper the read. Drop the full thread, not just the headline.</div>
+
+    <div class="help-section">
+      <div class="help-section-title">🌊 How The Lake Sees You</div>
+      <div class="help-item"><span class="help-icon">🌊</span><div class="help-text">Tap the <strong>"How The Lake Sees You"</strong> chip in the Currents bar for a full persona read — drawn from everything you've shared across all your sessions, not just this conversation.</div></div>
+      <div class="help-item"><span class="help-icon">🧠</span><div class="help-text">The Lake will tell you what kind of thinker you are, how you process and communicate, what you consistently focus on, and what patterns it has noticed across all your interactions.</div></div>
+      <div class="help-item"><span class="help-icon">🎯</span><div class="help-text">The more you use The Lake, <strong>the sharper this read gets.</strong> It learns your style, your concerns, and your blind spots over time.</div></div>
+    </div>
+
+    <div class="help-divider"></div>
+
+    <div class="help-tip">💡 Pro tip — the more context you give The Lake, the deeper the read. Drop the full thread, not just the headline. The Lake works best when it can see the whole water, not just the surface.</div>
   </div>
 </div>
 
@@ -682,7 +774,7 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
 // STATE
 // ============================================
 let currentMood = 'calm';
-let selectedFiles = []; // CHANGED: array for multiple files
+let selectedFiles = [];
 let chatHistory = [];
 let currentSessionId = null;
 let currentUser = null;
@@ -736,7 +828,6 @@ function handleFileSelect(event) {
   event.target.value = '';
   renderFilePreviews();
 }
-
 function renderFilePreviews() {
   const container = document.getElementById('filesPreviewContainer');
   if (selectedFiles.length === 0) {
@@ -750,41 +841,34 @@ function renderFilePreviews() {
     const icon = getFileIcon(file.name);
     if (isImage) {
       const url = URL.createObjectURL(file);
-      return `
-        <div class="file-preview-chip">
-          <img class="file-preview-chip-thumb" src="${url}" alt="${escapeHTML(file.name)}">
-          <div class="file-preview-chip-info">
-            <div class="file-preview-chip-name">${escapeHTML(file.name)}</div>
-            <div class="file-preview-chip-size">${formatFileSize(file.size)}</div>
-          </div>
-          <button class="file-preview-chip-remove" onclick="removeFile(${idx})">✕</button>
-        </div>
-      `;
-    }
-    return `
-      <div class="file-preview-chip">
-        <span class="file-preview-chip-icon">${icon}</span>
+      return `<div class="file-preview-chip">
+        <img class="file-preview-chip-thumb" src="${url}" alt="${escapeHTML(file.name)}">
         <div class="file-preview-chip-info">
           <div class="file-preview-chip-name">${escapeHTML(file.name)}</div>
           <div class="file-preview-chip-size">${formatFileSize(file.size)}</div>
         </div>
         <button class="file-preview-chip-remove" onclick="removeFile(${idx})">✕</button>
+      </div>`;
+    }
+    return `<div class="file-preview-chip">
+      <span class="file-preview-chip-icon">${icon}</span>
+      <div class="file-preview-chip-info">
+        <div class="file-preview-chip-name">${escapeHTML(file.name)}</div>
+        <div class="file-preview-chip-size">${formatFileSize(file.size)}</div>
       </div>
-    `;
+      <button class="file-preview-chip-remove" onclick="removeFile(${idx})">✕</button>
+    </div>`;
   }).join('');
 }
-
 function removeFile(idx) {
   selectedFiles.splice(idx, 1);
   renderFilePreviews();
 }
-
 function getFileIcon(name) {
   const ext = name.split('.').pop().toLowerCase();
-  const icons = { pdf:'📄', doc:'📝', docx:'📝', txt:'📃', csv:'📊', xlsx:'📊', xls:'📊', pptx:'📑', json:'🗂️', md:'📋', png:'🖼️', jpg:'🖼️', jpeg:'🖼️', gif:'🖼️', webp:'🖼️' };
+  const icons = { pdf:'📄',doc:'📝',docx:'📝',txt:'📃',csv:'📊',xlsx:'📊',xls:'📊',pptx:'📑',json:'🗂️',md:'📋',png:'🖼️',jpg:'🖼️',jpeg:'🖼️',gif:'🖼️',webp:'🖼️' };
   return icons[ext] || '📎';
 }
-
 function formatFileSize(bytes) {
   if (bytes < 1024) return bytes + ' B';
   if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
@@ -861,7 +945,6 @@ function saveSuggestedCrew() { localStorage.setItem('lakeSuggestedCrew', JSON.st
 function loadSuggestedCrew() {
   try { suggestedCrew = JSON.parse(localStorage.getItem('lakeSuggestedCrew') || '[]'); } catch(e) { suggestedCrew = []; }
 }
-
 function copyLakeEmail() {
   navigator.clipboard.writeText('drop@thelakeapp.app').then(() => {
     const btn = document.getElementById('copyEmailBtn');
@@ -913,10 +996,8 @@ function updateAllProfilePics(src) {
     if (existingImg) { existingImg.src = src; }
     else { const img = document.createElement('img'); img.src = src; loginPreview.appendChild(img); }
   }
-  const dockAvatar = document.getElementById('dockUserAvatar');
-  dockAvatar.innerHTML = src ? `<img src="${src}" alt="Profile">` : '🪶';
-  const depthsPic = document.getElementById('depthsProfilePic');
-  depthsPic.innerHTML = src ? `<img src="${src}" alt="Profile">` : '🪶';
+  document.getElementById('dockUserAvatar').innerHTML = src ? `<img src="${src}" alt="Profile">` : '🪶';
+  document.getElementById('depthsProfilePic').innerHTML = src ? `<img src="${src}" alt="Profile">` : '🪶';
   document.querySelectorAll('.wave.user-wave .wave-avatar').forEach(el => {
     el.innerHTML = src ? `<img src="${src}" alt="Profile">` : '🪶';
   });
@@ -1041,15 +1122,12 @@ function loadTide(sessionId) {
   currentMood = session.mood || 'calm';
   const container = document.getElementById('wavesContainer');
   container.innerHTML = '';
-
-  // ✅ For email sessions — show full email as first message the bot can analyze
   if (session.type === 'email' && session.emailRaw) {
     const emailContent = `📧 Email from ${session.emailFrom}\nSubject: ${session.emailSubject}\n\n${session.emailRaw}`;
     if (!chatHistory.find(m => m.role === 'user' && m.content.startsWith('📧 Email from'))) {
       chatHistory.unshift({ role: 'user', content: emailContent, time: session.time });
     }
   }
-
   chatHistory.forEach(msg => {
     if (msg.role === 'user') appendUserWave(msg.content, msg.time, false);
     else if (msg.role === 'assistant') appendLakeWave(msg.content, msg.time, false);
@@ -1093,7 +1171,7 @@ function filterTides(query) {
 }
 
 // ============================================
-// EMAIL SESSIONS — ✅ FULL CONTENT LOADED
+// EMAIL SESSIONS
 // ============================================
 async function loadEmailSessions() {
   try {
@@ -1101,17 +1179,13 @@ async function loadEmailSessions() {
     if (!res.ok) return;
     const emailSessions = await res.json();
     if (!emailSessions.length) return;
-
     let changed = false;
     emailSessions.forEach(es => {
-      // ✅ Store locally — keyed to this user
       const localKey = 'lakeEmail_' + es.id;
       if (!localStorage.getItem(localKey)) {
         localStorage.setItem(localKey, JSON.stringify(es));
         changed = true;
       }
-
-      // Add to session list if not already there
       const exists = allSessions.find(s => s.id === es.id);
       if (!exists) {
         const emailBody = es.messages?.[0]?.content || '';
@@ -1124,27 +1198,18 @@ async function loadEmailSessions() {
           emailFrom: es.from,
           emailSubject: es.title,
           emailRaw: emailBody,
-          history: [
-            {
-              role: 'user',
-              content: emailBody,
-              time: es.date || new Date().toISOString()
-            }
-          ],
+          history: [{ role: 'user', content: emailBody, time: es.date || new Date().toISOString() }],
           mood: 'analytical'
         });
         changed = true;
       }
     });
-
     if (changed) {
       allSessions = allSessions.slice(0, 50);
       localStorage.setItem('lakeSessions', JSON.stringify(allSessions));
       renderTides();
     }
-  } catch(e) {
-    console.log('No email sessions available');
-  }
+  } catch(e) { console.log('No email sessions available'); }
 }
 
 // ============================================
@@ -1183,7 +1248,7 @@ function toggleDock() {
 }
 
 // ============================================
-// SUGGESTIONS TOGGLE
+// SUGGESTIONS
 // ============================================
 function toggleSuggestions() {
   const list = document.getElementById('suggestionsList');
@@ -1207,31 +1272,27 @@ function renderCrew() {
   const colors = ['#4fc3f7,#0288d1','#ce93d8,#7b1fa2','#ffb74d,#f57c00','#81c784,#388e3c','#ff8a80,#d32f2f','#80cbc4,#00796b'];
   let suggestedHTML = '';
   if (suggestedCrew.length > 0) {
-    suggestedHTML = `
-      <div class="suggested-crew-section">
-        <div class="suggested-title">⚡ Spotted</div>
-        ${suggestedCrew.map((member, idx) => `
-          <div class="suggested-item">
-            <span class="suggested-name">👤 ${escapeHTML(member.name)}</span>
-            <button class="suggested-approve" onclick="approveSuggested(${idx})" title="Add to Crew">✓</button>
-            <button class="suggested-dismiss" onclick="dismissSuggested(${idx})" title="Dismiss">✕</button>
-          </div>
-        `).join('')}
-      </div>
-    `;
+    suggestedHTML = `<div class="suggested-crew-section">
+      <div class="suggested-title">⚡ Spotted</div>
+      ${suggestedCrew.map((member, idx) => `
+        <div class="suggested-item">
+          <span class="suggested-name">👤 ${escapeHTML(member.name)}</span>
+          <button class="suggested-approve" onclick="approveSuggested(${idx})" title="Add to Crew">✓</button>
+          <button class="suggested-dismiss" onclick="dismissSuggested(${idx})" title="Dismiss">✕</button>
+        </div>
+      `).join('')}
+    </div>`;
   }
   const crewHTML = crewMembers.map((member, idx) => {
     const color = colors[idx % colors.length];
     const initial = member.emoji || member.name.trim()[0].toUpperCase();
     const displayName = member.codename || member.name;
     const nickname = member.nickname ? `<span style="color:var(--text-dim);font-size:11px">${escapeHTML(member.nickname)}</span>` : '';
-    return `
-      <div class="crew-item" onclick="openCrewProfile(${idx})">
-        <div class="crew-avatar" style="background:${member.emoji ? 'none' : `linear-gradient(135deg,${color})`}">${initial}</div>
-        <div style="flex:1;min-width:0"><div class="crew-name">${escapeHTML(displayName)}</div>${nickname}</div>
-        <button class="tide-delete" onclick="removeCrew(event,${idx})" title="Remove">🗑</button>
-      </div>
-    `;
+    return `<div class="crew-item" onclick="openCrewProfile(${idx})">
+      <div class="crew-avatar" style="background:${member.emoji ? 'none' : `linear-gradient(135deg,${color})`}">${initial}</div>
+      <div style="flex:1;min-width:0"><div class="crew-name">${escapeHTML(displayName)}</div>${nickname}</div>
+      <button class="tide-delete" onclick="removeCrew(event,${idx})" title="Remove">🗑</button>
+    </div>`;
   }).join('');
   list.innerHTML = suggestedHTML + crewHTML + `<div class="crew-item" onclick="openCrewModal('add')" style="justify-content:center;color:var(--text-dim);">+ Add to The Crew</div>`;
 }
@@ -1267,7 +1328,13 @@ function closeCrewModal(e) {
 function saveCrewFromModal() {
   const name = document.getElementById('crewModalName').value.trim();
   if (!name) { document.getElementById('crewModalName').style.borderColor = 'var(--danger)'; setTimeout(() => document.getElementById('crewModalName').style.borderColor = '', 1500); return; }
-  const member = { name, nickname: document.getElementById('crewModalNickname').value.trim(), codename: document.getElementById('crewModalCodename').value.trim(), emoji: document.getElementById('crewModalEmoji').value.trim(), context: document.getElementById('crewModalContext').value.trim() };
+  const member = {
+    name,
+    nickname: document.getElementById('crewModalNickname').value.trim(),
+    codename: document.getElementById('crewModalCodename').value.trim(),
+    emoji: document.getElementById('crewModalEmoji').value.trim(),
+    context: document.getElementById('crewModalContext').value.trim()
+  };
   if (crewModalMode === 'edit' && crewModalIndex >= 0) crewMembers[crewModalIndex] = member;
   else if (crewModalMode === 'approve' && crewModalIndex >= 0) { suggestedCrew.splice(crewModalIndex, 1); saveSuggestedCrew(); crewMembers.push(member); }
   else crewMembers.push(member);
@@ -1296,7 +1363,8 @@ function openCrewProfile(idx) {
   document.getElementById('crewCardName').textContent = member.name;
   document.getElementById('crewCardNickname').textContent = member.nickname || '';
   const codenameEl = document.getElementById('crewCardCodename');
-  if (member.codename) { codenameEl.textContent = `"${member.codename}"`; codenameEl.style.display = 'inline-block'; } else { codenameEl.style.display = 'none'; }
+  if (member.codename) { codenameEl.textContent = `"${member.codename}"`; codenameEl.style.display = 'inline-block'; }
+  else { codenameEl.style.display = 'none'; }
   const contextEl = document.getElementById('crewCardContext');
   contextEl.textContent = member.context || 'No context note yet — tap Edit to add one.';
   contextEl.classList.toggle('empty', !member.context);
@@ -1336,6 +1404,58 @@ function setMood(mood, e) {
 function toggleDepths() { document.getElementById('depthsPanel').classList.toggle('show'); }
 
 // ============================================
+// HOW THE LAKE SEES YOU — ALL HISTORY
+// ============================================
+function askLakeKnowsYou() {
+  let allUserMessages = [];
+  allSessions.forEach(session => {
+    if (session.history) {
+      session.history
+        .filter(m => m.role === 'user' && m.content)
+        .forEach(m => allUserMessages.push(m.content));
+    }
+  });
+  chatHistory
+    .filter(m => m.role === 'user' && m.content)
+    .forEach(m => allUserMessages.push(m.content));
+  const unique = [...new Set(allUserMessages)];
+  const sample = unique.reverse().join('\n\n---\n\n').substring(0, 12000);
+  const prompt = `Here is a sample of everything I have shared with you across ALL my past sessions:\n\n${sample}\n\n---\n\nBased on ALL of this — give me a sharp persona read on me as a person and leader. What kind of thinker am I? How do I process and communicate? What do I consistently focus on, worry about, or care about? What patterns do you see in how I show up? What does The Lake now know about me that I might not have said out loud? Be honest, specific, and tight. This is a full read — not just this conversation.`;
+  sendPrompt(prompt);
+}
+
+// ============================================
+// CURRENTS — CLICKABLE WITH TOPICS
+// ============================================
+function updateCurrents(text) {
+  const lower = text.toLowerCase();
+  const bar = document.getElementById('currentsBar');
+  const topics = [
+    { keywords: ['transcript','log'], label: '📄 Transcript Analysis', prompt: 'Summarize the key findings from the transcript I dropped.' },
+    { keywords: ['influence'], label: '🗺️ Influence Mapping', prompt: 'Map the influence dynamics you are seeing in what I have shared.' },
+    { keywords: ['player','crew'], label: '👥 Player Breakdown', prompt: 'Break down each player — their role, their moves, and what they want.' },
+    { keywords: ['flag','off','wrong'], label: '🚩 Red Flags', prompt: 'What are the red flags you are seeing in this situation?' },
+    { keywords: ['meeting'], label: '🏢 Meeting Analysis', prompt: 'Analyze the meeting dynamics — who had power, who deflected, what was really happening.' },
+    { keywords: ['email'], label: '📧 Email Analysis', prompt: 'Read this email thread and tell me what is really being said beneath the surface.' },
+  ];
+  topics.forEach(topic => {
+    const matched = topic.keywords.some(k => lower.includes(k));
+    if (!matched) return;
+    const existing = Array.from(bar.querySelectorAll('.current-chip')).some(c => c.textContent.includes(topic.label.slice(2)));
+    if (!existing && bar.querySelectorAll('.current-chip').length < 7) {
+      const chip = document.createElement('span');
+      chip.className = 'current-chip';
+      chip.textContent = topic.label;
+      chip.onclick = () => sendPrompt(topic.prompt);
+      // Insert before the persona chip
+      const personaChip = bar.querySelector('.persona-chip');
+      if (personaChip) bar.insertBefore(chip, personaChip);
+      else bar.appendChild(chip);
+    }
+  });
+}
+
+// ============================================
 // SENDING WAVES
 // ============================================
 function sendPrompt(text) { document.getElementById('lakeInput').value = text; sendWave(); }
@@ -1348,8 +1468,6 @@ async function sendWave() {
   if (welcome) welcome.remove();
   if (!currentSessionId) currentSessionId = 'session_' + Date.now();
   const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-  // Build display for attachments
   const filesToSend = [...selectedFiles];
   const attachmentLabel = filesToSend.length > 0 ? ` [${filesToSend.length} file${filesToSend.length > 1 ? 's' : ''} attached]` : '';
   appendUserWave(text || '📎 Files attached', timeStr, true, filesToSend);
@@ -1359,16 +1477,13 @@ async function sendWave() {
   selectedFiles = [];
   renderFilePreviews();
   showRipple();
-
   try {
     const formData = new FormData();
     formData.append('message', text);
     formData.append('mood', currentMood);
     const historyToSend = chatHistory.slice(-11, -1).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.content }));
     formData.append('history', JSON.stringify(historyToSend));
-    // ✅ Send ALL files
     filesToSend.forEach(file => formData.append('file', file));
-
     const response = await fetch('/chat', { method: 'POST', body: formData });
     const data = await response.json();
     hideRipple();
@@ -1380,21 +1495,21 @@ async function sendWave() {
       saveSession();
       processNamesFromResponse(data.reflection);
     } else {
-      appendLakeWave('The Lake encountered turbulence: ' + (data.error || 'Unknown error'), timeStr, true);
+      // ✅ FIXED TURBULENCE MESSAGE
+      appendLakeWave('🌊 The Lake is still reading the water — sometimes deep currents take a moment. Wait a beat and send your message again if nothing surfaces within a minute.', timeStr, true);
     }
   } catch (err) {
     hideRipple();
-    appendLakeWave('🌊 Could not reach The Lake — check your connection.', timeStr, true);
+    // ✅ FIXED CONNECTION MESSAGE
+    appendLakeWave('🌊 The current is slow right now but The Lake is still here. Give it a moment and nudge again — it should come through shortly.', timeStr, true);
     console.error('Lake error:', err);
   }
 }
 
-// ✅ UPDATED: appendUserWave shows clickable attachments
 function appendUserWave(text, timeStr, scroll, files = []) {
   const container = document.getElementById('wavesContainer');
   const div = document.createElement('div');
   div.className = 'wave user-wave';
-
   let attachHTML = '';
   if (files.length > 0) {
     attachHTML = '<div class="wave-attachments">';
@@ -1415,7 +1530,6 @@ function appendUserWave(text, timeStr, scroll, files = []) {
     });
     attachHTML += '</div>';
   }
-
   div.innerHTML = `
     <div class="wave-avatar">${getUserAvatarHTML()}</div>
     <div class="wave-content">
@@ -1466,30 +1580,6 @@ function hideRipple() {
 }
 
 // ============================================
-// CURRENTS
-// ============================================
-function updateCurrents(text) {
-  const lower = text.toLowerCase();
-  const bar = document.getElementById('currentsBar');
-  const chips = bar.querySelectorAll('.current-chip');
-  let newTopic = null;
-  if (lower.includes('transcript') || lower.includes('log')) newTopic = '📄 Transcript Analysis';
-  else if (lower.includes('influence')) newTopic = '🗺️ Influence Mapping';
-  else if (lower.includes('player') || lower.includes('crew')) newTopic = '👥 Player Breakdown';
-  else if (lower.includes('flag') || lower.includes('off')) newTopic = '🚩 Red Flag Detection';
-  else if (lower.includes('meeting')) newTopic = '🏢 Meeting Analysis';
-  if (newTopic) {
-    const exists = Array.from(chips).some(c => c.textContent.includes(newTopic.slice(2)));
-    if (!exists && chips.length < 6) {
-      const chip = document.createElement('span');
-      chip.className = 'current-chip';
-      chip.textContent = newTopic;
-      bar.appendChild(chip);
-    }
-  }
-}
-
-// ============================================
 // INPUT
 // ============================================
 function handleKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendWave(); } }
@@ -1529,11 +1619,14 @@ function toggleMic() {
   recognition.start();
 }
 
+// ============================================
+// SHARE
+// ============================================
 function shareAsGroupSession() {
   if (!currentSessionId) { alert('Start a conversation first!'); return; }
   const groupUrl = window.location.origin + '/group.html?session=' + currentSessionId;
-  if (navigator.share) { navigator.share({ title: '🌊 Join my Lake session', text: 'Join me in The Great Lake for a group reflection:', url: groupUrl }); }
-  else { navigator.clipboard.writeText(groupUrl).then(() => { alert('Group link copied! Share it with your friend 🌊'); }); }
+  if (navigator.share) { navigator.share({ title: '🌊 Join my Lake session', text: 'Join me in The Great Lake:', url: groupUrl }); }
+  else { navigator.clipboard.writeText(groupUrl).then(() => { alert('Group link copied! 🌊'); }); }
 }
 </script>
 </body>
