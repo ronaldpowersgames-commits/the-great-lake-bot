@@ -1087,7 +1087,17 @@ async function loadEmailSessions() {
     if (!res.ok) return;
     const emailSessions = await res.json();
     if (!emailSessions.length) return;
+
+    let changed = false;
     emailSessions.forEach(es => {
+      // ✅ Store locally — keyed to this user
+      const localKey = 'lakeEmail_' + es.id;
+      if (!localStorage.getItem(localKey)) {
+        localStorage.setItem(localKey, JSON.stringify(es));
+        changed = true;
+      }
+
+      // Add to session list if not already there
       const exists = allSessions.find(s => s.id === es.id);
       if (!exists) {
         const emailBody = es.messages?.[0]?.content || '';
@@ -1098,9 +1108,8 @@ async function loadEmailSessions() {
           time: es.date || new Date().toISOString(),
           type: 'email',
           emailFrom: es.from,
-          emailSubject: es.title || es.subject,
+          emailSubject: es.title,
           emailRaw: emailBody,
-          // ✅ Full history with the email content so the bot can read it
           history: [
             {
               role: 'user',
@@ -1110,10 +1119,15 @@ async function loadEmailSessions() {
           ],
           mood: 'analytical'
         });
+        changed = true;
       }
     });
-    allSessions = allSessions.slice(0, 50);
-    renderTides();
+
+    if (changed) {
+      allSessions = allSessions.slice(0, 50);
+      localStorage.setItem('lakeSessions', JSON.stringify(allSessions));
+      renderTides();
+    }
   } catch(e) {
     console.log('No email sessions available');
   }
