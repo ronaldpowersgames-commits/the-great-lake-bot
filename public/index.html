@@ -36,32 +36,9 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-top: env(safe-area-inset-top, 0px);
 }
-html, body {
-  height: 100%;
-  height: -webkit-fill-available;
-  overflow: hidden;
-}
-body {
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-  background: var(--lake-deep);
-  color: var(--text-primary);
-  display: flex;
-  flex-direction: column;
-  overscroll-behavior: none;
-}
-.login-screen {
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
-  background: var(--lake-deep);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  padding-top: calc(24px + var(--safe-top));
-  overflow-y: auto;
-}
+html, body { height: 100%; height: -webkit-fill-available; overflow: hidden; }
+body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--lake-deep); color: var(--text-primary); display: flex; flex-direction: column; overscroll-behavior: none; }
+.login-screen { position: fixed; inset: 0; z-index: 1000; background: var(--lake-deep); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; padding-top: calc(24px + var(--safe-top)); overflow-y: auto; }
 .login-screen.hidden { display: none; }
 .login-logo { font-size: 72px; margin-bottom: 16px; animation: gentleFloat 4s ease-in-out infinite; }
 .login-title { font-size: 32px; font-weight: 700; color: var(--lake-light); margin-bottom: 6px; text-align: center; }
@@ -191,63 +168,50 @@ body {
 .user-wave .wave-bubble { background: linear-gradient(135deg, rgba(45,140,240,0.2), rgba(45,140,240,0.1)); border: 1px solid rgba(45,140,240,0.2); border-top-right-radius: 4px; color: var(--text-primary); }
 .wave-time { font-size: 10px; color: var(--text-dim); }
 .user-wave .wave-time { text-align: right; }
+/* ATTACHMENT THUMBNAILS IN CHAT */
+.wave-attachments { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.wave-attachment { display: flex; align-items: center; gap: 6px; padding: 6px 10px; background: rgba(45,140,240,0.1); border: 1px solid rgba(45,140,240,0.2); border-radius: 8px; cursor: pointer; transition: all 0.15s; text-decoration: none; max-width: 200px; }
+.wave-attachment:hover { background: rgba(45,140,240,0.2); }
+.wave-attachment-thumb { width: 48px; height: 48px; border-radius: 6px; object-fit: cover; flex-shrink: 0; }
+.wave-attachment-icon { font-size: 20px; flex-shrink: 0; }
+.wave-attachment-name { font-size: 11px; color: var(--lake-light); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* ATTACHMENT LIGHTBOX */
+.attachment-lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; align-items: center; justify-content: center; flex-direction: column; gap: 16px; }
+.attachment-lightbox.show { display: flex; }
+.attachment-lightbox img { max-width: 90vw; max-height: 80vh; border-radius: 12px; object-fit: contain; }
+.attachment-lightbox-name { color: var(--text-secondary); font-size: 13px; }
+.attachment-lightbox-close { position: absolute; top: 20px; right: 20px; width: 40px; height: 40px; border-radius: 12px; border: 1px solid var(--dock-border); background: var(--dock-bg); color: var(--text-primary); font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 .ripple { display: none; align-self: flex-start; padding: 14px 18px; background: var(--lake-surface); border: 1px solid var(--dock-border); border-radius: 18px; border-top-left-radius: 4px; margin-left: 42px; }
 .ripple.show { display: flex; gap: 6px; align-items: center; }
 .ripple-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--lake-light); opacity: 0.3; animation: rippleAnim 1.4s ease-in-out infinite; }
 .ripple-dot:nth-child(2) { animation-delay: 0.2s; }
 .ripple-dot:nth-child(3) { animation-delay: 0.4s; }
 @keyframes rippleAnim { 0%, 60%, 100% { opacity: 0.3; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-5px); } }
-/* SHORE DOCK */
 .shore-dock { padding: 10px 14px; padding-bottom: calc(10px + var(--safe-bottom)); border-top: 1px solid var(--dock-border); background: rgba(9,20,32,0.95); flex-shrink: 0; }
-/* PROMPT SUGGESTIONS — FIXED */
 .prompt-suggestions { padding: 4px 0 6px; }
-.suggestions-toggle {
-  background: rgba(45,140,240,0.06);
-  border: 1px solid rgba(45,140,240,0.15);
-  color: var(--text-dim);
-  border-radius: 20px;
-  padding: 6px 14px;
-  font-size: 12px;
-  cursor: pointer;
-  margin-bottom: 6px;
-  transition: all 0.15s;
-}
+.suggestions-toggle { background: rgba(45,140,240,0.06); border: 1px solid rgba(45,140,240,0.15); color: var(--text-dim); border-radius: 20px; padding: 6px 14px; font-size: 12px; cursor: pointer; margin-bottom: 6px; transition: all 0.15s; }
 .suggestions-toggle:hover { color: var(--lake-light); border-color: rgba(45,140,240,0.3); }
-.suggestions-list {
-  display: none;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding: 6px 0;
-  max-height: 160px;
-  overflow-y: auto;
-}
+.suggestions-list { display: none; flex-wrap: wrap; gap: 6px; padding: 6px 0; max-height: 160px; overflow-y: auto; }
 .suggestions-list.open { display: flex; }
-/* QUICK ACTIONS */
 .quick-actions { display: flex; gap: 6px; margin-bottom: 10px; overflow-x: auto; padding-bottom: 2px; -webkit-overflow-scrolling: touch; }
 .quick-actions::-webkit-scrollbar { height: 0; }
-.quick-action-btn {
-  padding: 6px 12px;
-  background: rgba(45,140,240,0.06);
-  border: 1px solid rgba(45,140,240,0.12);
-  border-radius: 20px;
-  color: var(--text-dim);
-  font-size: 11px;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.15s;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  flex-shrink: 0;
-}
+.quick-action-btn { padding: 6px 12px; background: rgba(45,140,240,0.06); border: 1px solid rgba(45,140,240,0.12); border-radius: 20px; color: var(--text-dim); font-size: 11px; cursor: pointer; white-space: nowrap; transition: all 0.15s; display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
 .quick-action-btn:hover, .quick-action-btn:active { background: rgba(45,140,240,0.12); color: var(--lake-light); border-color: rgba(45,140,240,0.25); }
-.file-preview { display: none; padding: 8px 12px; background: rgba(45,140,240,0.08); border: 1px solid rgba(45,140,240,0.15); border-radius: 10px; margin-bottom: 8px; align-items: center; gap: 10px; }
-.file-preview.show { display: flex; }
-.file-preview-icon { font-size: 20px; }
-.file-preview-info { flex: 1; }
-.file-preview-name { font-size: 12px; font-weight: 500; color: var(--lake-light); }
-.file-preview-size { font-size: 10px; color: var(--text-dim); }
-.file-preview-remove { width: 24px; height: 24px; border-radius: 6px; border: none; background: rgba(239,83,80,0.1); color: var(--danger); cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; }
+/* MULTI-FILE PREVIEW */
+.files-preview-container { display: none; flex-wrap: wrap; gap: 8px; padding: 8px 0; margin-bottom: 8px; }
+.files-preview-container.show { display: flex; }
+.file-preview-chip { display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: rgba(45,140,240,0.08); border: 1px solid rgba(45,140,240,0.15); border-radius: 10px; max-width: 200px; }
+.file-preview-chip-thumb { width: 32px; height: 32px; border-radius: 6px; object-fit: cover; flex-shrink: 0; }
+.file-preview-chip-icon { font-size: 20px; flex-shrink: 0; }
+.file-preview-chip-info { flex: 1; min-width: 0; }
+.file-preview-chip-name { font-size: 11px; font-weight: 500; color: var(--lake-light); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.file-preview-chip-size { font-size: 10px; color: var(--text-dim); }
+.file-preview-chip-remove { width: 20px; height: 20px; border-radius: 4px; border: none; background: rgba(239,83,80,0.1); color: var(--danger); cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+/* ATTACH MENU */
+.attach-menu { display: none; position: absolute; bottom: calc(100% + 8px); right: 0; background: var(--dock-bg); border: 1px solid var(--dock-border); border-radius: 14px; padding: 8px; z-index: 50; box-shadow: 0 8px 32px rgba(0,0,0,0.5); min-width: 180px; }
+.attach-menu.show { display: block; }
+.attach-menu-item { padding: 10px 14px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-secondary); transition: background 0.15s; }
+.attach-menu-item:hover { background: rgba(45,140,240,0.1); color: var(--lake-light); }
 .input-row { display: flex; align-items: flex-end; gap: 8px; }
 .input-wrap { flex: 1; position: relative; }
 .lake-input { width: 100%; min-height: 46px; max-height: 120px; padding: 13px 44px 13px 16px; background: var(--lake-mid); border: 1px solid var(--dock-border); border-radius: 14px; color: var(--text-primary); font-size: 16px; font-family: inherit; resize: none; outline: none; line-height: 1.4; transition: border-color 0.2s; -webkit-appearance: none; }
@@ -262,6 +226,7 @@ body {
 .mic-btn.listening { background: rgba(239,83,80,0.2); border-color: var(--danger); animation: pulse 1s ease-in-out infinite; }
 .input-hint { text-align: center; padding-top: 6px; font-size: 10px; color: var(--text-dim); }
 #fileInput { display: none; }
+#cameraInput { display: none; }
 .install-banner { display: none; position: fixed; bottom: calc(20px + var(--safe-bottom)); left: 50%; transform: translateX(-50%); background: var(--lake-surface); border: 1px solid var(--lake-glow); border-radius: 16px; padding: 14px 20px; z-index: 500; box-shadow: 0 8px 32px rgba(0,0,0,0.4); width: calc(100% - 32px); max-width: 380px; align-items: center; gap: 12px; animation: slideUp 0.4s ease-out; }
 .install-banner.show { display: flex; }
 @keyframes slideUp { from { opacity: 0; transform: translateX(-50%) translateY(20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
@@ -373,6 +338,14 @@ body {
 </head>
 <body>
 <div class="water-bg"></div>
+
+<!-- ATTACHMENT LIGHTBOX -->
+<div class="attachment-lightbox" id="attachmentLightbox" onclick="closeLightbox()">
+  <button class="attachment-lightbox-close" onclick="closeLightbox()">✕</button>
+  <img id="lightboxImg" src="" alt="">
+  <div class="attachment-lightbox-name" id="lightboxName"></div>
+</div>
+
 <div class="login-screen" id="loginScreen">
   <div class="login-logo">🌊</div>
   <div class="login-title">The Great Lake</div>
@@ -403,6 +376,7 @@ body {
     📱 <strong>Install as App:</strong> Tap your browser's share button → "Add to Home Screen"
   </div>
 </div>
+
 <div class="install-banner" id="installBanner">
   <div class="install-banner-text">
     <strong>📱 Install The Great Lake</strong>
@@ -411,8 +385,10 @@ body {
   <button class="install-banner-btn" onclick="installApp()">Install</button>
   <button class="install-banner-close" onclick="dismissInstall()">✕</button>
 </div>
+
 <button class="dock-toggle" id="dockToggle" onclick="toggleDock()">🛶</button>
 <div class="dock-overlay" onclick="toggleDock()"></div>
+
 <div class="app-layout">
   <aside class="dock" id="dock">
     <div class="dock-header">
@@ -446,6 +422,7 @@ body {
       <button class="dock-footer-btn" onclick="toggleDepths()" title="Settings">⚙️</button>
     </div>
   </aside>
+
   <main class="lake-window">
     <div class="lake-header">
       <div class="lake-header-left">
@@ -470,11 +447,13 @@ body {
         <div class="mood-option" onclick="setMood('stormy',event)"><span class="mood-dot" style="background:var(--stormy)"></span>⛈️ Stormy — no filter</div>
       </div>
     </div>
+
     <div class="currents-bar" id="currentsBar">
       <span class="currents-label">🧭 Currents:</span>
       <span class="current-chip">👥 Team Dynamics</span>
       <span class="current-chip">🎯 Leadership Patterns</span>
     </div>
+
     <div class="waves-container" id="wavesContainer">
       <div class="welcome-screen" id="welcomeScreen">
         <div class="welcome-icon">🌊</div>
@@ -490,20 +469,17 @@ body {
         </div>
       </div>
     </div>
+
     <div class="ripple" id="ripple">
       <div class="ripple-dot"></div>
       <div class="ripple-dot"></div>
       <div class="ripple-dot"></div>
     </div>
+
     <div class="shore-dock">
-      <div class="file-preview" id="filePreview">
-        <span class="file-preview-icon">📄</span>
-        <div class="file-preview-info">
-          <div class="file-preview-name" id="filePreviewName">document.pdf</div>
-          <div class="file-preview-size" id="filePreviewSize">2.4 MB</div>
-        </div>
-        <button class="file-preview-remove" onclick="removeFile()">✕</button>
-      </div>
+      <!-- MULTI-FILE PREVIEW -->
+      <div class="files-preview-container" id="filesPreviewContainer"></div>
+
       <div class="prompt-suggestions">
         <button class="suggestions-toggle" onclick="toggleSuggestions()">💡 Prompt Suggestions ▾</button>
         <div class="suggestions-list" id="suggestionsList">
@@ -526,14 +502,17 @@ body {
           <button class="quick-action-btn" onclick="sendPrompt('Read this and identify all followups and commitments made — list them clearly.')">📌 Followups & Commitments</button>
         </div>
       </div>
+
       <div class="quick-actions">
-        <button class="quick-action-btn" onclick="document.getElementById('fileInput').click()">📎 Drop a Log</button>
+        <button class="quick-action-btn" onclick="triggerFileInput()">📎 Drop a Log</button>
+        <button class="quick-action-btn" onclick="triggerCamera()">📷 Take Photo</button>
         <button class="quick-action-btn" onclick="sendPrompt('Tag the key players in this')">🏷️ Tag Players</button>
         <button class="quick-action-btn" onclick="sendPrompt('Summarize what we have so far')">📋 Summarize</button>
         <button class="quick-action-btn" onclick="sendPrompt('Generate a Lake Score Card for every crew member — rate each person on influence, transparency, reliability, and hidden agenda. Score each out of 10 with a one-line read.')">🃏 Score Cards</button>
         <button class="quick-action-btn" onclick="sendPrompt('Map the influence dynamics')">🗺️ Map Influence</button>
         <button class="quick-action-btn" onclick="sendPrompt('What are the undercurrents here?')">🌀 Undercurrents</button>
       </div>
+
       <div class="input-row">
         <div class="input-wrap">
           <textarea class="lake-input" id="lakeInput"
@@ -541,16 +520,30 @@ body {
             rows="1"
             onkeydown="handleKey(event)"
             oninput="autoResize(this)"></textarea>
-          <button class="attach-btn" onclick="document.getElementById('fileInput').click()">📎</button>
+          <div style="position:relative">
+            <button class="attach-btn" onclick="toggleAttachMenu(event)">📎</button>
+            <div class="attach-menu" id="attachMenu">
+              <div class="attach-menu-item" onclick="triggerFileInput()">📄 Files & Documents</div>
+              <div class="attach-menu-item" onclick="triggerCamera()">📷 Take a Photo</div>
+              <div class="attach-menu-item" onclick="triggerImageInput()">🖼️ Photo Library</div>
+            </div>
+          </div>
         </div>
         <button class="mic-btn" id="micBtn" onclick="toggleMic()">🎤</button>
         <button class="send-btn" onclick="sendWave()">🌊</button>
       </div>
-      <div class="input-hint">Enter to send · Shift+Enter for new line · 📎 files up to 50MB</div>
-      <input type="file" id="fileInput" onchange="handleFileSelect(event)" accept=".txt,.pdf,.doc,.docx,.csv,.json,.md,.rtf,.xlsx,.xls,.pptx">
+      <div class="input-hint">Enter to send · Shift+Enter for new line · 📎 attach multiple files</div>
+
+      <!-- FILE INPUTS -->
+      <input type="file" id="fileInput" multiple onchange="handleFileSelect(event)"
+        accept=".txt,.pdf,.doc,.docx,.csv,.json,.md,.rtf,.xlsx,.xls,.pptx,.png,.jpg,.jpeg,.gif,.webp">
+      <input type="file" id="cameraInput" accept="image/*" capture="environment" onchange="handleFileSelect(event)">
+      <input type="file" id="imageInput" accept="image/*" multiple onchange="handleFileSelect(event)">
     </div>
   </main>
 </div>
+
+<!-- DEPTHS PANEL -->
 <div class="depths-panel" id="depthsPanel">
   <div class="depths-header">
     <h3>⚙️ Depths</h3>
@@ -587,12 +580,95 @@ body {
     <button class="logout-btn" onclick="doLogout()">🚪 Leave The Lake</button>
   </div>
 </div>
+
+<!-- CREW MODAL -->
+<div class="crew-modal-overlay" id="crewModalOverlay" onclick="closeCrewModal(event)">
+  <div class="crew-modal">
+    <h3 id="crewModalTitle">🪶 Add to The Crew</h3>
+    <div class="crew-modal-field">
+      <label>Real Name</label>
+      <input type="text" id="crewModalName" placeholder="How you know them...">
+    </div>
+    <div class="crew-modal-field">
+      <label>Nickname <span style="color:var(--text-dim);font-weight:normal;font-size:11px">*optional</span></label>
+      <input type="text" id="crewModalNickname" placeholder="e.g. Marcus T.">
+    </div>
+    <div class="crew-modal-field">
+      <label>Avatar Emoji <span style="color:var(--text-dim);font-weight:normal;font-size:11px">*optional</span></label>
+      <input type="text" id="crewModalEmoji" placeholder="e.g. 🦈 🌊 🔥 🦊">
+    </div>
+    <div class="crew-modal-field">
+      <label>🎭 Codename</label>
+      <input type="text" id="crewModalCodename" placeholder="e.g. The Architect, Driftwood...">
+    </div>
+    <div class="crew-modal-field">
+      <label>📝 Context Note</label>
+      <textarea id="crewModalContext" placeholder="e.g. Tends to deflect in group settings, key decision maker..."></textarea>
+    </div>
+    <div class="crew-modal-actions">
+      <button class="crew-modal-cancel" onclick="closeCrewModal()">Cancel</button>
+      <button class="crew-modal-delete" id="crewModalDelete" style="display:none" onclick="deleteCrewFromModal()">🗑</button>
+      <button class="crew-modal-save" onclick="saveCrewFromModal()">🌊 Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- CREW PROFILE CARD -->
+<div class="crew-card-overlay" id="crewCardOverlay" onclick="closeCrewCard(event)">
+  <div class="crew-card">
+    <div class="crew-card-header">
+      <div class="crew-card-avatar" id="crewCardAvatar"></div>
+      <div class="crew-card-info">
+        <div class="crew-card-name" id="crewCardName"></div>
+        <div class="crew-card-nickname" id="crewCardNickname"></div>
+        <div class="crew-card-codename" id="crewCardCodename" style="display:none"></div>
+      </div>
+    </div>
+    <div class="crew-card-context" id="crewCardContext"></div>
+    <div class="crew-card-actions">
+      <button class="crew-card-ask" id="crewCardAsk">🌊 Ask The Lake</button>
+      <button class="crew-card-edit" onclick="editFromCard()">✏️ Edit</button>
+      <button class="crew-card-close" onclick="closeCrewCard()">✕</button>
+    </div>
+  </div>
+</div>
+
+<!-- HELP SCREEN -->
+<div class="help-overlay" id="helpOverlay" onclick="closeHelp(event)">
+  <div class="help-modal">
+    <div class="help-header">
+      <div class="help-title">🌊 How to use The Lake</div>
+      <button class="help-close" onclick="closeHelp()">✕</button>
+    </div>
+    <div class="help-section">
+      <div class="help-section-title">🌊 The Basics</div>
+      <div class="help-item"><span class="help-icon">💬</span><div class="help-text">Type anything in the box at the bottom. <strong>The Lake reflects back what it sees.</strong></div></div>
+      <div class="help-item"><span class="help-icon">📄</span><div class="help-text"><strong>Drop a Log</strong> — attach transcripts, meeting notes, screenshots, or chat exports.</div></div>
+      <div class="help-item"><span class="help-icon">📷</span><div class="help-text"><strong>Take a Photo</strong> — snap a whiteboard, document, or screenshot directly into chat.</div></div>
+      <div class="help-item"><span class="help-icon">📎</span><div class="help-text"><strong>Multiple attachments</strong> — attach several files at once. All will be sent together.</div></div>
+    </div>
+    <div class="help-divider"></div>
+    <div class="help-section">
+      <div class="help-section-title">📧 Email Drop</div>
+      <div class="help-item"><span class="help-icon">📨</span><div class="help-text">Forward any email to The Lake — it appears automatically in <strong>Past Tides</strong> within 30 seconds.</div></div>
+      <div class="help-item"><span class="help-icon">📋</span><div class="help-text">Forward to:
+        <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
+          <code style="font-size:11px;background:rgba(255,255,255,0.08);padding:6px 10px;border-radius:6px;color:#7dd3fc;flex:1;">drop@thelakeapp.app</code>
+          <button onclick="copyLakeEmail()" style="background:rgba(255,255,255,0.1);border:none;border-radius:6px;padding:6px 10px;color:white;cursor:pointer;font-size:12px;" id="copyEmailBtn">📋 Copy</button>
+        </div>
+      </div></div>
+    </div>
+    <div class="help-divider"></div>
+    <div class="help-tip">💡 Pro tip — the more context you give The Lake, the deeper the read. Drop the full thread, not just the headline.</div>
+  </div>
+</div>
+
 <script>
 // ============================================
 // STATE
 // ============================================
 let currentMood = 'calm';
-let selectedFile = null;
+let selectedFiles = []; // CHANGED: array for multiple files
 let chatHistory = [];
 let currentSessionId = null;
 let currentUser = null;
@@ -601,6 +677,118 @@ let deferredInstallPrompt = null;
 let allSessions = [];
 let crewMembers = [];
 let suggestedCrew = [];
+
+// ============================================
+// ATTACH MENU
+// ============================================
+function toggleAttachMenu(e) {
+  e.stopPropagation();
+  document.getElementById('attachMenu').classList.toggle('show');
+}
+function triggerFileInput() {
+  document.getElementById('attachMenu').classList.remove('show');
+  document.getElementById('fileInput').click();
+}
+function triggerCamera() {
+  document.getElementById('attachMenu').classList.remove('show');
+  document.getElementById('cameraInput').click();
+}
+function triggerImageInput() {
+  document.getElementById('attachMenu').classList.remove('show');
+  document.getElementById('imageInput').click();
+}
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.attach-btn') && !e.target.closest('.attach-menu')) {
+    document.getElementById('attachMenu').classList.remove('show');
+  }
+  if (!e.target.closest('.header-btn') && !e.target.closest('.mood-selector')) {
+    document.getElementById('moodSelector').classList.remove('show');
+  }
+});
+
+// ============================================
+// MULTI-FILE HANDLING
+// ============================================
+function handleFileSelect(event) {
+  const files = Array.from(event.target.files);
+  if (!files.length) return;
+  files.forEach(file => {
+    if (file.size > 50 * 1024 * 1024) {
+      alert(`🌊 ${file.name} is too heavy — max 50MB.`);
+      return;
+    }
+    selectedFiles.push(file);
+  });
+  event.target.value = '';
+  renderFilePreviews();
+}
+
+function renderFilePreviews() {
+  const container = document.getElementById('filesPreviewContainer');
+  if (selectedFiles.length === 0) {
+    container.classList.remove('show');
+    container.innerHTML = '';
+    return;
+  }
+  container.classList.add('show');
+  container.innerHTML = selectedFiles.map((file, idx) => {
+    const isImage = file.type.startsWith('image/');
+    const icon = getFileIcon(file.name);
+    if (isImage) {
+      const url = URL.createObjectURL(file);
+      return `
+        <div class="file-preview-chip">
+          <img class="file-preview-chip-thumb" src="${url}" alt="${escapeHTML(file.name)}">
+          <div class="file-preview-chip-info">
+            <div class="file-preview-chip-name">${escapeHTML(file.name)}</div>
+            <div class="file-preview-chip-size">${formatFileSize(file.size)}</div>
+          </div>
+          <button class="file-preview-chip-remove" onclick="removeFile(${idx})">✕</button>
+        </div>
+      `;
+    }
+    return `
+      <div class="file-preview-chip">
+        <span class="file-preview-chip-icon">${icon}</span>
+        <div class="file-preview-chip-info">
+          <div class="file-preview-chip-name">${escapeHTML(file.name)}</div>
+          <div class="file-preview-chip-size">${formatFileSize(file.size)}</div>
+        </div>
+        <button class="file-preview-chip-remove" onclick="removeFile(${idx})">✕</button>
+      </div>
+    `;
+  }).join('');
+}
+
+function removeFile(idx) {
+  selectedFiles.splice(idx, 1);
+  renderFilePreviews();
+}
+
+function getFileIcon(name) {
+  const ext = name.split('.').pop().toLowerCase();
+  const icons = { pdf:'📄', doc:'📝', docx:'📝', txt:'📃', csv:'📊', xlsx:'📊', xls:'📊', pptx:'📑', json:'🗂️', md:'📋', png:'🖼️', jpg:'🖼️', jpeg:'🖼️', gif:'🖼️', webp:'🖼️' };
+  return icons[ext] || '📎';
+}
+
+function formatFileSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+// ============================================
+// LIGHTBOX
+// ============================================
+function openLightbox(src, name) {
+  document.getElementById('lightboxImg').src = src;
+  document.getElementById('lightboxName').textContent = name;
+  document.getElementById('attachmentLightbox').classList.add('show');
+}
+function closeLightbox() {
+  document.getElementById('attachmentLightbox').classList.remove('show');
+}
+
 // ============================================
 // NAME DETECTION ENGINE
 // ============================================
@@ -636,9 +824,7 @@ function detectNamesFromText(text) {
       }
     }
   });
-  return Array.from(found.entries())
-    .filter(([name, score]) => score >= 2)
-    .map(([name]) => name);
+  return Array.from(found.entries()).filter(([,score]) => score >= 2).map(([name]) => name);
 }
 function processNamesFromResponse(responseText) {
   const detected = detectNamesFromText(responseText);
@@ -655,27 +841,21 @@ function processNamesFromResponse(responseText) {
       newSuggestions = true;
     }
   });
-  if (newSuggestions) {
-    saveSuggestedCrew();
-    renderCrew();
-  }
+  if (newSuggestions) { saveSuggestedCrew(); renderCrew(); }
 }
-function saveSuggestedCrew() {
-  localStorage.setItem('lakeSuggestedCrew', JSON.stringify(suggestedCrew));
-}
+function saveSuggestedCrew() { localStorage.setItem('lakeSuggestedCrew', JSON.stringify(suggestedCrew)); }
 function loadSuggestedCrew() {
-  try {
-    suggestedCrew = JSON.parse(localStorage.getItem('lakeSuggestedCrew') || '[]');
-  } catch(e) { suggestedCrew = []; }
+  try { suggestedCrew = JSON.parse(localStorage.getItem('lakeSuggestedCrew') || '[]'); } catch(e) { suggestedCrew = []; }
 }
+
 function copyLakeEmail() {
-  navigator.clipboard.writeText('drop@thelakeapp.app')
-    .then(() => {
-      const btn = document.getElementById('copyEmailBtn');
-      btn.textContent = '✅ Copied!';
-      setTimeout(() => btn.textContent = '📋 Copy', 2000);
-    });
+  navigator.clipboard.writeText('drop@thelakeapp.app').then(() => {
+    const btn = document.getElementById('copyEmailBtn');
+    btn.textContent = '✅ Copied!';
+    setTimeout(() => btn.textContent = '📋 Copy', 2000);
+  });
 }
+
 // ============================================
 // PWA
 // ============================================
@@ -684,28 +864,18 @@ window.addEventListener('beforeinstallprompt', (e) => {
   deferredInstallPrompt = e;
   if (currentUser) showInstallBanner();
 });
-function showInstallBanner() {
-  if (deferredInstallPrompt) {
-    document.getElementById('installBanner').classList.add('show');
-  }
-}
+function showInstallBanner() { if (deferredInstallPrompt) document.getElementById('installBanner').classList.add('show'); }
 function installApp() {
   if (deferredInstallPrompt) {
     deferredInstallPrompt.prompt();
-    deferredInstallPrompt.userChoice.then(() => {
-      deferredInstallPrompt = null;
-      dismissInstall();
-    });
+    deferredInstallPrompt.userChoice.then(() => { deferredInstallPrompt = null; dismissInstall(); });
   }
 }
-function dismissInstall() {
-  document.getElementById('installBanner').classList.remove('show');
-}
+function dismissInstall() { document.getElementById('installBanner').classList.remove('show'); }
 const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
 const isInStandaloneMode = window.matchMedia('(display-mode: standalone)').matches;
-if (isIOS && !isInStandaloneMode) {
-  document.getElementById('installHint').style.display = 'block';
-}
+if (isIOS && !isInStandaloneMode) document.getElementById('installHint').style.display = 'block';
+
 // ============================================
 // PROFILE PIC
 // ============================================
@@ -730,20 +900,17 @@ function updateAllProfilePics(src) {
     else { const img = document.createElement('img'); img.src = src; loginPreview.appendChild(img); }
   }
   const dockAvatar = document.getElementById('dockUserAvatar');
-  if (src) { dockAvatar.innerHTML = `<img src="${src}" alt="Profile">`; }
-  else { dockAvatar.innerHTML = '🪶'; }
+  dockAvatar.innerHTML = src ? `<img src="${src}" alt="Profile">` : '🪶';
   const depthsPic = document.getElementById('depthsProfilePic');
-  if (src) { depthsPic.innerHTML = `<img src="${src}" alt="Profile">`; }
-  else { depthsPic.innerHTML = '🪶'; }
+  depthsPic.innerHTML = src ? `<img src="${src}" alt="Profile">` : '🪶';
   document.querySelectorAll('.wave.user-wave .wave-avatar').forEach(el => {
-    if (src) { el.innerHTML = `<img src="${src}" alt="Profile">`; }
-    else { el.innerHTML = '🪶'; }
+    el.innerHTML = src ? `<img src="${src}" alt="Profile">` : '🪶';
   });
 }
 function getUserAvatarHTML() {
-  if (currentProfilePic) return `<img src="${currentProfilePic}" alt="Profile">`;
-  return '🪶';
+  return currentProfilePic ? `<img src="${currentProfilePic}" alt="Profile">` : '🪶';
 }
+
 // ============================================
 // LOGIN
 // ============================================
@@ -760,10 +927,7 @@ function doLogin() {
   localStorage.setItem('lakeUser', JSON.stringify(currentUser));
   enterLake();
 }
-function doGuestLogin() {
-  currentUser = { name: 'Guest', guest: true };
-  enterLake();
-}
+function doGuestLogin() { currentUser = { name: 'Guest', guest: true }; enterLake(); }
 function enterLake() {
   document.getElementById('loginScreen').classList.add('hidden');
   document.getElementById('dockUserName').textContent = currentUser.name;
@@ -776,10 +940,7 @@ function enterLake() {
 }
 function doLogout() {
   localStorage.removeItem('lakeUser');
-  currentUser = null;
-  currentProfilePic = null;
-  chatHistory = [];
-  currentSessionId = null;
+  currentUser = null; currentProfilePic = null; chatHistory = []; currentSessionId = null;
   document.getElementById('depthsPanel').classList.remove('show');
   document.getElementById('loginScreen').classList.remove('hidden');
   document.getElementById('loginName').value = '';
@@ -788,21 +949,19 @@ function doLogout() {
 }
 window.addEventListener('load', () => {
   const saved = localStorage.getItem('lakeUser');
-  if (saved) {
-    try { currentUser = JSON.parse(saved); enterLake(); } catch(e) {}
-  }
+  if (saved) { try { currentUser = JSON.parse(saved); enterLake(); } catch(e) {} }
   loadSessionHistory();
   loadCrew();
   loadSuggestedCrew();
   loadEmailSessions();
   setInterval(loadEmailSessions, 30000);
 });
+
 // ============================================
 // SESSION HISTORY
 // ============================================
 function loadSessionHistory() {
-  try { allSessions = JSON.parse(localStorage.getItem('lakeSessions') || '[]'); }
-  catch(e) { allSessions = []; }
+  try { allSessions = JSON.parse(localStorage.getItem('lakeSessions') || '[]'); } catch(e) { allSessions = []; }
   renderTides();
 }
 function saveSession() {
@@ -816,11 +975,8 @@ function saveSession() {
     history: chatHistory,
     mood: currentMood
   };
-  if (existingIdx >= 0) {
-    allSessions[existingIdx] = sessionData;
-  } else {
-    allSessions.unshift(sessionData);
-  }
+  if (existingIdx >= 0) allSessions[existingIdx] = sessionData;
+  else allSessions.unshift(sessionData);
   allSessions = allSessions.slice(0, 50);
   localStorage.setItem('lakeSessions', JSON.stringify(allSessions));
   renderTides();
@@ -839,9 +995,10 @@ function renderTides() {
   container.innerHTML = allSessions.map((s) => {
     const timeAgo = getTimeAgo(s.time);
     const isActive = s.id === currentSessionId;
+    const icon = s.type === 'email' ? '📧' : '🌊';
     return `
       <div class="tide-item ${isActive ? 'active' : ''}" onclick="loadTide('${s.id}')">
-        <span class="tide-icon">🌊</span>
+        <span class="tide-icon">${icon}</span>
         <div class="tide-info">
           <div class="tide-name">${escapeHTML(s.name)}</div>
           <div class="tide-preview">${escapeHTML(s.preview)}</div>
@@ -870,6 +1027,15 @@ function loadTide(sessionId) {
   currentMood = session.mood || 'calm';
   const container = document.getElementById('wavesContainer');
   container.innerHTML = '';
+
+  // ✅ For email sessions — show full email as first message the bot can analyze
+  if (session.type === 'email' && session.emailRaw) {
+    const emailContent = `📧 Email from ${session.emailFrom}\nSubject: ${session.emailSubject}\n\n${session.emailRaw}`;
+    if (!chatHistory.find(m => m.role === 'user' && m.content.startsWith('📧 Email from'))) {
+      chatHistory.unshift({ role: 'user', content: emailContent, time: session.time });
+    }
+  }
+
   chatHistory.forEach(msg => {
     if (msg.role === 'user') appendUserWave(msg.content, msg.time, false);
     else if (msg.role === 'assistant') appendLakeWave(msg.content, msg.time, false);
@@ -911,8 +1077,9 @@ function filterTides(query) {
     item.style.display = (name.includes(query.toLowerCase()) || preview.includes(query.toLowerCase())) ? 'flex' : 'none';
   });
 }
+
 // ============================================
-// EMAIL SESSIONS — load from server
+// EMAIL SESSIONS — ✅ FULL CONTENT LOADED
 // ============================================
 async function loadEmailSessions() {
   try {
@@ -920,35 +1087,46 @@ async function loadEmailSessions() {
     if (!res.ok) return;
     const emailSessions = await res.json();
     if (!emailSessions.length) return;
-
-    // Merge email sessions into allSessions
     emailSessions.forEach(es => {
       const exists = allSessions.find(s => s.id === es.id);
       if (!exists) {
+        const emailBody = es.messages?.[0]?.content || '';
         allSessions.unshift({
           id: es.id,
-          name: '📧 ' + (es.subject || 'Email'),
-          preview: 'From: ' + es.from,
-          time: es.time,
-          history: es.history,
-          mood: 'analytical',
-          type: 'email'
+          name: '📧 ' + (es.title || es.subject || 'Email'),
+          preview: 'From: ' + (es.from || 'Unknown'),
+          time: es.date || new Date().toISOString(),
+          type: 'email',
+          emailFrom: es.from,
+          emailSubject: es.title || es.subject,
+          emailRaw: emailBody,
+          // ✅ Full history with the email content so the bot can read it
+          history: [
+            {
+              role: 'user',
+              content: emailBody,
+              time: es.date || new Date().toISOString()
+            }
+          ],
+          mood: 'analytical'
         });
       }
     });
-
     allSessions = allSessions.slice(0, 50);
     renderTides();
   } catch(e) {
     console.log('No email sessions available');
   }
 }
+
 // ============================================
 // NEW SESSION
 // ============================================
 function newSession() {
   currentSessionId = 'session_' + Date.now();
   chatHistory = [];
+  selectedFiles = [];
+  renderFilePreviews();
   document.getElementById('wavesContainer').innerHTML = `
     <div class="welcome-screen" id="welcomeScreen">
       <div class="welcome-icon">🌊</div>
@@ -967,6 +1145,7 @@ function newSession() {
   renderTides();
   if (window.innerWidth <= 768) toggleDock();
 }
+
 // ============================================
 // DOCK
 // ============================================
@@ -974,36 +1153,30 @@ function toggleDock() {
   document.getElementById('dock').classList.toggle('open');
   document.querySelector('.dock-overlay').classList.toggle('show');
 }
+
 // ============================================
-// SUGGESTIONS TOGGLE — FIXED
+// SUGGESTIONS TOGGLE
 // ============================================
 function toggleSuggestions() {
   const list = document.getElementById('suggestionsList');
   const btn = document.querySelector('.suggestions-toggle');
   list.classList.toggle('open');
-  btn.textContent = list.classList.contains('open')
-    ? '💡 Prompt Suggestions ▴'
-    : '💡 Prompt Suggestions ▾';
+  btn.textContent = list.classList.contains('open') ? '💡 Prompt Suggestions ▴' : '💡 Prompt Suggestions ▾';
 }
+
 // ============================================
 // CREW
 // ============================================
 let crewModalMode = null;
 let crewModalIndex = -1;
 function loadCrew() {
-  try { crewMembers = JSON.parse(localStorage.getItem('lakeCrew') || '[]'); }
-  catch(e) { crewMembers = []; }
+  try { crewMembers = JSON.parse(localStorage.getItem('lakeCrew') || '[]'); } catch(e) { crewMembers = []; }
   renderCrew();
 }
-function saveCrew() {
-  localStorage.setItem('lakeCrew', JSON.stringify(crewMembers));
-}
+function saveCrew() { localStorage.setItem('lakeCrew', JSON.stringify(crewMembers)); }
 function renderCrew() {
   const list = document.getElementById('crewList');
-  const colors = [
-    '#4fc3f7,#0288d1','#ce93d8,#7b1fa2','#ffb74d,#f57c00',
-    '#81c784,#388e3c','#ff8a80,#d32f2f','#80cbc4,#00796b'
-  ];
+  const colors = ['#4fc3f7,#0288d1','#ce93d8,#7b1fa2','#ffb74d,#f57c00','#81c784,#388e3c','#ff8a80,#d32f2f','#80cbc4,#00796b'];
   let suggestedHTML = '';
   if (suggestedCrew.length > 0) {
     suggestedHTML = `
@@ -1027,67 +1200,37 @@ function renderCrew() {
     return `
       <div class="crew-item" onclick="openCrewProfile(${idx})">
         <div class="crew-avatar" style="background:${member.emoji ? 'none' : `linear-gradient(135deg,${color})`}">${initial}</div>
-        <div style="flex:1;min-width:0">
-          <div class="crew-name">${escapeHTML(displayName)}</div>
-          ${nickname}
-        </div>
+        <div style="flex:1;min-width:0"><div class="crew-name">${escapeHTML(displayName)}</div>${nickname}</div>
         <button class="tide-delete" onclick="removeCrew(event,${idx})" title="Remove">🗑</button>
       </div>
     `;
   }).join('');
-  list.innerHTML = suggestedHTML + crewHTML + `
-    <div class="crew-item" onclick="openCrewModal('add')" style="justify-content:center;color:var(--text-dim);">
-      + Add to The Crew
-    </div>
-  `;
+  list.innerHTML = suggestedHTML + crewHTML + `<div class="crew-item" onclick="openCrewModal('add')" style="justify-content:center;color:var(--text-dim);">+ Add to The Crew</div>`;
 }
-function approveSuggested(idx) {
-  const member = suggestedCrew[idx];
-  openCrewModal('approve', idx, member.name);
-}
-function dismissSuggested(idx) {
-  suggestedCrew.splice(idx, 1);
-  saveSuggestedCrew();
-  renderCrew();
-}
+function approveSuggested(idx) { openCrewModal('approve', idx, suggestedCrew[idx].name); }
+function dismissSuggested(idx) { suggestedCrew.splice(idx, 1); saveSuggestedCrew(); renderCrew(); }
 function openCrewModal(mode, idx = -1, prefillName = '') {
-  crewModalMode = mode;
-  crewModalIndex = idx;
-  const title = document.getElementById('crewModalTitle');
-  const nameInput = document.getElementById('crewModalName');
-  const nicknameInput = document.getElementById('crewModalNickname');
-  const emojiInput = document.getElementById('crewModalEmoji');
-  const codenameInput = document.getElementById('crewModalCodename');
-  const contextInput = document.getElementById('crewModalContext');
+  crewModalMode = mode; crewModalIndex = idx;
   const deleteBtn = document.getElementById('crewModalDelete');
+  document.getElementById('crewModalTitle').textContent = mode === 'edit' ? '✏️ Edit Crew Member' : mode === 'approve' ? '⚡ Add to The Crew' : '🪶 Add to The Crew';
   if (mode === 'edit' && idx >= 0) {
     const m = crewMembers[idx];
-    title.textContent = '✏️ Edit Crew Member';
-    nameInput.value = m.name || '';
-    nicknameInput.value = m.nickname || '';
-    codenameInput.value = m.codename || '';
-    emojiInput.value = m.emoji || '';
-    contextInput.value = m.context || '';
+    document.getElementById('crewModalName').value = m.name || '';
+    document.getElementById('crewModalNickname').value = m.nickname || '';
+    document.getElementById('crewModalCodename').value = m.codename || '';
+    document.getElementById('crewModalEmoji').value = m.emoji || '';
+    document.getElementById('crewModalContext').value = m.context || '';
     deleteBtn.style.display = 'block';
-  } else if (mode === 'approve') {
-    title.textContent = '⚡ Add to The Crew';
-    nameInput.value = prefillName || '';
-    emojiInput.value = '';
-    nicknameInput.value = '';
-    codenameInput.value = '';
-    contextInput.value = '';
-    deleteBtn.style.display = 'none';
   } else {
-    title.textContent = '🪶 Add to The Crew';
-    nameInput.value = '';
-    emojiInput.value = '';
-    nicknameInput.value = '';
-    codenameInput.value = '';
-    contextInput.value = '';
+    document.getElementById('crewModalName').value = prefillName || '';
+    document.getElementById('crewModalNickname').value = '';
+    document.getElementById('crewModalCodename').value = '';
+    document.getElementById('crewModalEmoji').value = '';
+    document.getElementById('crewModalContext').value = '';
     deleteBtn.style.display = 'none';
   }
   document.getElementById('crewModalOverlay').classList.add('show');
-  setTimeout(() => nameInput.focus(), 100);
+  setTimeout(() => document.getElementById('crewModalName').focus(), 100);
 }
 function closeCrewModal(e) {
   if (e && e.target !== document.getElementById('crewModalOverlay')) return;
@@ -1095,84 +1238,46 @@ function closeCrewModal(e) {
 }
 function saveCrewFromModal() {
   const name = document.getElementById('crewModalName').value.trim();
-  if (!name) {
-    document.getElementById('crewModalName').style.borderColor = 'var(--danger)';
-    setTimeout(() => document.getElementById('crewModalName').style.borderColor = '', 1500);
-    return;
-  }
-  const member = {
-    name,
-    nickname: document.getElementById('crewModalNickname').value.trim(),
-    codename: document.getElementById('crewModalCodename').value.trim(),
-    emoji: document.getElementById('crewModalEmoji').value.trim(),
-    context: document.getElementById('crewModalContext').value.trim()
-  };
-  if (crewModalMode === 'edit' && crewModalIndex >= 0) {
-    crewMembers[crewModalIndex] = member;
-  } else if (crewModalMode === 'approve' && crewModalIndex >= 0) {
-    suggestedCrew.splice(crewModalIndex, 1);
-    saveSuggestedCrew();
-    crewMembers.push(member);
-  } else {
-    crewMembers.push(member);
-  }
-  saveCrew();
-  renderCrew();
+  if (!name) { document.getElementById('crewModalName').style.borderColor = 'var(--danger)'; setTimeout(() => document.getElementById('crewModalName').style.borderColor = '', 1500); return; }
+  const member = { name, nickname: document.getElementById('crewModalNickname').value.trim(), codename: document.getElementById('crewModalCodename').value.trim(), emoji: document.getElementById('crewModalEmoji').value.trim(), context: document.getElementById('crewModalContext').value.trim() };
+  if (crewModalMode === 'edit' && crewModalIndex >= 0) crewMembers[crewModalIndex] = member;
+  else if (crewModalMode === 'approve' && crewModalIndex >= 0) { suggestedCrew.splice(crewModalIndex, 1); saveSuggestedCrew(); crewMembers.push(member); }
+  else crewMembers.push(member);
+  saveCrew(); renderCrew();
   document.getElementById('crewModalOverlay').classList.remove('show');
 }
 function deleteCrewFromModal() {
   if (crewModalIndex >= 0 && confirm(`Remove ${crewMembers[crewModalIndex].name} from The Crew?`)) {
-    crewMembers.splice(crewModalIndex, 1);
-    saveCrew();
-    renderCrew();
+    crewMembers.splice(crewModalIndex, 1); saveCrew(); renderCrew();
     document.getElementById('crewModalOverlay').classList.remove('show');
   }
 }
 function removeCrew(e, idx) {
   e.stopPropagation();
-  if (confirm(`Remove ${crewMembers[idx].name} from The Crew?`)) {
-    crewMembers.splice(idx, 1);
-    saveCrew();
-    renderCrew();
-  }
+  if (confirm(`Remove ${crewMembers[idx].name} from The Crew?`)) { crewMembers.splice(idx, 1); saveCrew(); renderCrew(); }
 }
 let crewCardIndex = -1;
 function openCrewProfile(idx) {
   const member = crewMembers[idx];
   if (!member) return;
   crewCardIndex = idx;
-  const colors = [
-    '#4fc3f7,#0288d1','#ce93d8,#7b1fa2','#ffb74d,#f57c00',
-    '#81c784,#388e3c','#ff8a80,#d32f2f','#80cbc4,#00796b'
-  ];
+  const colors = ['#4fc3f7,#0288d1','#ce93d8,#7b1fa2','#ffb74d,#f57c00','#81c784,#388e3c','#ff8a80,#d32f2f','#80cbc4,#00796b'];
   const color = colors[idx % colors.length];
-  const initial = member.emoji || member.name.trim()[0].toUpperCase();
   document.getElementById('crewCardAvatar').style.background = member.emoji ? 'none' : `linear-gradient(135deg,${color})`;
-  document.getElementById('crewCardAvatar').textContent = initial;
+  document.getElementById('crewCardAvatar').textContent = member.emoji || member.name.trim()[0].toUpperCase();
   document.getElementById('crewCardName').textContent = member.name;
   document.getElementById('crewCardNickname').textContent = member.nickname || '';
   const codenameEl = document.getElementById('crewCardCodename');
-  if (member.codename) {
-    codenameEl.textContent = `"${member.codename}"`;
-    codenameEl.style.display = 'inline-block';
-  } else {
-    codenameEl.style.display = 'none';
-  }
+  if (member.codename) { codenameEl.textContent = `"${member.codename}"`; codenameEl.style.display = 'inline-block'; } else { codenameEl.style.display = 'none'; }
   const contextEl = document.getElementById('crewCardContext');
-  if (member.context) {
-    contextEl.textContent = member.context;
-    contextEl.classList.remove('empty');
-  } else {
-    contextEl.textContent = 'No context note yet — tap Edit to add one.';
-    contextEl.classList.add('empty');
-  }
+  contextEl.textContent = member.context || 'No context note yet — tap Edit to add one.';
+  contextEl.classList.toggle('empty', !member.context);
   document.getElementById('crewCardAsk').onclick = () => {
     let prompt = `Tell me what I should know about ${member.name}`;
     if (member.codename) prompt += ` (codename: "${member.codename}")`;
     if (member.context) prompt += `. Context: ${member.context}`;
     prompt += ` — their patterns, influence style, and what to watch for.`;
-    closeCrewCard();
-    sendPrompt(prompt);
+    closeCrewCard(); sendPrompt(prompt);
     if (window.innerWidth <= 768) toggleDock();
   };
   document.getElementById('crewCardOverlay').classList.add('show');
@@ -1181,91 +1286,61 @@ function closeCrewCard(e) {
   if (e && e.target !== document.getElementById('crewCardOverlay')) return;
   document.getElementById('crewCardOverlay').classList.remove('show');
 }
-function editFromCard() {
-  closeCrewCard();
-  setTimeout(() => openCrewModal('edit', crewCardIndex), 150);
-}
+function editFromCard() { closeCrewCard(); setTimeout(() => openCrewModal('edit', crewCardIndex), 150); }
 function addCrew() { openCrewModal('add'); }
+
 // ============================================
 // MOOD
 // ============================================
-function toggleMoodSelector() {
-  document.getElementById('moodSelector').classList.toggle('show');
-}
+function toggleMoodSelector() { document.getElementById('moodSelector').classList.toggle('show'); }
 function setMood(mood, e) {
   if (e) e.stopPropagation();
   currentMood = mood;
-  const moods = {
-    calm: 'Still waters — ready to reflect',
-    analytical: 'Deep scan mode — precision active',
-    stormy: 'Rough waters — no filter, full truth'
-  };
+  const moods = { calm: 'Still waters — ready to reflect', analytical: 'Deep scan mode — precision active', stormy: 'Rough waters — no filter, full truth' };
   document.getElementById('lakeStatus').textContent = moods[mood];
   document.querySelectorAll('.mood-option, .depths-option').forEach(el => el.classList.remove('active'));
   document.getElementById('moodSelector').classList.remove('show');
 }
+
 // ============================================
 // DEPTHS
 // ============================================
-function toggleDepths() {
-  document.getElementById('depthsPanel').classList.toggle('show');
-}
-// ============================================
-// FILE HANDLING
-// ============================================
-function handleFileSelect(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  if (file.size > 50 * 1024 * 1024) {
-    alert('🌊 That log is too heavy — max 50MB.');
-    return;
-  }
-  selectedFile = file;
-  document.getElementById('filePreviewName').textContent = file.name;
-  document.getElementById('filePreviewSize').textContent = formatFileSize(file.size);
-  document.getElementById('filePreview').classList.add('show');
-}
-function removeFile() {
-  selectedFile = null;
-  document.getElementById('filePreview').classList.remove('show');
-  document.getElementById('fileInput').value = '';
-}
-function formatFileSize(bytes) {
-  if (bytes < 1024) return bytes + ' B';
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
-}
+function toggleDepths() { document.getElementById('depthsPanel').classList.toggle('show'); }
+
 // ============================================
 // SENDING WAVES
 // ============================================
-function sendPrompt(text) {
-  document.getElementById('lakeInput').value = text;
-  sendWave();
-}
+function sendPrompt(text) { document.getElementById('lakeInput').value = text; sendWave(); }
+
 async function sendWave() {
   const input = document.getElementById('lakeInput');
   const text = input.value.trim();
-  if (!text && !selectedFile) return;
+  if (!text && selectedFiles.length === 0) return;
   const welcome = document.getElementById('welcomeScreen');
   if (welcome) welcome.remove();
   if (!currentSessionId) currentSessionId = 'session_' + Date.now();
   const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  appendUserWave(text || '📎 ' + selectedFile?.name, timeStr, true);
-  chatHistory.push({ role: 'user', content: text, time: timeStr });
+
+  // Build display for attachments
+  const filesToSend = [...selectedFiles];
+  const attachmentLabel = filesToSend.length > 0 ? ` [${filesToSend.length} file${filesToSend.length > 1 ? 's' : ''} attached]` : '';
+  appendUserWave(text || '📎 Files attached', timeStr, true, filesToSend);
+  chatHistory.push({ role: 'user', content: text + attachmentLabel, time: timeStr });
   input.value = '';
   input.style.height = 'auto';
+  selectedFiles = [];
+  renderFilePreviews();
   showRipple();
+
   try {
     const formData = new FormData();
     formData.append('message', text);
     formData.append('mood', currentMood);
-    const historyToSend = chatHistory.slice(-11, -1).map(m => ({
-      role: m.role === 'user' ? 'user' : 'assistant',
-      content: m.content
-    }));
+    const historyToSend = chatHistory.slice(-11, -1).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.content }));
     formData.append('history', JSON.stringify(historyToSend));
-    if (selectedFile) formData.append('file', selectedFile);
-    removeFile();
+    // ✅ Send ALL files
+    filesToSend.forEach(file => formData.append('file', file));
+
     const response = await fetch('/chat', { method: 'POST', body: formData });
     const data = await response.json();
     hideRipple();
@@ -1285,21 +1360,46 @@ async function sendWave() {
     console.error('Lake error:', err);
   }
 }
-function appendUserWave(text, timeStr, scroll) {
+
+// ✅ UPDATED: appendUserWave shows clickable attachments
+function appendUserWave(text, timeStr, scroll, files = []) {
   const container = document.getElementById('wavesContainer');
   const div = document.createElement('div');
   div.className = 'wave user-wave';
+
+  let attachHTML = '';
+  if (files.length > 0) {
+    attachHTML = '<div class="wave-attachments">';
+    files.forEach(file => {
+      const isImage = file.type.startsWith('image/');
+      if (isImage) {
+        const url = URL.createObjectURL(file);
+        attachHTML += `<div class="wave-attachment" onclick="openLightbox('${url}','${escapeHTML(file.name)}')">
+          <img class="wave-attachment-thumb" src="${url}" alt="${escapeHTML(file.name)}">
+          <span class="wave-attachment-name">${escapeHTML(file.name)}</span>
+        </div>`;
+      } else {
+        attachHTML += `<div class="wave-attachment">
+          <span class="wave-attachment-icon">${getFileIcon(file.name)}</span>
+          <span class="wave-attachment-name">${escapeHTML(file.name)}</span>
+        </div>`;
+      }
+    });
+    attachHTML += '</div>';
+  }
+
   div.innerHTML = `
     <div class="wave-avatar">${getUserAvatarHTML()}</div>
     <div class="wave-content">
       <div class="wave-sender">${escapeHTML(currentUser?.name || 'You')}</div>
-      <div class="wave-bubble">${escapeHTML(text)}</div>
+      <div class="wave-bubble">${text ? escapeHTML(text) : ''}${attachHTML}</div>
       <div class="wave-time">${timeStr}</div>
     </div>
   `;
   container.appendChild(div);
   if (scroll) container.scrollTop = container.scrollHeight;
 }
+
 function appendLakeWave(text, timeStr, scroll) {
   const container = document.getElementById('wavesContainer');
   const div = document.createElement('div');
@@ -1315,12 +1415,14 @@ function appendLakeWave(text, timeStr, scroll) {
   container.appendChild(div);
   if (scroll) container.scrollTop = container.scrollHeight;
 }
+
 function formatReflection(text) {
   return escapeHTML(text)
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/\n\n/g, '<br><br>')
     .replace(/\n/g, '<br>');
 }
+
 // ============================================
 // RIPPLE
 // ============================================
@@ -1331,13 +1433,10 @@ function showRipple() {
 }
 function hideRipple() {
   document.getElementById('ripple').classList.remove('show');
-  const moods = {
-    calm: 'Still waters — ready to reflect',
-    analytical: 'Deep scan mode — precision active',
-    stormy: 'Rough waters — no filter, full truth'
-  };
+  const moods = { calm: 'Still waters — ready to reflect', analytical: 'Deep scan mode — precision active', stormy: 'Rough waters — no filter, full truth' };
   document.getElementById('lakeStatus').textContent = moods[currentMood];
 }
+
 // ============================================
 // CURRENTS
 // ============================================
@@ -1361,38 +1460,20 @@ function updateCurrents(text) {
     }
   }
 }
+
 // ============================================
 // INPUT
 // ============================================
-function handleKey(e) {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendWave(); }
-}
-function autoResize(el) {
-  el.style.height = 'auto';
-  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
-}
-function escapeHTML(str) {
-  if (!str) return '';
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
-}
+function handleKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendWave(); } }
+function autoResize(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px'; }
+function escapeHTML(str) { if (!str) return ''; const div = document.createElement('div'); div.textContent = str; return div.innerHTML; }
+
 // ============================================
 // HELP
 // ============================================
 function openHelp() { document.getElementById('helpOverlay').classList.add('show'); }
-function closeHelp(e) {
-  if (e && e.target !== document.getElementById('helpOverlay')) return;
-  document.getElementById('helpOverlay').classList.remove('show');
-}
-// ============================================
-// CLOSE ON OUTSIDE CLICK
-// ============================================
-document.addEventListener('click', (e) => {
-  if (!e.target.closest('.header-btn') && !e.target.closest('.mood-selector')) {
-    document.getElementById('moodSelector').classList.remove('show');
-  }
-});
+function closeHelp(e) { if (e && e.target !== document.getElementById('helpOverlay')) return; document.getElementById('helpOverlay').classList.remove('show'); }
+
 // ============================================
 // MOBILE KEYBOARD FIX
 // ============================================
@@ -1401,239 +1482,31 @@ if ('visualViewport' in window) {
     document.getElementById('wavesContainer').scrollTop = document.getElementById('wavesContainer').scrollHeight;
   });
 }
+
 // ============================================
 // VOICE INPUT
 // ============================================
 let recognition = null;
 let isListening = false;
 function toggleMic() {
-  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-    alert('Your browser doesn\'t support voice input. Try Chrome!');
-    return;
-  }
+  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) { alert('Your browser doesn\'t support voice input. Try Chrome!'); return; }
   if (isListening) { recognition.stop(); return; }
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   recognition = new SpeechRecognition();
-  recognition.continuous = false;
-  recognition.interimResults = true;
-  recognition.lang = 'en-US';
-  recognition.onstart = () => {
-    isListening = true;
-    document.getElementById('micBtn').classList.add('listening');
-    document.getElementById('micBtn').textContent = '🔴';
-  };
-  recognition.onresult = (event) => {
-    const transcript = Array.from(event.results).map(r => r[0].transcript).join('');
-    document.getElementById('lakeInput').value = transcript;
-    autoResize(document.getElementById('lakeInput'));
-  };
-  recognition.onend = () => {
-    isListening = false;
-    document.getElementById('micBtn').classList.remove('listening');
-    document.getElementById('micBtn').textContent = '🎤';
-  };
-  recognition.onerror = () => {
-    isListening = false;
-    document.getElementById('micBtn').classList.remove('listening');
-    document.getElementById('micBtn').textContent = '🎤';
-  };
+  recognition.continuous = false; recognition.interimResults = true; recognition.lang = 'en-US';
+  recognition.onstart = () => { isListening = true; document.getElementById('micBtn').classList.add('listening'); document.getElementById('micBtn').textContent = '🔴'; };
+  recognition.onresult = (event) => { const transcript = Array.from(event.results).map(r => r[0].transcript).join(''); document.getElementById('lakeInput').value = transcript; autoResize(document.getElementById('lakeInput')); };
+  recognition.onend = () => { isListening = false; document.getElementById('micBtn').classList.remove('listening'); document.getElementById('micBtn').textContent = '🎤'; };
+  recognition.onerror = () => { isListening = false; document.getElementById('micBtn').classList.remove('listening'); document.getElementById('micBtn').textContent = '🎤'; };
   recognition.start();
 }
-function exportConversation() {
-  if (!chatHistory || chatHistory.length === 0) {
-    alert('No conversation to export yet!');
-    return;
-  }
-  const lines = chatHistory
-    .filter(m => m.content)
-    .map(m => `${m.role === 'user' ? '👤 YOU' : '🌊 THE LAKE'} — ${m.time || ''}\n${m.content}`)
-    .join('\n\n─────────────────────────\n\n');
-  if (navigator.share) {
-    navigator.share({ title: '🌊 Lake Reflection', text: lines })
-      .catch(err => console.log('Share failed:', err));
-  } else {
-    navigator.clipboard.writeText(lines).then(() => {
-      alert('Copied to clipboard — paste anywhere to share!');
-    }).catch(() => {
-      alert('Share not supported on this browser. Try Chrome or Safari on mobile!');
-    });
-  }
-}
+
 function shareAsGroupSession() {
-  if (!currentSessionId) {
-    alert('Start a conversation first!');
-    return;
-  }
+  if (!currentSessionId) { alert('Start a conversation first!'); return; }
   const groupUrl = window.location.origin + '/group.html?session=' + currentSessionId;
-  if (navigator.share) {
-    navigator.share({
-      title: '🌊 Join my Lake session',
-      text: 'Join me in The Great Lake for a group reflection:',
-      url: groupUrl
-    });
-  } else {
-    navigator.clipboard.writeText(groupUrl).then(() => {
-      alert('Group link copied! Share it with your friend 🌊');
-    });
-  }
+  if (navigator.share) { navigator.share({ title: '🌊 Join my Lake session', text: 'Join me in The Great Lake for a group reflection:', url: groupUrl }); }
+  else { navigator.clipboard.writeText(groupUrl).then(() => { alert('Group link copied! Share it with your friend 🌊'); }); }
 }
 </script>
-<!-- Crew Modal -->
-<div class="crew-modal-overlay" id="crewModalOverlay" onclick="closeCrewModal(event)">
-  <div class="crew-modal">
-    <h3 id="crewModalTitle">🪶 Add to The Crew</h3>
-    <div class="crew-modal-field">
-      <label>Real Name</label>
-      <input type="text" id="crewModalName" placeholder="How you know them...">
-    </div>
-    <div class="crew-modal-field">
-      <label>Nickname <span style="color:var(--text-dim);font-weight:normal;font-size:11px">*optional</span></label>
-      <input type="text" id="crewModalNickname" placeholder="e.g. Marcus T.">
-    </div>
-    <div class="crew-modal-field">
-      <label>Avatar Emoji <span style="color:var(--text-dim);font-weight:normal;font-size:11px">*optional</span></label>
-      <input type="text" id="crewModalEmoji" placeholder="e.g. 🦈 🌊 🔥 🦊">
-    </div>
-    <div class="crew-modal-field">
-      <label>🎭 Codename</label>
-      <input type="text" id="crewModalCodename" placeholder="e.g. The Architect, Driftwood...">
-    </div>
-    <div class="crew-modal-field">
-      <label>📝 Context Note</label>
-      <textarea id="crewModalContext" placeholder="e.g. Tends to deflect in group settings, key decision maker..."></textarea>
-    </div>
-    <div class="crew-modal-actions">
-      <button class="crew-modal-cancel" onclick="closeCrewModal()">Cancel</button>
-      <button class="crew-modal-delete" id="crewModalDelete" style="display:none" onclick="deleteCrewFromModal()">🗑</button>
-      <button class="crew-modal-save" onclick="saveCrewFromModal()">🌊 Save</button>
-    </div>
-  </div>
-</div>
-<!-- Crew Profile Card -->
-<div class="crew-card-overlay" id="crewCardOverlay" onclick="closeCrewCard(event)">
-  <div class="crew-card">
-    <div class="crew-card-header">
-      <div class="crew-card-avatar" id="crewCardAvatar"></div>
-      <div class="crew-card-info">
-        <div class="crew-card-name" id="crewCardName"></div>
-        <div class="crew-card-nickname" id="crewCardNickname"></div>
-        <div class="crew-card-codename" id="crewCardCodename" style="display:none"></div>
-      </div>
-    </div>
-    <div class="crew-card-context" id="crewCardContext"></div>
-    <div class="crew-card-actions">
-      <button class="crew-card-ask" id="crewCardAsk">🌊 Ask The Lake</button>
-      <button class="crew-card-edit" onclick="editFromCard()">✏️ Edit</button>
-      <button class="crew-card-close" onclick="closeCrewCard()">✕</button>
-    </div>
-  </div>
-</div>
-<!-- Help Screen -->
-<div class="help-overlay" id="helpOverlay" onclick="closeHelp(event)">
-  <div class="help-modal">
-    <div class="help-header">
-      <div class="help-title">🌊 How to use The Lake</div>
-      <button class="help-close" onclick="closeHelp()">✕</button>
-    </div>
-
-    <!-- THE BASICS -->
-    <div class="help-section">
-      <div class="help-section-title">🌊 The Basics</div>
-      <div class="help-item"><span class="help-icon">💬</span><div class="help-text">Type anything in the box at the bottom. <strong>The Lake reflects back what it sees.</strong></div></div>
-      <div class="help-item"><span class="help-icon">📄</span><div class="help-text"><strong>Drop a Log</strong> — attach transcripts, meeting notes, screenshots, or chat exports. The Lake reads the room.</div></div>
-      <div class="help-item"><span class="help-icon">🧭</span><div class="help-text">Use the <strong>welcome prompts</strong> to get started fast.</div></div>
-    </div>
-    <div class="help-divider"></div>
-
-    <!-- INTERPERSONAL DYNAMICS -->
-    <div class="help-section">
-      <div class="help-section-title">🧠 Reading People & Dynamics</div>
-      <div class="help-item"><span class="help-icon">💬</span><div class="help-text"><strong>Paste a chat thread</strong> — The Lake decodes tone, intent, power plays, and what's really being said between the lines.</div></div>
-      <div class="help-item"><span class="help-icon">🖼️</span><div class="help-text"><strong>Drop a screenshot</strong> — text message, email, Slack thread. The Lake reads the behavior, not just the words.</div></div>
-      <div class="help-item"><span class="help-icon">🎙️</span><div class="help-text"><strong>Paste a transcript</strong> — meeting notes, call recordings, interview summaries. The Lake surfaces what the data is really saying.</div></div>
-      <div class="help-item"><span class="help-icon">🔥</span><div class="help-text"><strong>Something feels off?</strong> Describe the situation. The Lake maps the hidden dynamics — who holds power, who's deflecting, what's driving the behavior.</div></div>
-      <div class="help-item"><span class="help-icon">🎯</span><div class="help-text"><strong>Before a hard conversation</strong> — drop the context and ask The Lake what to watch for, how to position yourself, and what moves are available.</div></div>
-    </div>
-    <div class="help-divider"></div>
-
-    <!-- PROMPT SUGGESTIONS -->
-    <div class="help-section">
-      <div class="help-section-title">🧭 Prompt Suggestions</div>
-      <div class="help-item"><span class="help-icon">💡</span><div class="help-text">Tap the <strong>⚡ Suggestions</strong> button above the input bar to expand 17 ready-to-use prompts:</div></div>
-      <div class="help-item"><span class="help-icon">🧭</span><div class="help-text"><strong>Read the Currents</strong> — overall read of the situation or person.</div></div>
-      <div class="help-item"><span class="help-icon">🔍</span><div class="help-text"><strong>Surface the Truth</strong> — what's really going on beneath the surface.</div></div>
-      <div class="help-item"><span class="help-icon">🪨</span><div class="help-text"><strong>Drop the Full Logbook</strong> — deep dive into everything you've shared.</div></div>
-      <div class="help-item"><span class="help-icon">🧩</span><div class="help-text"><strong>Connect the Dots</strong> — find patterns across people and events.</div></div>
-      <div class="help-item"><span class="help-icon">🔥</span><div class="help-text"><strong>Red Flags</strong> — what should you be worried about right now.</div></div>
-      <div class="help-item"><span class="help-icon">🎭</span><div class="help-text"><strong>Mask & Motive</strong> — what's the person hiding and why.</div></div>
-      <div class="help-item"><span class="help-icon">📈</span><div class="help-text"><strong>Momentum Check</strong> — is this moving forward or stalling.</div></div>
-      <div class="help-item"><span class="help-icon">🧊</span><div class="help-text"><strong>Iceberg View</strong> — what's visible vs. what's lurking below.</div></div>
-      <div class="help-item"><span class="help-icon">🧵</span><div class="help-text"><strong>Thread the Story</strong> — pull the narrative together from all the pieces.</div></div>
-      <div class="help-item"><span class="help-icon">⚓</span><div class="help-text"><strong>Anchor Points</strong> — what are the fixed truths in this situation.</div></div>
-      <div class="help-item"><span class="help-icon">🌫️</span><div class="help-text"><strong>Fog Index</strong> — how much clarity do you actually have right now.</div></div>
-      <div class="help-item"><span class="help-icon">🎯</span><div class="help-text"><strong>Intent Scan</strong> — what does this person actually want.</div></div>
-      <div class="help-item"><span class="help-icon">🧨</span><div class="help-text"><strong>Pressure Test</strong> — where does this break under stress.</div></div>
-      <div class="help-item"><span class="help-icon">🪞</span><div class="help-text"><strong>Mirror Back</strong> — show me how I'm coming across in this.</div></div>
-      <div class="help-item"><span class="help-icon">🌪️</span><div class="help-text"><strong>Storm Warning</strong> — what's about to blow up if nothing changes.</div></div>
-      <div class="help-item"><span class="help-icon">🧮</span><div class="help-text"><strong>Odds & Outcomes</strong> — what are the likely scenarios from here.</div></div>
-      <div class="help-item"><span class="help-icon">📌</span><div class="help-text"><strong>Followups & Commitments</strong> — what was promised, agreed, or left hanging.</div></div>
-    </div>
-    <div class="help-divider"></div>
-
-    <!-- THE DOCK -->
-    <div class="help-section">
-      <div class="help-section-title">🗂 The Dock</div>
-      <div class="help-item"><span class="help-icon">🌊</span><div class="help-text"><strong>Past Tides</strong> — all your saved conversations, including forwarded emails.</div></div>
-      <div class="help-item"><span class="help-icon">🔍</span><div class="help-text"><strong>Sonar</strong> — search through past conversations.</div></div>
-      <div class="help-item"><span class="help-icon">👥</span><div class="help-text"><strong>The Crew</strong> — track the people in your world.</div></div>
-    </div>
-    <div class="help-divider"></div>
-
-    <!-- THE CREW -->
-    <div class="help-section">
-      <div class="help-section-title">👥 The Crew</div>
-      <div class="help-item"><span class="help-icon">⚡</span><div class="help-text"><strong>Spotted</strong> — The Lake auto-detects names from conversations and adds them to your Crew.</div></div>
-      <div class="help-item"><span class="help-icon">🪶</span><div class="help-text">Tap <strong>+ Add to The Crew</strong> to manually add someone. Give them an emoji avatar to make them easy to spot.</div></div>
-      <div class="help-item"><span class="help-icon">🌊</span><div class="help-text">Tap any crew member → <strong>Ask The Lake</strong> for a full behavioral read on that person.</div></div>
-      <div class="help-item"><span class="help-icon">🎭</span><div class="help-text"><strong>Emoji Avatars</strong> — assign an emoji to any crew member (e.g. 🦊 for a cunning colleague, 🧊 for someone who runs cold). Makes your Crew instantly readable at a glance.</div></div>
-    </div>
-    <div class="help-divider"></div>
-
-    <!-- MOODS -->
-    <div class="help-section">
-      <div class="help-section-title">🎭 Moods</div>
-      <div class="help-item"><span class="help-icon">😌</span><div class="help-text"><strong>Calm</strong> — reflective, deep, gentle. Best for processing emotions and long-form situations.</div></div>
-      <div class="help-item"><span class="help-icon">🎯</span><div class="help-text"><strong>Analytical</strong> — structured, precise, systematic. Best for transcripts, data, and decision-making.</div></div>
-      <div class="help-item"><span class="help-icon">⛈️</span><div class="help-text"><strong>Stormy</strong> — zero filter, raw truth. Use when you need The Lake to stop being polite and just tell you what it sees.</div></div>
-    </div>
-    <div class="help-divider"></div>
-
-    <!-- SCORE CARDS -->
-    <div class="help-section">
-      <div class="help-section-title">🃏 Score Cards</div>
-      <div class="help-item"><span class="help-icon">🃏</span><div class="help-text"><strong>Score Cards</strong> give you a structured behavioral snapshot of any person or situation — trust level, influence, risk, alignment, and more.</div></div>
-      <div class="help-item"><span class="help-icon">📊</span><div class="help-text">Tap <strong>🃏 Score Cards</strong> in the quick actions bar to generate one from your current conversation.</div></div>
-      <div class="help-item"><span class="help-icon">💡</span><div class="help-text">Best used <strong>after dropping a transcript or chat thread, or screenshot</strong> — the more data The Lake has, the sharper the card.</div></div>
-    </div>
-    <div class="help-divider"></div>
-
-    <!-- EMAIL DROP -->
-    <div class="help-section">
-      <div class="help-section-title">📧 Email Drop</div>
-      <div class="help-item"><span class="help-icon">📨</span><div class="help-text">Forward any email to The Lake — it appears automatically in <strong>Past Tides</strong> within 30 seconds.</div></div>
-      <div class="help-item"><span class="help-icon">📋</span><div class="help-text">Forward to this address:
-        <div style="display:flex;align-items:center;gap:8px;margin-top:6px;">
-          <code id="lakeEmail" style="font-size:11px;background:rgba(255,255,255,0.08);padding:6px 10px;border-radius:6px;color:#7dd3fc;flex:1;word-break:break-all;">drop@thelakeapp.app</code>
-          <button onclick="copyLakeEmail()" style="background:rgba(255,255,255,0.1);border:none;border-radius:6px;padding:6px 10px;color:white;cursor:pointer;font-size:12px;white-space:nowrap;" id="copyEmailBtn">📋 Copy</button>
-        </div>
-      </div></div>
-      <div class="help-item"><span class="help-icon">⚡</span><div class="help-text">Email threads, meeting notes, messenger app screenshots, handwritten notes, Slack exports — forward anything in, then open it from Past Tides and ask The Lake to read it.</div></div>
-      <div class="help-item"><span class="help-icon">🎯</span><div class="help-text"><strong>Pro move:</strong> Forward a tense email chain → open it in The Lake → ask <em>"What's really going on here and what's my best next move?"</em></div></div>
-    </div>
-    <div class="help-divider"></div>
-
-    <div class="help-tip">💡 Pro tip — the more context you give The Lake, the deeper the read. Drop the full thread, not just the headline.</div>
-  </div>
-</div>
 </body>
 </html>
