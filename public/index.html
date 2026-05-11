@@ -288,10 +288,14 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
   .dock-toggle { display: flex; }
   .lake-header { padding-left: 64px; }
   .wave { max-width: 90%; }
-  .welcome-prompts { grid-template-columns: 1fr; }
   .welcome-title { font-size: 20px; }
   .depths-panel { width: 100%; }
   .input-hint { display: none; }
+  /* ✅ ADD THESE */
+  .welcome-prompts { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .welcome-prompt-featured { grid-column: span 2; }
+  .welcome-prompt { font-size: 12px; padding: 10px 8px; }
+  .header-btn { width: 32px; height: 32px; font-size: 14px; }
 }
 @media (max-width: 380px) {
   .lake-header { padding-left: 58px; padding-right: 8px; }
@@ -402,7 +406,7 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
   background: linear-gradient(135deg, rgba(79,195,247,0.25), rgba(79,195,247,0.1));
   border-color: rgba(79,195,247,0.5);
 }
-
+  
 </style>
 </head>
 <body>
