@@ -447,6 +447,33 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
 .reflection-gap {
   height: 10px;
 }
+
+.input-row { display: flex; align-items: stretch; gap: 7px; }
+.side-buttons { display: flex; flex-direction: column; gap: 5px; }
+.attach-btn-stack {
+  width: 44px; flex: 1;
+  border-radius: 12px; border: 1px solid var(--dock-border);
+  background: var(--lake-mid);
+  color: var(--text-dim); font-size: 17px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.attach-btn-stack:hover { color: var(--lake-light); background: rgba(45,140,240,0.1); }
+.mic-btn { 
+  width: 44px; flex: 1;
+  border-radius: 12px; border: 1px solid var(--dock-border);
+  background: var(--lake-mid);
+  color: var(--text-secondary); font-size: 19px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.send-btn {
+  width: 58px; border-radius: 12px; border: none;
+  background: linear-gradient(135deg, var(--lake-glow), var(--lake-light));
+  color: var(--lake-deep); font-size: 17px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s; flex-shrink: 0; align-self: stretch;
+}
   
 </style>
 </head>
@@ -636,7 +663,6 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
             onkeydown="handleKey(event)"
             oninput="autoResize(this)"></textarea>
           <div style="position:relative">
-            <button class="attach-btn" onclick="toggleAttachMenu(event)">📎</button>
             <div class="attach-menu" id="attachMenu">
               <div class="attach-menu-item" onclick="triggerFileInput()">📄 Files & Documents</div>
               <div class="attach-menu-item" onclick="triggerCamera()">📷 Take a Photo</div>
@@ -644,7 +670,10 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
             </div>
           </div>
         </div>
-        <button class="mic-btn" id="micBtn" onclick="toggleMic()">🎤</button>
+        <div class="side-buttons">
+          <button class="attach-btn-stack" onclick="toggleAttachMenu(event)">📎</button>
+          <button class="mic-btn" id="micBtn" onclick="toggleMic()">🎤</button>
+        </div>
         <button class="send-btn" onclick="sendWave()">🌊</button>
       </div>
       <div class="input-hint">Enter to send · Shift+Enter for new line · 📎 attach multiple files</div>
@@ -946,7 +975,7 @@ function triggerImageInput() {
   document.getElementById('imageInput').click();
 }
 document.addEventListener('click', (e) => {
-  if (!e.target.closest('.attach-btn') && !e.target.closest('.attach-menu')) {
+    if (!e.target.closest('.attach-btn-stack') && !e.target.closest('.attach-menu')) {
     document.getElementById('attachMenu').classList.remove('show');
   }
   if (!e.target.closest('.header-btn') && !e.target.closest('.mood-selector')) {
