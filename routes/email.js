@@ -1,6 +1,10 @@
 const express = require('express');
 const router = express.Router();
 
+// Store emails temporarily in memory (just as a relay)
+// Frontend will poll and store locally
+const emailQueue = [];
+
 router.post('/inbound', express.json(), (req, res) => {
   try {
     const from = req.body.sender || req.body.from || 'Unknown';
@@ -24,22 +28,29 @@ router.post('/inbound', express.json(), (req, res) => {
       ]
     };
 
-    if (!global.emailSessions) global.emailSessions = [];
-    global.emailSessions.unshift(emailSession);
-    if (global.emailSessions.length > 50) {
-      global.emailSessions = global.emailSessions.slice(0, 50);
+    // Keep in queue for 5 minutes for frontend to pick up
+    emailQueue.unshift(emailSession);
+    if (emailQueue.length > 20) emailQueue.pop();
+
+    // Auto-clear emails older than 5 minutes
+    const fiveMinAgo = Date.now() - 5 * 60 * 1000;
+    while (emailQueue.length > 0) {
+      const last = emailQueue[emailQueue.length - 1];
+      if (new Date(last.date).getTime() < fiveMinAgo) emailQueue.pop();
+      else break;
     }
 
-    console.log(`📧 New email received from ${from}: ${subject}`);
-    res.status(200).send('OK');
+    console.log(`📧 Email received from ${from}: ${subject}`);
+    res.status(200).json({ ok: true });
   } catch (err) {
     console.error('Email inbound error:', err);
-    res.status(200).send('OK');
+    res.status(200).json({ ok: true });
   }
 });
 
+// Frontend polls this — gets new emails then stores them locally
 router.get('/sessions', (req, res) => {
-  res.json(global.emailSessions || []);
+  res.json(emailQueue);
 });
 
 module.exports = router;
