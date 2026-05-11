@@ -912,7 +912,45 @@ document.addEventListener('click', (e) => {
     document.getElementById('moodSelector').classList.remove('show');
   }
 });
+  
+// ============================================
+// PASTE IMAGE FROM CLIPBOARD           ← add from here
+// ============================================
+document.getElementById('lakeInput').addEventListener('paste', async (e) => {
+  const items = e.clipboardData && e.clipboardData.items;
+  if (!items) return;
 
+  for (const item of items) {
+    if (item.type.startsWith('image/')) {
+      e.preventDefault();
+
+      const file = item.getAsFile();
+      if (!file) continue;
+
+      if (file.size > 50 * 1024 * 1024) {
+        alert('📎 Pasted image is too heavy — max 50MB.');
+        return;
+      }
+
+      try {
+        const base64 = await fileToBase64(file);
+        const namedFile = new File([file], `pasted-image-${Date.now()}.png`, { type: file.type });
+        namedFile._base64 = base64;
+        selectedFiles.push(namedFile);
+        renderFilePreviews();
+
+        const btn = document.querySelector('.attach-btn');
+        if (btn) {
+          btn.style.color = '#4fc3f7';
+          setTimeout(() => btn.style.color = '', 1000);
+        }
+      } catch(err) {
+        console.warn('Could not paste image:', err);
+      }
+    }
+  }
+});
+  
 // ============================================
 // MULTI-FILE HANDLING
 // ============================================
