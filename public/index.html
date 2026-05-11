@@ -407,6 +407,47 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
   border-color: rgba(79,195,247,0.5);
 }
   
+/* ✅ REFLECTION FORMATTING */
+.reflection-h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--sand);
+  margin: 16px 0 8px 0;
+  letter-spacing: 0.5px;
+}
+.reflection-h4 {
+  font-size: 13px;
+  font-weight: 700;
+  color: #4fc3f7;
+  margin: 12px 0 6px 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.reflection-divider {
+  border: none;
+  border-top: 1px solid rgba(79,195,247,0.2);
+  margin: 16px 0;
+}
+.reflection-bullet {
+  padding: 3px 0 3px 16px;
+  position: relative;
+  line-height: 1.6;
+}
+.reflection-bullet::before {
+  content: '▸';
+  position: absolute;
+  left: 0;
+  color: #4fc3f7;
+}
+.reflection-numbered {
+  padding: 3px 0 3px 4px;
+  line-height: 1.6;
+  counter-increment: list-counter;
+}
+.reflection-gap {
+  height: 10px;
+}
+  
 </style>
 </head>
 <body>
@@ -1764,10 +1805,34 @@ function appendLakeWave(text, timeStr, scroll) {
 }
 
 function formatReflection(text) {
-  return escapeHTML(text)
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\n\n/g, '<br><br>')
-    .replace(/\n/g, '<br>');
+  let html = escapeHTML(text);
+
+  // Headings
+  html = html.replace(/^### (.+)$/gm, '<h4 class="reflection-h4">$1</h4>');
+  html = html.replace(/^## (.+)$/gm, '<h3 class="reflection-h3">$1</h3>');
+
+  // Bold
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+  // Italic
+  html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+
+  // Dividers --- becomes styled <hr>
+  html = html.replace(/^---$/gm, '<hr class="reflection-divider">');
+
+  // Numbered lists
+  html = html.replace(/^\d+\.\s+(.+)$/gm, '<div class="reflection-numbered">$1</div>');
+
+  // Bullet lists - and •
+  html = html.replace(/^[-•]\s+(.+)$/gm, '<div class="reflection-bullet">$1</div>');
+
+  // Double newline = paragraph break
+  html = html.replace(/\n\n/g, '<div class="reflection-gap"></div>');
+
+  // Single newline
+  html = html.replace(/\n/g, '<br>');
+
+  return html;
 }
 // ============================================
 // RIPPLE
