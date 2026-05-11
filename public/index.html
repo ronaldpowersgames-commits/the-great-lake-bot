@@ -369,6 +369,27 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
 .help-text strong { color: var(--text-primary); }
 .help-divider { height: 1px; background: var(--dock-border); margin: 16px 0; }
 .help-tip { padding: 11px 13px; background: rgba(79,195,247,0.06); border: 1px solid rgba(79,195,247,0.15); border-radius: 11px; font-size: 12px; color: var(--text-secondary); line-height: 1.6; font-style: italic; }
+.help-list {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.help-list li {
+  padding: 8px 10px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary, #ccc);
+}
+
+.help-list li strong {
+  color: var(--text-primary, #fff);
+}
 </style>
 </head>
 <body>
@@ -681,23 +702,26 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
     <div class="help-section">
       <div class="help-section-title">💡 PROMPT SUGGESTIONS</div>
       <p>Tap 💡 <strong>Prompt Suggestions</strong> above the input bar to expand 17 ready-to-use prompts. Every one is a different lens The Lake can use to read your situation.</p>
-      <p>🌀 <strong>Read the Currents</strong> — overall real-time read of the situation.</p>
-      <p>🔍 <strong>Surface the Truth</strong> — what's really going on beneath the surface.</p>
-      <p>🪵 <strong>Drop the Full Logbook</strong> — read everything and give the full picture.</p>
-      <p>🔆 <strong>Connect the Dots</strong> — find patterns across people and events.</p>
-      <p>🔶 <strong>Red Flags</strong> — what are the red flags here? Do not hold back.</p>
-      <p>🎭 <strong>Mask & Motive</strong> — what's each person showing vs. what they actually want.</p>
-      <p>📋 <strong>Momentum Check</strong> — where is energy building and where is it stalling.</p>
-      <p>🌐 <strong>Iceberg View</strong> — what's visible vs. what's lurking below.</p>
-      <p>📖 <strong>Thread the Story</strong> — turn the chaos into a clear narrative.</p>
-      <p>⚓ <strong>Anchor Points</strong> — the key facts everything else hangs on.</p>
-      <p>⬛ <strong>Fog Index</strong> — how much clarity vs. confusion and politics is present.</p>
-      <p>🎯 <strong>Intent Scan</strong> — what does each person actually want and what are they steering toward.</p>
-      <p>🔴 <strong>Pressure Test</strong> — what breaks, who folds, what holds under real pressure.</p>
-      <p>🟢 <strong>Mirror Back</strong> — reflect what was just said so it can be seen from the outside.</p>
-      <p>⏬ <strong>Storm Warning</strong> — what's coming if nothing changes.</p>
-      <p>📊 <strong>Odds & Outcomes</strong> — the most likely scenarios and what to bet on.</p>
-      <p>📌 <strong>Followups & Commitments</strong> — what was promised, agreed, or left hanging.</p>
+    
+      <ul class="help-list">
+        <li>🧭 <strong>Read the Currents</strong> — overall real-time read of the situation.</li>
+        <li>🔍 <strong>Surface the Truth</strong> — what's really going on beneath the surface.</li>
+        <li>🪨 <strong>Drop the Full Logbook</strong> — read everything and give the full picture.</li>
+        <li>🧩 <strong>Connect the Dots</strong> — find patterns across people and events.</li>
+        <li>🔥 <strong>Red Flags</strong> — what are the red flags? Do not hold back.</li>
+        <li>🎭 <strong>Mask & Motive</strong> — what's each person showing vs. what they actually want.</li>
+        <li>📈 <strong>Momentum Check</strong> — where is energy building and where is it stalling.</li>
+        <li>🧊 <strong>Iceberg View</strong> — what's visible on the surface vs. what's hidden underneath.</li>
+        <li>🧵 <strong>Thread the Story</strong> — turn the chaos into a clear narrative.</li>
+        <li>⚓ <strong>Anchor Points</strong> — the key facts everything else hangs on.</li>
+        <li>🌫️ <strong>Fog Index</strong> — how much clarity vs. confusion and politics is present.</li>
+        <li>🎯 <strong>Intent Scan</strong> — what does each person actually want and what are they steering toward.</li>
+        <li>🧨 <strong>Pressure Test</strong> — what breaks, who folds, what holds under real pressure.</li>
+        <li>🪞 <strong>Mirror Back</strong> — reflect what was just said so it can be seen from the outside.</li>
+        <li>🌪️ <strong>Storm Warning</strong> — what's coming if nothing changes.</li>
+        <li>🧮 <strong>Odds & Outcomes</strong> — the most likely scenarios and what to bet on.</li>
+        <li>📌 <strong>Followups & Commitments</strong> — what was promised, agreed, or left hanging.</li>
+      </ul>
     </div>
 
     <div class="help-divider"></div>
