@@ -837,6 +837,53 @@ let deferredInstallPrompt = null;
 let allSessions = [];
 let crewMembers = [];
 let suggestedCrew = [];
+  
+// ============================================
+// SHARED SESSION CHECK
+// ============================================
+(async function checkForSharedSession() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const shareId = urlParams.get('share');
+  if (!shareId) return;
+
+  try {
+    const res = await fetch('/share/' + shareId);
+    const data = await res.json();
+    if (!data.session) throw new Error('No session');
+
+    const session = data.session;
+
+    // Skip login — go straight to lake as viewer
+    currentUser = { name: 'Viewer', guest: true };
+    enterLake();
+
+    // Load shared session
+    allSessions = [session];
+    currentSessionId = session.id;
+    chatHistory = session.history || [];
+
+    renderTides();
+    loadTide(session.id);
+
+    // Show read-only banner
+    const banner = document.createElement('div');
+    banner.style.cssText = `
+      position: fixed; top: 70px; left: 50%; transform: translateX(-50%);
+      background: rgba(79,195,247,0.15); border: 1px solid rgba(79,195,247,0.3);
+      color: #4fc3f7; padding: 8px 20px; border-radius: 20px;
+      font-size: 13px; z-index: 999; backdrop-filter: blur(10px);
+    `;
+    banner.textContent = '👁 Viewing shared session — read only';
+    document.body.appendChild(banner);
+    setTimeout(() => banner.remove(), 5000);
+
+    // Clean URL
+    window.history.replaceState({}, '', '/');
+
+  } catch(e) {
+    alert('This share link has expired or is invalid.');
+  }
+})();
 
 // ============================================
 // ATTACH MENU
