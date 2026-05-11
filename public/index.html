@@ -1741,11 +1741,50 @@ function toggleMic() {
 // ============================================
 // SHARE
 // ============================================
-function shareAsGroupSession() {
+async function shareAsGroupSession() {
   if (!currentSessionId) { alert('Start a conversation first!'); return; }
-  const groupUrl = window.location.origin + '/group.html?session=' + currentSessionId;
-  if (navigator.share) { navigator.share({ title: '🌊 Join my Lake session', text: 'Join me in The Great Lake:', url: groupUrl }); }
-  else { navigator.clipboard.writeText(groupUrl).then(() => { alert('Group link copied! 🌊'); }); }
+
+  // Find the current session
+  const session = allSessions.find(s => s.id === currentSessionId);
+  if (!session) { alert('Session not found!'); return; }
+
+  try {
+    // Show loading state
+    const btn = document.querySelector('[onclick="shareAsGroupSession()"]');
+    if (btn) btn.textContent = '⏳';
+
+    // Save to Render
+    const res = await fetch('/share', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session })
+    });
+
+    const data = await res.json();
+    if (!data.id) throw new Error('No ID returned');
+
+    // Build shareable URL
+    const shareUrl = window.location.origin + '/?share=' + data.id;
+
+    // Share or copy
+    if (navigator.share) {
+      await navigator.share({
+        title: '🌊 ' + (session.name || 'Lake Session'),
+        text: 'Read my Lake session:',
+        url: shareUrl
+      });
+    } else {
+      await navigator.clipboard.writeText(shareUrl);
+      alert('🔗 Share link copied!\n\nAnyone with this link can read your session for 7 days.');
+    }
+
+    // Restore button
+    if (btn) btn.textContent = '🔗';
+
+  } catch (err) {
+    console.error('Share error:', err);
+    alert('Could not create share link. Try again.');
+  }
 }
 </script>
 </body>
