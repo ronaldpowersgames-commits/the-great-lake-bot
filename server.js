@@ -24,6 +24,7 @@ const updateRoutes = require('./routes/updates');
 const chatRoutes = require('./routes/chat');
 const crewRoutes = require('./routes/crew');
 const emailRoutes = require('./routes/email');
+const shareRoutes = require('./routes/share'); // ✅ NEW
 
 const app = express();
 app.set('trust proxy', 1);
@@ -98,6 +99,9 @@ app.use('/crew', crewRoutes);
 // ✅ Email webhook - PUBLIC - both paths covered
 app.use('/email', emailRoutes);
 app.use('/api/email', emailRoutes);
+
+// ✅ Shared sessions - PUBLIC - anyone with link can view
+app.use('/share', shareRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
@@ -195,6 +199,6 @@ app.listen(config.port, () => {
 setInterval(() => {
   fetch('https://the-great-lake-bot.onrender.com/health')
     .catch(() => {});
-}, 14 * 60 * 1000);
+}, 14 * 60 * 1000); // ✅ fixed *
 
 module.exports = app;
