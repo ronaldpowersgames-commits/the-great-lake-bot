@@ -1104,6 +1104,7 @@ function detectNamesFromText(text) {
   });
   return Array.from(found.entries()).filter(([,score]) => score >= 2).map(([name]) => name);
 }
+
 function processNamesFromResponse(responseText) {
   const detected = detectNamesFromText(responseText);
   if (detected.length === 0) return;
@@ -1121,10 +1122,20 @@ function processNamesFromResponse(responseText) {
   });
   if (newSuggestions) { saveSuggestedCrew(); renderCrew(); }
 }
-function saveSuggestedCrew() { localStorage.setItem('lakeSuggestedCrew', JSON.stringify(suggestedCrew)); }
-function loadSuggestedCrew() {
-  try { suggestedCrew = JSON.parse(localStorage.getItem('lakeSuggestedCrew') || '[]'); } catch(e) { suggestedCrew = []; }
+
+// ============================================
+// STORAGE KEY HELPER — isolates data per user
+// ============================================
+function storageKey(key) {
+  const email = currentUser?.email || 'guest';
+  return `lake_${email}_${key}`;
 }
+
+function saveSuggestedCrew() { localStorage.setItem(storageKey('suggestedCrew'), JSON.stringify(suggestedCrew)); }
+function loadSuggestedCrew() {
+  try { suggestedCrew = JSON.parse(localStorage.getItem(storageKey('suggestedCrew')) || '[]'); } catch(e) { suggestedCrew = []; }
+}
+
 function copyLakeEmail() {
   navigator.clipboard.writeText('drop@thelakeapp.app').then(() => {
     const btn = document.getElementById('copyEmailBtn');
@@ -1162,7 +1173,7 @@ function handleProfilePic(event) {
   const reader = new FileReader();
   reader.onload = (e) => {
     currentProfilePic = e.target.result;
-    localStorage.setItem('lakeProfilePic', currentProfilePic);
+    localStorage.setItem(storageKey('profilePic'), currentProfilePic);
     updateAllProfilePics(currentProfilePic);
   };
   reader.readAsDataURL(file);
@@ -1210,17 +1221,23 @@ function doLogin() {
   localStorage.setItem('lakeUser', JSON.stringify(currentUser));
   enterLake();
 }
-function doGuestLogin() { currentUser = { name: 'Guest', guest: true }; enterLake(); }
+
+function doGuestLogin() {
+  currentUser = { name: 'Guest', email: 'guest_' + Date.now(), guest: true };
+  enterLake();
+}
+
 function enterLake() {
   document.getElementById('loginScreen').classList.add('hidden');
   document.getElementById('dockUserName').textContent = currentUser.name;
   document.getElementById('depthsProfileName').textContent = currentUser.name;
-  const savedPic = localStorage.getItem('lakeProfilePic');
+  const savedPic = localStorage.getItem(storageKey('profilePic'));
   if (savedPic) { currentProfilePic = savedPic; updateAllProfilePics(savedPic); }
   loadSessionHistory();
   if (deferredInstallPrompt) showInstallBanner();
   setTimeout(() => { if (window.innerWidth > 768) document.getElementById('lakeInput').focus(); }, 300);
 }
+
 function doLogout() {
   localStorage.removeItem('lakeUser');
   currentUser = null; currentProfilePic = null; chatHistory = []; currentSessionId = null;
@@ -1230,6 +1247,7 @@ function doLogout() {
   document.getElementById('loginPass').value = '';
   newSession();
 }
+
 window.addEventListener('load', () => {
   const saved = localStorage.getItem('lakeUser');
   if (saved) { try { currentUser = JSON.parse(saved); enterLake(); } catch(e) {} }
@@ -1244,7 +1262,7 @@ window.addEventListener('load', () => {
 // SESSION HISTORY
 // ============================================
 function loadSessionHistory() {
-  try { allSessions = JSON.parse(localStorage.getItem('lakeSessions') || '[]'); } catch(e) { allSessions = []; }
+  try { allSessions = JSON.parse(localStorage.getItem(storageKey('sessions')) || '[]'); } catch(e) { allSessions = []; }
   renderTides();
 }
 function saveSession() {
@@ -1261,7 +1279,7 @@ function saveSession() {
   if (existingIdx >= 0) allSessions[existingIdx] = sessionData;
   else allSessions.unshift(sessionData);
   allSessions = allSessions.slice(0, 50);
-  localStorage.setItem('lakeSessions', JSON.stringify(allSessions));
+  localStorage.setItem(storageKey('sessions'), JSON.stringify(allSessions));
   renderTides();
 }
 function getSessionName() {
@@ -1316,7 +1334,6 @@ function loadTide(sessionId) {
       chatHistory.unshift({ role: 'user', content: emailContent, time: session.time });
     }
   }
-  // ✅ FIXED — passes saved attachments back into each wave on reload
   chatHistory.forEach(msg => {
     if (msg.role === 'user') appendUserWave(msg.content, msg.time, false, msg.attachments || []);
     else if (msg.role === 'assistant') appendLakeWave(msg.content, msg.time, false);
@@ -1328,7 +1345,7 @@ function loadTide(sessionId) {
 function deleteSession(e, sessionId) {
   e.stopPropagation();
   allSessions = allSessions.filter(s => s.id !== sessionId);
-  localStorage.setItem('lakeSessions', JSON.stringify(allSessions));
+  localStorage.setItem(storageKey('sessions'), JSON.stringify(allSessions));
   if (currentSessionId === sessionId) newSession();
   else renderTides();
 }
@@ -1339,13 +1356,13 @@ function renameSession(e, sessionId) {
   const newName = prompt('Rename this tide:', session.name);
   if (!newName || !newName.trim()) return;
   session.name = newName.trim();
-  localStorage.setItem('lakeSessions', JSON.stringify(allSessions));
+  localStorage.setItem(storageKey('sessions'), JSON.stringify(allSessions));
   renderTides();
 }
 function clearHistory() {
   if (confirm('Clear all past tides? This cannot be undone.')) {
     allSessions = [];
-    localStorage.removeItem('lakeSessions');
+    localStorage.removeItem(storageKey('sessions'));
     renderTides();
     newSession();
     toggleDepths();
@@ -1368,8 +1385,6 @@ async function loadEmailSessions() {
     if (!res.ok) return;
     const emailSessions = await res.json();
     if (!emailSessions.length) return;
-
-    // ✅ ONLY show emails sent FROM the logged-in user's email address
     const myEmail = currentUser?.email?.toLowerCase() || '';
     const mySessions = myEmail
       ? emailSessions.filter(es => {
@@ -1377,12 +1392,10 @@ async function loadEmailSessions() {
           return sender.includes(myEmail);
         })
       : [];
-
     if (!mySessions.length) return;
-
     let changed = false;
     mySessions.forEach(es => {
-      const localKey = 'lakeEmail_' + es.id;
+      const localKey = storageKey('email_' + es.id);
       if (!localStorage.getItem(localKey)) {
         localStorage.setItem(localKey, JSON.stringify(es));
         changed = true;
@@ -1412,7 +1425,7 @@ async function loadEmailSessions() {
     });
     if (changed) {
       allSessions = allSessions.slice(0, 50);
-      localStorage.setItem('lakeSessions', JSON.stringify(allSessions));
+      localStorage.setItem(storageKey('sessions'), JSON.stringify(allSessions));
       renderTides();
     }
   } catch(e) { console.log('No email sessions available'); }
@@ -1471,10 +1484,10 @@ function toggleSuggestions() {
 let crewModalMode = null;
 let crewModalIndex = -1;
 function loadCrew() {
-  try { crewMembers = JSON.parse(localStorage.getItem('lakeCrew') || '[]'); } catch(e) { crewMembers = []; }
+  try { crewMembers = JSON.parse(localStorage.getItem(storageKey('crew')) || '[]'); } catch(e) { crewMembers = []; }
   renderCrew();
 }
-function saveCrew() { localStorage.setItem('lakeCrew', JSON.stringify(crewMembers)); }
+function saveCrew() { localStorage.setItem(storageKey('crew'), JSON.stringify(crewMembers)); }
 function renderCrew() {
   const list = document.getElementById('crewList');
   const colors = ['#4fc3f7,#0288d1','#ce93d8,#7b1fa2','#ffb74d,#f57c00','#81c784,#388e3c','#ff8a80,#d32f2f','#80cbc4,#00796b'];
@@ -1578,9 +1591,9 @@ function openCrewProfile(idx) {
   contextEl.classList.toggle('empty', !member.context);
   document.getElementById('crewCardAsk').onclick = () => {
     let prompt = `Tell me what I should know about ${member.name}`;
-    if (member.codename) prompt += ` (codename: "${member.codename}")`;
+    if (member.codename) prompt += `(codename: "${member.codename}")`;
     if (member.context) prompt += `. Context: ${member.context}`;
-    prompt += ` — their patterns, influence style, and what to watch for.`;
+    prompt += `— their patterns, influence style, and what to watch for.`;
     closeCrewCard(); sendPrompt(prompt);
     if (window.innerWidth <= 768) toggleDock();
   };
@@ -1655,7 +1668,6 @@ function updateCurrents(text) {
       chip.className = 'current-chip';
       chip.textContent = topic.label;
       chip.onclick = () => sendPrompt(topic.prompt);
-      // Insert before the persona chip
       const personaChip = bar.querySelector('.persona-chip');
       if (personaChip) bar.insertBefore(chip, personaChip);
       else bar.appendChild(chip);
@@ -1667,8 +1679,6 @@ function updateCurrents(text) {
 // SENDING WAVES
 // ============================================
 function sendPrompt(text) { document.getElementById('lakeInput').value = text; sendWave(); }
-
-// Convert file to base64 data URL for permanent storage
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -1677,7 +1687,6 @@ function fileToBase64(file) {
     reader.readAsDataURL(file);
   });
 }
-
 async function sendWave() {
   const input = document.getElementById('lakeInput');
   const text = input.value.trim();
@@ -1688,40 +1697,20 @@ async function sendWave() {
   const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const filesToSend = [...selectedFiles];
   const attachmentLabel = filesToSend.length > 0 ? `[${filesToSend.length} file${filesToSend.length > 1 ? 's' : ''} attached]` : '';
-
-  // ✅ Convert all files to base64 BEFORE clearing selectedFiles
   const base64Attachments = [];
   for (const file of filesToSend) {
     try {
       const data = await fileToBase64(file);
-      base64Attachments.push({
-        name: file.name,
-        type: file.type,
-        size: file.size,
-        data: data  // full data URL — survives localStorage
-      });
-    } catch (e) {
-      console.warn('Could not convert file to base64:', file.name, e);
-    }
+      base64Attachments.push({ name: file.name, type: file.type, size: file.size, data });
+    } catch (e) { console.warn('Could not convert file to base64:', file.name, e); }
   }
-
-  // Append to chat using base64 attachments for permanent rendering
   appendUserWave(text || '📎 Files attached', timeStr, true, base64Attachments);
-
-  // Save to history with base64 attachments included
-  chatHistory.push({
-    role: 'user',
-    content: text + attachmentLabel,
-    time: timeStr,
-    attachments: base64Attachments  // ✅ persisted in localStorage
-  });
-
+  chatHistory.push({ role: 'user', content: text + attachmentLabel, time: timeStr, attachments: base64Attachments });
   input.value = '';
   input.style.height = 'auto';
   selectedFiles = [];
   renderFilePreviews();
   showRipple();
-
   try {
     const formData = new FormData();
     formData.append('message', text);
@@ -1753,8 +1742,6 @@ async function sendWave() {
 // ============================================
 // RENDER WAVES
 // ============================================
-
-// ✅ Now accepts base64 attachment objects instead of raw File objects
 function appendUserWave(text, timeStr, scroll, attachments = []) {
   const container = document.getElementById('wavesContainer');
   const div = document.createElement('div');
@@ -1789,7 +1776,6 @@ function appendUserWave(text, timeStr, scroll, attachments = []) {
   container.appendChild(div);
   if (scroll) container.scrollTop = container.scrollHeight;
 }
-
 function appendLakeWave(text, timeStr, scroll) {
   const container = document.getElementById('wavesContainer');
   const div = document.createElement('div');
@@ -1805,37 +1791,20 @@ function appendLakeWave(text, timeStr, scroll) {
   container.appendChild(div);
   if (scroll) container.scrollTop = container.scrollHeight;
 }
-
 function formatReflection(text) {
   let html = escapeHTML(text);
-
-  // Headings
   html = html.replace(/^### (.+)$/gm, '<h4 class="reflection-h4">$1</h4>');
   html = html.replace(/^## (.+)$/gm, '<h3 class="reflection-h3">$1</h3>');
-
-  // Bold
   html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-
-  // Italic
   html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
-
-  // Dividers --- becomes styled <hr>
   html = html.replace(/^---$/gm, '<hr class="reflection-divider">');
-
-  // Numbered lists
   html = html.replace(/^\d+\.\s+(.+)$/gm, '<div class="reflection-numbered">$1</div>');
-
-  // Bullet lists - and •
   html = html.replace(/^[-•]\s+(.+)$/gm, '<div class="reflection-bullet">$1</div>');
-
-  // Double newline = paragraph break
   html = html.replace(/\n\n/g, '<div class="reflection-gap"></div>');
-
-  // Single newline
   html = html.replace(/\n/g, '<br>');
-
   return html;
 }
+
 // ============================================
 // RIPPLE
 // ============================================
@@ -1895,44 +1864,26 @@ function toggleMic() {
 // ============================================
 async function shareAsGroupSession() {
   if (!currentSessionId) { alert('Start a conversation first!'); return; }
-
-  // Find the current session
   const session = allSessions.find(s => s.id === currentSessionId);
   if (!session) { alert('Session not found!'); return; }
-
   try {
-    // Show loading state
     const btn = document.querySelector('[onclick="shareAsGroupSession()"]');
     if (btn) btn.textContent = '⏳';
-
-    // Save to Render
     const res = await fetch('/share', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ session })
     });
-
     const data = await res.json();
     if (!data.id) throw new Error('No ID returned');
-
-    // Build shareable URL
     const shareUrl = window.location.origin + '/?share=' + data.id;
-
-    // Share or copy
     if (navigator.share) {
-      await navigator.share({
-        title: '🌊 ' + (session.name || 'Lake Session'),
-        text: 'Read my Lake session:',
-        url: shareUrl
-      });
+      await navigator.share({ title: '🌊 ' + (session.name || 'Lake Session'), text: 'Read my Lake session:', url: shareUrl });
     } else {
       await navigator.clipboard.writeText(shareUrl);
       alert('🔗 Share link copied!\n\nAnyone with this link can read your session for 7 days.');
     }
-
-    // Restore button
     if (btn) btn.textContent = '🔗';
-
   } catch (err) {
     console.error('Share error:', err);
     alert('Could not create share link. Try again.');
