@@ -1233,7 +1233,12 @@ async function loadEmailSessions() {
           emailFrom: es.from,
           emailSubject: es.title,
           emailRaw: emailBody,
-          history: [{ role: 'user', content: emailBody, time: es.date || new Date().toISOString() }],
+          history: [{
+            role: 'user',
+            content: emailBody,
+            time: es.date || new Date().toISOString(),
+            attachments: es.attachments || []  // ✅ ADD THIS
+          }],
           mood: 'analytical'
         });
         changed = true;
