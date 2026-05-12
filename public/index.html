@@ -1658,17 +1658,30 @@ function addCrew() { openCrewModal('add'); }
 function toggleMoodSelector() { document.getElementById('moodSelector').classList.toggle('show'); }
 function setMood(mood, event) {
   currentMood = mood;
-  
+
   // Update glow colour based on mood
   const glowColors = {
-    calm:       '#4a9eff',   // blue
-    analytical: '#9b6dff',   // purple
-    stormy:     '#ff6b35'    // orange-red
+    calm:       '#4fc3f7',
+    analytical: '#7c4dff',
+    stormy:     '#ff6e40'
   };
-  
   document.documentElement.style.setProperty('--lake-glow', glowColors[mood]);
-  
-  // rest of your existing setMood code...
+
+  // Update active state on mood options
+  document.querySelectorAll('.mood-option').forEach(el => el.classList.remove('active'));
+  if (event?.currentTarget) event.currentTarget.classList.add('active');
+
+  // Close the mood selector
+  document.getElementById('moodSelector').classList.remove('show');
+
+  // Update status text
+  const statusMap = {
+    calm:       'Still waters — ready to reflect',
+    analytical: 'Precision mode — let\'s go deep',
+    stormy:     'No filter — raw and direct'
+  };
+  const statusEl = document.getElementById('lakeStatus');
+  if (statusEl) statusEl.textContent = statusMap[mood];
 }
 
 // ============================================
