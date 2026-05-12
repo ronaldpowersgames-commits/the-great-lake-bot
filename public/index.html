@@ -1656,13 +1656,19 @@ function addCrew() { openCrewModal('add'); }
 // MOOD
 // ============================================
 function toggleMoodSelector() { document.getElementById('moodSelector').classList.toggle('show'); }
-function setMood(mood, e) {
-  if (e) e.stopPropagation();
+function setMood(mood, event) {
   currentMood = mood;
-  const moods = { calm: 'Still waters — ready to reflect', analytical: 'Deep scan mode — precision active', stormy: 'Rough waters — no filter, full truth' };
-  document.getElementById('lakeStatus').textContent = moods[mood];
-  document.querySelectorAll('.mood-option, .depths-option').forEach(el => el.classList.remove('active'));
-  document.getElementById('moodSelector').classList.remove('show');
+  
+  // Update glow colour based on mood
+  const glowColors = {
+    calm:       '#4a9eff',   // blue
+    analytical: '#9b6dff',   // purple
+    stormy:     '#ff6b35'    // orange-red
+  };
+  
+  document.documentElement.style.setProperty('--lake-glow', glowColors[mood]);
+  
+  // rest of your existing setMood code...
 }
 
 // ============================================
