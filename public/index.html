@@ -2234,29 +2234,9 @@ function initMic() {
 
 document.addEventListener('DOMContentLoaded', () => {
   initMic();
-
-  // Event delegation for bubble actions
-  const container = document.getElementById('wavesContainer');
-  if (container) {
-    container.addEventListener('click', (e) => {
-      const bubble = e.target.closest('.wave-bubble');
-      if (bubble) {
-        const waveEl = bubble.closest('.wave');
-        let actions = waveEl.querySelector('.bubble-actions');
-        if (!actions) {
-          const isLake = waveEl.classList.contains('lake-wave');
-          actions = buildBubbleActions(waveEl, isLake);
-          waveEl.querySelector('.wave-content')?.appendChild(actions);
-        }
-        const isShowing = actions.classList.contains('show');
-        document.querySelectorAll('.bubble-actions.show')
-          .forEach(el => el.classList.remove('show'));
-        if (!isShowing) actions.classList.add('show');
-      }
-    });
-  }
 });
-
+  
+}
   
 </script>
 <div class="toast" id="toast"></div>
