@@ -637,7 +637,7 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
         <div class="welcome-sub">Drop a wave, cast a line, or let a log drift in.<br>I'll reflect back what the water reveals.</div>
         <div class="welcome-prompts">
           <div class="welcome-prompt welcome-prompt-featured" onclick="sendPrompt('I want to understand myself better. Ask me questions — one at a time — that help me see my patterns, values, blind spots and strengths. Build a picture of who I am as we go.')">🪞 My Persona</div>
-          <div class="welcome-prompt welcome-prompt-featured" onclick="sendPrompt('It\'s journal time. Ask me to describe my day — what happened, how I felt, what\'s sitting with me. Ask follow up questions as we go. Help me process it like a journal entry.')">📓 Today's Journal</div>
+          <div class="welcome-prompt welcome-prompt-featured" onclick="sendPrompt('It\'s journal time. Ask me to describe my day — what happened, how I felt, what\'s sitting with me. Ask follow up questions as we go. Help me process it like a journal entry.')">📓 Today\'s Journal</div>
           <div class="welcome-prompt" onclick="sendPrompt('Read a situation for me')">🧭 Read a situation</div>
           <div class="welcome-prompt" onclick="sendPrompt('Help me see the real dynamic')">🎯 Real dynamic</div>
           <div class="welcome-prompt" onclick="sendPrompt('I have a transcript to drop in')">📄 Drop a log</div>
@@ -1710,6 +1710,7 @@ function toggleDepths() { document.getElementById('depthsPanel').classList.toggl
 // HOW THE LAKE SEES YOU — ALL HISTORY
 // ============================================
 function askLakeKnowsYou() {
+  // Collect all past user messages for context
   let allUserMessages = [];
   allSessions.forEach(session => {
     if (session.history) {
@@ -1721,10 +1722,57 @@ function askLakeKnowsYou() {
   chatHistory
     .filter(m => m.role === 'user' && m.content)
     .forEach(m => allUserMessages.push(m.content));
+
   const unique = [...new Set(allUserMessages)];
-  const sample = unique.reverse().join('\n\n---\n\n').substring(0, 12000);
-  const prompt = `Here is a sample of everything I have shared with you across ALL my past sessions:\n\n${sample}\n\n---\n\nBased on ALL of this — give me a sharp persona read on me as a person and leader. What kind of thinker am I? How do I process and communicate? What do I consistently focus on, worry about, or care about? What patterns do you see in how I show up? What does The Lake now know about me that I might not have said out loud? Be honest, specific, and tight. This is a full read — not just this conversation.`;
-  sendPrompt(prompt);
+  const historySample = unique.reverse().join('\n\n---\n\n').substring(0, 12000);
+
+  // Remove welcome screen
+  const welcome = document.getElementById('welcomeScreen');
+  if (welcome) welcome.remove();
+
+  if (!currentSessionId) currentSessionId = 'session_' + Date.now();
+
+  const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  // Show a clean short message in chat — NOT the data dump
+  const visibleMessage = '🌊 How does The Lake see me?';
+  appendUserWave(visibleMessage, timeStr, true, []);
+  chatHistory.push({ role: 'user', content: visibleMessage, time: timeStr });
+
+  showRipple();
+
+  // Build the full prompt with history — sent to API only, not shown in chat
+  const fullPrompt = historySample.length > 0
+    ? `Here is a sample of everything I have shared with you across ALL my past sessions:\n\n${historySample}\n\n---\n\nBased on ALL of this — give me a sharp persona read on me as a person and leader. What kind of thinker am I? How do I process and communicate? What do I consistently focus on, worry about, or care about? What patterns do you see in how I show up? What does The Lake now know about me that I might not have said out loud? Be honest, specific, and tight. This is a full read — not just this conversation.`
+    : `I haven't shared much yet, but based on what you know about me so far — give me your initial read. What kind of person and leader am I showing up as? Ask me a question to go deeper if you need more to work with.`;
+
+  // Send to API directly — bypassing sendWave so it doesn't re-render the message
+  (async () => {
+    try {
+      const formData = new FormData();
+      formData.append('message', fullPrompt);
+      formData.append('mood', currentMood);
+      formData.append('userName', currentUser?.name || '');
+      formData.append('history', JSON.stringify([]));
+
+      const response = await fetch('/chat', { method: 'POST', body: formData });
+      const data = await response.json();
+      hideRipple();
+
+      if (data.reflection) {
+        const reflectionTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        appendLakeWave(data.reflection, reflectionTime, true);
+        chatHistory.push({ role: 'assistant', content: data.reflection, time: reflectionTime });
+        saveSession();
+      } else {
+        appendLakeWave('🌊 The Lake is still reading the water — give it a moment and try again.', timeStr, true);
+      }
+    } catch (err) {
+      hideRipple();
+      appendLakeWave('🌊 The current is slow right now — give it a moment and nudge again.', timeStr, true);
+      console.error('Lake error:', err);
+    }
+  })();
 }
 
 // ============================================
@@ -2138,6 +2186,8 @@ function toggleBubbleActions(actionsEl) {
   document.querySelectorAll('.bubble-actions.show')
     .forEach(el => el.classList.remove('show'));
   if (!isShowing) actionsEl.classList.add('show');
+}  // ✅ add this closing brace
+
 function buildBubbleActions(waveEl, isLake) {
   const text = waveEl.querySelector('.wave-bubble')?.innerText || '';
   const actions = document.createElement('div');
