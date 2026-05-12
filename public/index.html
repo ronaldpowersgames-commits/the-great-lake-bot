@@ -2128,8 +2128,12 @@ function deleteBubble(waveEl) {
   showToast('Message removed 🗑️');
 }
 
-function toggleBubbleActions(actionsEl) {
-  const isShowing = actionsEl.classList.contains('show
+function tofunction toggleBubbleActions(actionsEl) {
+  const isShowing = actionsEl.classList.contains('show');
+  document.querySelectorAll('.bubble-actions.show')
+    .forEach(el => el.classList.remove('show'));
+  if (!isShowing) actionsEl.classList.add('show');
+}
   
 </script>
 <div class="toast" id="toast"></div>
