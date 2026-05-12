@@ -180,6 +180,16 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
 .user-wave .wave-bubble { background: linear-gradient(135deg, rgba(45,140,240,0.2), rgba(45,140,240,0.1)); border: 1px solid rgba(45,140,240,0.2); border-top-right-radius: 4px; color: var(--text-primary); }
 .wave-time { font-size: 9px; color: var(--text-dim); }
 .user-wave .wave-time { text-align: right; }
+/* ── BUBBLE ACTIONS ── */
+.bubble-actions { display: none; gap: 5px; margin-top: 5px; flex-wrap: wrap; }
+.bubble-actions.show { display: flex; }
+.bubble-action-btn { padding: 4px 9px; background: rgba(45,140,240,0.08); border: 1px solid rgba(45,140,240,0.15); border-radius: 20px; color: var(--text-secondary); font-size: 11px; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 4px; }
+.bubble-action-btn:hover { background: rgba(45,140,240,0.18); color: var(--lake-light); }
+/* ── TOAST ── */
+.toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--lake-surface); border: 1px solid var(--lake-glow); border-radius: 20px; padding: 8px 18px; font-size: 12px; color: var(--lake-light); opacity: 0; transition: all 0.3s; z-index: 999; pointer-events: none; white-space: nowrap; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+/* ── SPEAK ANIMATION ── */
+.speaking .wave-bubble { border-color: var(--lake-glow); box-shadow: 0 0 12px rgba(45,140,240,0.2); }
 
 /* ── ATTACHMENTS ── */
 .wave-attachments { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
@@ -1838,6 +1848,7 @@ function appendUserWave(text, timeStr, scroll, attachments = []) {
       <div class="wave-time">${timeStr}</div>
     </div>
   `;
+  attachBubbleActions(div);
   container.appendChild(div);
   if (scroll) container.scrollTop = container.scrollHeight;
 }
@@ -1853,6 +1864,7 @@ function appendLakeWave(text, timeStr, scroll) {
       <div class="wave-time">${timeStr}</div>
     </div>
   `;
+  attachBubbleActions(div);
   container.appendChild(div);
   if (scroll) container.scrollTop = container.scrollHeight;
 }
@@ -2037,7 +2049,89 @@ window.addEventListener('popstate', (e) => {
   newSession();
   history.pushState({ lake: true }, '');
 });
+
+// ============================================
+// BUBBLE ACTIONS + VOICE
+// ============================================
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+function copyText(text) {
+  navigator.clipboard.writeText(text).then(() => showToast('Copied 📋'));
+}
+
+let currentUtterance = null;
+
+function speakText(text, btn) {
+  if (window.speechSynthesis.speaking) {
+    window.speechSynthesis.cancel();
+    document.querySelectorAll('.bubble-action-btn.speaking-btn')
+      .forEach(b => b.textContent = '🔊 Speak');
+    if (currentUtterance?.text === text) return;
+  }
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.rate = 0.93;
+  utterance.pitch = 1;
+  currentUtterance = utterance;
+  utterance.onstart = () => {
+    btn.textContent = '⏹ Stop';
+    btn.classList.add('speaking-btn');
+    btn.closest('.wave')?.classList.add('speaking');
+  };
+  utterance.onend = () => {
+    btn.textContent = '🔊 Speak';
+    btn.classList.remove('speaking-btn');
+    btn.closest('.wave')?.classList.remove('speaking');
+  };
+  window.speechSynthesis.speak(utterance);
+}
+
+function regenerateMessage(waveEl) {
+  waveEl.remove();
+  const userWaves = document.querySelectorAll('.user-wave');
+  const lastUser = userWaves[userWaves.length - 1];
+  if (lastUser) {
+    const text = lastUser.querySelector('.wave-bubble')?.textContent;
+    if (text) sendPrompt(text);
+  }
+}
+
+function pinToCurrents(text) {
+  const bar = document.getElementById('currentsBar');
+  if (!bar) return;
+  const chip = document.createElement('div');
+  chip.className = 'current-chip';
+  chip.textContent = '📌 ' + text.slice(0, 30) + (text.length > 30 ? '...' : '');
+  bar.appendChild(chip);
+  showToast('Pinned to Currents 📌');
+}
+
+function editAndResend(text) {
+  const input = document.getElementById('lakeInput');
+  input.value = text;
+  input.focus();
+  input.style.height = 'auto';
+  input.style.height = input.scrollHeight + 'px';
+  showToast('Edit your message above ✏️');
+}
+
+function deleteBubble(waveEl) {
+  waveEl.style.opacity = '0';
+  waveEl.style.transform = 'translateY(-8px)';
+  waveEl.style.transition = 'all 0.3s';
+  setTimeout(() => waveEl.remove(), 300);
+  showToast('Message removed 🗑️');
+}
+
+function toggleBubbleActions(actionsEl) {
+  const isShowing = actionsEl.classList.contains('show
   
 </script>
+<div class="toast" id="toast"></div>
 </body>
 </html>
