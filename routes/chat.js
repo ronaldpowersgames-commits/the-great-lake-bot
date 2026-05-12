@@ -1,8 +1,8 @@
 /**
- * 🌊 The Great Lake Bot - Chat Route
- * Personal Leadership Coach + Full Work Co-Pilot
- * Supports: text, images, PDF, DOCX, file attachments, voice, mood, userName.
- */
+* 🌊 The Great Lake Bot - Chat Route
+* Personal Leadership Coach + Full Work Co-Pilot
+* Supports: text, images, PDF, DOCX, file attachments, voice, mood, userName.
+*/
 const express = require('express');
 const Anthropic = require('@anthropic-ai/sdk');
 const fs = require('fs');
@@ -11,32 +11,30 @@ const multer = require('multer');
 const pdfParse = require('pdf-parse');
 const mammoth = require('mammoth');
 const router = express.Router();
-
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 50 * 1024 * 1024 },
   fileFilter: (req, file, cb) => { cb(null, true); }
 });
-
 const IMAGE_TYPES = ['image/jpeg','image/jpg','image/png','image/gif','image/webp'];
 const PDF_TYPES   = ['application/pdf'];
 const DOCX_TYPES  = [
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'application/msword'
 ];
-
 if (!process.env.ANTHROPIC_API_KEY) {
   console.error('❌ ANTHROPIC_API_KEY is missing!');
 } else {
   console.log('✅ Anthropic API key loaded');
 }
-
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
 // ============================================
 // LOAD SYSTEM PROMPT FROM CORE MODEL FILES
+// ✅ FIX 1: Cached so files only read once at startup
 // ============================================
+let cachedModelFiles = null;
 function loadSystemPrompt() {
+  if (cachedModelFiles) return cachedModelFiles;
   const modelDir = path.join(__dirname, '..', 'core', 'model');
   const files = [
     'master_doc.txt','identity.txt','tone.txt','metaphors.txt',
@@ -45,12 +43,10 @@ function loadSystemPrompt() {
     'safety.txt','behavior_rules.txt','onboarding.txt',
     'update_syntax.txt','lake_score.txt',
   ];
-
   if (!fs.existsSync(modelDir)) {
     console.warn('⚠️  core/model/ directory not found — using fallback prompt');
     return null;
   }
-
   let systemPrompt = '';
   for (const file of files) {
     const filePath = path.join(modelDir, file);
@@ -61,21 +57,18 @@ function loadSystemPrompt() {
       console.warn('⚠️  Missing model file:', file);
     }
   }
-
   if (!systemPrompt.trim()) {
     console.warn('⚠️  No model files loaded — using fallback prompt');
     return null;
   }
-
   const MAX_PROMPT_CHARS = 150000;
   if (systemPrompt.length > MAX_PROMPT_CHARS) {
     systemPrompt = systemPrompt.substring(0, MAX_PROMPT_CHARS);
     console.warn('⚠️  System prompt trimmed to fit context window');
   }
-
-  return systemPrompt;
+  cachedModelFiles = systemPrompt;
+  return cachedModelFiles;
 }
-
 // ============================================
 // CORE COACH IDENTITY — always injected,
 // wraps around model files so it can never
@@ -83,21 +76,17 @@ function loadSystemPrompt() {
 // ============================================
 function getCoreCoachIdentity(userName) {
   const name = (userName && userName.trim()) ? userName.trim() : 'there';
-
   return `
 ================================================================================
 CORE IDENTITY — THE GREAT LAKE (PERSONAL COACH + CO-PILOT MODE)
 ================================================================================
-
 You are The Lake — a personal leadership coach, clarity engine, and full
 spectrum work co-pilot for ${name}. You have one mission above all others:
 to make ${name} a sharper, clearer, more effective leader and operator —
 in every single interaction, whether they are asking for leadership insight
 or asking you to draft an email.
-
 YOUR NAME: The Lake (or The Great Lake)
 THE USER YOU SERVE: ${name}
-
 USE ${name.toUpperCase()}'S NAME NATURALLY
 Use ${name}'s name the way a trusted coach would — warm, purposeful, never
 robotic. Deploy it at key moments only:
@@ -106,9 +95,8 @@ robotic. Deploy it at key moments only:
 - Reframing something:       "Pause for a second, ${name}..."
 - Affirming a sharp move:    "That's the right call, ${name}."
 - Closing warmly:            "You've got this, ${name}."
-Never pepper every sentence with their name. Use it like punctuation — 
+Never pepper every sentence with their name. Use it like punctuation —
 only when it adds weight or warmth.
-
 WHAT YOU DO
 You are a FULL SPECTRUM work co-pilot. You help ${name} with ANYTHING:
 - Writing, editing, rewriting, proofreading
@@ -118,11 +106,9 @@ You are a FULL SPECTRUM work co-pilot. You help ${name} with ANYTHING:
 - Data analysis, spreadsheet logic
 - Any task — big or small — that makes ${name} more effective
 You are NOT a narrow coaching tool. You show up for whatever ${name} brings.
-
 THE COACHING LAYER — ALWAYS ACTIVE
 Even on general tasks, your coaching instinct never switches off.
 You are always — covertly or overtly — developing ${name} as a leader.
-
 COVERT COACHING (woven silently into task delivery):
 - When writing an email for ${name}, model what a clear decisive leader
   sounds like — then deliver it without lecturing about it
@@ -130,16 +116,13 @@ COVERT COACHING (woven silently into task delivery):
 - When summarising a document, surface the power dynamics, the real
   variables, the things a leader would act on first
 - Let the quality of your output BE the coaching
-
 OVERT COACHING (when the moment earns it):
 - If ${name} describes a situation, name the leadership dynamic at play
 - If a pattern keeps recurring: "I notice this keeps coming up, ${name}..."
 - If there's a cleaner or bolder move available — offer it
 - If clarity is missing from their thinking — gently introduce structure
-
 RULE: Never lecture. Never preach. Coach through insight, not instruction.
 The best coaching feels like a mirror — not a megaphone.
-
 YOUR VOICE
 - Calm, sharp, warm — like the most trusted person in the room
 - Never sound like a generic AI assistant
@@ -148,7 +131,6 @@ YOUR VOICE
 - Use Lake water metaphors naturally — never forced or overdone
 - Match the energy: task mode = fast and excellent. Reflection mode = deep.
 - Short when speed is needed. Structured and full when depth is needed.
-
 WHAT YOU NEVER DO
 - Never say "As an AI..." or "I'm just a language model..."
 - Never refuse a reasonable task hiding behind vague limitations
@@ -156,7 +138,6 @@ WHAT YOU NEVER DO
 - Never forget who ${name} is or why they are here
 - Never lose the Lake voice — even in mundane tasks
 - Never coach in a way that feels like a lecture or performance review
-
 ================================================================================
 END CORE IDENTITY — ALL MODEL FILES AND OTHER INSTRUCTIONS ARE ADDITIVE BELOW
 ================================================================================
@@ -171,7 +152,6 @@ and personal leadership coach. You help users see the deeper currents beneath
 their situation using structured clarity, emotional intelligence, and grounded
 reasoning. You speak with the stillness and depth of a lake — never reactive,
 always clear. You operate under Governance Rules 1-27 at all times.
-
 You always produce a structured Clarity Snapshot containing:
 - Real Variable: The true governing factor
 - Incentives: What each party is actually moving toward
@@ -179,11 +159,9 @@ You always produce a structured Clarity Snapshot containing:
 - Water Cost: Where energy and attention are being drained
 - Trajectory: The direction things are heading if nothing changes
 - Leverage Points: Small moves that create outsized impact
-
 Keep responses grounded, strategic, and leadership-aligned.
 You are also a full spectrum work co-pilot — help with any task asked of you.`;
 }
-
 // ============================================
 // MOOD CONTEXT INJECTION
 // ============================================
@@ -194,14 +172,12 @@ CURRENT LAKE MOOD: CALM
 Respond with gentleness and depth. Take your time. Be reflective and thoughtful.
 Use water metaphors naturally. Guide the user gently toward clarity.
 Pace is slow and considered — like still water.`,
-
     analytical: `
 CURRENT LAKE MOOD: ANALYTICAL
 Respond with precision and structure. Use clear headers, bullet points, frameworks.
 Be systematic. Map everything. Leave no variable unexamined.
 Lead with pattern recognition and logic over emotion.
 Pace is methodical — like a current that knows exactly where it's going.`,
-
     stormy: `
 CURRENT LAKE MOOD: STORMY
 Respond with directness and zero filter. Say exactly what you see.
@@ -211,13 +187,11 @@ Pace is fast and forceful — like a wave that doesn't apologise for arriving.`
   };
   return moods[mood] || moods.calm;
 }
-
 // ============================================
 // FILE TEXT EXTRACTION
 // ============================================
 async function extractFileText(file) {
   const mime = file.mimetype;
-
   if (PDF_TYPES.includes(mime)) {
     try {
       const data = await pdfParse(file.buffer);
@@ -227,7 +201,6 @@ async function extractFileText(file) {
       return '[Could not extract PDF text — try copy/pasting as .txt]';
     }
   }
-
   if (DOCX_TYPES.includes(mime)) {
     try {
       const result = await mammoth.extractRawText({ buffer: file.buffer });
@@ -237,14 +210,12 @@ async function extractFileText(file) {
       return '[Could not extract DOCX text — try copy/pasting as .txt]';
     }
   }
-
   try {
     return file.buffer.toString('utf-8');
   } catch (e) {
     return '[Binary file — text extraction not supported]';
   }
 }
-
 // ============================================
 // HELPER
 // ============================================
@@ -261,28 +232,17 @@ router.post('/', upload.single('file'), async function(req, res) {
     let message = (req.body && req.body.message) ? req.body.message.trim() : '';
     const mood     = (req.body && req.body.mood)     || 'calm';
     const userName = (req.body && req.body.userName) || '';
-
     if (!process.env.ANTHROPIC_API_KEY) {
       return res.status(500).json({
         error: 'The Lake is not configured',
         details: 'ANTHROPIC_API_KEY is missing.',
       });
     }
-
-    // ── Build system prompt ──────────────────────────────────────────────
-    // Order matters:
-    // 1. Core coach identity (who The Lake is + who the user is)
-    // 2. Model files (the 27 rules, clarity engine, etc.)
-    // 3. Fallback if no model files exist
-    // 4. Mood context (always last — sets the session temperature)
-    // ────────────────────────────────────────────────────────────────────
-    const coreIdentity   = getCoreCoachIdentity(userName);
-    const modelFiles     = loadSystemPrompt();
-    const fallback       = modelFiles ? '' : getFallbackPrompt();
-    const moodContext    = getMoodContext(mood);
-
+    const coreIdentity = getCoreCoachIdentity(userName);
+    const modelFiles   = loadSystemPrompt();
+    const fallback     = modelFiles ? '' : getFallbackPrompt();
+    const moodContext  = getMoodContext(mood);
     const systemPrompt = coreIdentity + (modelFiles || fallback) + moodContext;
-
     // ── Build conversation history ───────────────────────────────────────
     let conversationHistory = [];
     if (req.body.history) {
@@ -292,7 +252,7 @@ router.post('/', upload.single('file'), async function(req, res) {
           : req.body.history;
         if (Array.isArray(history)) {
           conversationHistory = history
-            .slice(-10)
+            .slice(-6) // ✅ FIX 2: Reduced from -10 to -6 to save tokens
             .filter(m => m.role && m.content)
             .map(m => ({
               role: m.role === 'user' ? 'user' : 'assistant',
@@ -303,21 +263,16 @@ router.post('/', upload.single('file'), async function(req, res) {
         console.warn('⚠️  Could not parse history:', e.message);
       }
     }
-
     // ── Build user message content ───────────────────────────────────────
     let userMessageContent;
-
     if (req.file) {
       const isImage = IMAGE_TYPES.includes(req.file.mimetype);
-
       if (isImage) {
         const base64Image = req.file.buffer.toString('base64');
         const mediaType   = req.file.mimetype === 'image/jpg'
           ? 'image/jpeg'
           : req.file.mimetype;
-
         console.log('🖼️ Image attached:', req.file.originalname, formatBytes(req.file.size));
-
         userMessageContent = [
           {
             type: 'image',
@@ -334,7 +289,6 @@ router.post('/', upload.single('file'), async function(req, res) {
               : 'Please analyse this image and give me your full Lake reflection on what you see.',
           }
         ];
-
       } else {
         console.log('📎 File attached:', req.file.originalname, formatBytes(req.file.size));
         const fileContent = await extractFileText(req.file);
@@ -343,10 +297,8 @@ router.post('/', upload.single('file'), async function(req, res) {
         const fullMessage = message
           ? message + fileHeader + fileContent + fileFooter
           : `Please analyse this attached file:` + fileHeader + fileContent + fileFooter;
-
         userMessageContent = fullMessage;
       }
-
     } else {
       if (!message) {
         return res.status(400).json({
@@ -356,35 +308,28 @@ router.post('/', upload.single('file'), async function(req, res) {
       }
       userMessageContent = message;
     }
-
     // ── Add to history and call Claude ───────────────────────────────────
     conversationHistory.push({
       role: 'user',
       content: userMessageContent
     });
-
     console.log('🌊 Sending to Claude — mood:', mood, '| user:', userName || 'unknown', '| messages:', conversationHistory.length);
-
     const response = await client.messages.create({
       model: 'claude-sonnet-4-5',
-      max_tokens: 4096,
+      max_tokens: 2048, // ✅ FIX 3: Reduced from 4096 to 2048 to save tokens
       system: systemPrompt,
       messages: conversationHistory,
     });
-
     const reply = response.content &&
                   response.content[0] &&
                   response.content[0].text;
-
     if (!reply) {
       return res.status(500).json({
         error: 'The Lake returned no reflection',
         details: 'Empty response from Claude API.',
       });
     }
-
     console.log('✅ Reflection sent — tokens in:', response.usage?.input_tokens, '| out:', response.usage?.output_tokens);
-
     res.json({
       reflection: reply,
       model: 'claude-sonnet-4-5',
@@ -395,10 +340,8 @@ router.post('/', upload.single('file'), async function(req, res) {
         output_tokens: response.usage?.output_tokens,
       },
     });
-
   } catch (err) {
     console.error('❌ Lake Engine Error:', err.message);
-
     if (err.status === 401) {
       return res.status(500).json({
         error: 'The Lake cannot authenticate',
@@ -423,12 +366,10 @@ router.post('/', upload.single('file'), async function(req, res) {
         details: err.message,
       });
     }
-
     res.status(500).json({
       error: 'The Lake encountered turbulence',
       details: err.message,
     });
   }
 });
-
 module.exports = router;
