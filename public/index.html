@@ -1855,7 +1855,6 @@ function appendUserWave(text, timeStr, scroll, attachments = []) {
       <div class="wave-time">${timeStr}</div>
     </div>
   `;
-  attachBubbleActions(div);
   container.appendChild(div);
   if (scroll) container.scrollTop = container.scrollHeight;
 }
@@ -1871,7 +1870,6 @@ function appendLakeWave(text, timeStr, scroll) {
       <div class="wave-time">${timeStr}</div>
     </div>
   `;
-  attachBubbleActions(div);
   container.appendChild(div);
   if (scroll) container.scrollTop = container.scrollHeight;
 }
