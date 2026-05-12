@@ -2140,6 +2140,104 @@ function toggleBubbleActions(actionsEl) {
   document.querySelectorAll('.bubble-actions.show')
     .forEach(el => el.classList.remove('show'));
   if (!isShowing) actionsEl.classList.add('show');
+function buildBubbleActions(waveEl, isLake) {
+  const text = waveEl.querySelector('.wave-bubble')?.innerText || '';
+  const actions = document.createElement('div');
+  actions.className = 'bubble-actions';
+  if (isLake) {
+    const speakBtn = document.createElement('button');
+    speakBtn.className = 'bubble-action-btn';
+    speakBtn.innerHTML = '🔊 Speak';
+    speakBtn.onclick = () => speakText(text, speakBtn);
+    actions.appendChild(speakBtn);
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'bubble-action-btn';
+    copyBtn.innerHTML = '📋 Copy';
+    copyBtn.onclick = () => copyText(text);
+    actions.appendChild(copyBtn);
+    const regenBtn = document.createElement('button');
+    regenBtn.className = 'bubble-action-btn';
+    regenBtn.innerHTML = '🔁 Regenerate';
+    regenBtn.onclick = () => regenerateMessage(waveEl);
+    actions.appendChild(regenBtn);
+    const pinBtn = document.createElement('button');
+    pinBtn.className = 'bubble-action-btn';
+    pinBtn.innerHTML = '📌 Pin';
+    pinBtn.onclick = () => pinToCurrents(text);
+    actions.appendChild(pinBtn);
+  } else {
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'bubble-action-btn';
+    copyBtn.innerHTML = '📋 Copy';
+    copyBtn.onclick = () => copyText(text);
+    actions.appendChild(copyBtn);
+    const editBtn = document.createElement('button');
+    editBtn.className = 'bubble-action-btn';
+    editBtn.innerHTML = '✏️ Edit';
+    editBtn.onclick = () => editAndResend(text);
+    actions.appendChild(editBtn);
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'bubble-action-btn';
+    deleteBtn.innerHTML = '🗑️ Delete';
+    deleteBtn.onclick = () => deleteBubble(waveEl);
+    actions.appendChild(deleteBtn);
+  }
+  return actions;
+}
+
+function attachBubbleActions(waveEl) {
+  const isLake = waveEl.classList.contains('lake-wave');
+  const content = waveEl.querySelector('.wave-content');
+  if (!content) return;
+  const actions = buildBubbleActions(waveEl, isLake);
+  content.appendChild(actions);
+  const bubble = waveEl.querySelector('.wave-bubble');
+  if (bubble) {
+    bubble.style.cursor = 'pointer';
+    bubble.addEventListener('click', () => toggleBubbleActions(actions));
+  }
+}
+
+function initMic() {
+  const micBtn = document.getElementById('micBtn');
+  if (!micBtn) return;
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) { micBtn.style.display = 'none'; return; }
+  const recognition = new SpeechRecognition();
+  recognition.continuous = false;
+  recognition.interimResults = false;
+  recognition.lang = 'en-US';
+  let listening = false;
+  micBtn.addEventListener('click', () => {
+    if (listening) { recognition.stop(); } else { recognition.start(); }
+  });
+  recognition.onstart = () => {
+    listening = true;
+    micBtn.classList.add('listening');
+    showToast('Listening... 🎤');
+  };
+  recognition.onresult = (e) => {
+    const transcript = e.results[0][0].transcript;
+    const input = document.getElementById('lakeInput');
+    input.value = transcript;
+    input.style.height = 'auto';
+    input.style.height = input.scrollHeight + 'px';
+  };
+  recognition.onend = () => {
+    listening = false;
+    micBtn.classList.remove('listening');
+  };
+  recognition.onerror = () => {
+    listening = false;
+    micBtn.classList.remove('listening');
+    showToast('Mic error — try again 🎤');
+  };
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initMic();
+});
+  
 }
   
 </script>
