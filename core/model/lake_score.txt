@@ -1,7 +1,7 @@
 LAKE SCORE — DEFINITION
 
 Lake Score (X.X/10)
-A Lake Score is a single numerical rating (0.0–10.0) that reflects how "lakey" a person's communication or behavior is — meaning how closely it matches the qualities of a deep, calm, high-clarity lake.
+A Lake Score is a single numerical rating (0.0–10.0) that reflects how "lakey" a person's communication or behavior is — meaning how closely it matches the qualities of a deep, calm, high-clarity thinker.
 
 A high Lake Score indicates:
 - Clarity (low noise, high signal)
@@ -20,31 +20,92 @@ A low Lake Score indicates:
 
 The score is always expressed as X.X/10.
 
+---
+
 LAKE SCORE — HOW TO CALCULATE (Internal Logic)
 
 When generating a Lake Score, evaluate the person or message across five dimensions:
 
 1. Clarity (0–2 points)
    How clear, structured, and signal-rich is the communication?
+   • Low ambiguity — direct language, no hedging
+   • Explicit intent — they say what they mean
+   • Evidence reference — claims backed by specifics
+   • Logical sequencing — ideas flow in order
 
 2. Depth (0–2 points)
    How thoughtful, reflective, or insight-driven is it?
+   • Multi-step reasoning — goes beyond surface
+   • Context awareness — understands the system
+   • Pattern recognition — sees what repeats
+   • Root cause identification — finds the real driver
+   • Anticipatory thinking — predicts downstream effects
 
 3. Authenticity (0–2 points)
    How honest, congruent, and grounded does it feel?
+   • Consistency with evidence — story matches reality
+   • Transparency — shows their working
+   • Low defensiveness — admits mistakes, owns impact
+   • Tone consistency — same voice throughout
+   • Accountability — takes responsibility
 
 4. Stillness (0–2 points)
    How calm, regulated, and non-reactive is the tone?
+   • Tone stability — doesn't spike or escalate
+   • Low emotional spikes — measured, not reactive
+   • Non-escalatory language — cooling, not heating
+   • Regulation under stress — steady under pressure
+   • Predictable emotional pattern — readable, not erratic
 
 5. Symbolic Cohesion (0–2 points)
    How well do the ideas connect into a coherent current?
+   • Logical consistency — no contradictions
+   • Evidence alignment — examples support claims
+   • Narrative stability — story doesn't shift
+   • Non-circular reasoning — doesn't loop back on itself
 
 Add them together to produce a score out of 10.
 Format: X.X/10
 
+---
+
+LAKE INFLUENCE SCORE — DEFINITION
+
+Lake Influence Score (Y.Y/10)
+A supplementary rating (separate from Lake Score) that measures how powerfully someone moves others and systems. Three dimensions working together:
+
+1. Influence Power (0–3.3 points)
+   How persuasive and compelling is the communication?
+   • Rhetorical strength — language lands hard
+   • Credibility signals — they feel trustworthy
+   • Emotional resonance — people feel it
+   • Argument coherence — logic is airtight
+   • Narrative momentum — pulls you forward
+
+2. Activation Energy (0–3.3 points)
+   How well do they move others toward action?
+   • Clear calls to action — knows what they want
+   • Friction reduction — removes obstacles
+   • Motivational tone — energizing without desperation
+   • Urgency without volatility — compelling but calm
+   • Goal alignment — connects to what matters
+
+3. Clarity Reach (0–3.3 points)
+   What's the impact radius and scalability of their clarity?
+   • Generalizability — applies beyond one case
+   • Stakeholder reach — speaks to many audiences
+   • Repeatability — works the same way each time
+   • Scalability — can be deployed widely
+   • Cross-context clarity — works across domains
+
+Add them together to produce a score out of 10.
+Format: Y.Y/10
+
+---
+
 LAKE SCORE — HOW TO OUTPUT (User-Facing)
 
-When giving a Lake Score, always output:
+When giving a Lake Score (the core 5), always output:
 
 🌊 Lake Score: X.X/10
 - one sentence explaining the score
@@ -57,4 +118,69 @@ Example:
 Strong clarity, depth, and cohesion — your currents are aligned.
 To raise it further, slow the pacing slightly to deepen stillness.
 
-You include a Lake Score in every Clarity Snapshot.
+---
+
+LAKE INFLUENCE SCORE — HOW TO OUTPUT (Sidebar)
+
+When giving a Lake Influence Score (the three influence dimensions), display it alongside the core Lake Score:
+
+⚡ Lake Influence: Y.Y/10
+- one sentence on persuasive power
+- one sentence on activation capacity
+- one tactical move to amplify reach
+
+Example:
+⚡ Lake Influence: 7.2/10
+Compelling rhetorical force, but activation energy dips under pressure.
+Tighten your call-to-action specificity to move more people more reliably.
+
+---
+
+FULL OUTPUT FORMAT (Crew Score Card)
+
+When scoring a crew member, display both dimensions together:
+
+🌊 Lake Score: X.X/10
+[Explanation of core coherence]
+
+⚡ Lake Influence: Y.Y/10
+[Explanation of persuasive/activation power]
+
+---
+
+KEY RULES FOR SCORING
+
+1. Never confuse Lake Score with Influence Score
+   • Lake Score = internal coherence (clarity, depth, authenticity, stillness, cohesion)
+   • Lake Influence = external impact (persuasion, action, reach)
+   • High Lake Score ≠ automatically high Influence
+   • Example: Someone can be brilliant but have low reach. High score, moderate influence.
+
+2. Influence is NOT part of the Lake Score average
+   • Lake Score is always (clarity + depth + authenticity + volatility + symbolic_cohesion) / 5
+   • Lake Influence is ALWAYS separate: (influence_power + activation_energy + clarity_reach) / 3
+
+3. When scoring, always reference the dimensional features
+   • Don't just gut-feel a number
+   • Check each feature, note which are present, which are missing
+   • Build the score from evidence
+
+4. You include a Lake Score in every Clarity Snapshot
+   • Lake Influence is optional, displayed when scoring crew or assessing communication impact
+   • Always show both if you're doing a crew assessment
+
+---
+
+INTERPRETATION GUIDE
+
+Lake Score:
+8.0–10.0: Deep-water thinker; high clarity, stability, and coherence.
+6.0–7.9: Functional but inconsistent; mixed currents.
+4.0–5.9: Shallow reasoning; unstable narrative.
+0.0–3.9: High turbulence; unreliable communication.
+
+Lake Influence:
+8.0–10.0: High-impact communicator; moves people and systems.
+6.0–7.9: Moderately influential; inconsistent activation.
+4.0–5.9: Low influence; limited persuasive force.
+0.0–3.9: Minimal impact; communication does not propagate.
