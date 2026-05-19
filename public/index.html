@@ -250,6 +250,7 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
   flex-direction: column;
   gap: 6px;
   background: var(--dock-bg);
+  padding-bottom: calc(10px + var(--safe-bottom));
 }
 .prompt-suggestions { padding: 3px 0 5px; }
 .suggestions-toggle {
@@ -359,6 +360,15 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
 .logout-btn:hover { background: rgba(239,83,80,0.2); }
 
 /* ── RESPONSIVE ── */
+@media (min-width: 769px) {
+  .welcome-prompts {
+    max-width: 680px;
+    margin: 0 auto;
+  }
+  .welcome-screen {
+    justify-content: center;
+  }
+}
 @media (max-width: 768px) {
   .dock { position: fixed; top: 0; left: 0; bottom: 0; transform: translateX(-100%); z-index: 200; box-shadow: 8px 0 32px rgba(0,0,0,0.6); width: 80vw; max-width: 300px; min-width: unset; }
   .dock.open { transform: translateX(0); }
@@ -1333,6 +1343,7 @@ function handleFileSelect(event) {
 }
 function renderFilePreviews() {
   const container = document.getElementById('filesPreviewContainer');
+  if (!container) return;  // ← ADD THIS LINE — fixes the chat crash
   if (selectedFiles.length === 0) {
     container.classList.remove('show');
     container.innerHTML = '';
