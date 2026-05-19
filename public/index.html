@@ -291,11 +291,8 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
 .lake-input::placeholder { color: var(--text-dim); }
 .attach-btn { position: absolute; right: 9px; bottom: 9px; width: 26px; height: 34px; border-radius: 7px; border: none; background: transparent; color: var(--text-dim); cursor: pointer; font-size: 15px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
 .attach-btn:hover { color: var(--lake-light); background: rgba(45,140,240,0.1); }
-.send-btn { width: 44px; min-height: 70px; height: auto; align-self: stretch; border-radius: 12px; border: none; background: linear-gradient(135deg, var(--lake-glow), var(--lake-light)); }
 .send-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(45,140,240,0.3); }
 .send-btn:active { transform: scale(0.92); }
-.mic-btn { width: 44px; height: 44px; border-radius: 12px; border: none; background: var(--lake-mid); border: 1px solid var(--dock-border); color: var(--text-secondary); font-size: 19px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; }
-.mic-btn.listening { background: rgba(239,83,80,0.2); border-color: var(--danger); animation: pulse 1s ease-in-out infinite; }
 .input-hint { text-align: center; padding-top: 4px; font-size: 10px; color: var(--text-dim); opacity: 0.7; }
 #fileInput { display: none; }
 #cameraInput { display: none; }
@@ -519,13 +516,6 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
   height: 10px;
 }
 
-.input-row {
-  display: flex;
-  align-items: flex-end;
-  gap: 6px;
-  width: 100%;
-  box-sizing: border-box;
-}
 .side-buttons { display: flex; flex-direction: column; gap: 5px; }
 .attach-btn-stack {
   width: 44px; flex: 1;
