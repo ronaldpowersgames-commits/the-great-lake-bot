@@ -245,19 +245,46 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
 .shore-dock {
   width: 100%;
   box-sizing: border-box;
-  padding: 6px 10px 10px 10px;  /* add bottom breathing room */
+  padding: 6px 10px 10px 10px;
   display: flex;
   flex-direction: column;
   gap: 6px;
+  background: var(--dock-bg);
 }
 .prompt-suggestions { padding: 3px 0 5px; }
-.suggestions-toggle { background: rgba(45,140,240,0.05); border: 1px solid rgba(45,140,240,0.12); color: var(--text-dim); border-radius: 20px; padding: 5px 12px; font-size: 11px; cursor: pointer; margin-bottom: 5px; transition: all 0.15s; }
+.suggestions-toggle {
+  background: rgba(45,140,240,0.05);
+  border: 1px solid rgba(45,140,240,0.12);
+  color: var(--text-dim);
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-size: 10px;
+  cursor: pointer;
+  margin-bottom: 5px;
+  transition: all 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
 .suggestions-toggle:hover { color: var(--lake-light); border-color: rgba(45,140,240,0.28); }
 .suggestions-list { display: none; flex-wrap: wrap; gap: 5px; padding: 5px 0; max-height: 150px; overflow-y: auto; }
 .suggestions-list.open { display: flex; }
 .quick-actions { display: flex; gap: 5px; margin-bottom: 8px; overflow-x: auto; padding-bottom: 1px; -webkit-overflow-scrolling: touch; }
 .quick-actions::-webkit-scrollbar { height: 0; }
-.quick-action-btn { padding: 5px 11px; background: rgba(45,140,240,0.05); border: 1px solid rgba(45,140,240,0.1); border-radius: 20px; color: var(--text-dim); font-size: 11px; cursor: pointer; white-space: nowrap; transition: all 0.15s; display: flex; align-items: center; gap: 3px; flex-shrink: 0; }
+.quick-action-btn {
+  padding: 4px 9px;
+  background: rgba(45,140,240,0.05);
+  border: 1px solid rgba(45,140,240,0.1);
+  border-radius: 20px;
+  color: var(--text-dim);
+  font-size: 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
 .quick-action-btn:hover, .quick-action-btn:active { background: rgba(45,140,240,0.12); color: var(--lake-light); border-color: rgba(45,140,240,0.25); }
 
 /* ── MULTI-FILE PREVIEW ── */
@@ -280,10 +307,11 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
 /* ── INPUT ROW ── */
 .input-row {
   display: flex;
-  align-items: flex-end;
-  gap: 7px;
-  background: var(--dock-bg);    /* ← ADD THIS */
-  padding: 6px 0;                /* ← ADD THIS */
+  align-items: stretch;
+  gap: 6px;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 80px;
 }
 .input-wrap { flex: 1; position: relative; }
 .lake-input { width: 100%; min-height: 70px; max-height: 116px; padding: 10px 42px 10px 14px; background: var(--lake-mid); border: 1px solid var(--dock-border); border-radius: 12px; }
@@ -516,30 +544,59 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
   height: 10px;
 }
 
-.side-buttons { display: flex; flex-direction: column; gap: 5px; }
+.sid.side-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  align-self: stretch;
+}
 .attach-btn-stack {
-  width: 44px; flex: 1;
-  border-radius: 12px; border: 1px solid var(--dock-border);
+  width: 44px;
+  flex: 1;
+  min-height: 36px;
+  border-radius: 12px;
+  border: 1px solid var(--dock-border);
   background: var(--lake-mid);
-  color: var(--text-dim); font-size: 17px; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
+  color: var(--text-dim);
+  font-size: 17px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: all 0.15s;
 }
+
 .attach-btn-stack:hover { color: var(--lake-light); background: rgba(45,140,240,0.1); }
-.mic-btn { 
-  width: 44px; flex: 1;
-  border-radius: 12px; border: 1px solid var(--dock-border);
+.mic-btn {
+  width: 44px;
+  flex: 1;
+  min-height: 36px;
+  border-radius: 12px;
+  border: 1px solid var(--dock-border);
   background: var(--lake-mid);
-  color: var(--text-secondary); font-size: 19px; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
+  color: var(--text-secondary);
+  font-size: 19px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: all 0.2s;
 }
+
 .send-btn {
-  width: 58px; border-radius: 12px; border: none;
+  width: 58px;
+  border-radius: 12px;
+  border: none;
   background: linear-gradient(135deg, var(--lake-glow), var(--lake-light));
-  color: var(--lake-deep); font-size: 17px; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  transition: all 0.2s; flex-shrink: 0; align-self: stretch;
+  color: var(--lake-deep);
+  font-size: 17px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  align-self: stretch;
 }
 
 .suggestions-top-row {
