@@ -157,7 +157,7 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
 .waves-container::-webkit-scrollbar { width: 0; }
 .waves-container::-webkit-scrollbar-track { background: transparent; }
 .waves-container::-webkit-scrollbar-thumb { background: var(--lake-shimmer); border-radius: 4px; }
-.welcome-screen { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px 16px; max-height: 100dvh; overflow: hidden; }
+.welcome-screen { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px 16px; max-height: 100dvh; overflow: visible; }
 .welcome-icon { font-size: 52px; margin-bottom: 12px; animation: gentleFloat 4s ease-in-out infinite, lakeLogoPulse 3s ease-in-out infinite; cursor: pointer; display: inline-block; transition: transform 0.2s ease; }
 @keyframes lakeLogoPulse { 0%, 100% { filter: drop-shadow(0 0 12px var(--lake-glow)); } 50% { filter: drop-shadow(0 0 28px var(--lake-light)); } }
 .welcome-icon:hover { transform: scale(1.12); }
@@ -544,10 +544,17 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 12px;
   color: var(--text-primary, #e8f4fd);
-  padding: 12px 8px;
-  font-size: 0.82rem;
+  padding: 10px 8px;
+  font-size: 0.78rem;
   cursor: pointer;
-  text-align: left;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: background 0.2s ease, transform 0.15s ease;
   user-select: none;
   -webkit-user-select: none;
