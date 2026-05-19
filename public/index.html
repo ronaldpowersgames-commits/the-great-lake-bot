@@ -153,13 +153,12 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
 .current-chip.persona-chip { background: linear-gradient(135deg, rgba(45,140,240,0.15), rgba(100,181,246,0.1)); border-color: rgba(45,140,240,0.3); font-weight: 600; }
 
 /* ── WAVES ── */
-.waves-container { 
-   flex: 1;
-  overflow: hidden;
+.waves-container {
+  flex: 1;
+  overflow-y: auto;   /* ← CHANGE from overflow:hidden to overflow-y:auto */
   display: flex;
   flex-direction: column;
-  max-height: 100dvh;
-  overflow: hidden;
+  min-height: 0;      /* ← ADD THIS */
 }
 .waves-container::-webkit-scrollbar { width: 0; }
 .waves-container::-webkit-scrollbar-track { background: transparent; }
@@ -245,12 +244,11 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
 .shore-dock {
   width: 100%;
   box-sizing: border-box;
-  padding: 6px 10px 10px 10px;
+  padding: 6px 0 0 0;   /* ← zero on sides and bottom */
   display: flex;
   flex-direction: column;
   gap: 6px;
   background: var(--dock-bg);
-  padding-bottom: calc(10px + var(--safe-bottom));
 }
 .prompt-suggestions { padding: 3px 0 5px; }
 .suggestions-toggle {
@@ -1779,16 +1777,17 @@ function newSession() {
       <div class="welcome-title">The Lake is Still</div>
       <div class="welcome-sub">Drop a wave, cast a line, or let a log drift in.<br>I'll reflect back what the water reveals.</div>
       <div class="welcome-prompts">
-          <div class="welcome-prompt welcome-prompt-featured" onclick="sendPrompt('Show me my persona and leadership profile')">🌊 My Persona</div>
-          <div class="welcome-prompt welcome-prompt-featured" onclick="sendPrompt('Give me my leadership journal for today')">📓 Today\'s Journal</div>
-          <div class="welcome-prompt" onclick="sendPrompt('Read a situation for me')">🎯 Read a situation</div>
-          <div class="welcome-prompt" onclick="sendPrompt('Help me see the real dynamic')">🎭 Real dynamic</div>
-          <div class="welcome-prompt" onclick="sendPrompt('I have a transcript to drop in')">📄 Drop a log</div>
-          <div class="welcome-prompt" onclick="sendPrompt('Something feels off – help me see why')">🔥 Feels off</div>
-          <div class="welcome-prompt" onclick="sendPrompt('Break down the players involved')">👥 Break down players</div>
-          <div class="welcome-prompt" onclick="sendPrompt('What should I be watching for?')">🎮 What to watch</div>
+        <div class="welcome-prompt welcome-prompt-featured" onclick="sendPrompt('I want to understand myself better. Ask me questions that help me see my patterns, values, blind spots and strengths.')">🪞 My Persona</div>
+        <div class="welcome-prompt welcome-prompt-featured" onclick="sendPrompt('It\'s journal time. Ask me to describe my day — what happened, how I felt, what\'s sitting with me.')">📓 Today\'s Journal</div>
+        <div class="welcome-prompts-grid">
+          <div class="welcome-prompt-half" onclick="sendPrompt('Read a situation for me')">🧭 Read a situation</div>
+          <div class="welcome-prompt-half" onclick="sendPrompt('Help me see the real dynamic')">🎯 Real dynamic</div>
+          <div class="welcome-prompt-half" onclick="sendPrompt('I have a transcript to drop in')">📋 Drop a log</div>
+          <div class="welcome-prompt-half" onclick="sendPrompt('Something feels off - help me see why')">😤 Feels off</div>
+          <div class="welcome-prompt-half" onclick="sendPrompt('Break down the players involved')">👥 Break down players</div>
+          <div class="welcome-prompt-half" onclick="sendPrompt('What should I be watching for?')">👀 What to watch</div>
+        </div>
       </div>
-    </div>
   `;
   renderTides();
   if (window.innerWidth <= 768) toggleDock();
