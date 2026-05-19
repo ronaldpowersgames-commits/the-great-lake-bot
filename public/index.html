@@ -876,7 +876,7 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
       <div class="welcome-prompts-grid">
         <div class="welcome-prompt-half" onclick="sendPrompt('Read a situation for me')" data-long-press-batch="0">🧭 Read a situation</div>
         <div class="welcome-prompt-half" onclick="sendPrompt('Help me see the real dynamic')" data-long-press-batch="0">🎯 Real dynamic</div>
-        <div class="welcome-prompt-half" onclick="sendPrompt('I have a transcript to drop in')" data-long-press-batch="0">📋 Drop a log</div>
+        <div class="welcome-prompt-half" onclick="sendPrompt('I have a transcript to drop in')" data-long-press-batch="0">📋 Drop a chat-log</div>
         <div class="welcome-prompt-half" onclick="sendPrompt('Something feels off - help me see why')" data-long-press-batch="0">😤 Feels off</div>
         <div class="welcome-prompt-half" onclick="sendPrompt('Break down the players involved')" data-long-press-batch="0">👥 Break down players</div>
         <div class="welcome-prompt-half" onclick="sendPrompt('What should I be watching for?')" data-long-press-batch="0">👀 What to watch</div>
@@ -954,7 +954,7 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
         </div>
       </div>
       <div class="quick-actions">
-        <button class="quick-action-btn" onclick="triggerFileInput()">📎 Drop a Log</button>
+        <button class="quick-action-btn" onclick="triggerFileInput()">📎 Drop a Chat-Log</button>
         <button class="quick-action-btn" onclick="triggerCamera()">📷 Take Photo</button>
         <button class="quick-action-btn" onclick="sendPrompt('Analyse every person visible in our conversation. For each person generate a full Lake Score Card using the v2.0 model: score Clarity, Depth, Authenticity, Volatility, and Symbolic Cohesion each out of 10.0, then calculate their Lake Score ((C+D+A+V+SC)/5). Also score Influence Power, Activation Energy, and Clarity Reach each out of 10.0, then calculate their Lake Influence Score ((IP+AE+CR)/3). Format each card clearly with scores, a one-line read per dimension, and a final verdict.')">📝 Score Cards</button>
         <button class="quick-action-btn" onclick="sendPrompt('Map the influence dynamics')">🗺️ Map Influence</button>
@@ -1075,7 +1075,7 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
     <div class="help-section">
       <div class="help-section-title">🌊 The Basics</div>
       <div class="help-item"><span class="help-icon">💬</span><div class="help-text">Type anything in the box at the bottom. <strong>The Lake reflects back what it sees.</strong></div></div>
-      <div class="help-item"><span class="help-icon">📄</span><div class="help-text"><strong>Drop a Log</strong> — attach transcripts, meeting notes, screenshots, or chat exports. The Lake reads the room.</div></div>
+      <div class="help-item"><span class="help-icon">📄</span><div class="help-text"><strong>Drop a Chat-Log</strong> — attach transcripts, meeting notes, screenshots, or chat exports. The Lake reads the room.</div></div>
       <div class="help-item"><span class="help-icon">📷</span><div class="help-text"><strong>Take a Photo</strong> — snap a whiteboard, document, or screenshot directly into chat.</div></div>
       <div class="help-item"><span class="help-icon">📎</span><div class="help-text"><strong>Multiple attachments</strong> — attach several files at once. All will be read and analyzed together.</div></div>
       <div class="help-item"><span class="help-icon">🎤</span><div class="help-text"><strong>Voice input</strong> — tap the mic button and speak your thoughts directly into The Lake.</div></div>
@@ -1785,7 +1785,7 @@ function newSession() {
         <div class="welcome-prompts-grid">
           <div class="welcome-prompt-half" onclick="sendPrompt('Read a situation for me')">🧭 Read a situation</div>
           <div class="welcome-prompt-half" onclick="sendPrompt('Help me see the real dynamic')">🎯 Real dynamic</div>
-          <div class="welcome-prompt-half" onclick="sendPrompt('I have a transcript to drop in')">📋 Drop a log</div>
+          <div class="welcome-prompt-half" onclick="sendPrompt('I have a transcript to drop in')">📋 Drop a chat-log</div>
           <div class="welcome-prompt-half" onclick="sendPrompt('Something feels off - help me see why')">😤 Feels off</div>
           <div class="welcome-prompt-half" onclick="sendPrompt('Break down the players involved')">👥 Break down players</div>
           <div class="welcome-prompt-half" onclick="sendPrompt('What should I be watching for?')">👀 What to watch</div>
