@@ -164,6 +164,7 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
 .welcome-title { font-size: 22px; font-weight: 700; color: var(--lake-light); margin-bottom: 7px; }
 .welcome-sub { font-size: 13px; color: var(--text-dim); max-width: 320px; line-height: 1.6; margin-bottom: 24px; }
 .welcome-prompts { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; width: 100%; max-width: 480px; }
+    overflow: visible;
 .welcome-prompt { padding: 11px 13px; background: rgba(45,140,240,0.07); border: 1px solid rgba(45,140,240,0.13); border-radius: 13px; color: var(--text-secondary); font-size: 12px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; text-align: left; line-height: 1.3; }
 .welcome-prompt:hover { background: rgba(45,140,240,0.14); border-color: rgba(45,140,240,0.28); color: var(--lake-light); transform: translateY(-2px); }
 .wave { display: flex; gap: 9px; max-width: 84%; animation: waveIn 0.35s ease-out; }
@@ -723,28 +724,11 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
           <div class="welcome-prompt welcome-prompt-featured" onclick="sendPrompt('It\'s journal time. Ask me to describe my day — what happened, how I felt, what\'s sitting with me. Ask follow up questions as we go. Help me process it like a journal entry.')">📓 Today's Journal</div>
           <!-- CAROUSEL WRAPPER -->
             <div class="prompt-carousel-container">
-              <div class="carousel-dots">
-                <span class="carousel-dot active" data-batch="0"></span>
-                <span class="carousel-dot" data-batch="1"></span>
-                <span class="carousel-dot" data-batch="2"></span>
-              </div>
               <div class="prompt-carousel-track" id="promptCarouselTrack">
             
                 <!-- BATCH 1: INTERNAL -->
-                    <!-- BATCH 1: INTERNAL -->
-    <div class="prompt-batch" data-batch-index="0">
-      <div class="batch-label">⚙️ Internal</div>
-      <div class="welcome-prompts-grid">
-        <div class="welcome-prompt-half" onclick="sendPrompt('Run my Weekly Super-Powerful Cycle — give me the 7-day sequence of operating principles.')" data-long-press-batch="0">🔄 Weekly Cycle</div>
-        <div class="welcome-prompt-half" onclick="sendPrompt('Generate a Super-Powerful Principle and let me choose the category.')" data-long-press-batch="0">⚡ Principle Gen</div>
-        <div class="welcome-prompt-half" onclick="sendPrompt('Run my Morning Diagnostic — identify my weakest Lake dimension today and give me the one move to fix it.')" data-long-press-batch="0">🌅 Morning Diag</div>
-        <div class="welcome-prompt-half" onclick="sendPrompt('Activate Super-Powerful Mode — tune my tone, clarity, and presence to elite settings.')" data-long-press-batch="0">🔥 Persona Mode</div>
-        <div class="welcome-prompt-half" onclick="sendPrompt('Give me today\'s Super-Powerful Principle — one sentence that cuts through confusion and tells me where to start.')" data-long-press-batch="0">📍 Daily Principle</div>
-        <div class="welcome-prompt-half" onclick="sendPrompt('Run an Internal Alignment Reset — clear noise, surface my priorities, and give me the cleanest starting point.')" data-long-press-batch="0">🎯 Align Reset</div>
-      </div>
-    </div>
 
-    <!-- BATCH 2: SOCIAL -->
+    <!-- BATCH : SOCIAL -->
     <div class="prompt-batch" data-batch-index="1">
       <div class="batch-label">🤝 Social</div>
       <div class="welcome-prompts-grid">
@@ -754,6 +738,19 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
         <div class="welcome-prompt-half" onclick="sendPrompt('Calibrate my social vibe — tell me the tone I should use with this person or group.')" data-long-press-batch="1">🎚️ Vibe Cal</div>
         <div class="welcome-prompt-half" onclick="sendPrompt('Polish this message into its most Super-Powerful, clear, confident version.')" data-long-press-batch="1">✨ Msg Polish</div>
         <div class="welcome-prompt-half" onclick="sendPrompt('Give me the one move that builds momentum in this social situation — subtle, confident, and high-clarity.')" data-long-press-batch="1">🚀 Momentum</div>
+      </div>
+    </div>
+                
+    <!-- BATCH 2:INTERNAL -->
+    <div class="prompt-batch" data-batch-index="0">
+      <div class="batch-label">⚙️ Internal</div>
+      <div class="welcome-prompts-grid">
+        <div class="welcome-prompt-half" onclick="sendPrompt('Run my Weekly Super-Powerful Cycle — give me the 7-day sequence of operating principles.')" data-long-press-batch="0">🔄 Weekly Cycle</div>
+        <div class="welcome-prompt-half" onclick="sendPrompt('Generate a Super-Powerful Principle and let me choose the category.')" data-long-press-batch="0">⚡ Principle Gen</div>
+        <div class="welcome-prompt-half" onclick="sendPrompt('Run my Morning Diagnostic — identify my weakest Lake dimension today and give me the one move to fix it.')" data-long-press-batch="0">🌅 Morning Diag</div>
+        <div class="welcome-prompt-half" onclick="sendPrompt('Activate Super-Powerful Mode — tune my tone, clarity, and presence to elite settings.')" data-long-press-batch="0">🔥 Persona Mode</div>
+        <div class="welcome-prompt-half" onclick="sendPrompt('Give me today\'s Super-Powerful Principle — one sentence that cuts through confusion and tells me where to start.')" data-long-press-batch="0">📍 Daily Principle</div>
+        <div class="welcome-prompt-half" onclick="sendPrompt('Run an Internal Alignment Reset — clear noise, surface my priorities, and give me the cleanest starting point.')" data-long-press-batch="0">🎯 Align Reset</div>
       </div>
     </div>
 
@@ -771,6 +768,13 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
     </div>
 
   </div><!-- end track -->
+         </div><!-- end track -->
+            <div class="carousel-dots">
+              <span class="carousel-dot active" data-batch="0"></span>
+              <span class="carousel-dot" data-batch="1"></span>
+              <span class="carousel-dot" data-batch="2"></span>
+            </div>
+          </div><!-- end carousel -->
 </div><!-- end carousel -->
     </div>
 
@@ -2420,8 +2424,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // ── CAROUSEL ──
 let currentBatch = 0;
 const TOTAL_BATCHES = 3;
-let defaultBatch = parseInt(localStorage.getItem('defaultBatch') || '0');
-
+let defaultBatch = 1;
+  
 function initCarousel() {
   currentBatch = defaultBatch;
   renderCarousel(false);
