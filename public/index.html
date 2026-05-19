@@ -640,14 +640,57 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
         <div class="welcome-prompts">
           <div class="welcome-prompt welcome-prompt-featured" onclick="sendPrompt('I want to understand myself better. Ask me questions — one at a time — that help me see my patterns, values, blind spots and strengths. Build a picture of who I am as we go.')">🪞 My Persona</div>
           <div class="welcome-prompt welcome-prompt-featured" onclick="sendPrompt('It\'s journal time. Ask me to describe my day — what happened, how I felt, what\'s sitting with me. Ask follow up questions as we go. Help me process it like a journal entry.')">📓 Today's Journal</div>
-          <div class="welcome-prompt" onclick="sendPrompt('Read a situation for me')">🧭 Read a situation</div>
-          <div class="welcome-prompt" onclick="sendPrompt('Help me see the real dynamic')">🎯 Real dynamic</div>
-          <div class="welcome-prompt" onclick="sendPrompt('I have a transcript to drop in')">📄 Drop a log</div>
-          <div class="welcome-prompt" onclick="sendPrompt('Something feels off — help me see why')">😬 Feels off</div>
-          <div class="welcome-prompt" onclick="sendPrompt('Break down the players involved')">👥 Break down players</div>
-          <div class="welcome-prompt" onclick="sendPrompt('What should I be watching for?')">👀 What to watch</div>
-        </div>
+          <!-- CAROUSEL WRAPPER -->
+            <div class="prompt-carousel-container">
+              <div class="carousel-dots">
+                <span class="carousel-dot active" data-batch="0"></span>
+                <span class="carousel-dot" data-batch="1"></span>
+                <span class="carousel-dot" data-batch="2"></span>
+              </div>
+              <div class="prompt-carousel-track" id="promptCarouselTrack">
+            
+                <!-- BATCH 1: INTERNAL -->
+                    <!-- BATCH 1: INTERNAL -->
+    <div class="prompt-batch" data-batch-index="0">
+      <div class="batch-label">⚙️ Internal</div>
+      <div class="welcome-prompts-grid">
+        <div class="welcome-prompt-half" onclick="sendPrompt('Run my Weekly Super-Powerful Cycle — give me the 7-day sequence of operating principles.')" data-long-press-batch="0">🔄 Weekly Cycle</div>
+        <div class="welcome-prompt-half" onclick="sendPrompt('Generate a Super-Powerful Principle and let me choose the category.')" data-long-press-batch="0">⚡ Principle Gen</div>
+        <div class="welcome-prompt-half" onclick="sendPrompt('Run my Morning Diagnostic — identify my weakest Lake dimension today and give me the one move to fix it.')" data-long-press-batch="0">🌅 Morning Diag</div>
+        <div class="welcome-prompt-half" onclick="sendPrompt('Activate Super-Powerful Mode — tune my tone, clarity, and presence to elite settings.')" data-long-press-batch="0">🔥 Persona Mode</div>
+        <div class="welcome-prompt-half" onclick="sendPrompt('Give me today\'s Super-Powerful Principle — one sentence that cuts through confusion and tells me where to start.')" data-long-press-batch="0">📍 Daily Principle</div>
+        <div class="welcome-prompt-half" onclick="sendPrompt('Run an Internal Alignment Reset — clear noise, surface my priorities, and give me the cleanest starting point.')" data-long-press-batch="0">🎯 Align Reset</div>
       </div>
+    </div>
+
+    <!-- BATCH 2: SOCIAL -->
+    <div class="prompt-batch" data-batch-index="1">
+      <div class="batch-label">🤝 Social</div>
+      <div class="welcome-prompts-grid">
+        <div class="welcome-prompt-half" onclick="sendPrompt('Start Ice-Breaker Mode — ask me for quick context, then craft the perfect opener.')" data-long-press-batch="1">🧊 Ice-Breaker</div>
+        <div class="welcome-prompt-half" onclick="sendPrompt('Drop your chat screenshot into the Lake for a Super-Powerful read and the exact next thing to say.')" data-long-press-batch="1">📸 Chat Read</div>
+        <div class="welcome-prompt-half" onclick="sendPrompt('Give me the Super-Powerful social move for this situation — the read, the move, the tone, the risk, the reward.')" data-long-press-batch="1">🧭 Social Nav</div>
+        <div class="welcome-prompt-half" onclick="sendPrompt('Calibrate my social vibe — tell me the tone I should use with this person or group.')" data-long-press-batch="1">🎚️ Vibe Cal</div>
+        <div class="welcome-prompt-half" onclick="sendPrompt('Polish this message into its most Super-Powerful, clear, confident version.')" data-long-press-batch="1">✨ Msg Polish</div>
+        <div class="welcome-prompt-half" onclick="sendPrompt('Give me the one move that builds momentum in this social situation — subtle, confident, and high-clarity.')" data-long-press-batch="1">🚀 Momentum</div>
+      </div>
+    </div>
+
+    <!-- BATCH 3: PODCAST -->
+    <div class="prompt-batch" data-batch-index="2">
+      <div class="batch-label">🎙️ Podcast</div>
+      <div class="welcome-prompts-grid">
+        <div class="welcome-prompt-half" onclick="sendPrompt('Give me a compelling, curiosity-driven topic to open a conversation — something that instantly hooks the listener.')" data-long-press-batch="2">💡 Spark Topic</div>
+        <div class="welcome-prompt-half" onclick="sendPrompt('Generate a deep, thoughtful question that makes the other person reflect and open up.')" data-long-press-batch="2">🎯 Deep Q</div>
+        <div class="welcome-prompt-half" onclick="sendPrompt('Give me the perfect follow-up question that keeps the conversation flowing and makes me sound like a world-class interviewer.')" data-long-press-batch="2">🔁 Follow-Up</div>
+        <div class="welcome-prompt-half" onclick="sendPrompt('Help me pull a story out of someone — ask the kind of question that makes them share something meaningful.')" data-long-press-batch="2">📖 Story Pull</div>
+        <div class="welcome-prompt-half" onclick="sendPrompt('Take what someone just said and turn it into a sharper insight, then give me the next line to say.')" data-long-press-batch="2">🔍 Insight Amp</div>
+        <div class="welcome-prompt-half" onclick="sendPrompt('Give me a smooth, natural transition from one topic to another without awkwardness.')" data-long-press-batch="2">🌉 Conv Bridge</div>
+      </div>
+    </div>
+
+  </div><!-- end track -->
+</div><!-- end carousel -->
     </div>
 
     <div class="ripple" id="ripple">
@@ -687,7 +730,7 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
       <div class="quick-actions">
         <button class="quick-action-btn" onclick="triggerFileInput()">📎 Drop a Log</button>
         <button class="quick-action-btn" onclick="triggerCamera()">📷 Take Photo</button>
-        <button class="quick-action-btn" onclick="sendPrompt('Analyse every person visible in our conversation. For each person generate a full Lake Score Card using the v2.0 model: score Clarity, Depth, Authenticity, Volatility, and Symbolic Cohesion each out of 10.0, then calculate their Lake Score ((C+D+A+V+SC)/5). Also score Influence Power, Activation Energy, and Clarity Reach each out of 10.0, then calculate their Lake Influence Score ((IP+AE+CR)/3). Format each card clearly with scores, a one-line read per dimension, and a final verdict.')">🧮 Crew Score Cards</button>
+        <button class="quick-action-btn" onclick="sendPrompt('Analyse every person visible in our conversation. For each person generate a full Lake Score Card using the v2.0 model: score Clarity, Depth, Authenticity, Volatility, and Symbolic Cohesion each out of 10.0, then calculate their Lake Score ((C+D+A+V+SC)/5). Also score Influence Power, Activation Energy, and Clarity Reach each out of 10.0, then calculate their Lake Influence Score ((IP+AE+CR)/3). Format each card clearly with scores, a one-line read per dimension, and a final verdict.')">📝 Crew Score Cards</button>
         <button class="quick-action-btn" onclick="sendPrompt('Map the influence dynamics')">🗺️ Map Influence</button>
         <button class="quick-action-btn" onclick="sendPrompt('What are the undercurrents here?')">🌀 Undercurrents</button>
       </div>
