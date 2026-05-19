@@ -41,7 +41,7 @@ function loadSystemPrompt() {
     'governance.txt','clarity_engine.txt','influence_engine.txt',
     'output_format.txt','file_handling.txt','group_mode.txt',
     'safety.txt','behavior_rules.txt','onboarding.txt',
-    'update_syntax.txt','lake_score.txt',
+    'update_syntax.txt', 'lake_score.txt', 'lake_score_model.json',
   ];
   if (!fs.existsSync(modelDir)) {
     console.warn('⚠️  core/model/ directory not found — using fallback prompt');
