@@ -158,7 +158,9 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
 .waves-container::-webkit-scrollbar-track { background: transparent; }
 .waves-container::-webkit-scrollbar-thumb { background: var(--lake-shimmer); border-radius: 4px; }
 .welcome-screen { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px 16px; max-height: 100dvh; overflow: hidden; }
-.welcome-icon { font-size: 52px; margin-bottom: 12px; animation: gentleFloat 4s ease-in-out infinite; }
+.welcome-icon { font-size: 52px; margin-bottom: 12px; animation: gentleFloat 4s ease-in-out infinite, lakeLogoPulse 3s ease-in-out infinite; cursor: pointer; display: inline-block; transition: transform 0.2s ease; }
+@keyframes lakeLogoPulse { 0%, 100% { filter: drop-shadow(0 0 12px var(--lake-glow)); } 50% { filter: drop-shadow(0 0 28px var(--lake-light)); } }
+.welcome-icon:hover { transform: scale(1.12); }
 .welcome-title { font-size: 22px; font-weight: 700; color: var(--lake-light); margin-bottom: 7px; }
 .welcome-sub { font-size: 13px; color: var(--text-dim); max-width: 320px; line-height: 1.6; margin-bottom: 24px; }
 .welcome-prompts { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; width: 100%; max-width: 480px; }
@@ -632,7 +634,7 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
 
     <div class="waves-container" id="wavesContainer">
       <div class="welcome-screen" id="welcomeScreen">
-        <div class="welcome-icon">🌊</div>
+        <div class="welcome-icon" onclick="triggerDailyPrinciple()" style="cursor:pointer;" title="Get today's principle">🌊</div>
         <div class="welcome-title">The Lake is Still</div>
         <div class="welcome-sub">Drop a wave, cast a line, or let a log drift in.<br>I'll reflect back what the water reveals.</div>
         <div class="welcome-prompts">
@@ -641,9 +643,9 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
           <div class="welcome-prompt" onclick="sendPrompt('Read a situation for me')">🧭 Read a situation</div>
           <div class="welcome-prompt" onclick="sendPrompt('Help me see the real dynamic')">🎯 Real dynamic</div>
           <div class="welcome-prompt" onclick="sendPrompt('I have a transcript to drop in')">📄 Drop a log</div>
-          <div class="welcome-prompt" onclick="sendPrompt('Something feels off — help me see why')">🔥 Feels off</div>
+          <div class="welcome-prompt" onclick="sendPrompt('Something feels off — help me see why')">😬 Feels off</div>
           <div class="welcome-prompt" onclick="sendPrompt('Break down the players involved')">👥 Break down players</div>
-          <div class="welcome-prompt" onclick="sendPrompt('What should I be watching for?')">🌊 What to watch</div>
+          <div class="welcome-prompt" onclick="sendPrompt('What should I be watching for?')">👀 What to watch</div>
         </div>
       </div>
     </div>
@@ -667,7 +669,7 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
           <button class="quick-action-btn" onclick="sendPrompt('Surface the truth — cut through the noise and tell me what is really going on.')">🔍 Surface the Truth</button>
           <button class="quick-action-btn" onclick="sendPrompt('I am dropping the full logbook — read everything and give me the full picture.')">🪨 Drop the Full Logbook</button>
           <button class="quick-action-btn" onclick="sendPrompt('Connect the dots — find the patterns and links across everything shared.')">🧩 Connect the Dots</button>
-          <button class="quick-action-btn" onclick="sendPrompt('What are the red flags here? Do not hold back.')">🔥 Red Flags</button>
+          <button class="quick-action-btn" onclick="sendPrompt('What are the red flags here? Do not hold back.')">🚩 Red Flags</button>
           <button class="quick-action-btn" onclick="sendPrompt('Read the mask and the motive — what is each person showing versus what they actually want?')">🎭 Mask & Motive</button>
           <button class="quick-action-btn" onclick="sendPrompt('Run a momentum check — where is the energy building and where is it stalling?')">📈 Momentum Check</button>
           <button class="quick-action-btn" onclick="sendPrompt('Give me the iceberg view — what is visible on the surface and what is hidden underneath?')">🧊 Iceberg View</button>
@@ -1808,6 +1810,9 @@ function updateCurrents(text) {
 // ============================================
 // SENDING WAVES
 // ============================================
+function triggerDailyPrinciple() {
+  sendPrompt("Lake, give me today's Super‑Powerful Principle — one sentence that cuts through confusion, raises my Lake Score, and tells me exactly where to start today.");
+}
 function sendPrompt(text) { document.getElementById('lakeInput').value = text; sendWave(); }
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
