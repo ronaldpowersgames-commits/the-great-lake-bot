@@ -518,8 +518,10 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
   letter-spacing: 0.08em;
   color: var(--lake-light);
   opacity: 0.5;
-  margin-bottom: 8px;
+  margin-top: 8px;
+  margin-bottom: 0px;
   text-transform: uppercase;
+  order: 2;
 }
 .prompt-carousel-track {
   display: flex;
@@ -532,20 +534,22 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
   width: 100%;
   flex-shrink: 0;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
 }
 .welcome-prompts-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  padding: 0 4px;
+  gap: 7px;
+  width: 100%;
+  order: 1;
 }
 .welcome-prompt-half {
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 12px;
-  color: var(--text-primary, #e8f4fd);
-  padding: 10px 8px;
-  font-size: 0.78rem;
+  background: rgba(45,140,240,0.07);
+  border: 1px solid rgba(45,140,240,0.13);
+  border-radius: 13px;
+  color: var(--text-secondary);
+  font-size: 12px;
   cursor: pointer;
   text-align: center;
   white-space: nowrap;
@@ -555,7 +559,8 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.2s ease, transform 0.15s ease;
+  padding: 11px 13px;
+  transition: all 0.2s ease;
   user-select: none;
   -webkit-user-select: none;
 }
@@ -735,7 +740,7 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
             
                 <!-- BATCH 1: INTERNAL -->
 
-    <!-- BATCH : SOCIAL -->
+    <!-- BATCH 0: SOCIAL -->
     <div class="prompt-batch" data-batch-index="1">
       <div class="batch-label">🤝 Social</div>
       <div class="welcome-prompts-grid">
@@ -747,8 +752,21 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
         <div class="welcome-prompt-half" onclick="sendPrompt('Give me the one move that builds momentum in this social situation — subtle, confident, and high-clarity.')" data-long-press-batch="1">🚀 Momentum</div>
       </div>
     </div>
+
+    <!-- BATCH 1: STILL WATERS (original) -->
+    <div class="prompt-batch" data-batch-index="0">
+      <div class="batch-label">🌊 Still Waters</div>
+      <div class="welcome-prompts-grid">
+        <div class="welcome-prompt-half" onclick="sendPrompt('Read a situation for me')" data-long-press-batch="0">🧭 Read a situation</div>
+        <div class="welcome-prompt-half" onclick="sendPrompt('Help me see the real dynamic')" data-long-press-batch="0">🎯 Real dynamic</div>
+        <div class="welcome-prompt-half" onclick="sendPrompt('I have a transcript to drop in')" data-long-press-batch="0">📋 Drop a log</div>
+        <div class="welcome-prompt-half" onclick="sendPrompt('Something feels off - help me see why')" data-long-press-batch="0">😤 Feels off</div>
+        <div class="welcome-prompt-half" onclick="sendPrompt('Break down the players involved')" data-long-press-batch="0">👥 Break down players</div>
+        <div class="welcome-prompt-half" onclick="sendPrompt('What should I be watching for?')" data-long-press-batch="0">👀 What to watch</div>
+      </div>
+    </div>
                 
-    <!-- BATCH 2:INTERNAL -->
+    <!-- BATCH 3:INTERNAL -->
     <div class="prompt-batch" data-batch-index="0">
       <div class="batch-label">⚙️ Internal</div>
       <div class="welcome-prompts-grid">
@@ -761,7 +779,7 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
       </div>
     </div>
 
-    <!-- BATCH 3: PODCAST -->
+    <!-- BATCH 4: PODCAST -->
     <div class="prompt-batch" data-batch-index="2">
       <div class="batch-label">🎙️ Podcast</div>
       <div class="welcome-prompts-grid">
@@ -777,9 +795,10 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
   </div><!-- end track -->
          </div><!-- end track -->
             <div class="carousel-dots">
-              <span class="carousel-dot active" data-batch="0"></span>
-              <span class="carousel-dot" data-batch="1"></span>
+              <span class="carousel-dot" data-batch="0"></span>
+              <span class="carousel-dot active" data-batch="1"></span>
               <span class="carousel-dot" data-batch="2"></span>
+              <span class="carousel-dot" data-batch="3"></span>
             </div>
           </div><!-- end carousel -->
 </div><!-- end carousel -->
@@ -2430,7 +2449,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ── CAROUSEL ──
 let currentBatch = 0;
-const TOTAL_BATCHES = 3;
+const TOTAL_BATCHES = 4;
 let defaultBatch = 1;
   
 function initCarousel() {
