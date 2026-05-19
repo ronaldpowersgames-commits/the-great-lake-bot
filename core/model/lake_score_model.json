@@ -1,0 +1,123 @@
+{
+  "lake_model_schema": {
+    "version": "2.0",
+    "categories": {
+      "clarity": {
+        "description": "Measures directness, precision, and lack of ambiguity.",
+        "features": [
+          "low_ambiguity",
+          "low_hedging",
+          "explicit_intent",
+          "evidence_reference",
+          "logical_sequencing"
+        ],
+        "score_type": "float",
+        "range": "0.0 - 10.0"
+      },
+      "depth": {
+        "description": "Measures ability to reason beyond surface-level events.",
+        "features": [
+          "multi_step_reasoning",
+          "context_awareness",
+          "pattern_recognition",
+          "root_cause_identification",
+          "anticipatory_thinking"
+        ],
+        "score_type": "float",
+        "range": "0.0 - 10.0"
+      },
+      "authenticity": {
+        "description": "Measures alignment between statements, evidence, and behavior.",
+        "features": [
+          "consistency_with_evidence",
+          "transparency",
+          "low_defensiveness",
+          "tone_consistency",
+          "accountability"
+        ],
+        "score_type": "float",
+        "range": "0.0 - 10.0"
+      },
+      "volatility": {
+        "description": "Measures emotional stability and reactivity under pressure.",
+        "features": [
+          "tone_stability",
+          "low_emotional_spikes",
+          "non_escalatory_language",
+          "regulation_under_stress",
+          "predictable_emotional_pattern"
+        ],
+        "score_type": "float",
+        "range": "0.0 - 10.0"
+      },
+      "symbolic_cohesion": {
+        "description": "Measures internal consistency of narrative.",
+        "features": [
+          "logical_consistency",
+          "evidence_alignment",
+          "no_contradictions",
+          "narrative_stability",
+          "non_circular_reasoning"
+        ],
+        "score_type": "float",
+        "range": "0.0 - 10.0"
+      }
+    },
+    "influence_categories": {
+      "influence_power": {
+        "description": "Measures how persuasive and compelling the communication is.",
+        "features": [
+          "rhetorical_strength",
+          "credibility_signals",
+          "emotional_resonance",
+          "argument_coherence",
+          "narrative_momentum"
+        ],
+        "score_type": "float",
+        "range": "0.0 - 10.0"
+      },
+      "activation_energy": {
+        "description": "Measures ability to move others toward action.",
+        "features": [
+          "clear_calls_to_action",
+          "friction_reduction",
+          "motivational_tone",
+          "urgency_without_volatility",
+          "goal_alignment"
+        ],
+        "score_type": "float",
+        "range": "0.0 - 10.0"
+      },
+      "clarity_reach": {
+        "description": "Measures the impact radius and scalability of the person's clarity.",
+        "features": [
+          "generalizability",
+          "stakeholder_reach",
+          "repeatability",
+          "scalability",
+          "cross_context_clarity"
+        ],
+        "score_type": "float",
+        "range": "0.0 - 10.0"
+      }
+    },
+    "scoring_methods": {
+      "lake_score_formula": "(clarity + depth + authenticity + volatility + symbolic_cohesion) / 5",
+      "lake_influence_score_formula": "(influence_power + activation_energy + clarity_reach) / 3",
+      "interpretation": {
+        "lake_score": {
+          "8.0-10.0": "Deep-water thinker; high clarity, stability, and coherence.",
+          "6.0-7.9": "Functional but inconsistent; mixed currents.",
+          "4.0-5.9": "Shallow reasoning; unstable narrative.",
+          "0.0-3.9": "High turbulence; unreliable communication."
+        },
+        "lake_influence_score": {
+          "8.0-10.0": "High-impact communicator; moves people and systems.",
+          "6.0-7.9": "Moderately influential; inconsistent activation.",
+          "4.0-5.9": "Low influence; limited persuasive force.",
+          "0.0-3.9": "Minimal impact; communication does not propagate."
+        }
+      }
+    }
+  }
+}
