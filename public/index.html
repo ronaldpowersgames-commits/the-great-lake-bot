@@ -242,7 +242,14 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
 @keyframes rippleAnim { 0%, 60%, 100% { opacity: 0.3; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-5px); } }
 
 /* ── SHORE DOCK (input area) — slightly tighter ── */
-.shore-dock { padding: 8px 12px; padding-bottom: calc(8px + var(--safe-bottom)); border-top: 1px solid var(--dock-border); background: rgba(9,20,32,0.95); flex-shrink: 0; }
+.shore-dock {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
 .prompt-suggestions { padding: 3px 0 5px; }
 .suggestions-toggle { background: rgba(45,140,240,0.05); border: 1px solid rgba(45,140,240,0.12); color: var(--text-dim); border-radius: 20px; padding: 5px 12px; font-size: 11px; cursor: pointer; margin-bottom: 5px; transition: all 0.15s; }
 .suggestions-toggle:hover { color: var(--lake-light); border-color: rgba(45,140,240,0.28); }
@@ -506,7 +513,13 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background
   height: 10px;
 }
 
-.input-row { display: flex; align-items: stretch; gap: 7px; }
+.input-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  width: 100%;
+  box-sizing: border-box;
+}
 .side-buttons { display: flex; flex-direction: column; gap: 5px; }
 .attach-btn-stack {
   width: 44px; flex: 1;
