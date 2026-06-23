@@ -42,6 +42,8 @@ function loadSystemPrompt() {
     'output_format.txt','file_handling.txt','group_mode.txt',
     'safety.txt','behavior_rules.txt','onboarding.txt',
     'update_syntax.txt', 'lake_score.txt', 'lake_score_model.json',
+    'identity_integrity.txt', 'memory_expansion.txt', 'transcript_mastery.txt',
+    'crew_tagging.txt'
   ];
   if (!fs.existsSync(modelDir)) {
     console.warn('⚠️  core/model/ directory not found — using fallback prompt');
@@ -252,7 +254,7 @@ router.post('/', upload.single('file'), async function(req, res) {
           : req.body.history;
         if (Array.isArray(history)) {
           conversationHistory = history
-            .slice(-6) // ✅ FIX 2: Reduced from -10 to -6 to save tokens
+            .slice(-9) // ✅ FIX 2: Increased from -6 to -9 for minimum 9-message memory retention
             .filter(m => m.role && m.content)
             .map(m => ({
               role: m.role === 'user' ? 'user' : 'assistant',
