@@ -1,8 +1,8 @@
 /**
- * 🌊 The Great Lake Bot - Chat Route
- * Personal Leadership Coach + Full Work Co-Pilot
- * Supports: text, images, PDF, DOCX, file attachments, voice, mood, userName.
- */
+* 🌊 The Great Lake Bot - Chat Route
+* Personal Leadership Coach + Full Work Co-Pilot
+* Supports: text, images, PDF, DOCX, file attachments, voice, mood, userName.
+*/
 const express = require('express');
 const Anthropic = require('@anthropic-ai/sdk');
 const fs = require('fs');
@@ -30,95 +30,43 @@ if (!process.env.ANTHROPIC_API_KEY) {
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 // ============================================
 // LOAD SYSTEM PROMPT FROM CORE MODEL FILES
-// Priority: keep master_doc.txt and identity.txt intact, truncate less-critical files first
-// Also compress whitespace to reduce size when possible
+// ✅ FIX 1: Cached so files only read once at startup
 // ============================================
 let cachedModelFiles = null;
-function compressPrompt(text) {
-  // collapse multiple blank lines and trim
-  return text.replace(/\n{3,}/g, '\n\n').trim();
-}
 function loadSystemPrompt() {
   if (cachedModelFiles) return cachedModelFiles;
   const modelDir = path.join(__dirname, '..', 'core', 'model');
-  const allFiles = [
+  const files = [
     'master_doc.txt','identity.txt','tone.txt','metaphors.txt',
     'governance.txt','clarity_engine.txt','influence_engine.txt',
     'output_format.txt','file_handling.txt','group_mode.txt',
     'safety.txt','behavior_rules.txt','onboarding.txt',
     'update_syntax.txt', 'lake_score.txt', 'lake_score_model.json',
   ];
-  const priority = ['master_doc.txt', 'identity.txt'];
-
   if (!fs.existsSync(modelDir)) {
     console.warn('⚠️  core/model/ directory not found — using fallback prompt');
     return null;
   }
-
-  // Read priority files fully first
-  let systemPromptParts = [];
-  for (const file of priority) {
-    const p = path.join(modelDir, file);
-    if (fs.existsSync(p)) {
-      try {
-        const txt = fs.readFileSync(p, 'utf-8');
-        systemPromptParts.push(txt);
-        console.log('✅ Loaded priority file:', file);
-      } catch (e) {
-        console.warn('⚠️  Could not read priority file:', file, e.message);
-      }
-    } else {
-      console.warn('⚠️  Missing priority file:', file);
-    }
-  }
-
-  // Then add non-priority files until we hit the allowed cap
-  const nonPriority = allFiles.filter(f => !priority.includes(f));
-  const filesContent = [];
-  for (const file of nonPriority) {
-    const p = path.join(modelDir, file);
-    if (fs.existsSync(p)) {
-      try {
-        const txt = fs.readFileSync(p, 'utf-8');
-        filesContent.push({ name: file, text: txt });
-        console.log('✅ Loaded:', file);
-      } catch (e) {
-        console.warn('⚠️  Could not read file:', file, e.message);
-      }
+  let systemPrompt = '';
+  for (const file of files) {
+    const filePath = path.join(modelDir, file);
+    if (fs.existsSync(filePath)) {
+      systemPrompt += fs.readFileSync(filePath, 'utf-8') + '\n\n';
+      console.log('✅ Loaded:', file);
     } else {
       console.warn('⚠️  Missing model file:', file);
     }
   }
-
-  // Decide max prompt chars (allow slightly larger than before but still guarded)
-  const MAX_PROMPT_CHARS = 100000; // increased from 80k to 100k for a little more headroom
-
-  // Start with compressed priority content
-  let systemPrompt = compressPrompt(systemPromptParts.join('\n\n')) + '\n\n';
-
-  // Append non-priority files until we reach the cap. If a file would overflow, append a truncated slice with a marker.
-  for (const f of filesContent) {
-    if (systemPrompt.length >= MAX_PROMPT_CHARS) break;
-    const remaining = MAX_PROMPT_CHARS - systemPrompt.length;
-    const candidate = compressPrompt(f.text) + '\n\n';
-    if (candidate.length <= remaining) {
-      systemPrompt += candidate;
-    } else {
-      // append only the allowed portion and mark truncation
-      const slice = candidate.substring(0, Math.max(0, remaining - 50)); // leave room for marker
-      systemPrompt += slice + '\n\n[...system prompt truncated to fit context window]\n';
-      console.warn('⚠️  Truncated model file in prompt:', f.name);
-      break;
-    }
-  }
-
   if (!systemPrompt.trim()) {
     console.warn('⚠️  No model files loaded — using fallback prompt');
     return null;
   }
-
+  const MAX_PROMPT_CHARS = 150000;
+  if (systemPrompt.length > MAX_PROMPT_CHARS) {
+    systemPrompt = systemPrompt.substring(0, MAX_PROMPT_CHARS);
+    console.warn('⚠️  System prompt trimmed to fit context window');
+  }
   cachedModelFiles = systemPrompt;
-  console.log('ℹ️  Final systemPrompt length:', cachedModelFiles.length);
   return cachedModelFiles;
 }
 // ============================================
@@ -276,27 +224,6 @@ function formatBytes(bytes) {
   if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
   return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
 }
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-async function callAnthropicWithRetry(payload, maxAttempts = 3) {
-  let attempt = 0;
-  let lastErr = null;
-  while (attempt < maxAttempts) {
-    try {
-      return await client.messages.create(payload);
-    } catch (e) {
-      lastErr = e;
-      console.warn(`Anthropic call failed (attempt ${attempt+1}):`, e && (e.code || e.message || e));
-      // don't retry on client errors that are unlikely to succeed on retry
-      if (e && (e.status === 400 || e.status === 401 || e.status === 404 || e.status === 429)) {
-        throw e;
-      }
-      attempt++;
-      const backoff = Math.pow(2, attempt) * 500; // exponential backoff
-      await sleep(backoff);
-    }
-  }
-  throw lastErr;
-}
 // ============================================
 // POST /chat — The Lake Core Experience
 // ============================================
@@ -325,11 +252,7 @@ router.post('/', upload.single('file'), async function(req, res) {
           : req.body.history;
         if (Array.isArray(history)) {
           conversationHistory = history
-<<<<<<< HEAD
-            .slice(-6) // limit memory retention to last 6 messages for payload size
-=======
             .slice(-6) // ✅ FIX 2: Reduced from -10 to -6 to save tokens
->>>>>>> parent of a2e2871 (Update chat route to include new model files and increase memory retention to 9 messages minimum)
             .filter(m => m.role && m.content)
             .map(m => ({
               role: m.role === 'user' ? 'user' : 'assistant',
@@ -369,8 +292,8 @@ router.post('/', upload.single('file'), async function(req, res) {
       } else {
         console.log('📎 File attached:', req.file.originalname, formatBytes(req.file.size));
         const fileContent = await extractFileText(req.file);
-        const fileHeader  = `\n\n📄 ATTACHED FILE: ${req.file.originalname} (${formatBytes(req.file.size)})\n${'-'.repeat(50)}\n`;
-        const fileFooter  = `\n${'-'.repeat(50)}\n[End of attached file]\n`;
+        const fileHeader  = `\n\n📄 ATTACHED FILE: ${req.file.originalname} (${formatBytes(req.file.size)})\n${'─'.repeat(50)}\n`;
+        const fileFooter  = `\n${'─'.repeat(50)}\n[End of attached file]\n`;
         const fullMessage = message
           ? message + fileHeader + fileContent + fileFooter
           : `Please analyse this attached file:` + fileHeader + fileContent + fileFooter;
@@ -390,28 +313,13 @@ router.post('/', upload.single('file'), async function(req, res) {
       role: 'user',
       content: userMessageContent
     });
-
-    // Diagnostic logs to help debug payload size / errors
-    try {
-      const approxPayload = JSON.stringify({ system: systemPrompt, messages: conversationHistory });
-      console.log('ℹ️ systemPrompt length (chars):', (systemPrompt || '').length);
-      console.log('ℹ️ history messages count:', conversationHistory.length);
-      console.log('ℹ️ approx payload JSON length (chars):', approxPayload.length);
-    } catch (e) {
-      console.warn('⚠️ Could not compute payload size:', e.message);
-    }
-
     console.log('🌊 Sending to Claude — mood:', mood, '| user:', userName || 'unknown', '| messages:', conversationHistory.length);
-
-    const payload = {
+    const response = await client.messages.create({
       model: 'claude-sonnet-4-5',
-      max_tokens: 2048,
+      max_tokens: 2048, // ✅ FIX 3: Reduced from 4096 to 2048 to save tokens
       system: systemPrompt,
       messages: conversationHistory,
-    };
-
-    const response = await callAnthropicWithRetry(payload, 3);
-
+    });
     const reply = response.content &&
                   response.content[0] &&
                   response.content[0].text;
@@ -433,8 +341,7 @@ router.post('/', upload.single('file'), async function(req, res) {
       },
     });
   } catch (err) {
-    console.error('❌ Lake Engine Error:', err);
-    console.error(err && err.stack);
+    console.error('❌ Lake Engine Error:', err.message);
     if (err.status === 401) {
       return res.status(500).json({
         error: 'The Lake cannot authenticate',
