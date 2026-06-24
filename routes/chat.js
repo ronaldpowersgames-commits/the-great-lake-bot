@@ -47,8 +47,6 @@ function loadSystemPrompt() {
     'output_format.txt','file_handling.txt','group_mode.txt',
     'safety.txt','behavior_rules.txt','onboarding.txt',
     'update_syntax.txt', 'lake_score.txt', 'lake_score_model.json',
-    'identity_integrity.txt', 'memory_expansion.txt', 'transcript_mastery.txt',
-    'crew_tagging.txt'
   ];
   const priority = ['master_doc.txt', 'identity.txt'];
 
@@ -327,7 +325,11 @@ router.post('/', upload.single('file'), async function(req, res) {
           : req.body.history;
         if (Array.isArray(history)) {
           conversationHistory = history
+<<<<<<< HEAD
             .slice(-6) // limit memory retention to last 6 messages for payload size
+=======
+            .slice(-6) // ✅ FIX 2: Reduced from -10 to -6 to save tokens
+>>>>>>> parent of a2e2871 (Update chat route to include new model files and increase memory retention to 9 messages minimum)
             .filter(m => m.role && m.content)
             .map(m => ({
               role: m.role === 'user' ? 'user' : 'assistant',
