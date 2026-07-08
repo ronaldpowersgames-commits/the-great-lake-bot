@@ -2338,7 +2338,7 @@ function askLakeKnowsYou() {
       formData.append('userName', currentUser?.name || '');
       formData.append('history', JSON.stringify([]));
       const response = await fetch('/chat', { method: 'POST', body: formData });
-      const data     = await response.json();
+      const data     = await readChatResponse(response);
       hideRipple();
       if (data.reflection) {
         const reflectionTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -2350,7 +2350,7 @@ function askLakeKnowsYou() {
       }
     } catch(err) {
       hideRipple();
-      appendLakeWave('🌊 The current is slow right now — give it a moment and nudge again.', timeStr, true);
+      appendLakeWave(`🌊 The current hit a snag: ${err.message}`, timeStr, true);
       console.error('Lake error:', err);
     }
   })();
@@ -2406,6 +2406,14 @@ function fileToBase64(file) {
   });
 }
 
+async function readChatResponse(response) {
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.details || data.error || `Chat failed with status ${response.status}`);
+  }
+  return data;
+}
+
 async function sendWave() {
   const input = document.getElementById('lakeInput');
   const text  = input.value.trim();
@@ -2446,7 +2454,7 @@ async function sendWave() {
     filesToSend.forEach(file => formData.append('file', file));
 
     const response = await fetch('/chat', { method: 'POST', body: formData });
-    const data     = await response.json();
+    const data     = await readChatResponse(response);
     hideRipple();
 
     if (data.reflection) {
@@ -2461,7 +2469,7 @@ async function sendWave() {
     }
   } catch(err) {
     hideRipple();
-    appendLakeWave('🌊 The current is slow right now — give it a moment and nudge again.', timeStr, true);
+    appendLakeWave(`🌊 The current hit a snag: ${err.message}`, timeStr, true);
     console.error('Lake error:', err);
   }
 }
