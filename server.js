@@ -44,7 +44,8 @@ app.use(
         connectSrc: ["'self'"],
         fontSrc: ["'self'", "data:"],
         objectSrc: ["'none'"],
-        mediaSrc: ["'self'"],
+        // Allow data: and blob: for media so in-browser base64 audio/images work
+        mediaSrc: ["'self'", "data:", "blob:"],
         frameSrc: ["'none'"],
       },
     },
@@ -189,7 +190,7 @@ app.listen(config.port, () => {
   console.log('  Environment : ' + config.nodeEnv);
   console.log('  Port        : ' + config.port);
   console.log('  Governance  : Rules 1–27 ACTIVE');
-  console.log('  Model       : claude-sonnet-4-5');
+  console.log('  Model       : gpt-4o');
   console.log('  Status      : Still waters — ready to reflect');
   console.log('========================================================');
   console.log('');
