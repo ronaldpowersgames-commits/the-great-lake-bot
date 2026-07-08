@@ -1,5 +1,5 @@
 /**
- * 🌊 The Great Lake Bot - Chat Route (OpenAI Responses API Version)
+ * 🌊 The Great Lake Bot - Chat Route (OpenAI ChatGPT Version)
  * Personal Leadership Coach + Full Work Co-Pilot
  * MODEL: ChatGPT (OpenAI GPT-4o)
  */
@@ -23,9 +23,9 @@ const upload = multer({
   fileFilter: (req, file, cb) => cb(null, true)
 });
 
-const IMAGE_TYPES = ['image/jpeg','image/jpg','image/png','image/gif','image/webp'];
-const PDF_TYPES   = ['application/pdf'];
-const DOCX_TYPES  = [
+const IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+const PDF_TYPES = ['application/pdf'];
+const DOCX_TYPES = [
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'application/msword'
 ];
@@ -53,11 +53,11 @@ function loadSystemPrompt() {
 
   const modelDir = path.join(__dirname, '..', 'core', 'model');
   const files = [
-    'master_doc.txt','identity.txt','tone.txt','metaphors.txt',
-    'governance.txt','clarity_engine.txt','influence_engine.txt',
-    'output_format.txt','file_handling.txt','group_mode.txt',
-    'safety.txt','behavior_rules.txt','onboarding.txt',
-    'update_syntax.txt','lake_score.txt','lake_score_model.json'
+    'master_doc.txt', 'identity.txt', 'tone.txt', 'metaphors.txt',
+    'governance.txt', 'clarity_engine.txt', 'influence_engine.txt',
+    'output_format.txt', 'file_handling.txt', 'group_mode.txt',
+    'safety.txt', 'behavior_rules.txt', 'onboarding.txt',
+    'update_syntax.txt', 'lake_score.txt', 'lake_score_model.json'
   ];
 
   if (!fs.existsSync(modelDir)) {
@@ -215,13 +215,14 @@ function formatBytes(bytes) {
 }
 
 // ======================================================
-// POST /chat — NEW OPENAI RESPONSES API
+// POST /chat — OPENAI CHAT COMPLETIONS API
 // ======================================================
-router.post('/', upload.single('file'), async function(req, res) {
+router.post('/', upload.array('file', 5), async function(req, res) {
   try {
     const message = (req.body.message || '').trim();
     const mood = req.body.mood || 'calm';
     const userName = req.body.userName || '';
+    const uploadedFiles = Array.isArray(req.files) ? req.files : [];
 
     if (!process.env.OPENAI_API_KEY) {
       return res.status(500).json({
@@ -230,7 +231,6 @@ router.post('/', upload.single('file'), async function(req, res) {
       });
     }
 
-    // Build system prompt
     const coreIdentity = getCoreCoachIdentity(userName);
     const modelFiles = loadSystemPrompt();
     const fallback = modelFiles ? '' : getFallbackPrompt();
@@ -238,7 +238,6 @@ router.post('/', upload.single('file'), async function(req, res) {
 
     const systemPrompt = coreIdentity + (modelFiles || fallback) + moodContext;
 
-    // Build conversation history
     let conversationHistory = [];
     if (req.body.history) {
       try {
@@ -260,37 +259,42 @@ router.post('/', upload.single('file'), async function(req, res) {
       }
     }
 
-    // Build user message content
     let userMessageContent;
 
-    if (req.file) {
-      const isImage = IMAGE_TYPES.includes(req.file.mimetype);
+    if (uploadedFiles.length > 0) {
+      const file = uploadedFiles[0];
+      const isImage = IMAGE_TYPES.includes(file.mimetype);
 
       if (isImage) {
-        const base64Image = req.file.buffer.toString('base64');
-        console.log('🖼️ Image attached:', req.file.originalname, formatBytes(req.file.size));
+        const base64Image = file.buffer.toString('base64');
+        const imageUrl = `data:${file.mimetype};base64,${base64Image}`;
+
+        console.log('🖼️ Image attached:', file.originalname, formatBytes(file.size));
 
         userMessageContent = [
-          { type: "input_image", image: base64Image },
           {
-            type: "text",
+            type: 'text',
             text: message || 'Please analyse this image and give me your full Lake reflection.'
+          },
+          {
+            type: 'image_url',
+            image_url: { url: imageUrl }
           }
         ];
       } else {
-        console.log('📎 File attached:', req.file.originalname, formatBytes(req.file.size));
+        console.log('📎 File attached:', file.originalname, formatBytes(file.size));
 
-        let fileContent = await extractFileText(req.file);
+        let fileContent = await extractFileText(file);
         if (fileContent.length > 200000) {
           fileContent = fileContent.substring(0, 200000) + '\n\n[File truncated]';
         }
 
-        const header = `\n\n📄 ATTACHED FILE: ${req.file.originalname} (${formatBytes(req.file.size)})\n${"─".repeat(50)}\n`;
-        const footer = `\n${"─".repeat(50)}\n[End of attached file]\n`;
+        const header = `\n\n📄 ATTACHED FILE: ${file.originalname} (${formatBytes(file.size)})\n${'─'.repeat(50)}\n`;
+        const footer = `\n${'─'.repeat(50)}\n[End of attached file]\n`;
 
         userMessageContent = message
           ? message + header + fileContent + footer
-          : `Please analyse this attached file:` + header + fileContent + footer;
+          : 'Please analyse this attached file:' + header + fileContent + footer;
       }
     } else {
       if (!message) {
@@ -299,28 +303,28 @@ router.post('/', upload.single('file'), async function(req, res) {
           details: 'Send a message or attach a file.'
         });
       }
+
       userMessageContent = message;
     }
 
-    // Build final input array for Responses API
-    const input = [
-      { role: "system", content: systemPrompt },
+    const messages = [
+      { role: 'system', content: systemPrompt },
       ...conversationHistory.map(m => ({ role: m.role, content: m.content })),
-      { role: "user", content: userMessageContent }
+      { role: 'user', content: userMessageContent }
     ];
 
     console.log('🌊 Sending to ChatGPT (gpt-4o) — mood:', mood, '| user:', userName || 'unknown');
 
-    // Call OpenAI Responses API
-    const response = await client.responses.create({
-      model: "gpt-4o",
-      input,
-      max_output_tokens: 2048,
-      temperature: 1,
+    const response = await client.chat.completions.create({
+      model: 'gpt-4o',
+      messages,
+      max_tokens: 2048,
+      temperature: 1
+    }, {
       timeout: 30000
     });
 
-    const reply = response.output_text;
+    const reply = response.choices?.[0]?.message?.content;
 
     if (!reply) {
       return res.status(500).json({
@@ -336,7 +340,6 @@ router.post('/', upload.single('file'), async function(req, res) {
       mood,
       usage: response.usage || {}
     });
-
   } catch (err) {
     console.error('❌ Lake Engine Error:', err.message);
 
