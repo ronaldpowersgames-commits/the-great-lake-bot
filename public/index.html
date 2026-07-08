@@ -1258,7 +1258,7 @@ body {
       <div class="prompt-suggestions">
         <div class="suggestions-top-row">
           <button class="suggestions-toggle" onclick="toggleSuggestions()">💡 Prompt Suggestions ▾</button>
-          <button class="quick-action-btn" onclick="sendPrompt('Tag the key players in this')">🏷️ Tag Players</button>
+          <button class="quick-action-btn" onclick="tagPlayers()">🏷️ Tag Players</button>
           <button class="quick-action-btn" onclick="sendPrompt('Summarize what we have so far')">📋 Summarize</button>
         </div>
         <div class="suggestions-list" id="suggestionsList">
@@ -1712,21 +1712,70 @@ function detectNamesFromText(text) {
   return Array.from(found.entries()).filter(([,score]) => score >= 2).map(([name]) => name);
 }
 
+function parsePlayerTags(responseText) {
+  const match = responseText.match(/PLAYER_TAGS_JSON\s*([\s\S]*?)\s*END_PLAYER_TAGS_JSON/i);
+  if (!match) return [];
+
+  try {
+    const parsed = JSON.parse(match[1].trim());
+    const players = Array.isArray(parsed.players) ? parsed.players : [];
+    return players
+      .map(player => ({
+        name: String(player.name || player.label || '').trim(),
+        nickname: String(player.nickname || '').trim(),
+        codename: String(player.codename || player.role || '').trim(),
+        confidence: String(player.confidence || 'uncertain').trim(),
+        evidence: String(player.evidence || '').trim(),
+        relationshipNote: String(player.relationship_note || '').trim(),
+        needsConfirmation: Boolean(player.needs_confirmation),
+        source: 'tag-players'
+      }))
+      .filter(player => player.name);
+  } catch(err) {
+    console.warn('Could not parse player tags:', err);
+    return [];
+  }
+}
+
+function addSuggestedCrewMember(suggestion, existingNames) {
+  const key = suggestion.name.toLowerCase();
+  if (existingNames.has(key)) return false;
+
+  suggestedCrew.push(suggestion);
+  existingNames.add(key);
+  return true;
+}
+
 function processNamesFromResponse(responseText) {
-  const detected = detectNamesFromText(responseText);
-  if (!detected.length) return;
   const existingNames = new Set([
     ...crewMembers.map(m => m.name.toLowerCase()),
     ...suggestedCrew.map(m => m.name.toLowerCase())
   ]);
   let changed = false;
-  detected.forEach(name => {
-    if (!existingNames.has(name.toLowerCase())) {
-      suggestedCrew.push({ name, source: 'auto-detected' });
-      existingNames.add(name.toLowerCase());
-      changed = true;
-    }
+
+  parsePlayerTags(responseText).forEach(player => {
+    const contextBits = [
+      player.confidence ? `Confidence: ${player.confidence}` : '',
+      player.needsConfirmation ? 'Needs your confirmation before treating identity as certain.' : '',
+      player.evidence ? `Evidence: ${player.evidence}` : '',
+      player.relationshipNote ? `Track: ${player.relationshipNote}` : ''
+    ].filter(Boolean);
+
+    changed = addSuggestedCrewMember({
+      name: player.name,
+      nickname: player.nickname,
+      codename: player.codename,
+      context: contextBits.join('\n'),
+      confidence: player.confidence,
+      source: player.source
+    }, existingNames) || changed;
   });
+
+  const detected = detectNamesFromText(responseText);
+  detected.forEach(name => {
+    changed = addSuggestedCrewMember({ name, source: 'auto-detected' }, existingNames) || changed;
+  });
+
   if (changed) { saveSuggestedCrew(); renderCrew(); }
 }
 
@@ -2171,7 +2220,7 @@ function renderCrew() {
       <div class="suggested-title">⚡ Spotted</div>
       ${suggestedCrew.map((m, i) => `
         <div class="suggested-item">
-          <span class="suggested-name">👤 ${escapeHTML(m.name)}</span>
+          <span class="suggested-name" title="${escapeHTML(m.context || m.evidence || m.source || '')}">👤 ${escapeHTML(m.name)}${m.confidence ? ` · ${escapeHTML(m.confidence)}` : ''}</span>
           <button class="suggested-approve" onclick="approveSuggested(${i})">✓</button>
           <button class="suggested-dismiss" onclick="dismissSuggested(${i})">✕</button>
         </div>`).join('')}
@@ -2192,10 +2241,10 @@ function renderCrew() {
     `<div class="crew-item" onclick="openCrewModal('add')" style="justify-content:center;color:var(--text-dim);">+ Add to The Crew</div>`;
 }
 
-function approveSuggested(idx) { openCrewModal('approve', idx, suggestedCrew[idx].name); }
+function approveSuggested(idx) { openCrewModal('approve', idx, suggestedCrew[idx]); }
 function dismissSuggested(idx) { suggestedCrew.splice(idx, 1); saveSuggestedCrew(); renderCrew(); }
 
-function openCrewModal(mode, idx = -1, prefillName = '') {
+function openCrewModal(mode, idx = -1, prefill = '') {
   crewModalMode = mode; crewModalIndex = idx;
   const deleteBtn = document.getElementById('crewModalDelete');
   document.getElementById('crewModalTitle').textContent =
@@ -2209,11 +2258,12 @@ function openCrewModal(mode, idx = -1, prefillName = '') {
     document.getElementById('crewModalContext').value  = m.context  || '';
     deleteBtn.style.display = 'block';
   } else {
-    document.getElementById('crewModalName').value     = prefillName || '';
-    document.getElementById('crewModalNickname').value = '';
-    document.getElementById('crewModalCodename').value = '';
-    document.getElementById('crewModalEmoji').value    = '';
-    document.getElementById('crewModalContext').value  = '';
+    const suggested = typeof prefill === 'object' && prefill ? prefill : { name: prefill };
+    document.getElementById('crewModalName').value     = suggested.name || '';
+    document.getElementById('crewModalNickname').value = suggested.nickname || '';
+    document.getElementById('crewModalCodename').value = suggested.codename || '';
+    document.getElementById('crewModalEmoji').value    = suggested.emoji || '';
+    document.getElementById('crewModalContext').value  = suggested.context || '';
     deleteBtn.style.display = 'none';
   }
   document.getElementById('crewModalOverlay').classList.add('show');
@@ -2409,6 +2459,29 @@ function triggerDailyPrinciple() {
 function sendPrompt(text) {
   document.getElementById('lakeInput').value = text;
   sendWave();
+}
+
+function tagPlayers() {
+  sendPrompt(`Tag the key players in this interaction.
+
+Identify every person who appears in the current chat, screenshot, transcript, email, or uploaded file. Be careful about identity:
+- Use visible evidence only: names, handles, avatars, profile photos, bubble colors, left/right alignment, timestamps, quoted/replied-to text, and app layout.
+- Do not assume a replied-to message was written by the person sending the reply.
+- If identity is unclear, label the person as "Unknown 1", "Unknown 2", etc. and ask me to confirm.
+- Separate confirmed identity from interpretation.
+
+For each person, give:
+- likely name or temporary label
+- role in the interaction
+- evidence used to identify them
+- confidence: high, medium, low, or needs confirmation
+- what I should track about my relationship with them
+
+At the very end, include this exact machine-readable block so the app can suggest Crew entries:
+
+PLAYER_TAGS_JSON
+{"players":[{"name":"Name or Unknown 1","nickname":"","codename":"Role or pattern","confidence":"high|medium|low|needs confirmation","needs_confirmation":false,"evidence":"Visible evidence used","relationship_note":"What to track"}]}
+END_PLAYER_TAGS_JSON`);
 }
 
 function fileToBase64(file) {
