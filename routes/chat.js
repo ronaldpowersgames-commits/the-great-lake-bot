@@ -2,9 +2,10 @@
 * 🌊 The Great Lake Bot - Chat Route
 * Personal Leadership Coach + Full Work Co-Pilot
 * Supports: text, images, PDF, DOCX, file attachments, voice, mood, userName.
+* MODEL: ChatGPT (OpenAI GPT-4)
 */
 const express = require('express');
-const Anthropic = require('@anthropic-ai/sdk');
+const { OpenAI } = require('openai');
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
@@ -22,12 +23,12 @@ const DOCX_TYPES  = [
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'application/msword'
 ];
-if (!process.env.ANTHROPIC_API_KEY) {
-  console.error('❌ ANTHROPIC_API_KEY is missing!');
+if (!process.env.OPENAI_API_KEY) {
+  console.error('❌ OPENAI_API_KEY is missing!');
 } else {
-  console.log('✅ Anthropic API key loaded');
+  console.log('✅ OpenAI API key loaded');
 }
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 // ============================================
 // LOAD SYSTEM PROMPT FROM CORE MODEL FILES
 // ✅ FIX 1: Cached so files only read once at startup
@@ -232,10 +233,10 @@ router.post('/', upload.single('file'), async function(req, res) {
     let message = (req.body && req.body.message) ? req.body.message.trim() : '';
     const mood     = (req.body && req.body.mood)     || 'calm';
     const userName = (req.body && req.body.userName) || '';
-    if (!process.env.ANTHROPIC_API_KEY) {
+    if (!process.env.OPENAI_API_KEY) {
       return res.status(500).json({
         error: 'The Lake is not configured',
-        details: 'ANTHROPIC_API_KEY is missing.',
+        details: 'OPENAI_API_KEY is missing.',
       });
     }
     const coreIdentity = getCoreCoachIdentity(userName);
@@ -275,11 +276,9 @@ router.post('/', upload.single('file'), async function(req, res) {
         console.log('🖼️ Image attached:', req.file.originalname, formatBytes(req.file.size));
         userMessageContent = [
           {
-            type: 'image',
-            source: {
-              type: 'base64',
-              media_type: mediaType,
-              data: base64Image,
+            type: 'image_url',
+            image_url: {
+              url: `data:${mediaType};base64,${base64Image}`,
             },
           },
           {
@@ -292,8 +291,8 @@ router.post('/', upload.single('file'), async function(req, res) {
       } else {
         console.log('📎 File attached:', req.file.originalname, formatBytes(req.file.size));
         const fileContent = await extractFileText(req.file);
-        const fileHeader  = `\n\n📄 ATTACHED FILE: ${req.file.originalname} (${formatBytes(req.file.size)})\n${'─'.repeat(50)}\n`;
-        const fileFooter  = `\n${'─'.repeat(50)}\n[End of attached file]\n`;
+        const fileHeader  = `\n\n📄 ATTACHED FILE: ${req.file.originalname} (${formatBytes(req.file.size)})\n${"─".repeat(50)}\n`;
+        const fileFooter  = `\n${"─".repeat(50)}\n[End of attached file]\n`;
         const fullMessage = message
           ? message + fileHeader + fileContent + fileFooter
           : `Please analyse this attached file:` + fileHeader + fileContent + fileFooter;
@@ -308,36 +307,38 @@ router.post('/', upload.single('file'), async function(req, res) {
       }
       userMessageContent = message;
     }
-    // ── Add to history and call Claude ───────────────────────────────────
+    // ── Add to history and call OpenAI ChatGPT ──────────────────────────────
     conversationHistory.push({
       role: 'user',
       content: userMessageContent
     });
-    console.log('🌊 Sending to Claude — mood:', mood, '| user:', userName || 'unknown', '| messages:', conversationHistory.length);
-    const response = await client.messages.create({
-      model: 'claude-sonnet-4-5',
+    console.log('🌊 Sending to ChatGPT — mood:', mood, '| user:', userName || 'unknown', '| messages:', conversationHistory.length);
+    const response = await client.chat.completions.create({
+      model: 'gpt-4-turbo',
       max_tokens: 2048, // ✅ FIX 3: Reduced from 4096 to 2048 to save tokens
+      temperature: 1,
       system: systemPrompt,
       messages: conversationHistory,
     });
-    const reply = response.content &&
-                  response.content[0] &&
-                  response.content[0].text;
+    const reply = response.choices &&
+                  response.choices[0] &&
+                  response.choices[0].message &&
+                  response.choices[0].message.content;
     if (!reply) {
       return res.status(500).json({
         error: 'The Lake returned no reflection',
-        details: 'Empty response from Claude API.',
+        details: 'Empty response from ChatGPT API.',
       });
     }
-    console.log('✅ Reflection sent — tokens in:', response.usage?.input_tokens, '| out:', response.usage?.output_tokens);
+    console.log('✅ Reflection sent — tokens in:', response.usage?.prompt_tokens, '| out:', response.usage?.completion_tokens);
     res.json({
       reflection: reply,
-      model: 'claude-sonnet-4-5',
+      model: 'gpt-4-turbo',
       governance: 'Rules 1-27 active',
       mood: mood,
       usage: {
-        input_tokens: response.usage?.input_tokens,
-        output_tokens: response.usage?.output_tokens,
+        input_tokens: response.usage?.prompt_tokens,
+        output_tokens: response.usage?.completion_tokens,
       },
     });
   } catch (err) {
@@ -345,7 +346,7 @@ router.post('/', upload.single('file'), async function(req, res) {
     if (err.status === 401) {
       return res.status(500).json({
         error: 'The Lake cannot authenticate',
-        details: 'Invalid ANTHROPIC_API_KEY.',
+        details: 'Invalid OPENAI_API_KEY.',
       });
     }
     if (err.status === 429) {
@@ -357,7 +358,7 @@ router.post('/', upload.single('file'), async function(req, res) {
     if (err.status === 404) {
       return res.status(500).json({
         error: 'Model not found',
-        details: 'Claude model name is invalid.',
+        details: 'ChatGPT model name is invalid or not available.',
       });
     }
     if (err.status === 400) {
