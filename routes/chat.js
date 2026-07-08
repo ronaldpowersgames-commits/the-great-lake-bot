@@ -2,7 +2,7 @@
 * 🌊 The Great Lake Bot - Chat Route
 * Personal Leadership Coach + Full Work Co-Pilot
 * Supports: text, images, PDF, DOCX, file attachments, voice, mood, userName.
-* MODEL: ChatGPT (OpenAI GPT-4)
+* MODEL: ChatGPT (OpenAI GPT-4o)
 */
 const express = require('express');
 const { OpenAI } = require('openai');
@@ -312,9 +312,9 @@ router.post('/', upload.single('file'), async function(req, res) {
       role: 'user',
       content: userMessageContent
     });
-    console.log('🌊 Sending to ChatGPT — mood:', mood, '| user:', userName || 'unknown', '| messages:', conversationHistory.length);
+    console.log('🌊 Sending to ChatGPT (gpt-4o) — mood:', mood, '| user:', userName || 'unknown', '| messages:', conversationHistory.length);
     const response = await client.chat.completions.create({
-      model: 'gpt-4-turbo',
+      model: 'gpt-4o',
       max_tokens: 2048, // ✅ FIX 3: Reduced from 4096 to 2048 to save tokens
       temperature: 1,
       system: systemPrompt,
@@ -333,7 +333,7 @@ router.post('/', upload.single('file'), async function(req, res) {
     console.log('✅ Reflection sent — tokens in:', response.usage?.prompt_tokens, '| out:', response.usage?.completion_tokens);
     res.json({
       reflection: reply,
-      model: 'gpt-4-turbo',
+      model: 'gpt-4o',
       governance: 'Rules 1-27 active',
       mood: mood,
       usage: {
