@@ -25,10 +25,15 @@ const upload = multer({
 
 const IMAGE_TYPES = ['image/jpeg','image/jpg','image/png','image/gif','image/webp'];
 const PDF_TYPES   = ['application/pdf'];
+const EMAIL_TYPES = ['message/rfc822'];
 const DOCX_TYPES  = [
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'application/msword'
 ];
+
+const DIRECT_FILE_CHARS = 30000;
+const CHUNK_CHARS = 8000;
+const MAX_CHUNKS = 5;
 
 // ======================================================
 // OPENAI CLIENT
@@ -192,6 +197,11 @@ Direct, sharp, fast. No padding.`
 // ======================================================
 async function extractFileText(file) {
   const mime = file.mimetype;
+  const name = (file.originalname || '').toLowerCase();
+
+  if (name.endsWith('.msg')) {
+    return '[Outlook .msg files cannot be read directly yet. Export the email as PDF, EML, TXT, or DOCX and upload that version.]';
+  }
 
   if (PDF_TYPES.includes(mime)) {
     try {
@@ -225,6 +235,76 @@ function formatBytes(bytes) {
   if (bytes < 1024) return bytes + ' B';
   if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
   return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+function chunkText(text, chunkSize) {
+  const chunks = [];
+  for (let i = 0; i < text.length; i += chunkSize) {
+    chunks.push(text.slice(i, i + chunkSize));
+  }
+  return chunks;
+}
+
+function getFileKind(file) {
+  const name = (file.originalname || '').toLowerCase();
+  if (PDF_TYPES.includes(file.mimetype) || name.endsWith('.pdf')) return 'PDF';
+  if (DOCX_TYPES.includes(file.mimetype) || name.endsWith('.docx') || name.endsWith('.doc')) return 'Word document';
+  if (EMAIL_TYPES.includes(file.mimetype) || name.endsWith('.eml') || name.endsWith('.msg')) return 'email';
+  if (name.includes('transcript') || name.endsWith('.txt')) return 'transcript/text file';
+  return 'uploaded file';
+}
+
+async function summarizeLargeDocument(fileContent, file, userRequest) {
+  const chunks = chunkText(fileContent, CHUNK_CHARS).slice(0, MAX_CHUNKS);
+  const omittedChars = Math.max(fileContent.length - (CHUNK_CHARS * chunks.length), 0);
+  const fileKind = getFileKind(file);
+  const summaries = [];
+
+  for (let i = 0; i < chunks.length; i++) {
+    const messages = [
+        {
+          role: 'system',
+          content: `You summarize ${fileKind}s for later analysis. Be factual. Do not invent. Preserve speaker names, dates, decisions, asks, emotional shifts, conflicts, contradictions, and action items. If the text is a chat transcript, be careful about who said what.`
+        },
+        {
+          role: 'user',
+          content: `User request: ${userRequest || 'Analyze this document.'}\n\nChunk ${i + 1} of ${chunks.length} from ${file.originalname}:\n\n${chunks[i]}`
+        }
+    ];
+
+    let response;
+    try {
+      response = await client.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages,
+        max_tokens: 650,
+        temperature: 0.2
+      }, {
+        timeout: 30000
+      });
+    } catch (err) {
+      if (err.status !== 404) throw err;
+      response = await client.chat.completions.create({
+        model: 'gpt-4o',
+        messages,
+        max_tokens: 650,
+        temperature: 0.2
+      }, {
+        timeout: 30000
+      });
+    }
+
+    summaries.push(response.choices?.[0]?.message?.content || `[Chunk ${i + 1} produced no summary]`);
+  }
+
+  return [
+    `Large ${fileKind} processed in ${chunks.length} chunk summaries.`,
+    omittedChars > 0 ? `[Note: ${omittedChars} characters were left out to stay under the current OpenAI token-per-minute limit.]` : '',
+    `Original file: ${file.originalname} (${formatBytes(file.size)})`,
+    '',
+    'CHUNK SUMMARIES:',
+    summaries.map((summary, index) => `\n--- Chunk ${index + 1} Summary ---\n${summary}`).join('\n')
+  ].filter(Boolean).join('\n');
 }
 
 // ======================================================
@@ -300,9 +380,8 @@ router.post('/', upload.array('file', 5), async function(req, res) {
         console.log('📎 File attached:', file.originalname, formatBytes(file.size));
 
         let fileContent = await extractFileText(file);
-        const MAX_FILE_CHARS = 50000;
-        if (fileContent.length > MAX_FILE_CHARS) {
-          fileContent = fileContent.substring(0, MAX_FILE_CHARS) + '\n\n[File truncated to fit the current OpenAI token limit]';
+        if (fileContent.length > DIRECT_FILE_CHARS) {
+          fileContent = await summarizeLargeDocument(fileContent, file, message);
         }
 
         const header = `\n\n📄 ATTACHED FILE: ${file.originalname} (${formatBytes(file.size)})\n${"─".repeat(50)}\n`;
