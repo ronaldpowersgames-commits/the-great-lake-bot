@@ -23,9 +23,9 @@ const upload = multer({
   fileFilter: (req, file, cb) => cb(null, true)
 });
 
-const IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-const PDF_TYPES = ['application/pdf'];
-const DOCX_TYPES = [
+const IMAGE_TYPES = ['image/jpeg','image/jpg','image/png','image/gif','image/webp'];
+const PDF_TYPES   = ['application/pdf'];
+const DOCX_TYPES  = [
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'application/msword'
 ];
@@ -53,11 +53,11 @@ function loadSystemPrompt() {
 
   const modelDir = path.join(__dirname, '..', 'core', 'model');
   const files = [
-    'master_doc.txt', 'identity.txt', 'tone.txt', 'metaphors.txt',
-    'governance.txt', 'clarity_engine.txt', 'influence_engine.txt',
-    'output_format.txt', 'file_handling.txt', 'group_mode.txt',
-    'safety.txt', 'behavior_rules.txt', 'onboarding.txt',
-    'update_syntax.txt', 'lake_score.txt', 'lake_score_model.json'
+    'master_doc.txt','identity.txt','tone.txt','metaphors.txt',
+    'governance.txt','clarity_engine.txt','influence_engine.txt',
+    'output_format.txt','file_handling.txt','group_mode.txt',
+    'safety.txt','behavior_rules.txt','onboarding.txt',
+    'update_syntax.txt','lake_score.txt','lake_score_model.json'
   ];
 
   if (!fs.existsSync(modelDir)) {
@@ -82,7 +82,7 @@ function loadSystemPrompt() {
     return null;
   }
 
-  const MAX_PROMPT_CHARS = 150000;
+  const MAX_PROMPT_CHARS = 35000;
   if (systemPrompt.length > MAX_PROMPT_CHARS) {
     systemPrompt = systemPrompt.substring(0, MAX_PROMPT_CHARS);
     console.warn('⚠️ System prompt trimmed to fit context window');
@@ -244,6 +244,7 @@ router.post('/', upload.array('file', 5), async function(req, res) {
       });
     }
 
+    // Build system prompt
     const coreIdentity = getCoreCoachIdentity(userName);
     const modelFiles = loadSystemPrompt();
     const fallback = modelFiles ? '' : getFallbackPrompt();
@@ -251,6 +252,7 @@ router.post('/', upload.array('file', 5), async function(req, res) {
 
     const systemPrompt = coreIdentity + (modelFiles || fallback) + moodContext;
 
+    // Build conversation history
     let conversationHistory = [];
     if (req.body.history) {
       try {
@@ -260,7 +262,7 @@ router.post('/', upload.array('file', 5), async function(req, res) {
 
         if (Array.isArray(history)) {
           conversationHistory = history
-            .slice(-6)
+            .slice(-4)
             .filter(m => m.role && m.content)
             .map(m => ({
               role: m.role === 'user' ? 'user' : 'assistant',
@@ -272,6 +274,7 @@ router.post('/', upload.array('file', 5), async function(req, res) {
       }
     }
 
+    // Build user message content
     let userMessageContent;
 
     if (uploadedFiles.length > 0) {
@@ -281,16 +284,15 @@ router.post('/', upload.array('file', 5), async function(req, res) {
       if (isImage) {
         const base64Image = file.buffer.toString('base64');
         const imageUrl = `data:${file.mimetype};base64,${base64Image}`;
-
         console.log('🖼️ Image attached:', file.originalname, formatBytes(file.size));
 
         userMessageContent = [
           {
-            type: 'text',
+            type: "text",
             text: message || 'Please analyse this image and give me your full Lake reflection.'
           },
           {
-            type: 'image_url',
+            type: "image_url",
             image_url: { url: imageUrl }
           }
         ];
@@ -298,16 +300,17 @@ router.post('/', upload.array('file', 5), async function(req, res) {
         console.log('📎 File attached:', file.originalname, formatBytes(file.size));
 
         let fileContent = await extractFileText(file);
-        if (fileContent.length > 200000) {
-          fileContent = fileContent.substring(0, 200000) + '\n\n[File truncated]';
+        const MAX_FILE_CHARS = 50000;
+        if (fileContent.length > MAX_FILE_CHARS) {
+          fileContent = fileContent.substring(0, MAX_FILE_CHARS) + '\n\n[File truncated to fit the current OpenAI token limit]';
         }
 
-        const header = `\n\n📄 ATTACHED FILE: ${file.originalname} (${formatBytes(file.size)})\n${'─'.repeat(50)}\n`;
-        const footer = `\n${'─'.repeat(50)}\n[End of attached file]\n`;
+        const header = `\n\n📄 ATTACHED FILE: ${file.originalname} (${formatBytes(file.size)})\n${"─".repeat(50)}\n`;
+        const footer = `\n${"─".repeat(50)}\n[End of attached file]\n`;
 
         userMessageContent = message
           ? message + header + fileContent + footer
-          : 'Please analyse this attached file:' + header + fileContent + footer;
+          : `Please analyse this attached file:` + header + fileContent + footer;
       }
     } else {
       if (!message) {
@@ -316,22 +319,24 @@ router.post('/', upload.array('file', 5), async function(req, res) {
           details: 'Send a message or attach a file.'
         });
       }
-
       userMessageContent = message;
     }
 
+    // Build final messages array for ChatGPT
     const messages = [
-      { role: 'system', content: systemPrompt },
+      { role: "system", content: systemPrompt },
       ...conversationHistory.map(m => ({ role: m.role, content: m.content })),
-      { role: 'user', content: userMessageContent }
+      { role: "user", content: userMessageContent }
     ];
 
     console.log('🌊 Sending to ChatGPT (gpt-4o) — mood:', mood, '| user:', userName || 'unknown');
 
+    // Call OpenAI Chat Completions API. Keep timeout in request options,
+    // not the JSON body, because OpenAI rejects unknown request parameters.
     const response = await client.chat.completions.create({
-      model: 'gpt-4o',
+      model: "gpt-4o",
       messages,
-      max_tokens: 2048,
+      max_tokens: 1200,
       temperature: 1
     }, {
       timeout: 30000
@@ -353,6 +358,7 @@ router.post('/', upload.array('file', 5), async function(req, res) {
       mood,
       usage: response.usage || {}
     });
+
   } catch (err) {
     console.error('❌ Lake Engine Error:', err.status || 'unknown status', err.message);
 
