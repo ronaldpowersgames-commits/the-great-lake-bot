@@ -103,7 +103,9 @@ app.use('/api/email', emailRoutes);
 // ✅ Shared sessions - PUBLIC - anyone with link can view
 app.use('/share', shareRoutes);
 
-// Health check
+// Health check - includes OpenAI model info
+const openaiModel = process.env.OPENAI_MODEL || 'gpt-4-turbo';
+
 app.get('/health', (req, res) => {
   res.status(200).json({
     name: config.appName,
@@ -112,7 +114,7 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString(),
     governance: 'Rules 1–27 active',
     lake: 'Still waters — ready to reflect',
-    model: 'gpt-4o'
+    model: openaiModel,
   });
 });
 
@@ -190,7 +192,7 @@ app.listen(config.port, () => {
   console.log('  Environment : ' + config.nodeEnv);
   console.log('  Port        : ' + config.port);
   console.log('  Governance  : Rules 1–27 ACTIVE');
-  console.log('  Model       : gpt-4o');
+  console.log('  Model       : ' + openaiModel);
   console.log('  Status      : Still waters — ready to reflect');
   console.log('========================================================');
   console.log('');
