@@ -1192,7 +1192,7 @@ body {
               <div class="prompt-batch">
                 <div class="batch-label">🤝 Social</div>
                 <div class="welcome-prompts-grid">
-                  <div class="welcome-prompt-half" onclick="sendPrompt('Start Ice-Breaker Mode — ask me for quick context, then craft the perfect opener.')" data-long-press-batch="0">🧊 Ice-Breaker</div>
+                  <div class="welcome-prompt-half" onclick="startIceBreaker()" data-long-press-batch="0">🧊 Ice-Breaker</div>
                   <div class="welcome-prompt-half" onclick="sendPrompt('Drop your chat screenshot into the Lake for a Super-Powerful read and the exact next thing to say.')" data-long-press-batch="0">📸 Chat Read</div>
                   <div class="welcome-prompt-half" onclick="sendPrompt('Give me the Super-Powerful social move for this situation — the read, the move, the tone, the risk, the reward.')" data-long-press-batch="0">🧭 Social Nav</div>
                   <div class="welcome-prompt-half" onclick="sendPrompt('Calibrate my social vibe — tell me the tone I should use with this person or group.')" data-long-press-batch="0">🎚️ Vibe Cal</div>
@@ -2261,7 +2261,7 @@ function newSession() {
             <div class="prompt-batch">
               <div class="batch-label">🤝 Social</div>
               <div class="welcome-prompts-grid">
-                <div class="welcome-prompt-half" onclick="sendPrompt('Start Ice-Breaker Mode — ask me for quick context, then craft the perfect opener.')" data-long-press-batch="0">🧊 Ice-Breaker</div>
+                <div class="welcome-prompt-half" onclick="startIceBreaker()" data-long-press-batch="0">🧊 Ice-Breaker</div>
                 <div class="welcome-prompt-half" onclick="sendPrompt('Drop your chat screenshot into the Lake for a Super-Powerful read and the exact next thing to say.')" data-long-press-batch="0">📸 Chat Read</div>
                 <div class="welcome-prompt-half" onclick="sendPrompt('Give me the Super-Powerful social move for this situation.')" data-long-press-batch="0">🧭 Social Nav</div>
                 <div class="welcome-prompt-half" onclick="sendPrompt('Calibrate my social vibe — tell me the tone I should use with this person or group.')" data-long-press-batch="0">🎚️ Vibe Cal</div>
@@ -2625,6 +2625,15 @@ function triggerDailyPrinciple() {
   return sendWave({
     requestText: "Lake, give me pro-tip — one sentence that cuts through confusion, raises my Lake Score, and tells me exactly where to start today.",
     action: 'pro-tip', reuseAttachments: false
+  });
+}
+
+function startIceBreaker() {
+  const context = document.getElementById('lakeInput').value.trim();
+  return sendWave({
+    visibleText: context ? `Help me break the ice: ${context}` : 'Help me break the ice.',
+    requestText: context ? `Start Ice-Breaker Mode. Here is my context: ${context}` : 'Start Ice-Breaker Mode.',
+    action: 'ice-breaker', reuseAttachments: true
   });
 }
 

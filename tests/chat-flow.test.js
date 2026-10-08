@@ -104,6 +104,28 @@ test('homepage pro-tip opens a short Socratic conversation without reattaching s
   assert.match(requests.at(-1).messages[0].content, /followed by exactly ONE inviting, incisive open question/);
 });
 
+test('Ice Breaker preserves typed context and reviewed Crew memory for guided questions', async () => {
+  const context = browserContext();
+  context.document.getElementById('lakeInput').value = 'Meeting Jo at the team lunch';
+  vm.runInContext('crewMembers = [{name:"Jo Smith",nickname:"Jo",context:"New teammate",observations:[{reviewed:true,date:"2026-10-08",evidence:"Jo mentioned cycling",note:"Enjoys cycling",sources:["chat.txt"]}]}];', context);
+  await vm.runInContext('startIceBreaker()', context);
+  assert.equal(context.sent.get('action'), 'ice-breaker');
+  assert.match(context.visibleMessages[0], /Meeting Jo at the team lunch/);
+  assert.match(context.sent.get('crew'), /Enjoys cycling/);
+  const { requests, handler } = routeContext();
+  await handler({ body: {message:context.sent.get('message'),action:'ice-breaker',crew:context.sent.get('crew')}, files:[] }, {
+    json() {}, status() { return this; }
+  });
+  const prompt = requests.at(-1).messages[0].content;
+  assert.match(prompt, /ICE-BREAKER MODE START/);
+  assert.match(prompt, /Do not ask again for information already available/);
+  assert.match(prompt, /Enjoys cycling/);
+  await handler({ body: {message:'It is our first lunch together',crew:context.sent.get('crew')}, files:[] }, {
+    json() {}, status() { return this; }
+  });
+  assert.match(requests.at(-1).messages[0].content, /ICE-BREAKER CONVERSATIONS/);
+});
+
 test('chat reads every attachment and includes the user Crew aliases', async () => {
   const {requests, handler} = routeContext();
   let result;
