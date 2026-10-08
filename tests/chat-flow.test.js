@@ -118,6 +118,8 @@ test('Ice Breaker preserves typed context and reviewed Crew memory for guided qu
   });
   const prompt = requests.at(-1).messages[0].content;
   assert.match(prompt, /ICE-BREAKER MODE START/);
+  assert.match(prompt, /Offer a usable provisional opener early and continue discovery with ONE natural follow-up question/);
+  assert.match(prompt, /Vary the conversational rhythm according to the user's answers/);
   assert.match(prompt, /Do not ask again for information already available/);
   assert.match(prompt, /Enjoys cycling/);
   await handler({ body: {message:'It is our first lunch together',crew:context.sent.get('crew')}, files:[] }, {
