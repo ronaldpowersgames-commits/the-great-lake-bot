@@ -105,8 +105,6 @@ app.use('/api/email', emailRoutes);
 app.use('/share', shareRoutes);
 
 // Health check - includes OpenAI model info
-const openaiModel = process.env.OPENAI_MODEL || 'gpt-4-turbo';
-
 app.get('/health', (req, res) => {
   res.status(200).json({
     name: config.appName,
