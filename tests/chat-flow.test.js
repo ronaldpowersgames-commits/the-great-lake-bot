@@ -126,6 +126,9 @@ test('Ice Breaker preserves typed context and reviewed Crew memory for guided qu
     json() {}, status() { return this; }
   });
   assert.match(requests.at(-1).messages[0].content, /ICE-BREAKER CONVERSATIONS/);
+  assert.match(requests.at(-1).messages[0].content, /HELP NOW, DEEPEN NATURALLY/);
+  assert.match(requests.at(-1).messages[0].content, /do not switch into a question-only interview/);
+  assert.match(requests.at(-1).messages[0].content, /stop probing and deliver/);
 });
 
 test('chat reads every attachment and includes the user Crew aliases', async () => {
