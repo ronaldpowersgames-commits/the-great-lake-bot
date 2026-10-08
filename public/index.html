@@ -873,12 +873,14 @@ body {
 .crew-modal {
   background: var(--dock-bg); border: 1px solid var(--dock-border);
   border-radius: 20px; padding: 24px; width: 100%; max-width: 360px;
+  max-height: calc(100dvh - 40px); overflow-y: auto;
   box-shadow: 0 16px 48px rgba(0,0,0,0.6); animation: waveIn 0.3s ease-out;
 }
 .crew-modal h3 { font-size: 16px; color: var(--lake-light); margin-bottom: 20px; text-align: center; }
 .crew-modal-field { margin-bottom: 13px; }
 .crew-modal-field label { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 5px; }
 .crew-modal-field input,
+.crew-modal-field select,
 .crew-modal-field textarea {
   width: 100%; padding: 11px 13px;
   background: var(--lake-mid); border: 1px solid var(--dock-border); border-radius: 9px;
@@ -886,6 +888,7 @@ body {
   transition: border-color 0.2s; -webkit-appearance: none;
 }
 .crew-modal-field input:focus,
+.crew-modal-field select:focus,
 .crew-modal-field textarea:focus { border-color: var(--lake-glow); }
 .crew-modal-field textarea { resize: none; height: 66px; line-height: 1.5; }
 .crew-modal-actions { display: flex; gap: 9px; margin-top: 18px; }
@@ -1176,7 +1179,7 @@ body {
     <div class="waves-container" id="wavesContainer">
       <!-- WELCOME SCREEN -->
       <div class="welcome-screen" id="welcomeScreen">
-        <div class="welcome-icon" onclick="triggerDailyPrinciple()" title="Get today's principle">🌊</div>
+        <div class="welcome-icon" onclick="triggerDailyPrinciple()" title="Get a pro-tip">🌊</div>
         <div class="welcome-title">The Lake is Still</div>
         <div class="welcome-sub">Drop a wave, cast a line, or let a log drift in.<br>I'll reflect back what the water reveals.</div>
         <div class="welcome-prompts">
@@ -1258,7 +1261,7 @@ body {
       <div class="prompt-suggestions">
         <div class="suggestions-top-row">
           <button class="suggestions-toggle" onclick="toggleSuggestions()">💡 Prompt Suggestions ▾</button>
-          <button class="quick-action-btn" onclick="sendPrompt('Tag the key players in this')">🏷️ Tag Players</button>
+          <button class="quick-action-btn" onclick="tagPlayers()">🏷️ Tag Players</button>
           <button class="quick-action-btn" onclick="sendPrompt('Summarize what we have so far')">📋 Summarize</button>
         </div>
         <div class="suggestions-list" id="suggestionsList">
@@ -1312,7 +1315,7 @@ body {
       </div>
       <div class="input-hint">Enter
          to send · Shift+Enter for new line · 📎 attach multiple files</div>
-      <input type="file" id="fileInput" multiple onchange="handleFileSelect(event)" accept=".txt,.pdf,.doc,.docx,.csv,.json,.md,.rtf,.xlsx,.xls,.pptx,.png,.jpg,.jpeg,.gif,.webp">
+      <input type="file" id="fileInput" multiple onchange="handleFileSelect(event)" accept=".txt,.pdf,.doc,.docx,.eml,.csv,.json,.md,.png,.jpg,.jpeg,.gif,.webp">
       <input type="file" id="cameraInput" accept="image/*" capture="environment" onchange="handleFileSelect(event)">
       <input type="file" id="imageInput" accept="image/*" multiple onchange="handleFileSelect(event)">
     </div><!-- end shore-dock -->
@@ -1331,6 +1334,10 @@ body {
       <div class="depths-profile-name" id="depthsProfileName">Guest</div>
       <div class="depths-profile-hint">Tap to change photo</div>
     </div>
+    <div class="depths-section crew-modal-field">
+      <label for="myChatAliases">My Chat Names / Handles</label>
+      <input id="myChatAliases" type="text" placeholder="Punzle, Ronnie, Ron" onchange="saveMyChatAliases()">
+    </div>
     <div class="depths-section">
       <h4>🌊 Lake Mood</h4>
       <div class="depths-option active" onclick="setMood('calm',event)">🌊 Calm — gentle, reflective</div>
@@ -1346,7 +1353,7 @@ body {
       <h4>📏 Governance</h4>
       <div class="depths-info">🛡 Rules 1-27: Active</div>
       <div class="depths-info">🔒 Safety Filters: On</div>
-      <div class="depths-info">🤖 Model: Claude Sonnet</div>
+      <div class="depths-info" id="backendModelInfo">🤖 Model: Loading...</div>
     </div>
     <div class="depths-section">
       <h4>ℹ️ About</h4>
@@ -1362,7 +1369,8 @@ body {
   <div class="crew-modal">
     <h3 id="crewModalTitle">🪶 Add to The Crew</h3>
     <div class="crew-modal-field"><label>Real Name</label><input type="text" id="crewModalName" placeholder="How you know them..."></div>
-    <div class="crew-modal-field"><label>Nickname <span style="color:var(--text-dim);font-weight:normal;font-size:10px">*optional</span></label><input type="text" id="crewModalNickname" placeholder="e.g. Marcus T."></div>
+    <div class="crew-modal-field"><label>Nicknames / Aliases <span style="color:var(--text-dim);font-weight:normal;font-size:10px">*optional</span></label><input type="text" id="crewModalNickname" placeholder="e.g. Punzle, Ronnie, Ron"></div>
+    <div class="crew-modal-field" id="crewMatchField" hidden><label for="crewMatchSelect">Link To Crew Member</label><select id="crewMatchSelect"></select></div>
     <div class="crew-modal-field"><label>Avatar Emoji <span style="color:var(--text-dim);font-weight:normal;font-size:10px">*optional</span></label><input type="text" id="crewModalEmoji" placeholder="e.g. 🦈 🌊 🔥 🦊"></div>
     <div class="crew-modal-field"><label>🎭 Codename</label><input type="text" id="crewModalCodename" placeholder="e.g. The Architect, Driftwood..."></div>
     <div class="crew-modal-field"><label>📝 Context Note</label><textarea id="crewModalContext" placeholder="e.g. Tends to deflect in group settings..."></textarea></div>
@@ -1492,6 +1500,7 @@ body {
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
+<script src="/session-store.js"></script>
 <script>
 // ============================================
 // STATE
@@ -1504,6 +1513,9 @@ let currentUser       = null;
 let currentProfilePic = null;
 let deferredInstallPrompt = null;
 let allSessions       = [];
+let sessionHistoryKey = null;
+let sessionLoadPromise = Promise.resolve();
+let lastResponseModel = null;
 let crewMembers       = [];
 let suggestedCrew     = [];
 
@@ -1519,7 +1531,7 @@ let suggestedCrew     = [];
     const data = await res.json();
     if (!data.session) throw new Error('No session');
     currentUser = { name: 'Viewer', guest: true };
-    enterLake();
+    await enterLake();
     allSessions      = [data.session];
     currentSessionId = data.session.id;
     chatHistory      = data.session.history || [];
@@ -1611,6 +1623,7 @@ function handleFileSelect(event) {
   if (!files.length) return;
   files.forEach(file => {
     if (file.size > 50 * 1024 * 1024) { alert(`🌊 ${file.name} is too heavy — max 50MB.`); return; }
+    if (selectedFiles.length >= 20) { showToast('Up to 20 files per conversation.'); return; }
     selectedFiles.push(file);
   });
   event.target.value = '';
@@ -1712,21 +1725,154 @@ function detectNamesFromText(text) {
   return Array.from(found.entries()).filter(([,score]) => score >= 2).map(([name]) => name);
 }
 
+function parsePlayerTags(responseText) {
+  const match = responseText.match(/PLAYER_TAGS_JSON\s*([\s\S]*?)\s*END_PLAYER_TAGS_JSON/i);
+  if (!match) return [];
+
+  try {
+    const parsed = JSON.parse(match[1].trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, ''));
+    const players = Array.isArray(parsed.players) ? parsed.players : [];
+    return players
+      .filter(player => player && typeof player === 'object')
+      .map(player => ({
+        name: String(player.name || player.label || '').trim(),
+        nickname: String(player.nickname || '').trim(),
+        codename: String(player.codename || player.role || '').trim(),
+        confidence: String(player.confidence || 'uncertain').trim(),
+        evidence: String(player.evidence || '').trim(),
+        relationshipNote: String(player.relationship_note || '').trim(),
+        needsConfirmation: Boolean(player.needs_confirmation),
+        source: 'tag-players'
+      }))
+      .filter(player => player.name);
+  } catch(err) {
+    console.warn('Could not parse player tags:', err);
+    return [];
+  }
+}
+
+function stripPlayerTagsJson(text) {
+  return String(text || '').replace(/PLAYER_TAGS_JSON[\s\S]*?(?:END_PLAYER_TAGS_JSON|$)/gi, '').trim();
+}
+
+function normalizePersonKey(value) {
+  return String(value || '')
+    .normalize('NFKD')
+    .replace(/\p{M}/gu, '')
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function splitAliases(value) {
+  return String(value || '')
+    .split(/[,;/|]+|\s+aka\s+|\s+or\s+/i)
+    .map(normalizePersonKey)
+    .filter(Boolean);
+}
+
+function getCrewAliases(member) {
+  return [
+    normalizePersonKey(member.name),
+    normalizePersonKey(member.codename),
+    ...splitAliases(member.nickname)
+  ].filter(Boolean);
+}
+
+function levenshteinDistance(a, b) {
+  const matrix = Array.from({ length: a.length + 1 }, (_, i) => [i]);
+  for (let j = 1; j <= b.length; j++) matrix[0][j] = j;
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      matrix[i][j] = a[i - 1] === b[j - 1]
+        ? matrix[i - 1][j - 1]
+        : Math.min(matrix[i - 1][j - 1], matrix[i][j - 1], matrix[i - 1][j]) + 1;
+    }
+  }
+  return matrix[a.length][b.length];
+}
+
+function aliasesLikelyMatch(a, b) {
+  if (!a || !b) return false;
+  if (a === b) return true;
+  const aParts = a.split(' ');
+  const bParts = b.split(' ');
+  if (aParts.length === 1 && bParts.includes(a) && a.length >= 3) return true;
+  if (bParts.length === 1 && aParts.includes(b) && b.length >= 3) return true;
+
+  const longest = Math.max(a.length, b.length);
+  return longest >= 5 && levenshteinDistance(a, b) / longest <= 0.22;
+}
+
+function findCrewAliasMatch(suggestion) {
+  const suggestionAliases = [
+    normalizePersonKey(suggestion.name),
+    ...splitAliases(suggestion.nickname)
+  ].filter(Boolean);
+
+  return crewMembers.filter(member =>
+    getCrewAliases(member).some(existingAlias =>
+      suggestionAliases.some(alias => aliasesLikelyMatch(alias, existingAlias))
+    )
+  );
+}
+
+function addSuggestedCrewMember(suggestion, existingNames) {
+  const key = normalizePersonKey(suggestion.name);
+  if (['the lake', 'lake', 'the great lake'].includes(key)) return false;
+  if (existingNames.has(key)) return false;
+
+  const matches = findCrewAliasMatch(suggestion);
+  suggestion.possibleMatches = matches.map(member => member.name);
+  if (matches.length) {
+    suggestion.confidence = 'needs confirmation';
+    suggestion.context = [suggestion.context, `Possible Crew match: ${matches.map(member => member.name).join(', ')}. Confirm before linking.`].filter(Boolean).join('\n');
+  }
+
+  suggestedCrew.push(suggestion);
+  existingNames.add(key);
+  return true;
+}
+
 function processNamesFromResponse(responseText) {
-  const detected = detectNamesFromText(responseText);
-  if (!detected.length) return;
   const existingNames = new Set([
-    ...crewMembers.map(m => m.name.toLowerCase()),
-    ...suggestedCrew.map(m => m.name.toLowerCase())
+    ...suggestedCrew.flatMap(m => [
+      normalizePersonKey(m.name),
+      normalizePersonKey(m.codename),
+      ...splitAliases(m.nickname)
+    ])
   ]);
   let changed = false;
-  detected.forEach(name => {
-    if (!existingNames.has(name.toLowerCase())) {
-      suggestedCrew.push({ name, source: 'auto-detected' });
-      existingNames.add(name.toLowerCase());
-      changed = true;
-    }
+
+  parsePlayerTags(responseText).forEach(player => {
+    const contextBits = [
+      player.confidence ? `Confidence: ${player.confidence}` : '',
+      player.needsConfirmation ? 'Needs your confirmation before treating identity as certain.' : '',
+      player.evidence ? `Evidence: ${player.evidence}` : '',
+      player.relationshipNote ? `Track: ${player.relationshipNote}` : ''
+    ].filter(Boolean);
+
+    changed = addSuggestedCrewMember({
+      name: player.name,
+      nickname: player.nickname,
+      codename: player.codename,
+      context: contextBits.join('\n'),
+      observation: {
+        date: new Date().toISOString(), sessionId: currentSessionId,
+        evidence: player.evidence, note: player.relationshipNote,
+        sources: [...new Set(chatHistory.flatMap(message => (message.attachments || []).map(file => file.name)))]
+      },
+      confidence: player.confidence,
+      source: player.source
+    }, existingNames) || changed;
   });
+
+  const detected = /PLAYER_TAGS_JSON/i.test(responseText) ? [] : detectNamesFromText(responseText);
+  detected.forEach(name => {
+    changed = addSuggestedCrewMember({ name, source: 'auto-detected' }, existingNames) || changed;
+  });
+
   if (changed) { saveSuggestedCrew(); renderCrew(); }
 }
 
@@ -1741,6 +1887,7 @@ function saveSuggestedCrew() { localStorage.setItem(storageKey('suggestedCrew'),
 function loadSuggestedCrew() {
   try { suggestedCrew = JSON.parse(localStorage.getItem(storageKey('suggestedCrew')) || '[]'); }
   catch(e) { suggestedCrew = []; }
+  renderCrew();
 }
 function copyLakeEmail() {
   navigator.clipboard.writeText('drop@thelakeapp.app').then(() => {
@@ -1818,7 +1965,8 @@ function doLogin() {
     setTimeout(() => i.style.borderColor = '', 1500); return;
   }
   currentUser = { name, email, guest: false };
-  localStorage.setItem('lakeUser', JSON.stringify(currentUser));
+  try { localStorage.setItem('lakeUser', JSON.stringify(currentUser)); }
+  catch { showToast('Signed in for this visit. This device could not save the profile.'); }
   enterLake();
 }
 
@@ -1827,13 +1975,14 @@ function doGuestLogin() {
   enterLake();
 }
 
-function enterLake() {
+async function enterLake() {
   document.getElementById('loginScreen').classList.add('hidden');
   document.getElementById('dockUserName').textContent    = currentUser.name;
   document.getElementById('depthsProfileName').textContent = currentUser.name;
+  document.getElementById('myChatAliases').value = currentUser.aliases || '';
   const savedPic = localStorage.getItem(storageKey('profilePic'));
   if (savedPic) { currentProfilePic = savedPic; updateAllProfilePics(savedPic); }
-  loadSessionHistory();
+  await loadSessionHistory();
   loadCrew();
   loadSuggestedCrew();
   if (deferredInstallPrompt) showInstallBanner();
@@ -1850,10 +1999,38 @@ function doLogout() {
   newSession();
 }
 
-window.addEventListener('load', () => {
+function saveMyChatAliases() {
+  if (!currentUser) return;
+  currentUser.aliases = document.getElementById('myChatAliases').value.trim();
+  try { localStorage.setItem('lakeUser', JSON.stringify(currentUser)); }
+  catch { showToast('Names updated for this visit, but could not be saved on this device.'); }
+}
+
+async function loadBackendStatus() {
+  const modelInfo = document.getElementById('backendModelInfo');
+  if (!modelInfo) return;
+
+  try {
+    const response = await fetch('/health');
+    const data = await response.json();
+    modelInfo.textContent = `🤖 Model: ${data.model || 'Unavailable'}`;
+  } catch(err) {
+    modelInfo.textContent = '🤖 Model: Unavailable';
+  }
+}
+
+function showBackendModel(model) {
+  if (!model) return;
+  if (lastResponseModel && lastResponseModel !== model) showToast(`The Lake model updated to ${model}.`);
+  lastResponseModel = model;
+  document.getElementById('backendModelInfo').textContent = `🤖 Model: ${model}`;
+}
+
+window.addEventListener('load', async () => {
+  loadBackendStatus();
   const saved = localStorage.getItem('lakeUser');
-  if (saved) { try { currentUser = JSON.parse(saved); enterLake(); } catch(e) {} }
-  loadSessionHistory();
+  if (saved) { try { currentUser = JSON.parse(saved); await enterLake(); } catch(e) {} }
+  await loadSessionHistory();
   loadCrew();
   loadSuggestedCrew();
   loadEmailSessions();
@@ -1866,15 +2043,44 @@ window.addEventListener('load', () => {
 // SESSION HISTORY
 // ============================================
 function loadSessionHistory() {
-  try { allSessions = JSON.parse(localStorage.getItem(storageKey('sessions')) || '[]'); }
-  catch(e) { allSessions = []; }
+  const key = storageKey('sessions');
+  if (sessionHistoryKey === key) return sessionLoadPromise;
+  sessionHistoryKey = key;
+  allSessions = [];
   renderTides();
+  sessionLoadPromise = (async () => {
+    let sessions;
+    try { sessions = await LakeSessionStore.read(key); }
+    catch(error) {
+      try { sessions = error.recoveredSessions || JSON.parse(localStorage.getItem(key) || '[]'); }
+      catch { sessions = []; }
+      showToast('Device history could not be opened. Keep this tab open and export important chats.');
+      console.warn('Session storage unavailable:', error);
+    }
+    if (storageKey('sessions') !== key) return;
+    allSessions = Array.isArray(sessions) ? sessions : [];
+    renderTides();
+  })();
+  return sessionLoadPromise;
 }
 
-function saveSession() {
+async function persistSessions() {
+  try {
+    await LakeSessionStore.write(storageKey('sessions'), allSessions);
+    return true;
+  } catch(error) {
+    console.warn('Could not save device history:', error);
+    showToast('This device could not save the chat. Export it before closing.');
+    return false;
+  }
+}
+
+async function saveSession() {
+  await sessionLoadPromise;
   if (!currentSessionId || chatHistory.length === 0) return;
   const existingIdx = allSessions.findIndex(s => s.id === currentSessionId);
   const sessionData = {
+    ...(allSessions[existingIdx] || {}),
     id:      currentSessionId,
     name:    getSessionName(),
     preview: chatHistory[0]?.content?.substring(0, 60) || '',
@@ -1884,9 +2090,8 @@ function saveSession() {
   };
   if (existingIdx >= 0) allSessions[existingIdx] = sessionData;
   else allSessions.unshift(sessionData);
-  allSessions = allSessions.slice(0, 50);
-  localStorage.setItem(storageKey('sessions'), JSON.stringify(allSessions));
   renderTides();
+  await persistSessions();
 }
 
 function getSessionName() {
@@ -1957,27 +2162,29 @@ function loadTide(sessionId) {
   if (window.innerWidth <= 768) toggleDock();
 }
 
-function deleteSession(e, sessionId) {
+async function deleteSession(e, sessionId) {
   e.stopPropagation();
   allSessions = allSessions.filter(s => s.id !== sessionId);
-  localStorage.setItem(storageKey('sessions'), JSON.stringify(allSessions));
+  await persistSessions();
   if (currentSessionId === sessionId) newSession();
   else renderTides();
 }
 
-function renameSession(e, sessionId) {
+async function renameSession(e, sessionId) {
   e.stopPropagation();
   const session = allSessions.find(s => s.id === sessionId);
   if (!session) return;
   const newName = prompt('Rename this tide:', session.name);
   if (!newName?.trim()) return;
   session.name = newName.trim();
-  localStorage.setItem(storageKey('sessions'), JSON.stringify(allSessions));
+  await persistSessions();
   renderTides();
 }
 
-function clearHistory() {
+async function clearHistory() {
   if (confirm('Clear all past tides? This cannot be undone.')) {
+    try { await LakeSessionStore.write(storageKey('sessions'), []); }
+    catch { showToast('History could not be cleared. Please try again.'); return; }
     allSessions = [];
     localStorage.removeItem(storageKey('sessions'));
     renderTides(); newSession(); toggleDepths();
@@ -1997,6 +2204,7 @@ function filterTides(query) {
 // ============================================
 async function loadEmailSessions() {
   try {
+    await sessionLoadPromise;
     const res = await fetch('/email/sessions');
     if (!res.ok) return;
     const emailSessions = await res.json();
@@ -2024,8 +2232,7 @@ async function loadEmailSessions() {
       }
     });
     if (changed) {
-      allSessions = allSessions.slice(0, 50);
-      localStorage.setItem(storageKey('sessions'), JSON.stringify(allSessions));
+      await persistSessions();
       renderTides();
     }
   } catch(e) { console.log('No email sessions available'); }
@@ -2043,7 +2250,7 @@ function newSession() {
   const container = document.getElementById('wavesContainer');
   container.innerHTML = `
     <div class="welcome-screen" id="welcomeScreen">
-      <div class="welcome-icon" onclick="triggerDailyPrinciple()" title="Get today's principle">🌊</div>
+      <div class="welcome-icon" onclick="triggerDailyPrinciple()" title="Get a pro-tip">🌊</div>
       <div class="welcome-title">The Lake is Still</div>
       <div class="welcome-sub">Drop a wave, cast a line, or let a log drift in.<br>I'll reflect back what the water reveals.</div>
       <div class="welcome-prompts">
@@ -2157,9 +2364,9 @@ function renderCrew() {
       <div class="suggested-title">⚡ Spotted</div>
       ${suggestedCrew.map((m, i) => `
         <div class="suggested-item">
-          <span class="suggested-name">👤 ${escapeHTML(m.name)}</span>
-          <button class="suggested-approve" onclick="approveSuggested(${i})">✓</button>
-          <button class="suggested-dismiss" onclick="dismissSuggested(${i})">✕</button>
+          <span class="suggested-name" title="${escapeHTML(m.context || m.evidence || m.source || '')}">👤 ${escapeHTML(m.name)}${m.confidence ? ` · ${escapeHTML(m.confidence)}` : ''}</span>
+          <button class="suggested-approve" onclick="approveSuggested(${i})" title="Review player" aria-label="Review player">✓</button>
+          <button class="suggested-dismiss" onclick="dismissSuggested(${i})" title="Dismiss player" aria-label="Dismiss player">✕</button>
         </div>`).join('')}
     </div>`;
   }
@@ -2178,11 +2385,17 @@ function renderCrew() {
     `<div class="crew-item" onclick="openCrewModal('add')" style="justify-content:center;color:var(--text-dim);">+ Add to The Crew</div>`;
 }
 
-function approveSuggested(idx) { openCrewModal('approve', idx, suggestedCrew[idx].name); }
+function approveSuggested(idx) { openCrewModal('approve', idx, suggestedCrew[idx]); }
 function dismissSuggested(idx) { suggestedCrew.splice(idx, 1); saveSuggestedCrew(); renderCrew(); }
 
-function openCrewModal(mode, idx = -1, prefillName = '') {
+function openCrewModal(mode, idx = -1, prefill = '') {
   crewModalMode = mode; crewModalIndex = idx;
+  const matchField = document.getElementById('crewMatchField');
+  const matchSelect = document.getElementById('crewMatchSelect');
+  matchField.hidden = mode !== 'approve';
+  matchSelect.innerHTML = '<option value="">Add as a new person</option>' + crewMembers.map((member, index) =>
+    `<option value="${index}">${escapeHTML(member.name)}</option>`).join('');
+  matchSelect.value = '';
   const deleteBtn = document.getElementById('crewModalDelete');
   document.getElementById('crewModalTitle').textContent =
     mode === 'edit' ? '✏️ Edit Crew Member' : '🪶 Add to The Crew';
@@ -2195,11 +2408,12 @@ function openCrewModal(mode, idx = -1, prefillName = '') {
     document.getElementById('crewModalContext').value  = m.context  || '';
     deleteBtn.style.display = 'block';
   } else {
-    document.getElementById('crewModalName').value     = prefillName || '';
-    document.getElementById('crewModalNickname').value = '';
-    document.getElementById('crewModalCodename').value = '';
-    document.getElementById('crewModalEmoji').value    = '';
-    document.getElementById('crewModalContext').value  = '';
+    const suggested = typeof prefill === 'object' && prefill ? prefill : { name: prefill };
+    document.getElementById('crewModalName').value     = suggested.name || '';
+    document.getElementById('crewModalNickname').value = suggested.nickname || '';
+    document.getElementById('crewModalCodename').value = suggested.codename || '';
+    document.getElementById('crewModalEmoji').value    = suggested.emoji || '';
+    document.getElementById('crewModalContext').value  = suggested.context || '';
     deleteBtn.style.display = 'none';
   }
   document.getElementById('crewModalOverlay').classList.add('show');
@@ -2226,9 +2440,26 @@ function saveCrewFromModal() {
     context:  document.getElementById('crewModalContext').value.trim()
   };
   if (crewModalMode === 'edit' && crewModalIndex >= 0) {
-    crewMembers[crewModalIndex] = member;
+    crewMembers[crewModalIndex] = { ...crewMembers[crewModalIndex], ...member };
   } else if (crewModalMode === 'approve' && crewModalIndex >= 0) {
-    suggestedCrew.splice(crewModalIndex, 1); saveSuggestedCrew(); crewMembers.push(member);
+    const observation = suggestedCrew[crewModalIndex].observation;
+    const matchIndex = document.getElementById('crewMatchSelect').value;
+    if (matchIndex !== '') {
+      const existing = crewMembers[Number(matchIndex)];
+      const aliases = [existing.nickname, member.name !== existing.name ? member.name : '', member.nickname].filter(Boolean).join(', ');
+      existing.nickname = [...new Set(aliases.split(/[,;/|]+/).map(alias => alias.trim()).filter(Boolean))].join(', ');
+      existing.context = [existing.context, member.context].filter(Boolean).join('\n\n');
+      if (observation) {
+        existing.observations = existing.observations || [];
+        if (!existing.observations.some(item => item.sessionId === observation.sessionId && item.evidence === observation.evidence && item.note === observation.note)) {
+          existing.observations.push({ ...observation, reviewed: true });
+        }
+      }
+    } else {
+      if (observation) member.observations = [{ ...observation, reviewed: true }];
+      crewMembers.push(member);
+    }
+    suggestedCrew.splice(crewModalIndex, 1); saveSuggestedCrew();
   } else {
     crewMembers.push(member);
   }
@@ -2338,19 +2569,21 @@ function askLakeKnowsYou() {
       formData.append('userName', currentUser?.name || '');
       formData.append('history', JSON.stringify([]));
       const response = await fetch('/chat', { method: 'POST', body: formData });
-      const data     = await response.json();
+      const data     = await readChatResponse(response);
+      showBackendModel(data.model);
       hideRipple();
       if (data.reflection) {
+        const cleanReflection = stripPlayerTagsJson(data.reflection);
         const reflectionTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        appendLakeWave(data.reflection, reflectionTime, true);
-        chatHistory.push({ role: 'assistant', content: data.reflection, time: reflectionTime });
-        saveSession();
+        appendLakeWave(cleanReflection, reflectionTime, true);
+        chatHistory.push({ role: 'assistant', content: cleanReflection, time: reflectionTime });
+        await saveSession();
       } else {
         appendLakeWave('🌊 The Lake is still reading the water — give it a moment and try again.', timeStr, true);
       }
     } catch(err) {
       hideRipple();
-      appendLakeWave('🌊 The current is slow right now — give it a moment and nudge again.', timeStr, true);
+      appendLakeWave(`🌊 The current hit a snag: ${err.message}`, timeStr, true);
       console.error('Lake error:', err);
     }
   })();
@@ -2389,12 +2622,45 @@ function updateCurrents(text) {
 // SENDING
 // ============================================
 function triggerDailyPrinciple() {
-  sendPrompt("Lake, give me today's Super-Powerful Principle — one sentence that cuts through confusion, raises my Lake Score, and tells me exactly where to start today.");
+  return sendWave({
+    requestText: "Lake, give me pro-tip — one sentence that cuts through confusion, raises my Lake Score, and tells me exactly where to start today.",
+    action: 'pro-tip', reuseAttachments: false
+  });
 }
 
 function sendPrompt(text) {
   document.getElementById('lakeInput').value = text;
   sendWave();
+}
+
+function tagPlayers() {
+  const context = document.getElementById('lakeInput').value.trim();
+  sendWave({ visibleText: 'Tag players', reuseAttachments: true, requestText: `Tag the key players in this interaction.
+
+Identify every person who appears in the current chat, screenshot, transcript, email, or uploaded file. Be careful about identity:
+- Use visible evidence only: names, handles, avatars, profile photos, bubble colors, left/right alignment, timestamps, quoted/replied-to text, and app layout.
+- Do not assume a replied-to message was written by the person sending the reply.
+- If identity is unclear, label the person as "Unknown 1", "Unknown 2", etc. and ask me to confirm.
+- Separate confirmed identity from interpretation.
+- Only identify people in the supplied interaction. Do not tag The Lake, the app, or people invented in an assistant answer. Do not tag me unless I appear in the supplied material.
+- If no interaction material is available, ask for it and do not produce a player block.
+- Treat supplied Crew names and aliases as possible matches, not proof. Ask when more than one person could match. Never infer identity from a face alone.
+- Use a codename only if supplied by the user; do not invent a nickname from someone's role.
+
+For each person, give:
+- likely name or temporary label
+- role in the interaction
+- evidence used to identify them
+- confidence: high, medium, low, or needs confirmation
+- what I should track about my relationship with them
+
+At the very end, include this exact machine-readable block so the app can suggest Crew entries:
+Do not announce or explain the block in your prose. Put only JSON between the markers, without a code fence.
+
+PLAYER_TAGS_JSON
+{"players":[{"name":"Name or Unknown 1","nickname":"","codename":"Role or pattern","confidence":"high|medium|low|needs confirmation","needs_confirmation":false,"evidence":"Visible evidence used","relationship_note":"What to track"}]}
+END_PLAYER_TAGS_JSON
+${context ? `\nAdditional interaction or correction supplied by the user:\n${context}` : ''}` });
 }
 
 function fileToBase64(file) {
@@ -2406,63 +2672,109 @@ function fileToBase64(file) {
   });
 }
 
-async function sendWave() {
-  const input = document.getElementById('lakeInput');
-  const text  = input.value.trim();
-  if (!text && selectedFiles.length === 0) return;
+async function readChatResponse(response) {
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.details || data.error || `Chat failed with status ${response.status}`);
+  }
+  return data;
+}
 
+let waveInFlight = false;
+
+async function sendWave(options = {}) {
+  if (waveInFlight) return;
+  const input = document.getElementById('lakeInput');
+  const text  = options.requestText ?? input.value.trim();
+  const visibleText = options.visibleText ?? text;
+  if (!text && selectedFiles.length === 0) return;
+  waveInFlight = true;
+
+  try {
+  await sessionLoadPromise;
   const welcome = document.getElementById('welcomeScreen');
   if (welcome) welcome.remove();
   if (!currentSessionId) currentSessionId = 'session_' + Date.now();
 
   const timeStr         = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  const filesToSend     = [...selectedFiles];
-  const attachmentLabel = filesToSend.length > 0 ? ` [${filesToSend.length} file${filesToSend.length > 1 ? 's' : ''} attached]` : '';
+  const newFiles = [...selectedFiles];
+  const filesToSend = [];
+  const seenSources = new Set();
+  if (options.reuseAttachments !== false) {
+    for (const attachment of chatHistory.filter(m => m.role === 'user').flatMap(m => m.attachments || [])) {
+      if (!attachment.data) continue;
+      const key = attachment.name + attachment.data;
+      if (seenSources.has(key)) continue;
+      seenSources.add(key);
+      const encoded = attachment.data.split(',')[1];
+      const bytes = Uint8Array.from(atob(encoded), character => character.charCodeAt(0));
+      filesToSend.push(new File([bytes], attachment.name, { type: attachment.type || 'application/octet-stream' }));
+    }
+  }
+  filesToSend.push(...newFiles);
+  if (filesToSend.length > 20 || filesToSend.reduce((bytes, file) => bytes + file.size, 0) > 100 * 1024 * 1024) {
+    showToast('This conversation exceeds 20 files or 100MB. Start a new tide for the next batch.');
+    return;
+  }
+  const attachmentLabel = newFiles.length > 0 ? ` [${newFiles.length} file${newFiles.length > 1 ? 's' : ''} attached]` : '';
   const base64Attachments = [];
 
-  for (const file of filesToSend) {
+  for (const file of newFiles) {
     try {
       const data = await fileToBase64(file);
       base64Attachments.push({ name: file.name, type: file.type, size: file.size, data });
     } catch(e) { console.warn('Could not convert file:', file.name, e); }
   }
 
-  appendUserWave(text || '📎 Files attached', timeStr, true, base64Attachments);
-  chatHistory.push({ role: 'user', content: text + attachmentLabel, time: timeStr, attachments: base64Attachments });
+  appendUserWave(visibleText || '📎 Files attached', timeStr, true, base64Attachments);
+  chatHistory.push({ role: 'user', content: visibleText + attachmentLabel, time: timeStr, attachments: base64Attachments });
 
   input.value        = '';
   input.style.height = 'auto';
   selectedFiles      = [];
   renderFilePreviews();
   showRipple();
+  await saveSession();
 
   try {
     const formData = new FormData();
     formData.append('message', text);
+    if (options.action) formData.append('action', options.action);
     formData.append('mood', currentMood);
     formData.append('userName', currentUser?.name || '');
+    formData.append('userAliases', currentUser?.aliases || '');
+    formData.append('crew', JSON.stringify(crewMembers.map(({ name, nickname, codename, context, observations }) => ({ name, nickname, codename, context, observations: (observations || []).slice(-10) }))));
     const historyToSend = chatHistory.slice(-11, -1).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.content }));
     formData.append('history', JSON.stringify(historyToSend));
     filesToSend.forEach(file => formData.append('file', file));
 
     const response = await fetch('/chat', { method: 'POST', body: formData });
-    const data     = await response.json();
+    const data     = await readChatResponse(response);
+    showBackendModel(data.model);
     hideRipple();
 
     if (data.reflection) {
+      const cleanReflection = stripPlayerTagsJson(data.reflection);
       const reflectionTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      appendLakeWave(data.reflection, reflectionTime, true);
-      chatHistory.push({ role: 'assistant', content: data.reflection, time: reflectionTime });
+      appendLakeWave(cleanReflection, reflectionTime, true);
+      chatHistory.push({ role: 'assistant', content: cleanReflection, time: reflectionTime });
       updateCurrents(text);
-      saveSession();
-      processNamesFromResponse(data.reflection);
+      await saveSession();
+      try { processNamesFromResponse(data.reflection); }
+      catch { showToast('Reply received. Crew suggestions could not be saved on this device.'); }
     } else {
       appendLakeWave('🌊 The Lake is still reading the water — sometimes deep currents take a moment.', timeStr, true);
     }
   } catch(err) {
     hideRipple();
-    appendLakeWave('🌊 The current is slow right now — give it a moment and nudge again.', timeStr, true);
+    appendLakeWave(`🌊 The current hit a snag: ${err.message}`, timeStr, true);
     console.error('Lake error:', err);
+  }
+  } catch(err) {
+    hideRipple();
+    appendLakeWave(`Could not prepare the attachment: ${err.message}`, '', true);
+  } finally {
+    waveInFlight = false;
   }
 }
 

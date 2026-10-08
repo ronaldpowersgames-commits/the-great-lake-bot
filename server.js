@@ -8,6 +8,7 @@ const helmet = require('helmet');
 const cors = require('cors');
 const morgan = require('morgan');
 const config = require('./config');
+const { chatModel } = require('./config/models');
 const { authenticate } = require('./middleware/auth');
 const { globalLimiter } = require('./middleware/rateLimiter');
 const { safetyFilter } = require('./middleware/governanceEnforcement');
@@ -112,7 +113,7 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString(),
     governance: 'Rules 1–27 active',
     lake: 'Still waters — ready to reflect',
-    model: 'gpt-4o'
+    model: chatModel
   });
 });
 
@@ -190,7 +191,7 @@ app.listen(config.port, () => {
   console.log('  Environment : ' + config.nodeEnv);
   console.log('  Port        : ' + config.port);
   console.log('  Governance  : Rules 1–27 ACTIVE');
-  console.log('  Model       : gpt-4o');
+  console.log('  Model       : ' + chatModel);
   console.log('  Status      : Still waters — ready to reflect');
   console.log('========================================================');
   console.log('');
