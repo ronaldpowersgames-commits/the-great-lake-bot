@@ -79,6 +79,17 @@ Existing localStorage history migrates only after a successful database write.
 Storage failures show a separate notice and do not turn a received reply into a
 chat error. This is local storage, not a cloud backup; export important tides.
 
+Settings includes **Export Full Data + Transfer Prompt**: a private JSON archive
+of all conversations, original stored attachments, Crew, profile and settings
+available for the current profile on this device. It is not an AI summary and
+does not truncate history. The included transfer prompt guides another AI through
+the archive; import/automatic restoration is not implemented. Keep exports private.
+
+Switching moods preserves the conversation ID, history, uploads and Crew context.
+Normal model requests still use a bounded recent-message window. Replies arriving
+after navigation are saved to their originating chat, with a tappable reply-ready
+notice; deleting an in-progress chat does not resurrect it when the reply arrives.
+
 Review Spotted suggestions to add a person or link them to an existing Crew
 member. Nicknames act as aliases, and ambiguous matches require confirmation.
 Approved observations retain their source tide, filenames and date, and are
@@ -103,6 +114,8 @@ with Playwright and Chrome against a running local server.
 safe rendering, keyboard behavior, all snapshot scopes, JSON download/reload and
 mobile controls. Set `LAKE_TEST_URL` to the local preview and
 `LAKE_PLAYWRIGHT_PATH` when Playwright is not installed in this repository.
+`tests/conversation-continuity.cjs` checks mood continuity, delayed replies,
+cross-profile isolation, deleted in-progress chats and full-data downloads.
 
 ## Endpoints
 

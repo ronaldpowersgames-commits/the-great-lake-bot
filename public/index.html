@@ -1006,6 +1006,12 @@ body {
 .snapshot-json { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; margin: 8px 0 0; max-height: 300px; overflow-y: auto; }
 .snapshot-details { margin-top: 6px; }
 .snapshot-details summary { cursor: pointer; color: var(--lake-light); font-size: 12px; }
+.mode-continuity { padding: 6px 12px; color: var(--text-dim); font-size: 11px; border-top: 1px solid var(--dock-border); }
+.mode-continuity strong { color: var(--text-secondary); font-weight: 500; }
+.backup-export { width: 100%; min-height: 44px; border: 1px solid var(--dock-border); border-radius: 8px; background: transparent; text-align: left; font: inherit; white-space: normal; }
+.reply-notice { position: sticky; bottom: 8px; margin-top: auto; align-self: center; width: min(100%, 440px); flex-shrink: 0; padding: 10px 13px; border: 1px solid var(--lake-light); border-radius: 8px; background: var(--dock-bg); color: var(--text-primary); text-align: left; cursor: pointer; font: inherit; z-index: 2; }
+.reply-notice span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+.reply-notice .reply-preview { margin-top: 3px; color: var(--text-secondary); }
 .snapshot-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
 .snapshot-actions .quick-action-btn { border-radius: 8px; min-width: 0; padding: 5px 3px; white-space: normal; }
 .quick-action-btn[hidden] { display: none; }
@@ -1162,15 +1168,16 @@ body {
       </div>
       <!-- Mood selector -->
       <div class="mood-selector" id="moodSelector">
-        <div class="mood-option active" onclick="setMood('calm',event)">
+        <div class="mood-option active" data-mood="calm" onclick="setMood('calm',event)">
           <span class="mood-dot" style="background:var(--calm)"></span>🌊 Calm — gentle, reflective
         </div>
-        <div class="mood-option" onclick="setMood('analytical',event)">
-          <span class="mood-dot" style="background:var(--analytical)"></span>🔍 Analytical — precise
+        <div class="mood-option" data-mood="analytical" onclick="setMood('analytical',event)">
+          <span class="mood-dot" style="background:var(--analytical)"></span>🔍 Analytical — read precisely
         </div>
-        <div class="mood-option" onclick="setMood('stormy',event)">
-          <span class="mood-dot" style="background:var(--stormy)"></span>⛈️ Stormy — sharp, witty
+        <div class="mood-option" data-mood="stormy" onclick="setMood('stormy',event)">
+          <span class="mood-dot" style="background:var(--stormy)"></span>⛈️ Stormy — write with bite
         </div>
+        <div class="mode-continuity"><strong>Same chat. Different lens.</strong></div>
       </div>
     </div>
 
@@ -1351,9 +1358,14 @@ body {
     </div>
     <div class="depths-section">
       <h4>🌊 Lake Mood</h4>
-      <div class="depths-option active" onclick="setMood('calm',event)">🌊 Calm — gentle, reflective</div>
-      <div class="depths-option" onclick="setMood('analytical',event)">🔍 Analytical — precise breakdowns</div>
-      <div class="depths-option" onclick="setMood('stormy',event)">⛈️ Stormy — sharp, witty, candid</div>
+      <div class="depths-option active" data-mood="calm" onclick="setMood('calm',event)">🌊 Calm — gentle, reflective</div>
+      <div class="depths-option" data-mood="analytical" onclick="setMood('analytical',event)">🔍 Analytical — read precisely</div>
+      <div class="depths-option" data-mood="stormy" onclick="setMood('stormy',event)">⛈️ Stormy — write with bite</div>
+      <div class="mode-continuity"><strong>Same chat. Different lens.</strong></div>
+    </div>
+    <div class="depths-section">
+      <h4>💾 Backup &amp; Transfer</h4>
+      <button class="depths-option backup-export" onclick="exportFullBackup()" title="Private full-data backup with original stored attachments and an AI transfer prompt">⬇ Export Full Data + Transfer Prompt</button>
     </div>
     <div class="depths-section">
       <h4>📱 App</h4>
@@ -1488,7 +1500,7 @@ body {
       <div class="help-section-title">🎭 Lake Moods</div>
       <div class="help-item"><span class="help-icon">🌊</span><div class="help-text"><strong>Calm</strong> — reflective, deep, gentle. Best for processing emotions.</div></div>
       <div class="help-item"><span class="help-icon">🔍</span><div class="help-text"><strong>Analytical</strong> — structured, precise. Best for transcripts and decision-making.</div></div>
-      <div class="help-item"><span class="help-icon">⛈️</span><div class="help-text"><strong>Stormy</strong> — zero filter, raw truth. Use when you need The Lake to stop being polite.</div></div>
+      <div class="help-item"><span class="help-icon">⛈️</span><div class="help-text"><strong>Stormy</strong> — punchier drafts, playful bite and candid challenges. Same conversation, sharper voice.</div></div>
     </div>
     <div class="help-divider"></div>
     <div class="help-section">
@@ -1513,6 +1525,7 @@ body {
 
 <script src="/session-store.js"></script>
 <script src="/snapshot-context.js"></script>
+<script src="/full-backup.js"></script>
 <script>
 // ============================================
 // STATE
@@ -1819,7 +1832,7 @@ function addSuggestedCrewMember(suggestion, existingNames) {
   return true;
 }
 
-function processNamesFromResponse(responseText) {
+function processNamesFromResponse(responseText, source = { id: currentSessionId, history: chatHistory }) {
   const existingNames = new Set([
     ...suggestedCrew.flatMap(m => [
       normalizePersonKey(m.name),
@@ -1843,9 +1856,9 @@ function processNamesFromResponse(responseText) {
       codename: player.codename,
       context: contextBits.join('\n'),
       observation: {
-        date: new Date().toISOString(), sessionId: currentSessionId,
+        date: new Date().toISOString(), sessionId: source.id,
         evidence: player.evidence, note: player.relationshipNote,
-        sources: [...new Set(chatHistory.flatMap(message => (message.attachments || []).map(file => file.name)))]
+        sources: [...new Set(source.history.flatMap(message => (message.attachments || []).map(file => file.name)))]
       },
       confidence: player.confidence,
       source: player.source
@@ -2049,38 +2062,43 @@ function loadSessionHistory() {
   return sessionLoadPromise;
 }
 
-async function persistSessions() {
+async function persistSessions(sessions = allSessions, key = storageKey('sessions')) {
   try {
-    await LakeSessionStore.write(storageKey('sessions'), allSessions);
+    await LakeSessionStore.write(key, sessions);
     return true;
   } catch(error) {
     console.warn('Could not save device history:', error);
-    showToast('This device could not save the chat. Export it before closing.');
+    if (key === storageKey('sessions')) showToast('This device could not save the chat. Export it before closing.');
     return false;
   }
 }
 
-async function saveSession() {
+async function saveSession(target) {
   await sessionLoadPromise;
-  if (!currentSessionId || chatHistory.length === 0) return;
-  const existingIdx = allSessions.findIndex(s => s.id === currentSessionId);
+  if (target?.discarded) return;
+  const id = target?.id || currentSessionId;
+  const history = target?.history || chatHistory;
+  const key = target?.key || storageKey('sessions');
+  const sessions = key === storageKey('sessions') ? allSessions : await LakeSessionStore.read(key);
+  if (!id || history.length === 0) return;
+  const existingIdx = sessions.findIndex(s => s.id === id);
   const sessionData = {
-    ...(allSessions[existingIdx] || {}),
-    id:      currentSessionId,
-    name:    getSessionName(),
-    preview: chatHistory[0]?.content?.substring(0, 60) || '',
+    ...(sessions[existingIdx] || {}),
+    id,
+    name:    sessions[existingIdx]?.name || getSessionName(history),
+    preview: history[0]?.content?.substring(0, 60) || '',
     time:    new Date().toISOString(),
-    history: chatHistory,
-    mood:    currentMood
+    history,
+    mood:    key === storageKey('sessions') && id === currentSessionId ? currentMood : sessions[existingIdx]?.mood || target?.mood || currentMood
   };
-  if (existingIdx >= 0) allSessions[existingIdx] = sessionData;
-  else allSessions.unshift(sessionData);
-  renderTides();
-  await persistSessions();
+  if (existingIdx >= 0) sessions[existingIdx] = sessionData;
+  else sessions.unshift(sessionData);
+  if (key === storageKey('sessions')) renderTides();
+  await persistSessions(sessions, key);
 }
 
-function getSessionName() {
-  const first = chatHistory.find(m => m.role === 'user');
+function getSessionName(history = chatHistory) {
+  const first = history.find(m => m.role === 'user');
   if (first?.content) return first.content.substring(0, 40) + (first.content.length > 40 ? '...' : '');
   return 'New Session';
 }
@@ -2125,7 +2143,7 @@ function loadTide(sessionId) {
   currentSessionId = sessionId;
   chatHistory      = session.history || [];
   document.getElementById('downloadSnapshotButton').hidden = !chatHistory.some(message => message.snapshot);
-  currentMood      = session.mood || 'calm';
+  applyMood(session.mood || 'calm');
   const container  = document.getElementById('wavesContainer');
   container.innerHTML = '';
   // Re-add ripple
@@ -2145,11 +2163,12 @@ function loadTide(sessionId) {
   });
   container.scrollTop = container.scrollHeight;
   renderTides();
-  if (window.innerWidth <= 768) toggleDock();
+  if (window.innerWidth <= 768 && document.getElementById('dock').classList.contains('open')) toggleDock();
 }
 
 async function deleteSession(e, sessionId) {
   e.stopPropagation();
+  if (activeWave?.id === sessionId) activeWave.discarded = true;
   allSessions = allSessions.filter(s => s.id !== sessionId);
   await persistSessions();
   if (currentSessionId === sessionId) newSession();
@@ -2169,6 +2188,7 @@ async function renameSession(e, sessionId) {
 
 async function clearHistory() {
   if (confirm('Clear all past tides? This cannot be undone.')) {
+    if (activeWave?.key === storageKey('sessions')) activeWave.discarded = true;
     try { await LakeSessionStore.write(storageKey('sessions'), []); }
     catch { showToast('History could not be cleared. Please try again.'); return; }
     allSessions = [];
@@ -2307,7 +2327,7 @@ function newSession() {
 
   renderTides();
   initCarousel();
-  if (window.innerWidth <= 768) toggleDock();
+  if (window.innerWidth <= 768 && document.getElementById('dock').classList.contains('open')) toggleDock();
 }
 
 // ============================================
@@ -2507,16 +2527,21 @@ function editFromCard() { closeCrewCard(); setTimeout(() => openCrewModal('edit'
 // ============================================
 function toggleMoodSelector() { document.getElementById('moodSelector').classList.toggle('show'); }
 
-function setMood(mood, event) {
+function applyMood(mood) {
+  if (!['calm', 'analytical', 'stormy'].includes(mood)) mood = 'calm';
   currentMood = mood;
   const glowColors = { calm: '#4fc3f7', analytical: '#7c4dff', stormy: '#ff6e40' };
   document.documentElement.style.setProperty('--lake-glow', glowColors[mood]);
-  document.querySelectorAll('.mood-option, .depths-option').forEach(el => el.classList.remove('active'));
-  if (event?.currentTarget) event.currentTarget.classList.add('active');
-  document.getElementById('moodSelector').classList.remove('show');
-  const statusMap = { calm: 'Still waters — ready to reflect', analytical: 'Precision mode — let\'s go deep', stormy: 'Rough waters — direct, evidence-led' };
+  document.querySelectorAll('[data-mood]').forEach(el => el.classList.toggle('active', el.dataset.mood === mood));
+  const statusMap = { calm: 'Still waters — ready to reflect', analytical: 'Precision mode — read the evidence', stormy: 'Rough waters — playful bite, straight talk' };
   const statusEl = document.getElementById('lakeStatus');
   if (statusEl) statusEl.textContent = statusMap[mood];
+}
+
+function setMood(mood) {
+  applyMood(mood);
+  document.getElementById('moodSelector').classList.remove('show');
+  saveSession().catch(error => console.warn('Could not save the selected mood:', error));
 }
 
 // ============================================
@@ -2537,43 +2562,11 @@ function askLakeKnowsYou() {
   chatHistory.filter(m => m.role === 'user' && m.content).forEach(m => allUserMessages.push(m.content));
   const unique        = [...new Set(allUserMessages)];
   const historySample = unique.reverse().join('\n\n---\n\n').substring(0, 12000);
-  const welcome = document.getElementById('welcomeScreen');
-  if (welcome) welcome.remove();
-  if (!currentSessionId) currentSessionId = 'session_' + Date.now();
-  const timeStr        = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const visibleMessage = '🌊 How does The Lake see me?';
-  appendUserWave(visibleMessage, timeStr, true, []);
-  chatHistory.push({ role: 'user', content: visibleMessage, time: timeStr });
-  showRipple();
   const fullPrompt = historySample.length > 0
     ? `Here is a sample of everything I have shared with you across ALL my past sessions:\n\n${historySample}\n\n---\n\nBased on ALL of this — give me a sharp persona read on me as a person and leader. What kind of thinker am I? How do I process and communicate? What do I consistently focus on, worry about, or care about? What patterns do you see in how I show up? What does The Lake now know about me that I might not have said out loud? Be honest, specific, and tight.`
     : `I haven't shared much yet — give me your initial read. What kind of person and leader am I showing up as? Ask me a question to go deeper if you need more.`;
-  (async () => {
-    try {
-      const formData = new FormData();
-      formData.append('message', fullPrompt);
-      formData.append('mood', currentMood);
-      formData.append('userName', currentUser?.name || '');
-      formData.append('history', JSON.stringify([]));
-      const response = await fetch('/chat', { method: 'POST', body: formData });
-      const data     = await readChatResponse(response);
-      showBackendModel(data.model);
-      hideRipple();
-      if (data.reflection) {
-        const cleanReflection = stripPlayerTagsJson(data.reflection);
-        const reflectionTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        appendLakeWave(cleanReflection, reflectionTime, true);
-        chatHistory.push({ role: 'assistant', content: cleanReflection, time: reflectionTime });
-        await saveSession();
-      } else {
-        appendLakeWave('🌊 The Lake is still reading the water — give it a moment and try again.', timeStr, true);
-      }
-    } catch(err) {
-      hideRipple();
-      appendLakeWave(`🌊 The current hit a snag: ${err.message}`, timeStr, true);
-      console.error('Lake error:', err);
-    }
-  })();
+  return sendWave({ visibleText: visibleMessage, requestText: fullPrompt, reuseAttachments: false });
 }
 
 // ============================================
@@ -2652,6 +2645,26 @@ function downloadSnapshot(message) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+async function exportFullBackup() {
+  try {
+    await sessionLoadPromise;
+    await saveSession();
+    const current = { id: currentSessionId, name: allSessions.find(session => session.id === currentSessionId)?.name || getSessionName(), history: chatHistory, mood: currentMood };
+    const backup = LakeFullBackup.build({
+      user: currentUser, sessions: allSessions, current, crew: crewMembers, suggestedCrew,
+      profilePic: currentProfilePic,
+      settings: { mood: currentMood, defaultPromptBatch: localStorage.getItem('defaultBatch'), requestInProgress: waveInFlight }
+    });
+    const url = URL.createObjectURL(new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json;charset=utf-8' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `lake-full-backup-${backup.created_at.slice(0, 10)}.json`;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    showToast('Full backup downloaded. Keep it private; it includes your chats and stored files.');
+  } catch (error) { showToast('Backup could not be exported: ' + error.message); }
+}
+
 function downloadLatestSnapshot() {
   const message = [...chatHistory].reverse().find(item => item.role === 'assistant' && item.snapshot);
   if (message) downloadSnapshot(message);
@@ -2720,6 +2733,29 @@ async function readChatResponse(response) {
 }
 
 let waveInFlight = false;
+let activeWave = null;
+
+function isRequestVisible(origin) {
+  return !origin.discarded && origin.id === currentSessionId && origin.key === storageKey('sessions');
+}
+
+function showReplyNotice(origin, reply) {
+  if (origin.discarded || origin.key !== storageKey('sessions')) return;
+  const container = document.getElementById('wavesContainer');
+  const notice = document.createElement('button');
+  notice.className = 'reply-notice';
+  const name = allSessions.find(session => session.id === origin.id)?.name || getSessionName(origin.history);
+  notice.setAttribute('aria-label', 'Open conversation: ' + name);
+  const title = document.createElement('span');
+  title.textContent = '🌊 Reply ready · ' + name;
+  const preview = document.createElement('span');
+  preview.className = 'reply-preview';
+  preview.textContent = reply.snapshot ? 'AI handoff ready' : reply.content.replace(/[*#]/g, '').slice(0, 110);
+  notice.append(title, preview);
+  notice.onclick = () => loadTide(origin.id);
+  container.appendChild(notice);
+  container.scrollTop = container.scrollHeight;
+}
 
 async function sendWave(options = {}) {
   if (waveInFlight) return;
@@ -2728,19 +2764,26 @@ async function sendWave(options = {}) {
   const visibleText = options.visibleText ?? text;
   if (!text && selectedFiles.length === 0) return;
   waveInFlight = true;
+  let origin;
 
   try {
   await sessionLoadPromise;
   const welcome = document.getElementById('welcomeScreen');
   if (welcome) welcome.remove();
   if (!currentSessionId) currentSessionId = 'session_' + Date.now();
+  origin = {
+    id: currentSessionId, history: chatHistory, key: storageKey('sessions'), mood: currentMood,
+    userName: currentUser?.name || '', userAliases: currentUser?.aliases || '',
+    crew: JSON.stringify(crewMembers.map(({ name, nickname, codename, context, observations }) => ({ name, nickname, codename, context, observations: (observations || []).slice(-10) })))
+  };
+  activeWave = origin;
 
   const timeStr         = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const newFiles = options.snapshot ? [] : [...selectedFiles];
   const filesToSend = [];
   const seenSources = new Set();
   if (options.reuseAttachments !== false) {
-    for (const attachment of chatHistory.filter(m => m.role === 'user').flatMap(m => m.attachments || [])) {
+    for (const attachment of origin.history.filter(m => m.role === 'user').flatMap(m => m.attachments || [])) {
       if (!attachment.data) continue;
       const key = attachment.name + attachment.data;
       if (seenSources.has(key)) continue;
@@ -2766,34 +2809,35 @@ async function sendWave(options = {}) {
     } catch(e) { console.warn('Could not convert file:', file.name, e); }
   }
 
-  appendUserWave(visibleText || '📎 Files attached', timeStr, true, base64Attachments);
-  chatHistory.push({ role: 'user', content: visibleText + attachmentLabel, time: timeStr, attachments: base64Attachments,
+  if (isRequestVisible(origin)) appendUserWave(visibleText || '📎 Files attached', timeStr, true, base64Attachments);
+  origin.history.push({ role: 'user', content: visibleText + attachmentLabel, time: timeStr, attachments: base64Attachments,
     ...(options.action ? { action: options.action } : {}) });
 
-  if (!options.snapshot) {
+  if (!options.snapshot && isRequestVisible(origin)) {
     input.value        = '';
     input.style.height = 'auto';
     selectedFiles      = [];
   }
   renderFilePreviews();
-  showRipple();
-  await saveSession();
+  if (isRequestVisible(origin)) showRipple();
+  await saveSession(origin);
+  if (origin.discarded) return;
 
   try {
     const formData = new FormData();
     formData.append('message', text);
     if (options.action) formData.append('action', options.action);
-    formData.append('mood', currentMood);
-    formData.append('userName', currentUser?.name || '');
-    formData.append('userAliases', currentUser?.aliases || '');
-    formData.append('crew', JSON.stringify(crewMembers.map(({ name, nickname, codename, context, observations }) => ({ name, nickname, codename, context, observations: (observations || []).slice(-10) }))));
-    const historyToSend = chatHistory.slice(-11, -1).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.content }));
+    formData.append('mood', origin.mood);
+    formData.append('userName', origin.userName);
+    formData.append('userAliases', origin.userAliases);
+    formData.append('crew', origin.crew);
+    const historyToSend = origin.history.slice(-11, -1).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.content }));
     formData.append('history', JSON.stringify(historyToSend));
     filesToSend.forEach(file => formData.append('file', file));
 
     const response = await fetch('/chat', { method: 'POST', body: formData });
     const data     = await readChatResponse(response);
-    showBackendModel(data.model);
+    if (origin.key === storageKey('sessions')) showBackendModel(data.model);
     hideRipple();
 
     if (data.reflection) {
@@ -2801,25 +2845,29 @@ async function sendWave(options = {}) {
       const reflectionTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       const reply = { role: 'assistant', content: cleanReflection, time: reflectionTime,
         ...(options.snapshot ? { snapshot: options.snapshot } : {}) };
-      appendLakeWave(cleanReflection, reflectionTime, true, reply.snapshot);
-      chatHistory.push(reply);
-      if (!options.snapshot) updateCurrents(text);
-      await saveSession();
-      try { if (!options.snapshot) processNamesFromResponse(data.reflection); }
+      origin.history.push(reply);
+      await saveSession(origin);
+      if (isRequestVisible(origin)) {
+        appendLakeWave(cleanReflection, reflectionTime, true, reply.snapshot);
+        if (!options.snapshot) updateCurrents(text);
+      } else showReplyNotice(origin, reply);
+      try { if (!options.snapshot && !origin.discarded && origin.key === storageKey('sessions')) processNamesFromResponse(data.reflection, origin); }
       catch { showToast('Reply received. Crew suggestions could not be saved on this device.'); }
     } else {
-      appendLakeWave('🌊 The Lake is still reading the water — sometimes deep currents take a moment.', timeStr, true);
+      if (isRequestVisible(origin)) appendLakeWave('🌊 The Lake is still reading the water — sometimes deep currents take a moment.', timeStr, true);
     }
   } catch(err) {
     hideRipple();
-    appendLakeWave(`🌊 The current hit a snag: ${err.message}`, timeStr, true);
+    if (isRequestVisible(origin)) appendLakeWave(`🌊 The current hit a snag: ${err.message}`, timeStr, true);
+    else if (!origin.discarded && origin.key === storageKey('sessions')) showToast('A reply failed in ' + getSessionName(origin.history) + '. Open that chat to retry.');
     console.error('Lake error:', err);
   }
   } catch(err) {
     hideRipple();
-    appendLakeWave(`Could not prepare the attachment: ${err.message}`, '', true);
+    if (!origin || isRequestVisible(origin)) appendLakeWave(`Could not prepare the attachment: ${err.message}`, '', true);
   } finally {
     waveInFlight = false;
+    activeWave = null;
   }
 }
 

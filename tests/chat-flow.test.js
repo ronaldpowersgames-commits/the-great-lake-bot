@@ -18,6 +18,7 @@ function browserContext() {
     } },
     saveSuggestedCrew() {}, renderCrew() {}, hideRipple() {}, showRipple() {},
     renderFilePreviews() {}, saveSession() {}, updateCurrents() {}, showToast() {},
+    storageKey(key) { return 'lake_test_' + key; },
     showBackendModel(model) { context.document.getElementById('backendModelInfo').textContent = `\ud83e\udd16 Model: ${model}`; },
     appendUserWave(text) { context.visibleMessages.push(text); },
     appendLakeWave(text) { context.replies.push(text); },
@@ -61,6 +62,13 @@ test('Tag Players shows a short message and resends the latest interaction attac
 test('machine player data is removed from visible replies', () => {
   const context = browserContext();
   assert.equal(vm.runInContext('stripPlayerTagsJson(`Sam needs confirmation.\nPLAYER_TAGS_JSON {"players":[]} END_PLAYER_TAGS_JSON`)', context), 'Sam needs confirmation.');
+});
+
+test('late Crew suggestions retain the originating conversation and file evidence', () => {
+  const context = browserContext();
+  vm.runInContext('currentSessionId = "elsewhere"; processNamesFromResponse(`PLAYER_TAGS_JSON {"players":[{"name":"Jo","confidence":"high","evidence":"Named in source"}]} END_PLAYER_TAGS_JSON`, {id:"original",history:[{attachments:[{name:"original.txt"}]}]});',context);
+  assert.equal(vm.runInContext('suggestedCrew[0].observation.sessionId',context),'original');
+  assert.equal(vm.runInContext('suggestedCrew[0].observation.sources[0]',context),'original.txt');
 });
 
 test('Enter makes a newline; Ctrl+Enter sends unless composing or repeating', () => {
@@ -146,9 +154,49 @@ test('modes have distinct conversational behaviors and Stormy keeps the edge off
   assert.match(calm, /room for the user to find their own words/);
   assert.match(analytical, /what evidence would distinguish them/);
   assert.match(stormy, /dry wit/);
+  assert.match(stormy, /confident, mischievous openers/);
   assert.match(stormy, /never the person's worth/);
   assert.match(stormy, /Dial down the wit for grief, distress/);
   assert.equal(context.getMoodContext('unknown'), calm);
+});
+
+test('full backups preserve original files and complete history without exporting login secrets', () => {
+  const { build } = require('../public/full-backup');
+  const content = 'x'.repeat(350000) + 'END_OF_HISTORY';
+  const backup = build({ user: {name:'Ron',email:'ron@example.test',password:'SECRET',token:'SECRET'},
+    sessions:[{id:'old',history:[{role:'user',content,attachments:[{name:'chat.png',data:'ORIGINAL_BASE64'}]}]}],
+    current:{id:'current',history:[{role:'assistant',content:'Current reply'}]},
+    crew:[{name:'Jo',nickname:'Jojo'}], suggestedCrew:[],settings:{mood:'stormy'} });
+  assert.equal(backup.coverage.message_count, 2);
+  assert.equal(backup.coverage.truncated, false);
+  assert.equal(backup.data.conversations[0].history[0].content, content);
+  assert.equal(backup.data.conversations[0].history[0].attachments[0].data, 'ORIGINAL_BASE64');
+  assert.match(backup.transfer_prompt, /another|reconstruct continuity/);
+  assert.doesNotMatch(JSON.stringify(backup), /SECRET/);
+});
+
+test('a late reply remains attached to its original conversation after navigation', async () => {
+  const context = browserContext();
+  let release;
+  context.fetch = async (_url, options) => {
+    context.sent = options.body;
+    await new Promise(resolve => { release = resolve; });
+    return {ok:true,json:async () => ({reflection:'Original chat reply'})};
+  };
+  context.notices = [];
+  context.showReplyNotice = (origin, reply) => context.notices.push({id:origin.id,reply});
+  context.document.getElementById('lakeInput').value = 'Original question';
+  const pending = vm.runInContext('sendWave()', context);
+  while (!release) await new Promise(resolve => setImmediate(resolve));
+  const originalId = vm.runInContext('currentSessionId', context);
+  vm.runInContext('currentSessionId = null; chatHistory = []; currentMood = "analytical";', context);
+  release();
+  await pending;
+  assert.equal(vm.runInContext('chatHistory.length', context), 0);
+  assert.equal(context.replies.length, 0);
+  assert.equal(context.notices[0].id, originalId);
+  assert.equal(context.notices[0].reply.content, 'Original chat reply');
+  assert.equal(context.sent.get('mood'), 'calm');
 });
 
 function routeContext(reply = () => 'Test reflection') {
