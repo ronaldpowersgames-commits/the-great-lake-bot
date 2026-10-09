@@ -22,8 +22,10 @@ priority over interpreting an uploaded conversation.
 Explicit brevity/exit cues override coaching. Small side questions get a brief
 answer without replacing the active thread. Casual reactions can be emoji-only.
 Modes use the same configured model, upload logic and safety boundaries; only
-tone/pacing guidance and visual accents change: Calm is gentle and unhurried,
-Analytical emphasizes evidence and trade-offs, and Stormy is candid and concise.
+tone/pacing guidance and visual accents change: Calm is spacious and grounding,
+Analytical is an evidence-and-trade-off thought workshop, and Stormy is punchy,
+witty and edgier, challenging grounded contradictions without attacking people.
+Stormy softens its humor around distress; it is not automatic confrontation.
 No mode provides extra memory, tools or certainty.
 
 Enter inserts a newline. Ctrl+Enter sends on desktop; mobile uses the send button.

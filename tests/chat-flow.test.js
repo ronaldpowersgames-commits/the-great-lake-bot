@@ -138,6 +138,19 @@ test('all moods prioritize brevity and natural reactions without changing the mo
   }
 });
 
+test('modes have distinct conversational behaviors and Stormy keeps the edge off personal attacks', () => {
+  const { context } = routeContext();
+  const calm = context.getMoodContext('calm');
+  const analytical = context.getMoodContext('analytical');
+  const stormy = context.getMoodContext('stormy');
+  assert.match(calm, /room for the user to find their own words/);
+  assert.match(analytical, /what evidence would distinguish them/);
+  assert.match(stormy, /dry wit/);
+  assert.match(stormy, /never the person's worth/);
+  assert.match(stormy, /Dial down the wit for grief, distress/);
+  assert.equal(context.getMoodContext('unknown'), calm);
+});
+
 function routeContext(reply = () => 'Test reflection') {
   const requests = [];
   let handler;
