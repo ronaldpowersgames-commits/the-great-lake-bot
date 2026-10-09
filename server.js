@@ -81,6 +81,13 @@ app.use(globalLimiter);
 // ============================================
 
 // ✅ Serve static files FIRST
+// Legacy share links must never run the account app's startup.
+app.get('/', (req, res, next) => {
+  if (typeof req.query.share === 'string') {
+    return res.redirect(303, '/shared.html?id=' + encodeURIComponent(req.query.share));
+  }
+  next();
+});
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ✅ Safeguard for .js files (prevents HTML fallback)

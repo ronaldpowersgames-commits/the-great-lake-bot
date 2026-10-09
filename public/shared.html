@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>Shared Conversation | The Great Lake</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #091622; color: #e5eef6; font: 15px/1.5 system-ui, sans-serif; }
+    header { border-bottom: 1px solid #294154; padding: 16px 20px; }
+    header div, main { max-width: 850px; margin: auto; }
+    header strong { color: #63bafa; font-size: 20px; }
+    header span { display: block; color: #a3b5c4; font-size: 12px; }
+    main { padding: 20px 16px 40px; }
+    h1 { font-size: 20px; overflow-wrap: anywhere; margin: 0 0 20px; }
+    article { max-width: 92%; margin: 14px 0; }
+    article.user { margin-left: auto; }
+    .sender { font-size: 12px; color: #a3b5c4; margin-bottom: 4px; }
+    .user .sender { text-align: right; }
+    .bubble { padding: 10px 14px; border: 1px solid #294154; border-radius: 8px; background: #142a40; overflow-wrap: anywhere; }
+    .user .bubble { background: #143932; border-color: #315d54; }
+    .bubble p { margin: 0 0 8px; white-space: pre-wrap; }
+    .bubble p:last-child { margin-bottom: 0; }
+    .bubble img { display: block; max-width: 100%; max-height: 600px; height: auto; margin-top: 8px; }
+    .attachment, time { color: #a3b5c4; font-size: 12px; }
+    time { display: block; margin-top: 3px; }
+    a { color: #7fc7fa; }
+  </style>
+</head>
+<body>
+  <header><div><strong>The Great Lake</strong><span>Shared conversation · Read only</span></div></header>
+  <main><h1 id="title">Loading conversation...</h1><div id="messages" aria-live="polite"></div></main>
+  <script src="/shared-view.js"></script>
+</body>
+</html>

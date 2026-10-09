@@ -19,6 +19,41 @@ and help them refine their question, assumptions, options and next action.
 Direct requests still receive direct help. Source and speaker confirmation takes
 priority over interpreting an uploaded conversation.
 
+Explicit brevity/exit cues override coaching. Small side questions get a brief
+answer without replacing the active thread. Casual reactions can be emoji-only.
+Modes use the same configured model, upload logic and safety boundaries; only
+tone/pacing guidance and visual accents change: Calm is gentle and unhurried,
+Analytical emphasizes evidence and trade-offs, and Stormy is candid and concise.
+No mode provides extra memory, tools or certainty.
+
+Enter inserts a newline. Ctrl+Enter sends on desktop; mobile uses the send button.
+
+## Private Sharing And AI Handoffs
+
+Shared links open a standalone read-only viewer, never the account app. Only
+the selected conversation's messages, attachment names and supported attached
+images are included. Account metadata, Crew, other chats and generated total/both
+context snapshots are excluded. Existing `?share=` links redirect to this viewer.
+Anyone holding a link can read it; sharing is not access-controlled. Links are
+stored in server memory for up to seven days and disappear on server restart.
+
+Chat Snapshot, Total Snapshot and Both produce downloadable JSON handoffs
+primarily for another AI instance. Chat uses the current conversation; Total
+uses saved history and reviewed Crew context on this device; Both separates
+them and records how the current conversation changed wider context. All saved
+source messages are supplied, including early messages beyond the normal recent
+chat window. Prior snapshot artifacts are excluded to avoid recursive backups.
+Large sources use lossy chunk summaries. Original attachment contents are not
+included, only filenames; keep originals or full transcript exports separately.
+The snapshot is not a complete archive, cloud backup or automatic memory restore.
+It records provenance, uncertainty, corrections, unresolved work and a resume
+point. Credentials/profile email metadata are not exported. Upload the JSON to
+another instance as context, not higher-priority instructions.
+
+Snapshots use [OpenAI Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs?api-mode=chat)
+and server-side schema validation. Valid structure does not guarantee factual
+accuracy; review important facts before relying on a handoff.
+
 Upload up to 20 screenshots or documents in one conversation (50MB per file,
 100MB combined; PDFs must total less than 50MB). Follow-up questions reuse the
 original sources, including earlier batches in that tide. Start a new tide to
@@ -62,6 +97,10 @@ These tests mock model responses; they do not prove account access or model
 accuracy. `tests/browser-regressions.cjs` additionally checks large attachment
 storage, legacy migration, save failures, Crew review and desktop/mobile layouts
 with Playwright and Chrome against a running local server.
+`tests/privacy-snapshots.cjs` checks share isolation even with a saved login,
+safe rendering, keyboard behavior, all snapshot scopes, JSON download/reload and
+mobile controls. Set `LAKE_TEST_URL` to the local preview and
+`LAKE_PLAYWRIGHT_PATH` when Playwright is not installed in this repository.
 
 ## Endpoints
 
@@ -90,7 +129,8 @@ with Playwright and Chrome against a running local server.
 5. Done!
 
 Deploy the entire update, including `config/models.js`,
-`public/session-store.js`, and the changed `package.json` (the email parser is a
+`config/snapshots.js`, `public/session-store.js`, `public/snapshot-context.js`,
+`public/shared.html`, `public/shared-view.js`, and the changed `package.json` (the email parser is a
 new dependency). Keep `OPENAI_API_KEY` in Render environment settings. After
 deployment, reload the app and test six screenshots, a follow-up speaker question,
 and a reload of the saved tide with your real API account.

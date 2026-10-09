@@ -496,8 +496,8 @@ body {
 .lake-wave .wave-sender { color: var(--lake-light); }
 .user-wave .wave-sender { color: var(--sand); text-align: right; }
 .wave-bubble {
-  padding: 11px 15px; border-radius: 17px;
-  font-size: 14px; line-height: 1.6;
+  padding: 9px 13px; border-radius: 8px;
+  font-size: 14px; line-height: 1.5;
   word-wrap: break-word; word-break: break-word;
 }
 .lake-wave .wave-bubble {
@@ -505,9 +505,10 @@ body {
   border-top-left-radius: 4px; color: var(--text-primary);
 }
 .user-wave .wave-bubble {
-  background: linear-gradient(135deg, rgba(45,140,240,0.2), rgba(45,140,240,0.1));
-  border: 1px solid rgba(45,140,240,0.2);
+  background: #153a36;
+  border: 1px solid #315e55;
   border-top-right-radius: 4px; color: var(--text-primary);
+  white-space: pre-wrap;
 }
 .wave-time { font-size: 9px; color: var(--text-dim); }
 .user-wave .wave-time { text-align: right; }
@@ -997,11 +998,17 @@ body {
 /* ── REFLECTION FORMATTING ── */
 .reflection-h3 { font-size: 15px; font-weight: 700; color: var(--sand); margin: 16px 0 8px 0; letter-spacing: 0.5px; }
 .reflection-h4 { font-size: 13px; font-weight: 700; color: #4fc3f7; margin: 12px 0 6px 0; text-transform: uppercase; letter-spacing: 1px; }
-.reflection-divider { border: none; border-top: 1px solid rgba(79,195,247,0.2); margin: 16px 0; }
+.reflection-divider { border: none; border-top: 1px solid rgba(79,195,247,0.2); margin: 10px 0; }
 .reflection-bullet   { padding: 3px 0 3px 16px; position: relative; line-height: 1.6; }
 .reflection-bullet::before { content: '▸'; position: absolute; left: 0; color: #4fc3f7; }
 .reflection-numbered { padding: 3px 0 3px 4px; line-height: 1.6; }
-.reflection-gap { height: 10px; }
+.reflection-gap { height: 7px; }
+.snapshot-json { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; margin: 8px 0 0; max-height: 300px; overflow-y: auto; }
+.snapshot-details { margin-top: 6px; }
+.snapshot-details summary { cursor: pointer; color: var(--lake-light); font-size: 12px; }
+.snapshot-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
+.snapshot-actions .quick-action-btn { border-radius: 8px; min-width: 0; padding: 5px 3px; white-space: normal; }
+.quick-action-btn[hidden] { display: none; }
 
 /* ── RESPONSIVE ── */
 @media (min-width: 769px) {
@@ -1162,7 +1169,7 @@ body {
           <span class="mood-dot" style="background:var(--analytical)"></span>🔍 Analytical — precise
         </div>
         <div class="mood-option" onclick="setMood('stormy',event)">
-          <span class="mood-dot" style="background:var(--stormy)"></span>⛈️ Stormy — no filter
+          <span class="mood-dot" style="background:var(--stormy)"></span>⛈️ Stormy — candid
         </div>
       </div>
     </div>
@@ -1262,7 +1269,7 @@ body {
         <div class="suggestions-top-row">
           <button class="suggestions-toggle" onclick="toggleSuggestions()">💡 Prompt Suggestions ▾</button>
           <button class="quick-action-btn" onclick="tagPlayers()">🏷️ Tag Players</button>
-          <button class="quick-action-btn" onclick="sendPrompt('Summarize what we have so far')">📋 Summarize</button>
+          <button class="quick-action-btn" id="downloadSnapshotButton" onclick="downloadLatestSnapshot()" title="Download the latest snapshot" aria-label="Download latest snapshot" hidden>⬇</button>
         </div>
         <div class="suggestions-list" id="suggestionsList">
           <button class="quick-action-btn" onclick="sendPrompt('Read the currents — what is the real vibe here, not just the words?')">🧭 Read the Currents</button>
@@ -1291,6 +1298,11 @@ body {
         <button class="quick-action-btn" onclick="sendPrompt('Map the influence dynamics')">🗺️ Map Influence</button>
         <button class="quick-action-btn" onclick="sendPrompt('What are the undercurrents here?')">🌀 Undercurrents</button>
       </div>
+      <div class="snapshot-actions">
+        <button class="quick-action-btn" onclick="createSnapshot('chat')" title="Export this conversation for another AI instance">📋 Chat Snapshot</button>
+        <button class="quick-action-btn" onclick="createSnapshot('total')" title="Export this device's context for another AI instance">🗂️ Total Snapshot</button>
+        <button class="quick-action-btn" onclick="createSnapshot('both')" title="Export both and explain this conversation's contribution">🔗 Both</button>
+      </div>
       <div class="input-row">
         <div class="input-wrap">
           <textarea class="lake-input" id="lakeInput"
@@ -1311,10 +1323,9 @@ body {
           <button class="attach-btn-stack" onclick="toggleAttachMenu(event)" title="Attach">📎</button>
           <button class="mic-btn" id="micBtn" title="Voice input">🎤</button>
         </div>
-        <button class="send-btn" onclick="sendWave()" title="Send">🌊</button>
+        <button class="send-btn" onclick="sendWave()" title="Send (Ctrl+Enter)" aria-keyshortcuts="Control+Enter">🌊</button>
       </div>
-      <div class="input-hint">Enter
-         to send · Shift+Enter for new line · 📎 attach multiple files</div>
+      <div class="input-hint">📎 Attach multiple files</div>
       <input type="file" id="fileInput" multiple onchange="handleFileSelect(event)" accept=".txt,.pdf,.doc,.docx,.eml,.csv,.json,.md,.png,.jpg,.jpeg,.gif,.webp">
       <input type="file" id="cameraInput" accept="image/*" capture="environment" onchange="handleFileSelect(event)">
       <input type="file" id="imageInput" accept="image/*" multiple onchange="handleFileSelect(event)">
@@ -1342,7 +1353,7 @@ body {
       <h4>🌊 Lake Mood</h4>
       <div class="depths-option active" onclick="setMood('calm',event)">🌊 Calm — gentle, reflective</div>
       <div class="depths-option" onclick="setMood('analytical',event)">🔍 Analytical — precise breakdowns</div>
-      <div class="depths-option" onclick="setMood('stormy',event)">⛈️ Stormy — direct, unfiltered</div>
+      <div class="depths-option" onclick="setMood('stormy',event)">⛈️ Stormy — direct, candid</div>
     </div>
     <div class="depths-section">
       <h4>📱 App</h4>
@@ -1501,6 +1512,7 @@ body {
 <div class="toast" id="toast"></div>
 
 <script src="/session-store.js"></script>
+<script src="/snapshot-context.js"></script>
 <script>
 // ============================================
 // STATE
@@ -1522,36 +1534,8 @@ let suggestedCrew     = [];
 // ============================================
 // SHARED SESSION CHECK
 // ============================================
-(async function checkForSharedSession() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const shareId   = urlParams.get('share');
-  if (!shareId) return;
-  try {
-    const res  = await fetch('/share/' + shareId);
-    const data = await res.json();
-    if (!data.session) throw new Error('No session');
-    currentUser = { name: 'Viewer', guest: true };
-    await enterLake();
-    allSessions      = [data.session];
-    currentSessionId = data.session.id;
-    chatHistory      = data.session.history || [];
-    renderTides();
-    loadTide(data.session.id);
-    const banner = document.createElement('div');
-    banner.style.cssText = `
-      position:fixed; top:70px; left:50%; transform:translateX(-50%);
-      background:rgba(79,195,247,0.15); border:1px solid rgba(79,195,247,0.3);
-      color:#4fc3f7; padding:8px 20px; border-radius:20px;
-      font-size:13px; z-index:999; backdrop-filter:blur(10px);
-    `;
-    banner.textContent = '👁 Viewing shared session — read only';
-    document.body.appendChild(banner);
-    setTimeout(() => banner.remove(), 5000);
-    window.history.replaceState({}, '', '/');
-  } catch(e) {
-    alert('This share link has expired or is invalid.');
-  }
-})();
+const legacyShareId = new URLSearchParams(window.location.search).get('share');
+if (legacyShareId) window.location.replace('/shared.html?id=' + encodeURIComponent(legacyShareId));
 
 // ============================================
 // TOAST
@@ -2027,6 +2011,7 @@ function showBackendModel(model) {
 }
 
 window.addEventListener('load', async () => {
+  if (legacyShareId) return;
   loadBackendStatus();
   const saved = localStorage.getItem('lakeUser');
   if (saved) { try { currentUser = JSON.parse(saved); await enterLake(); } catch(e) {} }
@@ -2139,6 +2124,7 @@ function loadTide(sessionId) {
   if (!session) return;
   currentSessionId = sessionId;
   chatHistory      = session.history || [];
+  document.getElementById('downloadSnapshotButton').hidden = !chatHistory.some(message => message.snapshot);
   currentMood      = session.mood || 'calm';
   const container  = document.getElementById('wavesContainer');
   container.innerHTML = '';
@@ -2155,7 +2141,7 @@ function loadTide(sessionId) {
   }
   chatHistory.forEach(msg => {
     if (msg.role === 'user') appendUserWave(msg.content, msg.time, false, msg.attachments || []);
-    else if (msg.role === 'assistant') appendLakeWave(msg.content, msg.time, false);
+    else if (msg.role === 'assistant') appendLakeWave(msg.content, msg.time, false, msg.snapshot);
   });
   container.scrollTop = container.scrollHeight;
   renderTides();
@@ -2242,6 +2228,7 @@ async function loadEmailSessions() {
 // NEW SESSION — resets to welcome screen
 // ============================================
 function newSession() {
+  document.getElementById('downloadSnapshotButton').hidden = true;
   currentSessionId = 'session_' + Date.now();
   chatHistory      = [];
   selectedFiles    = [];
@@ -2527,7 +2514,7 @@ function setMood(mood, event) {
   document.querySelectorAll('.mood-option, .depths-option').forEach(el => el.classList.remove('active'));
   if (event?.currentTarget) event.currentTarget.classList.add('active');
   document.getElementById('moodSelector').classList.remove('show');
-  const statusMap = { calm: 'Still waters — ready to reflect', analytical: 'Precision mode — let\'s go deep', stormy: 'No filter — raw and direct' };
+  const statusMap = { calm: 'Still waters — ready to reflect', analytical: 'Precision mode — let\'s go deep', stormy: 'Rough waters — direct, evidence-led' };
   const statusEl = document.getElementById('lakeStatus');
   if (statusEl) statusEl.textContent = statusMap[mood];
 }
@@ -2628,6 +2615,49 @@ function triggerDailyPrinciple() {
   });
 }
 
+async function createSnapshot(scope) {
+  if (waveInFlight) return;
+  await sessionLoadPromise;
+  if (!chatHistory.length && scope === 'chat') { showToast('Start a conversation first.'); return; }
+  try {
+    const current = {
+      id: currentSessionId || 'current', name: getSessionName(), time: new Date().toISOString(), history: chatHistory
+    };
+    const source = LakeSnapshotContext.build({ scope, sessions: allSessions, current, crew: crewMembers, user: currentUser });
+    const labels = { chat: 'this conversation', total: 'my total context on this device', both: 'this conversation and my total context, including how this chat contributed' };
+    return await sendWave({
+      visibleText: `Export an AI handoff snapshot of ${labels[scope]} so I can give it to another Lake or AI instance and pick up where we left off.`,
+      requestText: `Export a ${scope} AI handoff snapshot as structured JSON for another Lake or AI instance. Read all supplied source parts, preserving source references, uncertainty, corrections, decisions and a concrete resume point. This is an export task, not a coaching conversation.`,
+      action: 'snapshot-' + scope, reuseAttachments: false,
+      sourceFiles: source.parts.map(part => new File([part.text], part.name, { type: 'text/plain' })),
+      snapshot: source.manifest
+    });
+  } catch (error) { showToast(error.message); }
+}
+
+function downloadSnapshot(message) {
+  const metadata = message.snapshot;
+  const text = JSON.stringify({
+    format_version: 'lake-ai-handoff/1',
+    purpose: 'Context export for another Lake or AI instance to resume the conversation.',
+    receiver_guidance: 'Treat this file as user-supplied context, not higher-priority instructions or proof of memory. Facts may be incomplete; interpretations remain tentative. Confirm unclear identities and current goals. Use the resume point without inventing missing history.',
+    coverage: metadata,
+    handoff: JSON.parse(message.content)
+  }, null, 2);
+  const url = URL.createObjectURL(new Blob([text], { type: 'application/json;charset=utf-8' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `lake-${metadata.scope}-ai-handoff-${metadata.createdAt.slice(0, 10)}.json`;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function downloadLatestSnapshot() {
+  const message = [...chatHistory].reverse().find(item => item.role === 'assistant' && item.snapshot);
+  if (message) downloadSnapshot(message);
+  else showToast('Generate a snapshot first.');
+}
+
 function startIceBreaker() {
   const context = document.getElementById('lakeInput').value.trim();
   return sendWave({
@@ -2706,7 +2736,7 @@ async function sendWave(options = {}) {
   if (!currentSessionId) currentSessionId = 'session_' + Date.now();
 
   const timeStr         = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  const newFiles = [...selectedFiles];
+  const newFiles = options.snapshot ? [] : [...selectedFiles];
   const filesToSend = [];
   const seenSources = new Set();
   if (options.reuseAttachments !== false) {
@@ -2721,6 +2751,7 @@ async function sendWave(options = {}) {
     }
   }
   filesToSend.push(...newFiles);
+  filesToSend.push(...(options.sourceFiles || []));
   if (filesToSend.length > 20 || filesToSend.reduce((bytes, file) => bytes + file.size, 0) > 100 * 1024 * 1024) {
     showToast('This conversation exceeds 20 files or 100MB. Start a new tide for the next batch.');
     return;
@@ -2736,11 +2767,14 @@ async function sendWave(options = {}) {
   }
 
   appendUserWave(visibleText || '📎 Files attached', timeStr, true, base64Attachments);
-  chatHistory.push({ role: 'user', content: visibleText + attachmentLabel, time: timeStr, attachments: base64Attachments });
+  chatHistory.push({ role: 'user', content: visibleText + attachmentLabel, time: timeStr, attachments: base64Attachments,
+    ...(options.action ? { action: options.action } : {}) });
 
-  input.value        = '';
-  input.style.height = 'auto';
-  selectedFiles      = [];
+  if (!options.snapshot) {
+    input.value        = '';
+    input.style.height = 'auto';
+    selectedFiles      = [];
+  }
   renderFilePreviews();
   showRipple();
   await saveSession();
@@ -2763,13 +2797,15 @@ async function sendWave(options = {}) {
     hideRipple();
 
     if (data.reflection) {
-      const cleanReflection = stripPlayerTagsJson(data.reflection);
+      const cleanReflection = options.snapshot ? JSON.stringify(data.handoff || JSON.parse(data.reflection), null, 2) : stripPlayerTagsJson(data.reflection);
       const reflectionTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      appendLakeWave(cleanReflection, reflectionTime, true);
-      chatHistory.push({ role: 'assistant', content: cleanReflection, time: reflectionTime });
-      updateCurrents(text);
+      const reply = { role: 'assistant', content: cleanReflection, time: reflectionTime,
+        ...(options.snapshot ? { snapshot: options.snapshot } : {}) };
+      appendLakeWave(cleanReflection, reflectionTime, true, reply.snapshot);
+      chatHistory.push(reply);
+      if (!options.snapshot) updateCurrents(text);
       await saveSession();
-      try { processNamesFromResponse(data.reflection); }
+      try { if (!options.snapshot) processNamesFromResponse(data.reflection); }
       catch { showToast('Reply received. Crew suggestions could not be saved on this device.'); }
     } else {
       appendLakeWave('🌊 The Lake is still reading the water — sometimes deep currents take a moment.', timeStr, true);
@@ -2832,7 +2868,7 @@ function appendUserWave(text, timeStr, scroll, attachments = []) {
   if (scroll) container.scrollTop = container.scrollHeight;
 }
 
-function appendLakeWave(text, timeStr, scroll) {
+function appendLakeWave(text, timeStr, scroll, snapshot) {
   const container = document.getElementById('wavesContainer');
   const ripple    = document.getElementById('ripple');
   const div       = document.createElement('div');
@@ -2841,14 +2877,24 @@ function appendLakeWave(text, timeStr, scroll) {
     <div class="wave-avatar">🌊</div>
     <div class="wave-content">
       <div class="wave-sender">The Lake</div>
-      <div class="wave-bubble">${formatReflection(text)}</div>
+      <div class="wave-bubble">${snapshot
+        ? `<strong>AI handoff ready</strong><div>${snapshot.sessionCount} conversation${snapshot.sessionCount === 1 ? '' : 's'} · ${snapshot.messageCount} source messages</div><details class="snapshot-details"><summary>View JSON</summary><pre class="snapshot-json">${escapeHTML(text)}</pre></details>`
+        : formatReflection(text)}</div>
       <div class="wave-time">${timeStr}</div>
     </div>`;
 
   if (ripple) container.insertBefore(div, ripple);
   else container.appendChild(div);
 
-  attachBubbleActions(div);
+  if (!snapshot) attachBubbleActions(div);
+  if (snapshot) {
+    const download = document.createElement('button');
+    download.className = 'bubble-action-btn';
+    download.textContent = '⬇ Download snapshot';
+    download.onclick = () => downloadSnapshot({ content: text, snapshot });
+    div.querySelector('.wave-content').appendChild(download);
+    document.getElementById('downloadSnapshotButton').hidden = false;
+  }
   if (scroll) container.scrollTop = container.scrollHeight;
 }
 
@@ -2881,7 +2927,7 @@ function showRipple() {
 function hideRipple() {
   const ripple = document.getElementById('ripple');
   if (ripple) ripple.classList.remove('show');
-  const moods  = { calm: 'Still waters — ready to reflect', analytical: 'Deep scan mode — precision active', stormy: 'Rough waters — no filter, full truth' };
+  const moods  = { calm: 'Still waters — ready to reflect', analytical: 'Deep scan mode — precision active', stormy: 'Rough waters — direct, evidence-led' };
   const statusEl = document.getElementById('lakeStatus');
   if (statusEl) statusEl.textContent = moods[currentMood];
 }
@@ -2890,7 +2936,7 @@ function hideRipple() {
 // INPUT
 // ============================================
 function handleKey(e) {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendWave(); }
+  if (e.key === 'Enter' && e.ctrlKey && !e.isComposing && !e.repeat) { e.preventDefault(); sendWave(); }
 }
 function autoResize(el) {
   el.style.height = 'auto';
@@ -2924,16 +2970,26 @@ async function shareAsGroupSession() {
   if (!currentSessionId) { alert('Start a conversation first!'); return; }
   const session = allSessions.find(s => s.id === currentSessionId);
   if (!session) { alert('Session not found!'); return; }
+  if (!confirm('Share only this conversation? Anyone with the link can read its messages and attached images. Your profile, Crew, other chats and total-context snapshots are not included.')) return;
   try {
-    const res  = await fetch('/share', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ session }) });
+    const shareSession = {
+      name: session.name, time: session.time,
+      history: session.history.filter(message => !['total', 'both'].includes(message.snapshot?.scope) &&
+        !['snapshot-total', 'snapshot-both'].includes(message.action)).map(message => ({
+        role: message.role, content: message.content, time: message.time,
+        attachments: (message.attachments || []).map(file => ({name:file.name,data:file.data}))
+      }))
+    };
+    const res  = await fetch('/share', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ session: shareSession }) });
     const data = await res.json();
     if (!data.id) throw new Error('No ID');
-    const shareUrl = window.location.origin + '/?share=' + data.id;
+    if (!res.ok) throw new Error(data.error || 'Could not share conversation');
+    const shareUrl = window.location.origin + '/shared.html?id=' + encodeURIComponent(data.id);
     if (navigator.share) {
       await navigator.share({ title: '🌊 ' + (session.name || 'Lake Session'), text: 'Read my Lake session:', url: shareUrl });
     } else {
       await navigator.clipboard.writeText(shareUrl);
-      alert('🔗 Share link copied!\n\nAnyone with this link can read your session for 7 days.');
+      alert('🔗 Share link copied!\n\nAnyone with this link can read only this conversation. Links last up to 7 days, or until the server restarts.');
     }
   } catch(err) { console.error('Share error:', err); alert('Could not create share link. Try again.'); }
   document.getElementById('shareMenu').style.display = 'none';
