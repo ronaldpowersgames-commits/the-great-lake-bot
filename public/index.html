@@ -1012,8 +1012,9 @@ body {
 .reply-notice { position: sticky; bottom: 8px; margin-top: auto; align-self: center; width: min(100%, 440px); flex-shrink: 0; padding: 10px 13px; border: 1px solid var(--lake-light); border-radius: 8px; background: var(--dock-bg); color: var(--text-primary); text-align: left; cursor: pointer; font: inherit; z-index: 2; }
 .reply-notice span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
 .reply-notice .reply-preview { margin-top: 3px; color: var(--text-secondary); }
-.snapshot-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
-.snapshot-actions .quick-action-btn { border-radius: 8px; min-width: 0; padding: 5px 3px; white-space: normal; }
+.snapshot-menu { position: fixed; z-index: 100; width: 220px; max-width: calc(100vw - 16px); padding: 5px; border: 1px solid var(--dock-border); border-radius: 8px; background: var(--dock-bg); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+.snapshot-menu button { display: block; width: 100%; min-height: 42px; padding: 9px 12px; border: 0; border-radius: 4px; background: transparent; color: var(--text-secondary); font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
+.snapshot-menu button:hover, .snapshot-menu button:focus-visible { background: rgba(45,140,240,0.12); color: var(--lake-light); }
 .quick-action-btn[hidden] { display: none; }
 
 /* ── RESPONSIVE ── */
@@ -1276,6 +1277,7 @@ body {
         <div class="suggestions-top-row">
           <button class="suggestions-toggle" onclick="toggleSuggestions()">💡 Prompt Suggestions ▾</button>
           <button class="quick-action-btn" onclick="tagPlayers()">🏷️ Tag Players</button>
+          <button class="quick-action-btn" id="snapshotMenuButton" onclick="toggleSnapshotMenu()" aria-haspopup="menu" aria-expanded="false" aria-controls="snapshotMenu">📋 Snapshot ▾</button>
           <button class="quick-action-btn" id="downloadSnapshotButton" onclick="downloadLatestSnapshot()" title="Download the latest snapshot" aria-label="Download latest snapshot" hidden>⬇</button>
         </div>
         <div class="suggestions-list" id="suggestionsList">
@@ -1305,10 +1307,10 @@ body {
         <button class="quick-action-btn" onclick="sendPrompt('Map the influence dynamics')">🗺️ Map Influence</button>
         <button class="quick-action-btn" onclick="sendPrompt('What are the undercurrents here?')">🌀 Undercurrents</button>
       </div>
-      <div class="snapshot-actions">
-        <button class="quick-action-btn" onclick="createSnapshot('chat')" title="Export this conversation for another AI instance">📋 Chat Snapshot</button>
-        <button class="quick-action-btn" onclick="createSnapshot('total')" title="Export this device's context for another AI instance">🗂️ Total Snapshot</button>
-        <button class="quick-action-btn" onclick="createSnapshot('both')" title="Export both and explain this conversation's contribution">🔗 Both</button>
+      <div class="snapshot-menu" id="snapshotMenu" role="menu" aria-label="Snapshot scope" hidden>
+        <button role="menuitem" onclick="createSnapshot('chat')" title="Export this conversation for another AI instance">📋 Chat Snapshot</button>
+        <button role="menuitem" onclick="createSnapshot('total')" title="Export this device's context for another AI instance">🗂️ Total Snapshot</button>
+        <button role="menuitem" onclick="createSnapshot('both')" title="Export both and explain this conversation's contribution">🔗 Both</button>
       </div>
       <div class="input-row">
         <div class="input-wrap">
@@ -2608,7 +2610,44 @@ function triggerDailyPrinciple() {
   });
 }
 
+function closeSnapshotMenu(restoreFocus = false) {
+  document.getElementById('snapshotMenu').hidden = true;
+  const button = document.getElementById('snapshotMenuButton');
+  button.setAttribute('aria-expanded', 'false');
+  if (restoreFocus) button.focus();
+}
+
+function toggleSnapshotMenu() {
+  const menu = document.getElementById('snapshotMenu');
+  if (!menu.hidden) { closeSnapshotMenu(true); return; }
+  menu.hidden = false;
+  const button = document.getElementById('snapshotMenuButton');
+  button.setAttribute('aria-expanded', 'true');
+  const anchor = button.getBoundingClientRect();
+  menu.style.left = Math.max(8, Math.min(anchor.right - menu.offsetWidth, window.innerWidth - menu.offsetWidth - 8)) + 'px';
+  menu.style.top = Math.max(8, anchor.top - menu.offsetHeight - 8) + 'px';
+  menu.querySelector('button').focus();
+}
+
+document.addEventListener('click', event => {
+  if (!event.target.closest('#snapshotMenu') && !event.target.closest('#snapshotMenuButton')) closeSnapshotMenu();
+});
+document.addEventListener('keydown', event => {
+  const menu = document.getElementById('snapshotMenu');
+  if (menu.hidden) return;
+  if (event.key === 'Escape') { event.preventDefault(); closeSnapshotMenu(true); }
+  if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+    event.preventDefault();
+    const items = [...menu.querySelectorAll('button')];
+    const index = items.indexOf(document.activeElement);
+    items[(index + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length].focus();
+  }
+  if (event.key === 'Tab') closeSnapshotMenu();
+});
+window.addEventListener('resize', () => closeSnapshotMenu());
+
 async function createSnapshot(scope) {
+  closeSnapshotMenu();
   if (waveInFlight) return;
   await sessionLoadPromise;
   if (!chatHistory.length && scope === 'chat') { showToast('Start a conversation first.'); return; }

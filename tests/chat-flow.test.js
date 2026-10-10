@@ -12,8 +12,9 @@ function browserContext() {
   const elements = new Map();
   const context = vm.createContext({
     console, FormData, File, Blob, Date, atob,
-    document: { getElementById(id) {
-      if (!elements.has(id)) elements.set(id, { value: '', style: {}, textContent: '', remove() {} });
+    window: {addEventListener() {}},
+    document: { addEventListener() {}, getElementById(id) {
+      if (!elements.has(id)) elements.set(id, { value: '', style: {}, textContent: '', remove() {}, setAttribute() {} });
       return elements.get(id);
     } },
     saveSuggestedCrew() {}, renderCrew() {}, hideRipple() {}, showRipple() {},

@@ -51,6 +51,13 @@ function handoff(scope) {
     await page.waitForFunction(() => allSessions.length === 2);
     await page.evaluate(() => loadTide('current'));
     const input = page.locator('#lakeInput');
+    await page.locator('#snapshotMenuButton').click();
+    const menuBounds = await page.locator('#snapshotMenu').boundingBox();
+    assert.ok(menuBounds.x >= 0 && menuBounds.x + menuBounds.width <= 1365 && menuBounds.y >= 0);
+    await page.keyboard.press('ArrowDown');
+    assert.match(await page.locator(':focus').innerText(),/Total Snapshot/);
+    await page.keyboard.press('Escape');
+    assert.equal(await page.locator('#snapshotMenuButton').evaluate(el => el === document.activeElement),true);
     await input.fill('Line one');
     await input.press('Enter');
     await input.type('Line two');
@@ -91,9 +98,24 @@ function handoff(scope) {
     assert.equal(await page.getByRole('button', {name:'Download snapshot',exact:false}).count() >= 3, true);
     assert.equal(await page.locator('.snapshot-details').count(), 3);
     await page.setViewportSize({width:390,height:844});
-    for (const button of await page.locator('.snapshot-actions button').all()) {
+    await page.locator('#snapshotMenuButton').click();
+    assert.equal(await page.locator('#snapshotMenuButton').getAttribute('aria-expanded'),'true');
+    for (const button of await page.locator('#snapshotMenu button').all()) {
       const bounds = await button.boundingBox();
       assert.ok(bounds.x >= 0 && bounds.x + bounds.width <= 390 && bounds.y >= 0 && bounds.y + bounds.height <= 844);
+    }
+    await page.screenshot({path:path.join(process.env.TEMP,'lake-snapshot-menu-mobile.png')});
+    await page.keyboard.press('Escape');
+    assert.equal(await page.locator('#snapshotMenu').isVisible(),false);
+    await page.locator('#snapshotMenuButton').click();
+    await input.click();
+    assert.equal(await page.locator('#snapshotMenu').isVisible(),false);
+    for (const [scope,label] of [['chat','Chat Snapshot'],['total','Total Snapshot'],['both','Both']]) {
+      await page.locator('#snapshotMenuButton').click();
+      await page.getByRole('menuitem',{name:label,exact:false}).click();
+      await page.waitForFunction(() => !waveInFlight);
+      assert.equal(requests.at(-1).action,'snapshot-' + scope);
+      assert.equal(await page.locator('#snapshotMenu').isVisible(),false);
     }
     const userColor = await page.locator('.user-wave .wave-bubble').first().evaluate(el => getComputedStyle(el).backgroundColor);
     const botColor = await page.locator('.lake-wave .wave-bubble').first().evaluate(el => getComputedStyle(el).backgroundColor);
