@@ -355,6 +355,7 @@ test('ordinary transcript analysis passes exact text or rejects oversized batche
 
 test('splitter preserves every character including CRLF, blank lines, BOM and emoji', () => {
   const {split} = require('../public/transcript-splitter');
+  assert.deepEqual(split('x'.repeat(60000)).map(part => part.text.length),[29000,29000,2000]);
   for (const original of ['\ufeffSam: hello\r\n\r\nJo: emoji 😀\r\n'.repeat(2000),'x'.repeat(999) + '😀' + 'y'.repeat(4000),'']) {
     const parts = split(original,1000);
     assert.equal(parts.map(part => part.text).join(''),original);

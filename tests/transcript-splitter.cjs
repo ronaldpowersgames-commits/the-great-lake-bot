@@ -13,7 +13,9 @@ const base = process.env.LAKE_TEST_URL || 'http://localhost:3011';
     await page.goto(base + '/transcript-splitter.html');
     const original = '\ufeff[00:00:01] Sam: exact text 😀\r\n\r\n'.repeat(1800) + '[01:02:15] Craig: Yeah.\r\n';
     await page.locator('#file').setInputFiles({name:'original.txt',mimeType:'text/plain',buffer:Buffer.from(original)});
-    await page.waitForFunction(() => document.getElementById('status').textContent === 'File loaded locally.');
+    await page.waitForFunction(() => document.getElementById('status').textContent === 'Loaded locally: original.txt');
+    assert.equal(await page.locator('#size').inputValue(),'29000');
+    assert.match(await page.locator('#limitNote').innerText(),/30,000 characters total per request/);
     await page.locator('#split').click();
     const texts = [];
     for (const button of await page.locator('#parts button').all()) {
@@ -24,7 +26,38 @@ const base = process.env.LAKE_TEST_URL || 'http://localhost:3011';
       texts.push(fs.readFileSync(await download.path(),'utf8'));
     }
     assert.equal(texts.join(''),original);
-    assert.ok(texts.every(text => text.length <= 12000));
+    assert.ok(texts.every(text => text.length <= 29000));
+    const indexEvent = page.waitForEvent('download');
+    await page.getByRole('button',{name:'Download Part Index'}).click();
+    const indexDownload = await indexEvent;
+    const index = JSON.parse(fs.readFileSync(await indexDownload.path(),'utf8'));
+    assert.equal(index.part_count,texts.length);
+    assert.equal(index.total_characters,original.length);
+    assert.equal(index.target_characters,29000);
+    const dropped = '\ufeff[01:00] Jo: dropped transcript\r\n\r\n'.repeat(1000) + 'END 😀\r\n';
+    const dropResult = await page.evaluate(text => {
+      const transfer = new DataTransfer();
+      transfer.items.add(new File([text],'dropped.txt',{type:'text/plain'}));
+      const input = document.getElementById('text');
+      input.dispatchEvent(new DragEvent('dragover',{bubbles:true,cancelable:true,dataTransfer:transfer}));
+      const highlighted = document.querySelector('main').classList.contains('file-drag-over');
+      const event = new DragEvent('drop',{bubbles:true,cancelable:true,dataTransfer:transfer});
+      input.dispatchEvent(event);
+      return {highlighted,prevented:event.defaultPrevented};
+    },dropped);
+    assert.deepEqual(dropResult,{highlighted:true,prevented:true});
+    await page.waitForFunction(() => document.getElementById('status').textContent === 'Loaded locally: dropped.txt');
+    assert.equal(await page.evaluate(() => document.querySelector('main').classList.contains('file-drag-over')),false);
+    await page.locator('#split').click();
+    const droppedParts = [];
+    for (const button of await page.locator('#parts button').all()) {
+      const event = page.waitForEvent('download');
+      await button.click();
+      const download = await event;
+      assert.match(download.suggestedFilename(),/^dropped-part-/);
+      droppedParts.push(fs.readFileSync(await download.path(),'utf8'));
+    }
+    assert.equal(droppedParts.join(''),dropped);
     await page.screenshot({path:path.join(process.env.TEMP,'lake-transcript-splitter-desktop.png')});
     await page.setViewportSize({width:390,height:844});
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),true);

@@ -72,9 +72,12 @@ contents are extracted; embedded email attachments must be uploaded separately.
 Ordinary document analysis sends original extracted text, never automatic
 summaries. The total selected text plus the message is limited to 30,000
 characters per request; oversized batches are explicitly rejected. Use Settings
-> Transcript Splitter to produce lossless TXT parts (12,000 characters by default,
+> Transcript Splitter to produce lossless TXT parts (29,000 characters by default,
 preferring line boundaries). Parts concatenate exactly to the original UTF-8
 source, including blank lines and CRLF. A manifest records offsets and part order.
+Drop a UTF-8 TXT file onto the splitter or choose it with the file picker. The
+default leaves about 1,000 characters for the question; select one part at a time.
+The optional "Part Index" download is the manifest, not additional source text.
 Use Sources beside Snapshot to include/exclude previously attached originals
 for the next question without deleting them. Not every stored part is in model
 context at once, and earlier assistant analysis is not exact transcript evidence.

@@ -526,7 +526,7 @@ Include a precise resume point: active topic, latest user intent, unresolved que
     let userMessageContent;
     let rawTextChars = message.length;
     if (!snapshotScope && rawTextChars > DIRECT_FILE_CHARS) {
-      return res.status(413).json({error:'Exact text too large',details:'Paste at most 30,000 characters per request, or use the Transcript Splitter to create 12,000-character TXT parts. Nothing was summarized or silently omitted.'});
+      return res.status(413).json({error:'Exact text too large',details:'Paste at most 30,000 characters per request, or use the Transcript Splitter to create 29,000-character TXT parts, leaving room for your question. Nothing was summarized or silently omitted.'});
     }
 
     if (uploadedFiles.length > 0) {
@@ -553,7 +553,7 @@ Include a precise resume point: active topic, latest user intent, unresolved que
           let fileContent = await extractFileText(file);
           rawTextChars += fileContent.length;
           if (!snapshotScope && rawTextChars > DIRECT_FILE_CHARS) {
-            return res.status(413).json({error: 'Exact source batch too large', details: 'Exact text is limited to 30,000 characters per request, including your message and selected text files. Use the Transcript Splitter (12,000-character parts), then use Sources to select the part(s) for this question. Nothing was summarized or silently omitted.'});
+            return res.status(413).json({error: 'Exact source batch too large', details: 'Exact text is limited to 30,000 characters per request, including your message and selected text files. Use the Transcript Splitter (29,000-character parts), then use Sources to select one part for this question. Nothing was summarized or silently omitted.'});
           }
           if (snapshotScope && fileContent.length > Math.floor(DIRECT_FILE_CHARS / uploadedFiles.length)) {
             fileContent = await summarizeLargeDocument(fileContent, file, message, snapshotScope ? 'handoff' : 'analysis');

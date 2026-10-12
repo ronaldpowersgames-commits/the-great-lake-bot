@@ -4,6 +4,7 @@ const status = document.getElementById('status');
 const list = document.getElementById('parts');
 let filename = 'transcript.txt';
 let manifest;
+let loadSequence = 0;
 function download(name, text, type) {
   const url = URL.createObjectURL(new Blob([text],{type}));
   const link = document.createElement('a');
@@ -13,23 +14,48 @@ function download(name, text, type) {
 function invalidate() {list.replaceChildren();manifest = null;document.getElementById('manifest').hidden = true;status.textContent = '';}
 textInput.addEventListener('input',invalidate);
 document.getElementById('size').addEventListener('input',invalidate);
-fileInput.addEventListener('change',async () => {
-  invalidate();
-  const file = fileInput.files[0];
+async function loadFile(file) {
   if (!file) return;
+  const sequence = ++loadSequence;
+  invalidate();
   const splitButton = document.getElementById('split');
+  if (!file.name.toLowerCase().endsWith('.txt')) {splitButton.disabled = false;status.textContent = 'Choose one UTF-8 TXT transcript.';return;}
   splitButton.disabled = true;
   try {
     // A strict decode avoids replacing invalid bytes with altered transcript text.
-    textInput.value = '';
     const text = new TextDecoder('utf-8',{fatal:true,ignoreBOM:true}).decode(await file.arrayBuffer());
+    if (sequence !== loadSequence) return;
     filename = file.name;
     textInput.value = text;
     // Textareas normalize newlines; retain the original file text separately.
     textInput.originalText = text;
-    status.textContent = 'File loaded locally.';
-  } catch {textInput.originalText = null;status.textContent = 'Could not read this file as UTF-8. Export a UTF-8 TXT transcript and try again.';}
-  finally {splitButton.disabled = false;}
+    status.textContent = `Loaded locally: ${file.name}`;
+  } catch {if(sequence === loadSequence) status.textContent = 'Could not read this file as UTF-8. Export a UTF-8 TXT transcript and try again.';}
+  finally {if(sequence === loadSequence) splitButton.disabled = false;}
+}
+fileInput.addEventListener('change',() => loadFile(fileInput.files[0]));
+const dropZone = document.querySelector('main');
+const isFileDrag = event => Array.from(event.dataTransfer?.types || []).includes('Files');
+document.addEventListener('dragover',event => {if(isFileDrag(event))event.preventDefault();});
+document.addEventListener('drop',event => {
+  if(isFileDrag(event))event.preventDefault();
+  dropZone.classList.remove('file-drag-over');
+});
+dropZone.addEventListener('dragover',event => {
+  if(!isFileDrag(event))return;
+  event.preventDefault();event.dataTransfer.dropEffect = 'copy';
+  dropZone.classList.add('file-drag-over');
+});
+dropZone.addEventListener('dragleave',event => {if(!dropZone.contains(event.relatedTarget))dropZone.classList.remove('file-drag-over');});
+dropZone.addEventListener('drop',event => {
+  if(!isFileDrag(event))return;
+  event.preventDefault();
+  const files = Array.from(event.dataTransfer.files);
+  if(files.length !== 1) {status.textContent = 'Drop one TXT transcript at a time.';return;}
+  if(files[0].name.toLowerCase().endsWith('.txt')) {
+    try {fileInput.files = event.dataTransfer.files;} catch { /* The loaded filename remains visible in status on browsers with read-only file inputs. */ }
+  }
+  loadFile(files[0]);
 });
 textInput.addEventListener('input',() => {textInput.originalText = null;});
 document.getElementById('split').addEventListener('click',() => {

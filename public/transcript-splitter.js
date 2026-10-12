@@ -1,5 +1,5 @@
 (function(root) {
-  function split(text, size = 12000) {
+  function split(text, size = 29000) {
     if (!Number.isInteger(size) || size < 1000 || size > 30000) throw new Error('Choose 1,000 to 30,000 characters per part.');
     const parts = [];
     let start = 0;
