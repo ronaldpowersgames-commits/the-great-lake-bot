@@ -1009,6 +1009,7 @@ body {
 .mode-continuity { padding: 6px 12px; color: var(--text-dim); font-size: 11px; border-top: 1px solid var(--dock-border); }
 .mode-continuity strong { color: var(--text-secondary); font-weight: 500; }
 .backup-export { width: 100%; min-height: 44px; border: 1px solid var(--dock-border); border-radius: 8px; background: transparent; text-align: left; font: inherit; white-space: normal; }
+.shore-dock.file-drag-over .lake-input { outline: 2px solid var(--lake-light); background: rgba(45,140,240,0.12); }
 .reply-notice { position: sticky; bottom: 8px; margin-top: auto; align-self: center; width: min(100%, 440px); flex-shrink: 0; padding: 10px 13px; border: 1px solid var(--lake-light); border-radius: 8px; background: var(--dock-bg); color: var(--text-primary); text-align: left; cursor: pointer; font: inherit; z-index: 2; }
 .reply-notice span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
 .reply-notice .reply-preview { margin-top: 3px; color: var(--text-secondary); }
@@ -1590,6 +1591,30 @@ document.addEventListener('click', (e) => {
 // PASTE IMAGE FROM CLIPBOARD
 // ============================================
 document.addEventListener('DOMContentLoaded', () => {
+  const composer = document.querySelector('.shore-dock');
+  const isFileDrag = event => Array.from(event.dataTransfer?.types || []).includes('Files');
+  document.addEventListener('dragover', event => {
+    if (isFileDrag(event)) event.preventDefault();
+  });
+  document.addEventListener('drop', event => {
+    if (isFileDrag(event)) event.preventDefault();
+    composer?.classList.remove('file-drag-over');
+  });
+  composer?.addEventListener('dragover', event => {
+    if (!isFileDrag(event)) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'copy';
+    composer.classList.add('file-drag-over');
+  });
+  composer?.addEventListener('dragleave', event => {
+    if (!composer.contains(event.relatedTarget)) composer.classList.remove('file-drag-over');
+  });
+  composer?.addEventListener('drop', event => {
+    if (!isFileDrag(event)) return;
+    event.preventDefault();
+    addSelectedFiles(Array.from(event.dataTransfer.files));
+    document.getElementById('lakeInput').focus();
+  });
   const lakeInput = document.getElementById('lakeInput');
   if (lakeInput) {
     lakeInput.addEventListener('paste', async (e) => {
@@ -1605,8 +1630,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const base64   = await fileToBase64(file);
             const namedFile = new File([file], `pasted-image-${Date.now()}.png`, { type: file.type });
             namedFile._base64 = base64;
-            selectedFiles.push(namedFile);
-            renderFilePreviews();
+            addSelectedFiles([namedFile]);
           } catch(err) { console.warn('Could not paste image:', err); }
         }
       }
@@ -1619,13 +1643,16 @@ document.addEventListener('DOMContentLoaded', () => {
 // ============================================
 function handleFileSelect(event) {
   const files = Array.from(event.target.files);
-  if (!files.length) return;
+  addSelectedFiles(files);
+  event.target.value = '';
+}
+
+function addSelectedFiles(files) {
   files.forEach(file => {
     if (file.size > 50 * 1024 * 1024) { alert(`🌊 ${file.name} is too heavy — max 50MB.`); return; }
     if (selectedFiles.length >= 20) { showToast('Up to 20 files per conversation.'); return; }
     selectedFiles.push(file);
   });
-  event.target.value = '';
   renderFilePreviews();
 }
 

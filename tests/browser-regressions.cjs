@@ -34,6 +34,34 @@ const { chromium } = require(process.env.LAKE_PLAYWRIGHT_PATH || 'playwright');
     await page.goto(process.env.LAKE_TEST_URL || 'http://localhost:3010');
     await page.waitForFunction(() => allSessions.some(session => session.id === 'legacy'));
     assert.equal(await page.evaluate(() => localStorage.getItem(storageKey('sessions'))), null);
+    const dropped = await page.evaluate(() => {
+      const transfer = new DataTransfer();
+      transfer.items.add(new File(['Transcript source'], 'dropped.txt', {type:'text/plain'}));
+      const png = Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a3ioAAAAASUVORK5CYII='),char => char.charCodeAt(0));
+      transfer.items.add(new File([png], 'dropped.png', {type:'image/png'}));
+      const input = document.getElementById('lakeInput');
+      input.value = 'Preserve my draft';
+      const over = new DragEvent('dragover',{bubbles:true,cancelable:true,dataTransfer:transfer});
+      input.dispatchEvent(over);
+      const highlighted = document.querySelector('.shore-dock').classList.contains('file-drag-over');
+      const drop = new DragEvent('drop',{bubbles:true,cancelable:true,dataTransfer:transfer});
+      input.dispatchEvent(drop);
+      return {highlighted, prevented:drop.defaultPrevented, names:selectedFiles.map(file => file.name),draft:input.value,highlightCleared:!document.querySelector('.shore-dock').classList.contains('file-drag-over')};
+    });
+    assert.deepEqual(dropped,{highlighted:true,prevented:true,names:['dropped.txt','dropped.png'],draft:'Preserve my draft',highlightCleared:true});
+    assert.equal(await page.locator('.file-preview-chip').count(),2);
+    await page.screenshot({path:path.join(process.env.TEMP,'lake-file-drop-desktop.png')});
+    await page.evaluate(() => {
+      selectedFiles = [];
+      addSelectedFiles(Array.from({length:21},(_,index) => new File(['source'],`limit-${index}.txt`,{type:'text/plain'})));
+    });
+    assert.equal(await page.evaluate(() => selectedFiles.length),20);
+    await page.evaluate(() => {
+      selectedFiles = [];
+      window.alert = () => {};
+      addSelectedFiles([{name:'oversized.txt',size:51*1024*1024}]);
+    });
+    assert.equal(await page.evaluate(() => selectedFiles.length),0);
     await page.evaluate(() => {
       localStorage.setItem('quota-pressure', 'x'.repeat(4 * 1024 * 1024));
       newSession();

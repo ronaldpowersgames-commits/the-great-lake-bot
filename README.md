@@ -75,9 +75,16 @@ quotes. Text inputs over 320,000 characters must be split, rather than silently
 truncated. API rate limits can still require smaller batches.
 
 History and original uploads are stored in IndexedDB on this browser/device.
+Desktop files can be dropped onto the composer or selected with the attachment
+button; both paths enforce the same 20-file and 50MB-per-file limits.
 Existing localStorage history migrates only after a successful database write.
 Storage failures show a separate notice and do not turn a received reply into a
 chat error. This is local storage, not a cloud backup; export important tides.
+
+Long-document chunk summaries retry output-limit failures with bounded larger
+budgets. Completed summaries are reused for identical sources and processing
+purpose for up to ten minutes in a bounded server-memory cache. Failed or
+incomplete summaries are never cached or passed off as complete source coverage.
 
 Settings includes **Export Full Data + Transfer Prompt**: a private JSON archive
 of all conversations, original stored attachments, Crew, profile and settings

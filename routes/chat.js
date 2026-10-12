@@ -14,6 +14,7 @@ const mammoth = require('mammoth');
 const { simpleParser } = require('mailparser');
 const { chatModel: CHAT_MODEL, summaryModel: SUMMARY_MODEL } = require('../config/models');
 const snapshots = require('../config/snapshots');
+const { createHash } = require('node:crypto');
 
 const router = express.Router();
 
@@ -37,6 +38,8 @@ const DOCX_TYPES  = [
 const DIRECT_FILE_CHARS = 30000;
 const CHUNK_CHARS = 8000;
 const MAX_DOCUMENT_CHARS = 320000;
+const summaryCache = new Map();
+const SUMMARY_CACHE_TTL_MS = 10 * 60 * 1000;
 
 // ======================================================
 // OPENAI CLIENT
@@ -355,7 +358,7 @@ async function summarizeLargeDocument(fileContent, file, userRequest, purpose = 
         },
         {
           role: 'user',
-          content: `User request: ${userRequest || 'Analyze this document.'}\n\nChunk ${i + 1} of ${chunks.length} from ${file.originalname}:\n\n${chunks[i]}`
+          content: `Prepare a factual source summary for subsequent questions.\n\nChunk ${i + 1} of ${chunks.length} from ${file.originalname}:\n\n${chunks[i]}`
         }
     ];
 
@@ -386,14 +389,26 @@ async function summarizeLargeDocument(fileContent, file, userRequest, purpose = 
 }
 
 async function createSummary(messages, maxTokens) {
-  const response = await client.chat.completions.create({
-    model: SUMMARY_MODEL, messages, max_completion_tokens: maxTokens
-  }, { timeout: 60000 });
-  const choice = response.choices?.[0];
-  if (!choice?.message?.content || choice.finish_reason === 'length') {
-    throw new Error('Document processing did not finish. Please split the transcript into smaller parts.');
+  const key = createHash('sha256').update(JSON.stringify({model: SUMMARY_MODEL, messages, maxTokens})).digest('hex');
+  const cached = summaryCache.get(key);
+  if (cached && cached.expires > Date.now()) return cached.text;
+  summaryCache.delete(key);
+  for (const budget of [maxTokens, maxTokens * 2, maxTokens * 4]) {
+    const response = await client.chat.completions.create({
+      model: SUMMARY_MODEL, messages, max_completion_tokens: budget
+    }, { timeout: 60000 });
+    const choice = response.choices?.[0];
+    if (choice?.message?.content && (!choice.finish_reason || choice.finish_reason === 'stop')) {
+      for (const [cachedKey, value] of summaryCache) {
+        if (value.expires <= Date.now()) summaryCache.delete(cachedKey);
+      }
+      if (summaryCache.size >= 64) summaryCache.delete(summaryCache.keys().next().value);
+      summaryCache.set(key, {text: choice.message.content, expires: Date.now() + SUMMARY_CACHE_TTL_MS});
+      return choice.message.content;
+    }
+    if (choice?.finish_reason !== 'length') break;
   }
-  return choice.message.content;
+  throw new Error('Document processing did not finish after retrying. Split text into parts of about 8,000 characters and try again; no incomplete summary was used.');
 }
 
 function receiveUploads(req, res, next) {

@@ -214,7 +214,8 @@ function routeContext(reply = () => 'Test reflection') {
       if (name === 'openai') return { OpenAI: class {
         constructor() { this.chat = { completions: { create: async args => {
           requests.push(args);
-          return { choices: [{message: {content:reply(args)}}], model: 'gpt-4o-test' };
+          const result = reply(args);
+          return { choices: [typeof result === 'string' ? {message: {content:result}} : result], model: 'gpt-4o-test' };
         } } }; }
       } };
       if (name === 'multer') return require('multer');
@@ -318,6 +319,23 @@ test('long transcripts process the end beyond the previous five-chunk limit', as
   assert.match(result, /RAW END EXCERPT/);
   assert.match(result, /Jo: final source message/);
   assert.doesNotMatch(result, /left out/);
+});
+
+test('document summaries retry output limits and reuse completed chunks for follow-up questions', async () => {
+  const {requests,context} = routeContext(args => ({message:{content:args.max_completion_tokens < 1800 ? 'INCOMPLETE' : 'Complete source summary'},finish_reason:args.max_completion_tokens < 1800 ? 'length' : 'stop'}));
+  context.original = 'Sam: source text\n'.repeat(2500) + 'Jo: final message';
+  const first = await vm.runInContext('summarizeLargeDocument(original,{originalname:"transcript.txt",size:original.length},"Read the transcript")',context);
+  assert.doesNotMatch(first,/INCOMPLETE/);
+  assert.match(first,/Complete source summary/);
+  const count = requests.length;
+  await vm.runInContext('summarizeLargeDocument(original,{originalname:"transcript.txt",size:original.length},"What size chunks can you read?")',context);
+  assert.equal(requests.length,count);
+});
+
+test('repeated truncated summaries never reach the final analysis', async () => {
+  const {requests,context} = routeContext(() => ({message:{content:'INCOMPLETE'},finish_reason:'length'}));
+  await assert.rejects(vm.runInContext('createSummary([{role:"user",content:"Source"}],900)',context),/after retrying/);
+  assert.equal(requests.length,3);
 });
 
 test('scanned PDFs reach vision instead of pretending text extraction succeeded', async () => {
