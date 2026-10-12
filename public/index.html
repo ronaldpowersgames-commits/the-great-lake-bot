@@ -1341,7 +1341,7 @@ body {
         <button class="send-btn" onclick="sendWave()" title="Send (Ctrl+Enter)" aria-keyshortcuts="Control+Enter">🌊</button>
       </div>
       <div class="input-hint">📎 Attach multiple files</div>
-      <input type="file" id="fileInput" multiple onchange="handleFileSelect(event)" accept=".txt,.pdf,.doc,.docx,.eml,.csv,.json,.md,.png,.jpg,.jpeg,.gif,.webp">
+    <input type="file" id="fileInput" multiple onchange="handleFileSelect(event)" accept=".zip,.txt,.pdf,.doc,.docx,.eml,.csv,.json,.md,.png,.jpg,.jpeg,.gif,.webp">
       <input type="file" id="cameraInput" accept="image/*" capture="environment" onchange="handleFileSelect(event)">
       <input type="file" id="imageInput" accept="image/*" multiple onchange="handleFileSelect(event)">
     </div><!-- end shore-dock -->
@@ -1535,6 +1535,8 @@ body {
 <script src="/session-store.js"></script>
 <script src="/snapshot-context.js"></script>
 <script src="/full-backup.js"></script>
+<script src="/vendor/jszip.min.js"></script>
+<script src="/transcript-archive.js"></script>
 <script>
 // ============================================
 // STATE
@@ -1653,12 +1655,38 @@ function handleFileSelect(event) {
   event.target.value = '';
 }
 
-function addSelectedFiles(files) {
-  files.forEach(file => {
-    if (file.size > 50 * 1024 * 1024) { alert(`🌊 ${file.name} is too heavy — max 50MB.`); return; }
-    if (selectedFiles.length >= 20) { showToast('Up to 20 files per conversation.'); return; }
+let pendingFileLoads = 0;
+async function addSelectedFiles(files) {
+  const target = selectedFiles;
+  const sessionId = currentSessionId;
+  const profile = storageKey('sessions');
+  for (const file of files) {
+    if (target !== selectedFiles || sessionId !== currentSessionId || profile !== storageKey('sessions')) break;
+    if (/\.zip$/i.test(file.name)) {
+      pendingFileLoads++;
+      try {
+        if (file.size > 50 * 1024 * 1024) throw new Error('ZIP files must be 50MB or smaller.');
+        const parts = await LakeTranscriptArchive.unpack(JSZip,await file.arrayBuffer());
+        if (target !== selectedFiles || sessionId !== currentSessionId || profile !== storageKey('sessions')) continue;
+        if (target.length + parts.length > 20) throw new Error('Import up to 20 pending files at a time.');
+        const imported = parts.map((part,index) => {
+          const source = new File([part.data],part.name,{type:'text/plain'});
+          source.excluded = index !== 0;
+          return source;
+        });
+        chatHistory.flatMap(message => message.attachments || []).forEach(source => {source.excluded = true;});
+        target.forEach(source => {source.excluded = true;});
+        target.push(...imported);
+        showToast(`Imported ${parts.length} TXT parts. First part active; previous sources paused. Choose parts in Sources.`);
+        await saveSession();
+      } catch(error) {if(profile === storageKey('sessions'))showToast('ZIP could not be imported: ' + error.message);}
+      finally {pendingFileLoads--;}
+      continue;
+    }
+    if (file.size > 50 * 1024 * 1024) { alert(`🌊 ${file.name} is too heavy — max 50MB.`); continue; }
+    if (selectedFiles.length >= 20) { showToast('Up to 20 files per conversation.'); break; }
     selectedFiles.push(file);
-  });
+  }
   renderFilePreviews();
 }
 
@@ -2661,9 +2689,10 @@ function renderSourceControls() {
   const button = document.getElementById('sourceMenuButton');
   const menu = document.getElementById('sourceMenu');
   if (!button || !menu) return;
-  const attachments = chatHistory.filter(message => message.role === 'user').flatMap(message => message.attachments || []).filter(file => file.data);
+  const attachments = [...chatHistory.filter(message => message.role === 'user').flatMap(message => message.attachments || []).filter(file => file.data), ...selectedFiles];
   const sources = new Map();
-  attachments.forEach(file => sources.set(file.name + file.data,file));
+  const keyOf = file => file.data ? file.name + file.data : 'pending:' + selectedFiles.indexOf(file);
+  attachments.forEach(file => sources.set(keyOf(file),file));
   button.hidden = sources.size === 0;
   button.textContent = `Sources ${[...sources.values()].filter(file => !file.excluded).length}/${sources.size} ▾`;
   menu.replaceChildren();
@@ -2673,8 +2702,8 @@ function renderSourceControls() {
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox'; checkbox.checked = !file.excluded;
     checkbox.onchange = () => {
-      attachments.filter(item => item.name + item.data === key).forEach(item => {item.excluded = !checkbox.checked;});
-      renderSourceControls();
+      attachments.filter(item => keyOf(item) === key).forEach(item => {item.excluded = !checkbox.checked;});
+      renderFilePreviews();
       saveSession().catch(error => showToast('Source selection could not be saved: ' + error.message));
     };
     label.append(checkbox,document.createTextNode(file.name));
@@ -2879,6 +2908,7 @@ function showReplyNotice(origin, reply) {
 }
 
 async function sendWave(options = {}) {
+  if (pendingFileLoads) {showToast('Wait for ZIP import to finish before sending.');return;}
   if (waveInFlight) return;
   const input = document.getElementById('lakeInput');
   const text  = options.requestText ?? input.value.trim();
@@ -2914,7 +2944,7 @@ async function sendWave(options = {}) {
       filesToSend.push(new File([bytes], attachment.name, { type: attachment.type || 'application/octet-stream' }));
     }
   }
-  filesToSend.push(...newFiles);
+  filesToSend.push(...newFiles.filter(file => !file.excluded));
   filesToSend.push(...(options.sourceFiles || []));
   if (filesToSend.length > 20 || filesToSend.reduce((bytes, file) => bytes + file.size, 0) > 100 * 1024 * 1024) {
     showToast('This conversation exceeds 20 files or 100MB. Start a new tide for the next batch.');
@@ -2926,7 +2956,7 @@ async function sendWave(options = {}) {
   for (const file of newFiles) {
     try {
       const data = await fileToBase64(file);
-      base64Attachments.push({ name: file.name, type: file.type, size: file.size, data });
+      base64Attachments.push({ name: file.name, type: file.type, size: file.size, data, ...(file.excluded ? {excluded:true} : {}) });
     } catch(e) { console.warn('Could not convert file:', file.name, e); }
   }
 

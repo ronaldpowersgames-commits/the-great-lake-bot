@@ -30,7 +30,7 @@ function browserContext() {
       return { ok: true, json: async () => ({ reflection: 'Found Sam.', model: 'gpt-4o-test' }) };
     }
   });
-  vm.runInContext('let crewMembers = []; let suggestedCrew = []; let selectedFiles = []; let chatHistory = []; let currentSessionId = null; let currentUser = {name:"Ron"}; let currentMood = "calm"; let sessionLoadPromise = Promise.resolve();', context);
+  vm.runInContext('let crewMembers = []; let suggestedCrew = []; let selectedFiles = []; let chatHistory = []; let currentSessionId = null; let currentUser = {name:"Ron"}; let currentMood = "calm"; let sessionLoadPromise = Promise.resolve(); let pendingFileLoads = 0;', context);
   vm.runInContext(script.slice(script.indexOf('const IGNORE_WORDS'), script.indexOf('// STORAGE HELPERS')), context);
   vm.runInContext(script.slice(script.indexOf('function triggerDailyPrinciple('), script.indexOf('// RENDER WAVES')), context);
   vm.runInContext('fileToBase64 = async file => "data:text/plain;base64,dGVzdA==";', context);
@@ -372,6 +372,29 @@ test('unchecked source files remain in stored history but are not uploaded with 
   assert.equal(context.sent.getAll('file').length,1);
   assert.equal(context.sent.getAll('file')[0].name,'two.txt');
   assert.equal(vm.runInContext('chatHistory[0].attachments.length',context),1);
+});
+
+test('transcript ZIP import retains verbatim bytes and rejects unsafe or oversized archives', async () => {
+  const JSZip = require('jszip');
+  const {unpack} = require('../public/transcript-archive');
+  const zip = new JSZip();
+  const raw = '\ufeffSam: exact text 😀\r\n';
+  zip.file('part-002.txt','Second');zip.file('part-001.txt',raw);
+  zip.file('transcript-manifest.json','{}');
+  const parts = await unpack(JSZip,await zip.generateAsync({type:'uint8array'}));
+  assert.deepEqual(parts.map(part => part.name),['part-001.txt','part-002.txt']);
+  assert.deepEqual(Buffer.from(parts[0].data),Buffer.from(raw));
+  zip.file('script.js','Do not execute');
+  await assert.rejects(unpack(JSZip,await zip.generateAsync({type:'uint8array'})),/only TXT/);
+  const big = new JSZip();big.file('too-large.txt','x'.repeat(30001));
+  await assert.rejects(unpack(JSZip,await big.generateAsync({type:'uint8array'})),/30,000/);
+});
+
+test('transcript discussions include guidance for exact splitting and ZIP import without repetitive tutorials', async () => {
+  const {handler,requests} = routeContext();
+  await handler({body:{message:'How should I upload this transcript?'},files:[]},{json(){},status(){return this;}});
+  assert.match(requests.at(-1).messages[0].content,/Settings > Transcript Splitter/);
+  assert.match(requests.at(-1).messages[0].content,/do not repeat a tutorial in every reply/);
 });
 
 test('scanned PDFs reach vision instead of pretending text extraction succeeded', async () => {

@@ -80,6 +80,12 @@ default leaves about 1,000 characters for the question; select one part at a tim
 The optional "Part Index" download is the manifest, not additional source text.
 "Download All ZIP" saves all numbered TXT parts and their index together. ZIP
 creation stays in the browser; the transcript is not uploaded to make the archive.
+The same ZIP can be dropped or attached in chat: up to 20 UTF-8 TXT parts are
+unpacked locally, the first is active, and other/previous sources are paused.
+All imported parts are saved with the message; Sources selects originals for
+later questions. Archives with other file types, duplicate filenames, oversized
+parts or invalid text are rejected rather than partially imported. Transcript
+discussions guide users to this workflow when relevant without repeated tutorials.
 Use Sources beside Snapshot to include/exclude previously attached originals
 for the next question without deleting them. Not every stored part is in model
 context at once, and earlier assistant analysis is not exact transcript evidence.
