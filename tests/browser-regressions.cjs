@@ -85,7 +85,7 @@ const { chromium } = require(process.env.LAKE_PLAYWRIGHT_PATH || 'playwright');
     assert.equal(uploads[2], 6);
     assert.doesNotMatch(await page.locator('#wavesContainer').innerText(), /hit a snag|setItem|exceeded the quota/);
     assert.match(await page.locator('#toast').innerText(), /could not save the chat/);
-    await page.getByRole('button', { name: 'Review player', exact: true }).click();
+    await page.locator('.suggested-item').filter({hasText:'Punzle'}).getByRole('button', { name: 'Review player', exact: true }).click();
     await page.locator('#crewMatchSelect').selectOption('0');
     await page.evaluate(() => saveCrewFromModal());
     assert.equal(await page.evaluate(() => crewMembers.length), 1);

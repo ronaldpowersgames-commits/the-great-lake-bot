@@ -14,6 +14,7 @@ const mammoth = require('mammoth');
 const { simpleParser } = require('mailparser');
 const { chatModel: CHAT_MODEL, summaryModel: SUMMARY_MODEL } = require('../config/models');
 const snapshots = require('../config/snapshots');
+const meetingMemory = require('../public/meeting-memory');
 const { createHash } = require('node:crypto');
 
 const router = express.Router();
@@ -464,7 +465,8 @@ router.post('/', receiveUploads, async function(req, res) {
           codename: String(member.codename || '').slice(0, 100),
           userReviewedNotes: String(member.context || '').slice(0, 1500),
           reviewedObservations: Array.isArray(member.observations) ? member.observations.filter(item => item?.reviewed).slice(-10).map(item => ({
-            date: String(item.date || ''), sessionId: String(item.sessionId || ''),
+            recordedAt: String(item.date || ''), sessionId: String(item.sessionId || ''),
+            meetingDates: Array.isArray(item.meetingDates) ? item.meetingDates.slice(0,20) : [],
             evidence: String(item.evidence || '').slice(0, 500), note: String(item.note || '').slice(0, 500),
             sources: Array.isArray(item.sources) ? item.sources.map(String).slice(0, 20) : []
           })) : []
@@ -498,8 +500,9 @@ For chat scope, use only the current conversation; leave total_context and contr
 Include a precise resume point: active topic, latest user intent, unresolved questions, unfinished work and a useful next step. The receiving AI must be able to resume without pretending to remember things not in this file. Flag lossy chunk summaries, absent original attachment contents, uncertain identities, contradictions and missing context. Do not claim a complete account-wide archive. Never include authentication credentials or profile email metadata. Snapshot creation itself is not a new personality insight.
 ` : '';
     const sourceContext = snapshotScope ? '' : '\nEXACT DOCUMENT MODE: Attached text is original extracted text, not a summary. Only claim exact wording from the source parts actually supplied in this request. Other numbered parts may exist outside your context; do not imply that you read them. A part may start or end inside an utterance: mark incomplete fragments and do not invent their author or missing continuation. Prior assistant summaries are interpretations, not verbatim source evidence.\n';
+    const meetingContext = snapshotScope ? '' : '\nMEETING CHRONOLOGY AND IDENTITIES: Calendar dates in transcript filenames/titles are candidate call dates, not upload dates. Respect user-reviewed date corrections; if a filename date is ambiguous or missing, ask rather than inventing chronology. Times such as [01:02:15] are positions in the call, not calendar dates. Use reviewed Crew aliases to connect speaker labels, but ask about fuzzy matches, shared names or conflicting identity evidence. Do not automatically merge two people. For meeting-currents requests, the supplied meeting-evidence.json contains exact retrieved passages across stored meetings. Cite filenames and source character ranges for observations, distinguish direct quotes from interpretations, and disclose the coverage limits. Do not count duplicate uploads as independent corroboration or invent decisions/commitments outside the cited passages.\n';
     const transcriptWorkflow = snapshotScope ? '' : '\nTRANSCRIPT WORKFLOW: When the user first discusses uploading or analyzing a transcript, briefly point them to Settings > Transcript Splitter for exact, lossless parts when useful. It defaults to 29,000 characters, leaving room under the 30,000 combined text-and-question limit. Download All ZIP includes numbered TXT parts and an index; the Lake chat can import that ZIP locally (up to 20 parts), with the first part active and the others selectable in Sources. Stored parts are not all in your context simultaneously. Mention this naturally once, and again if the user asks or hits a size limit; do not repeat a tutorial in every reply or derail a quick side question. Never suggest summarizing the original transcript as a substitute for exact reading.\n';
-    const systemPrompt = (modelFiles || fallback) + coreIdentity + moodContext + crewContext + userIdentity + openingContext + snapshotContext + sourceContext + transcriptWorkflow;
+    const systemPrompt = (modelFiles || fallback) + coreIdentity + moodContext + crewContext + userIdentity + openingContext + snapshotContext + sourceContext + transcriptWorkflow + meetingContext;
 
     // Build conversation history
     let conversationHistory = [];
@@ -536,7 +539,9 @@ Include a precise resume point: active topic, latest user intent, unresolved que
       if (pdfBytes >= 50 * 1024 * 1024) {
         return res.status(413).json({ error: 'PDF batch too large', details: 'PDFs in one conversation must total less than 50MB. Split them into smaller batches.' });
       }
-      for (const file of uploadedFiles) {
+      let sourceMetadata=[];
+      try {const parsed=JSON.parse(req.body.sourceMetadata || '[]');if(Array.isArray(parsed))sourceMetadata=parsed.slice(0,20);} catch {}
+      for (const [fileIndex,file] of uploadedFiles.entries()) {
         if (PDF_TYPES.includes(file.mimetype) || file.originalname.toLowerCase().endsWith('.pdf')) {
           userMessageContent.push({ type: 'file', file: {
             filename: file.originalname, file_data: `data:application/pdf;base64,${file.buffer.toString('base64')}`
@@ -559,7 +564,9 @@ Include a precise resume point: active topic, latest user intent, unresolved que
           if (snapshotScope && fileContent.length > Math.floor(DIRECT_FILE_CHARS / uploadedFiles.length)) {
             fileContent = await summarizeLargeDocument(fileContent, file, message, snapshotScope ? 'handoff' : 'analysis');
           }
-          const header = `\n\nATTACHED FILE: ${file.originalname} (${formatBytes(file.size)})\n`;
+          const reviewedDate=sourceMetadata[fileIndex]?.filename===file.originalname?sourceMetadata[fileIndex].meetingDate:null;
+          const date=meetingMemory.dateOf(file.originalname,reviewedDate);
+          const header = `\n\nATTACHED FILE: ${file.originalname} (${formatBytes(file.size)})\nMEETING DATE METADATA (user/source data): ${JSON.stringify(date)}\n`;
           userMessageContent.push({ type: 'text', text: header + fileContent + '\n[End of attached file]\n' });
         }
       }

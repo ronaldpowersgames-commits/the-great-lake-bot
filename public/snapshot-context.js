@@ -8,7 +8,7 @@
       messages: (session.history || []).filter(message => !message.snapshot && !String(message.action || '').startsWith('snapshot-')).map((message, index) => ({
         sourceMessage: index + 1,
         role: message.role, content: String(message.content || ''), time: message.time,
-        attachments: (message.attachments || []).map(file => ({ name: file.name, type: file.type }))
+        attachments: (message.attachments || []).map(file => ({ name: file.name, type: file.type, meetingDate: file.meetingDate || null }))
       }))
     }));
     const manifest = {
@@ -23,8 +23,8 @@
       crew: scope === 'chat' ? [] : crew.map(member => ({
         name: member.name, aliases: member.nickname, codename: member.codename, userNotes: member.context,
         reviewedObservations: (member.observations || []).filter(observation => observation.reviewed).map(observation => ({
-          date: observation.date, sessionId: observation.sessionId, evidence: observation.evidence,
-          note: observation.note, sources: observation.sources
+          recordedAt: observation.date, sessionId: observation.sessionId, evidence: observation.evidence,
+          note: observation.note, sources: observation.sources, meetingDates: observation.meetingDates || []
         }))
       })),
       sessions: cleanSessions

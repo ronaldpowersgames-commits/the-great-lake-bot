@@ -86,6 +86,28 @@ All imported parts are saved with the message; Sources selects originals for
 later questions. Archives with other file types, duplicate filenames, oversized
 parts or invalid text are rejected rather than partially imported. Transcript
 discussions guide users to this workflow when relevant without repeated tutorials.
+
+## Meeting Currents
+
+The Meeting Currents button searches original TXT/LOG attachments in the current
+profile's saved device history, including inactive source parts. This is an
+explicit archive search; ordinary chat requests still send only selected files.
+Keywords and reviewed Crew aliases select verbatim passages with filenames,
+source IDs and character ranges. Broad queries sample dated passages across
+meetings. Duplicate identical uploads are not independent evidence. Coverage and
+source-chat links accompany the result; the model does not receive the whole
+archive at once. This is lexical retrieval, not exhaustive semantic analysis,
+automatic commitment tracking, account-wide cloud memory or proof of model accuracy.
+
+Meeting dates are parsed from transcript filenames (ISO dates, unambiguous numeric
+dates and English month names). Ambiguous dates remain unresolved, and Sources
+allows a user-reviewed date correction. Call dates stay separate from upload and
+observation timestamps. Named transcript speaker labels create Spotted suggestions
+with dated original evidence. Review a fuzzy match against the existing Crew
+directory to save its label as an alias; no identities are silently merged.
+Date corrections, reviewed observations and aliases survive full backups and
+are included in applicable snapshot handoffs. Crew-card questions use archived
+transcript evidence when available.
 Use Sources beside Snapshot to include/exclude previously attached originals
 for the next question without deleting them. Not every stored part is in model
 context at once, and earlier assistant analysis is not exact transcript evidence.
@@ -142,6 +164,8 @@ mobile controls. Set `LAKE_TEST_URL` to the local preview and
 cross-profile isolation, deleted in-progress chats and full-data downloads.
 `tests/transcript-splitter.cjs` checks lossless UTF-8 part downloads, mobile
 layout and persistent source selection without deleting original attachments.
+`tests/meeting-memory.cjs` checks date corrections, fuzzy speaker review, alias
+linking, dated cross-meeting retrieval, profile isolation and source navigation.
 
 ## Endpoints
 

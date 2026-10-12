@@ -1019,6 +1019,8 @@ body {
 .source-menu { position: fixed; z-index: 100; width: 320px; max-width: calc(100vw - 16px); max-height: 240px; overflow: auto; padding: 8px; border: 1px solid var(--dock-border); border-radius: 8px; background: var(--dock-bg); }
 .source-menu label { display: flex; gap: 8px; align-items: center; min-height: 42px; font-size: 12px; padding: 6px; color: var(--text-secondary); overflow-wrap: anywhere; }
 .source-menu input { flex-shrink: 0; }
+.archive-source-btn { white-space: normal; max-width: 100%; text-align: left; border-radius: 4px; margin-top: 4px; min-height: 44px; font-size: 12px; }
+.archive-coverage { font-size: 11px; color: var(--text-secondary); line-height: 1.4; }
 .quick-action-btn[hidden] { display: none; }
 
 /* ── RESPONSIVE ── */
@@ -1306,6 +1308,7 @@ body {
         </div>
       </div>
       <div class="quick-actions">
+        <button class="quick-action-btn" onclick="readMeetingCurrents()">Meeting Currents</button>
         <button class="quick-action-btn" onclick="triggerFileInput()">📎 Drop a Chat-Log</button>
         <button class="quick-action-btn" onclick="triggerCamera()">📷 Take Photo</button>
         <button class="quick-action-btn" onclick="sendPrompt('Analyse every person visible in our conversation. For each person generate a full Lake Score Card using the v2.0 model: score Clarity, Depth, Authenticity, Volatility, and Symbolic Cohesion each out of 10.0, then calculate their Lake Score. Format each card clearly with scores, a one-line read per dimension, and a final verdict.')">📝 Score Cards</button>
@@ -1535,6 +1538,7 @@ body {
 <script src="/session-store.js"></script>
 <script src="/snapshot-context.js"></script>
 <script src="/full-backup.js"></script>
+<script src="/meeting-memory.js"></script>
 <script src="/vendor/jszip.min.js"></script>
 <script src="/transcript-archive.js"></script>
 <script>
@@ -1882,7 +1886,18 @@ function findCrewAliasMatch(suggestion) {
 function addSuggestedCrewMember(suggestion, existingNames) {
   const key = normalizePersonKey(suggestion.name);
   if (['the lake', 'lake', 'the great lake'].includes(key)) return false;
-  if (existingNames.has(key)) return false;
+  if (existingNames.has(key)) {
+    const pending = suggestedCrew.find(member => normalizePersonKey(member.name) === key);
+    if (pending && suggestion.observation) {
+      pending.observations = pending.observations || [];
+      const observations = [pending.observation,...pending.observations].filter(Boolean);
+      if (!observations.some(item => item.sessionId === suggestion.observation.sessionId && item.evidence === suggestion.observation.evidence && JSON.stringify(item.sources) === JSON.stringify(suggestion.observation.sources) && JSON.stringify(item.meetingDates) === JSON.stringify(suggestion.observation.meetingDates))) {
+        pending.observations.push(suggestion.observation);
+        return true;
+      }
+    }
+    return false;
+  }
 
   const matches = findCrewAliasMatch(suggestion);
   suggestion.possibleMatches = matches.map(member => member.name);
@@ -1897,6 +1912,7 @@ function addSuggestedCrewMember(suggestion, existingNames) {
 }
 
 function processNamesFromResponse(responseText, source = { id: currentSessionId, history: chatHistory }) {
+  const dates = source.archiveSources?.map(item=>({filename:item.filename,...item.meeting_date})) || source.usedSources || source.history.flatMap(message => (message.attachments || []).filter(file => !file.excluded).map(file => ({filename:file.name,...LakeMeetingMemory.dateOf(file.name,file.meetingDate)})));
   const existingNames = new Set([
     ...suggestedCrew.flatMap(m => [
       normalizePersonKey(m.name),
@@ -1921,8 +1937,9 @@ function processNamesFromResponse(responseText, source = { id: currentSessionId,
       context: contextBits.join('\n'),
       observation: {
         date: new Date().toISOString(), sessionId: source.id,
+        meetingDates: dates,
         evidence: player.evidence, note: player.relationshipNote,
-        sources: [...new Set(source.history.flatMap(message => (message.attachments || []).map(file => file.name)))]
+        sources: [...new Set(dates.map(item => item.filename))]
       },
       confidence: player.confidence,
       source: player.source
@@ -2224,7 +2241,7 @@ function loadTide(sessionId) {
   }
   chatHistory.forEach(msg => {
     if (msg.role === 'user') appendUserWave(msg.content, msg.time, false, msg.attachments || []);
-    else if (msg.role === 'assistant') appendLakeWave(msg.content, msg.time, false, msg.snapshot);
+    else if (msg.role === 'assistant') appendLakeWave(msg.content, msg.time, false, msg.snapshot, msg.archiveCoverage, msg.archiveSources);
   });
   container.scrollTop = container.scrollHeight;
   renderTides();
@@ -2514,21 +2531,22 @@ function saveCrewFromModal() {
   if (crewModalMode === 'edit' && crewModalIndex >= 0) {
     crewMembers[crewModalIndex] = { ...crewMembers[crewModalIndex], ...member };
   } else if (crewModalMode === 'approve' && crewModalIndex >= 0) {
-    const observation = suggestedCrew[crewModalIndex].observation;
+    const suggestion = suggestedCrew[crewModalIndex];
+    const observations = [suggestion.observation,...(suggestion.observations || [])].filter(Boolean);
     const matchIndex = document.getElementById('crewMatchSelect').value;
     if (matchIndex !== '') {
       const existing = crewMembers[Number(matchIndex)];
       const aliases = [existing.nickname, member.name !== existing.name ? member.name : '', member.nickname].filter(Boolean).join(', ');
       existing.nickname = [...new Set(aliases.split(/[,;/|]+/).map(alias => alias.trim()).filter(Boolean))].join(', ');
       existing.context = [existing.context, member.context].filter(Boolean).join('\n\n');
-      if (observation) {
+      for (const observation of observations) {
         existing.observations = existing.observations || [];
-        if (!existing.observations.some(item => item.sessionId === observation.sessionId && item.evidence === observation.evidence && item.note === observation.note)) {
+        if (!existing.observations.some(item => item.sessionId === observation.sessionId && item.evidence === observation.evidence && item.note === observation.note && JSON.stringify(item.sources) === JSON.stringify(observation.sources) && JSON.stringify(item.meetingDates) === JSON.stringify(observation.meetingDates))) {
           existing.observations.push({ ...observation, reviewed: true });
         }
       }
     } else {
-      if (observation) member.observations = [{ ...observation, reviewed: true }];
+      if (observations.length) member.observations = observations.map(observation => ({...observation,reviewed:true}));
       crewMembers.push(member);
     }
     suggestedCrew.splice(crewModalIndex, 1); saveSuggestedCrew();
@@ -2575,7 +2593,9 @@ function openCrewProfile(idx) {
     if (member.codename) prompt += ` (codename: "${member.codename}")`;
     if (member.context)  prompt += `. Context: ${member.context}`;
     prompt += ` — their patterns, influence style, and what to watch for.`;
-    closeCrewCard(); sendPrompt(prompt);
+    closeCrewCard();
+    if(allSessions.some(session => (session.history || []).some(message => (message.attachments || []).some(file => /\.(txt|log)$/i.test(file.name))))) readMeetingCurrents(prompt);
+    else sendPrompt(prompt);
     if (window.innerWidth <= 768) toggleDock();
   };
   document.getElementById('crewCardOverlay').classList.add('show');
@@ -2680,6 +2700,44 @@ function closeSnapshotMenu(restoreFocus = false) {
   if (restoreFocus) button.focus();
 }
 
+function readMeetingCurrents(queryOverride) {
+  if(waveInFlight || pendingFileLoads) {showToast('Wait for the current reply or upload to finish.');return;}
+  const query = queryOverride || document.getElementById('lakeInput').value.trim() || 'Read the currents across my meetings';
+  if(query.length>4000) {showToast('Keep archive questions under 4,000 characters so there is room for original evidence.');return;}
+  const documents = [];
+  for(const session of allSessions) {
+    (session.history || []).forEach((message,messageIndex) => (message.attachments || []).forEach((file,fileIndex) => {
+      if(!/\.(txt|log)$/i.test(file.name) || !file.data) return;
+      let text;
+      try {text = new TextDecoder('utf-8',{fatal:true,ignoreBOM:true}).decode(Uint8Array.from(atob(file.data.split(',')[1]),char => char.charCodeAt(0)));} catch {text = null;}
+      documents.push({id:`${session.id}/${messageIndex}/${fileIndex}`,sessionId:session.id,filename:file.name,meetingDate:file.meetingDate,text});
+    }));
+  }
+  if(!documents.length) {showToast('Upload and send meeting TXT parts first. The archive uses transcripts stored on this device.');return;}
+  const evidence = LakeMeetingMemory.retrieve(documents,query,crewMembers,Math.max(1500,Math.min(24000,28500-query.length)));
+  return sendWave({visibleText:`Meeting Currents: ${query}`,requestText:query,action:'meeting-currents',reuseAttachments:false,
+    sourceFiles:[new File([JSON.stringify(evidence)],'meeting-evidence.json',{type:'application/json'})],archiveCoverage:evidence.coverage,preserveDraft:Boolean(queryOverride),
+    archiveSources:evidence.passages.map(({filename,session_id,start,end,meeting_date})=>({filename,session_id,start,end,meeting_date}))});
+}
+
+function suggestTranscriptSpeakers(attachments,sessionId) {
+  const existing = new Set(suggestedCrew.map(member => normalizePersonKey(member.name)));
+  let changed = false;
+  for(const file of attachments) {
+    if(!/\.(txt|log)$/i.test(file.name)) continue;
+    try {
+      const text = new TextDecoder('utf-8',{fatal:true,ignoreBOM:true}).decode(Uint8Array.from(atob(file.data.split(',')[1]),char => char.charCodeAt(0)));
+      const meetingDate = LakeMeetingMemory.dateOf(file.name,file.meetingDate);
+      for(const speaker of LakeMeetingMemory.speakers(text)) {
+        changed = addSuggestedCrewMember({name:speaker.name,confidence:'needs confirmation',source:'transcript-speaker',
+          context:`Speaker label in ${file.name}. Meeting date: ${meetingDate.date || meetingDate.status}. Confirm who this label belongs to.`,
+          observation:{date:new Date().toISOString(),sessionId,evidence:speaker.evidence,note:'Speaker label present; identity requires user review.',sources:[file.name],meetingDates:[{filename:file.name,...meetingDate}],sourceOffset:speaker.offset}},existing) || changed;
+      }
+    } catch(error) {console.warn('Could not inspect speaker labels:',file.name,error);}
+  }
+  if(changed) {saveSuggestedCrew();renderCrew();}
+}
+
 function closeSourceMenu() {
   document.getElementById('sourceMenu').hidden = true;
   document.getElementById('sourceMenuButton').setAttribute('aria-expanded','false');
@@ -2708,6 +2766,27 @@ function renderSourceControls() {
     };
     label.append(checkbox,document.createTextNode(file.name));
     menu.append(label);
+    if(/\.(txt|log)$/i.test(file.name)) {
+      const dateLabel = document.createElement('label');
+      const date = LakeMeetingMemory.dateOf(file.name,file.meetingDate);
+      const input = document.createElement('input');input.type='date';input.value=date.date || '';
+      input.setAttribute('aria-label','Meeting date for ' + file.name);
+      input.onchange = () => {
+        if(input.value && !LakeMeetingMemory.validDate(input.value)) return;
+        attachments.filter(item => keyOf(item)===key).forEach(item => {item.meetingDate=input.value;});
+        for(const member of [...crewMembers,...suggestedCrew]) {
+          for(const observation of [member.observation,...(member.observations || [])].filter(Boolean)) {
+            if(new Set(attachments.filter(item=>item.name===file.name).map(keyOf)).size===1 && observation.sessionId===currentSessionId && observation.sources?.includes(file.name)) {
+              observation.meetingDates=(observation.meetingDates || []).map(item => item.filename===file.name?{filename:file.name,...LakeMeetingMemory.dateOf(file.name,input.value)}:item);
+            }
+          }
+        }
+        try {saveCrew();saveSuggestedCrew();} catch(error) {showToast('Crew date notes could not be saved on this device.');console.warn(error);}
+        saveSession().catch(error => showToast('Meeting date could not be saved: ' + error.message));
+      };
+      dateLabel.append(document.createTextNode(date.status==='user-reviewed'?'Reviewed date':date.status==='ambiguous'?'Date needs confirmation':date.status==='unknown'?'Meeting date':'Date from title'),input);
+      menu.append(dateLabel);
+    }
   }
 }
 
@@ -2930,7 +3009,7 @@ async function sendWave(options = {}) {
   activeWave = origin;
 
   const timeStr         = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  const newFiles = options.snapshot ? [] : [...selectedFiles];
+  const newFiles = options.snapshot || options.action==='meeting-currents' ? [] : [...selectedFiles];
   const filesToSend = [];
   const seenSources = new Set();
   if (options.reuseAttachments !== false) {
@@ -2941,11 +3020,15 @@ async function sendWave(options = {}) {
       seenSources.add(key);
       const encoded = attachment.data.split(',')[1];
       const bytes = Uint8Array.from(atob(encoded), character => character.charCodeAt(0));
-      filesToSend.push(new File([bytes], attachment.name, { type: attachment.type || 'application/octet-stream' }));
+      const original = new File([bytes], attachment.name, { type: attachment.type || 'application/octet-stream' });
+      original.meetingDate = attachment.meetingDate;
+      filesToSend.push(original);
     }
   }
   filesToSend.push(...newFiles.filter(file => !file.excluded));
   filesToSend.push(...(options.sourceFiles || []));
+  origin.usedSources = filesToSend.map(file=>({filename:file.name,...LakeMeetingMemory.dateOf(file.name,file.meetingDate)}));
+  origin.archiveSources = options.archiveSources;
   if (filesToSend.length > 20 || filesToSend.reduce((bytes, file) => bytes + file.size, 0) > 100 * 1024 * 1024) {
     showToast('This conversation exceeds 20 files or 100MB. Start a new tide for the next batch.');
     return;
@@ -2956,7 +3039,7 @@ async function sendWave(options = {}) {
   for (const file of newFiles) {
     try {
       const data = await fileToBase64(file);
-      base64Attachments.push({ name: file.name, type: file.type, size: file.size, data, ...(file.excluded ? {excluded:true} : {}) });
+      base64Attachments.push({ name: file.name, type: file.type, size: file.size, data, ...(file.excluded ? {excluded:true} : {}),...(file.meetingDate ? {meetingDate:file.meetingDate} : {}) });
     } catch(e) { console.warn('Could not convert file:', file.name, e); }
   }
 
@@ -2965,15 +3048,16 @@ async function sendWave(options = {}) {
     ...(options.action ? { action: options.action } : {}) });
 
   if (!options.snapshot && isRequestVisible(origin)) {
-    input.value        = '';
-    input.style.height = 'auto';
-    selectedFiles      = [];
+    if(!options.preserveDraft) {input.value='';input.style.height='auto';}
+    if(options.action!=='meeting-currents') selectedFiles=[];
   }
   renderFilePreviews();
   if (isRequestVisible(origin)) showRipple();
   closeSourceMenu();
   await saveSession(origin);
   if (origin.discarded) return;
+  try {if(origin.key===storageKey('sessions'))suggestTranscriptSpeakers(base64Attachments,origin.id);}
+  catch(error) {showToast('Speaker suggestions could not be saved on this device. Your chat request will continue.');console.warn(error);}
 
   try {
     const formData = new FormData();
@@ -2985,6 +3069,7 @@ async function sendWave(options = {}) {
     formData.append('crew', origin.crew);
     const historyToSend = origin.history.slice(-11, -1).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.content }));
     formData.append('history', JSON.stringify(historyToSend));
+    formData.append('sourceMetadata',JSON.stringify(filesToSend.map(file => ({filename:file.name,meetingDate:file.meetingDate || ''}))));
     filesToSend.forEach(file => formData.append('file', file));
 
     const response = await fetch('/chat', { method: 'POST', body: formData });
@@ -2996,11 +3081,13 @@ async function sendWave(options = {}) {
       const cleanReflection = options.snapshot ? JSON.stringify(data.handoff || JSON.parse(data.reflection), null, 2) : stripPlayerTagsJson(data.reflection);
       const reflectionTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       const reply = { role: 'assistant', content: cleanReflection, time: reflectionTime,
+        ...(options.archiveCoverage ? {archiveCoverage:options.archiveCoverage} : {}),
+        ...(options.archiveSources ? {archiveSources:options.archiveSources} : {}),
         ...(options.snapshot ? { snapshot: options.snapshot } : {}) };
       origin.history.push(reply);
       await saveSession(origin);
       if (isRequestVisible(origin)) {
-        appendLakeWave(cleanReflection, reflectionTime, true, reply.snapshot);
+        appendLakeWave(cleanReflection, reflectionTime, true, reply.snapshot, reply.archiveCoverage, reply.archiveSources);
         if (!options.snapshot) updateCurrents(text);
       } else showReplyNotice(origin, reply);
       try { if (!options.snapshot && !origin.discarded && origin.key === storageKey('sessions')) processNamesFromResponse(data.reflection, origin); }
@@ -3068,7 +3155,7 @@ function appendUserWave(text, timeStr, scroll, attachments = []) {
   if (scroll) container.scrollTop = container.scrollHeight;
 }
 
-function appendLakeWave(text, timeStr, scroll, snapshot) {
+function appendLakeWave(text, timeStr, scroll, snapshot, archiveCoverage, archiveSources) {
   const container = document.getElementById('wavesContainer');
   const ripple    = document.getElementById('ripple');
   const div       = document.createElement('div');
@@ -3087,6 +3174,20 @@ function appendLakeWave(text, timeStr, scroll, snapshot) {
   else container.appendChild(div);
 
   if (!snapshot) attachBubbleActions(div);
+  if(archiveCoverage) {
+    const coverage = document.createElement('div');coverage.className='wave-time archive-coverage';
+    coverage.textContent=`Archive evidence: ${archiveCoverage.retrieved_passages} passages from ${archiveCoverage.represented_meetings}/${archiveCoverage.indexed_meetings} indexed meetings. Not the complete archive in context.`;
+    div.querySelector('.wave-content').append(coverage);
+    const details = document.createElement('details');details.className='snapshot-details';
+    const summary = document.createElement('summary');summary.textContent='Archive sources';details.append(summary);
+    for(const source of archiveSources || []) {
+      const button = document.createElement('button');button.className='quick-action-btn archive-source-btn';
+      button.textContent=`${source.filename} · chars ${source.start}–${source.end}`;
+      button.onclick=()=>{if(allSessions.some(session=>session.id===source.session_id))loadTide(source.session_id);else showToast('This source conversation is no longer stored on this device.');};
+      details.append(button);
+    }
+    div.querySelector('.wave-content').append(details);
+  }
   if (snapshot) {
     const download = document.createElement('button');
     download.className = 'bubble-action-btn';

@@ -11,7 +11,8 @@ const script = html.match(/<script>([\s\S]*)<\/script>/)[1];
 function browserContext() {
   const elements = new Map();
   const context = vm.createContext({
-    console, FormData, File, Blob, Date, atob,
+    console, FormData, File, Blob, Date, atob, TextDecoder,
+    LakeMeetingMemory: require('../public/meeting-memory'),
     window: {addEventListener() {}},
     document: { addEventListener() {}, getElementById(id) {
       if (!elements.has(id)) elements.set(id, { value: '', style: {}, textContent: '', remove() {}, setAttribute() {} });
@@ -30,7 +31,7 @@ function browserContext() {
       return { ok: true, json: async () => ({ reflection: 'Found Sam.', model: 'gpt-4o-test' }) };
     }
   });
-  vm.runInContext('let crewMembers = []; let suggestedCrew = []; let selectedFiles = []; let chatHistory = []; let currentSessionId = null; let currentUser = {name:"Ron"}; let currentMood = "calm"; let sessionLoadPromise = Promise.resolve(); let pendingFileLoads = 0;', context);
+  vm.runInContext('let crewMembers = []; let suggestedCrew = []; let selectedFiles = []; let chatHistory = []; let allSessions = []; let currentSessionId = null; let currentUser = {name:"Ron"}; let currentMood = "calm"; let sessionLoadPromise = Promise.resolve(); let pendingFileLoads = 0;', context);
   vm.runInContext(script.slice(script.indexOf('const IGNORE_WORDS'), script.indexOf('// STORAGE HELPERS')), context);
   vm.runInContext(script.slice(script.indexOf('function triggerDailyPrinciple('), script.indexOf('// RENDER WAVES')), context);
   vm.runInContext('fileToBase64 = async file => "data:text/plain;base64,dGVzdA==";', context);
@@ -395,6 +396,51 @@ test('transcript discussions include guidance for exact splitting and ZIP import
   await handler({body:{message:'How should I upload this transcript?'},files:[]},{json(){},status(){return this;}});
   assert.match(requests.at(-1).messages[0].content,/Settings > Transcript Splitter/);
   assert.match(requests.at(-1).messages[0].content,/do not repeat a tutorial in every reply/);
+});
+
+test('meeting dates come from titles, preserve uncertainty and accept reviewed corrections', () => {
+  const {dateOf} = require('../public/meeting-memory');
+  assert.equal(dateOf('2026-08-31_Weekly-part-001-of-003.txt').date,'2026-08-31');
+  assert.equal(dateOf('October 12, 2026 call.txt').date,'2026-10-12');
+  assert.equal(dateOf('Team_Oct_12_2026_call.txt').date,'2026-10-12');
+  assert.equal(dateOf('12 October 2026 call.txt').date,'2026-10-12');
+  assert.equal(dateOf('Marching 12 2026.txt').date,null);
+  assert.equal(dateOf('03-04-2026 meeting.txt').status,'ambiguous');
+  assert.equal(dateOf('2026-02-30 meeting.txt').date,null);
+  assert.equal(dateOf('meeting.txt').status,'unknown');
+  assert.equal(dateOf('03-04-2026 meeting.txt','2026-04-03').status,'user-reviewed');
+});
+
+test('speaker labels create fuzzy Crew suggestions with dated source evidence but never merge identities', () => {
+  const context=browserContext();
+  const text='[00:01:02] Roby: I will send the revised plan.\r\n';
+  context.sourceData='data:text/plain;base64,'+Buffer.from(text).toString('base64');
+  vm.runInContext('crewMembers=[{name:"Robert Smith",nickname:"Robby"}];suggestTranscriptSpeakers([{name:"2026-08-31-call.txt",data:sourceData}],"call-one");suggestTranscriptSpeakers([{name:"2026-09-07-call.txt",data:sourceData}],"call-two");',context);
+  assert.equal(vm.runInContext('crewMembers.length',context),1);
+  assert.equal(vm.runInContext('suggestedCrew[0].possibleMatches[0]',context),'Robert Smith');
+  assert.equal(vm.runInContext('suggestedCrew[0].observation.meetingDates[0].date',context),'2026-08-31');
+  assert.equal(vm.runInContext('suggestedCrew[0].observations[0].meetingDates[0].date',context),'2026-09-07');
+  assert.equal(vm.runInContext('suggestedCrew[0].confidence',context),'needs confirmation');
+});
+
+test('meeting retrieval expands reviewed aliases, cites exact ranges and does not inflate repeated uploads', () => {
+  const {retrieve}=require('../public/meeting-memory');
+  const docs=[{id:'one',sessionId:'old',filename:'2026-08-31-call.txt',text:'[00:01] Robby: I will send the revised plan.\r\n'},
+    {id:'two',sessionId:'new',filename:'2026-09-07-call.txt',text:'[00:02] Robert: The revised plan is ready.\r\n'}];
+  const result=retrieve([...docs,{...docs[0],id:'duplicate',sessionId:'copy'}],'Robert Smith commitments',[{name:'Robert Smith',nickname:'Robby, Robert'}]);
+  assert.equal(result.coverage.indexed_meetings,2);
+  assert.equal(result.coverage.duplicate_sources,1);
+  assert.equal(result.coverage.complete_archive_in_context,false);
+  assert.equal(result.coverage.represented_meetings,2);
+  for(const passage of result.passages)assert.equal(passage.text,docs.find(doc=>doc.id===passage.source_id).text.slice(passage.start,passage.end));
+});
+
+test('reviewed meeting dates are carried into the model request without using upload timestamps', async () => {
+  const {handler,requests}=routeContext();
+  await handler({body:{message:'Read this call',sourceMetadata:JSON.stringify([{filename:'03-04-2026-call.txt',meetingDate:'2026-04-03'}])},files:[{originalname:'03-04-2026-call.txt',mimetype:'text/plain',buffer:Buffer.from('[01:02:15] Robby: Yes.'),size:23}]},{json(){},status(){return this;}});
+  assert.match(JSON.stringify(requests.at(-1).messages.at(-1).content),/2026-04-03/);
+  assert.match(requests.at(-1).messages[0].content,/not upload dates/);
+  assert.match(requests.at(-1).messages[0].content,/do not automatically merge|Do not automatically merge/);
 });
 
 test('scanned PDFs reach vision instead of pretending text extraction succeeded', async () => {
