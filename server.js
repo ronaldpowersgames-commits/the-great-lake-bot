@@ -88,6 +88,9 @@ app.get('/', (req, res, next) => {
   }
   next();
 });
+app.get('/vendor/jszip.min.js', (_req, res) => {
+  res.sendFile(require.resolve('jszip/dist/jszip.min.js'));
+});
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ✅ Safeguard for .js files (prevents HTML fallback)

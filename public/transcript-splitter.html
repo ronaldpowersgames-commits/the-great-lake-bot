@@ -8,6 +8,7 @@
 </style>
 <style>
 .limit-note{font-size:13px;color:#a7becd;margin:0 0 18px}main.file-drag-over textarea{outline:2px solid #65c4ff;background:#16344a}
+.download-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:12px 0 18px}.download-actions #manifest{margin:0}
 </style>
 <main>
 <a href="/">The Great Lake</a>
@@ -16,8 +17,9 @@
 <label for="text">Transcript</label><textarea id="text" spellcheck="false"></textarea>
 <div class="toolbar"><div><label for="size">Characters per part</label><input id="size" type="number" min="1000" max="30000" step="1000" value="29000" aria-describedby="limitNote"></div><button id="split">Split Transcript</button></div>
 <p class="limit-note" id="limitNote">The Lake accepts 30,000 characters total per request, including your message and selected text files. The 29,000 default leaves about 1,000 for your question. Select one part at a time; use smaller parts for longer questions.</p>
-<div id="status" role="status"></div><button id="manifest" title="Optional JSON index of filenames, part order and positions in the original transcript" hidden>Download Part Index</button><div id="parts"></div>
+<div id="status" role="status"></div><div class="download-actions"><button id="zip" hidden>Download All ZIP</button><button id="manifest" title="Optional JSON index of filenames, part order and positions in the original transcript" hidden>Download Part Index</button></div><div id="parts"></div>
 </main>
 <script src="/transcript-splitter.js"></script>
+<script src="/vendor/jszip.min.js"></script>
 <script src="/transcript-splitter-ui.js"></script>
 </html>

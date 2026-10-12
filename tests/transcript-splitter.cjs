@@ -1,6 +1,7 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const JSZip = require('jszip');
 const {chromium} = require(process.env.LAKE_PLAYWRIGHT_PATH || 'playwright');
 const base = process.env.LAKE_TEST_URL || 'http://localhost:3011';
 (async () => {
@@ -27,6 +28,17 @@ const base = process.env.LAKE_TEST_URL || 'http://localhost:3011';
     }
     assert.equal(texts.join(''),original);
     assert.ok(texts.every(text => text.length <= 29000));
+    const zipEvent = page.waitForEvent('download');
+    await page.getByRole('button',{name:'Download All ZIP'}).click();
+    const zipDownload = await zipEvent;
+    assert.equal(zipDownload.suggestedFilename(),'original-parts.zip');
+    const archive = await JSZip.loadAsync(fs.readFileSync(await zipDownload.path()));
+    const files = Object.keys(archive.files).filter(name => name.endsWith('.txt')).sort();
+    assert.equal(files.length,texts.length);
+    const originalBytes = Buffer.concat(await Promise.all(files.map(name => archive.file(name).async('nodebuffer'))));
+    assert.deepEqual(originalBytes,Buffer.from(original));
+    const zipManifest = JSON.parse(await archive.file('transcript-manifest.json').async('string'));
+    assert.deepEqual(zipManifest.parts.map(part => part.filename),files);
     const indexEvent = page.waitForEvent('download');
     await page.getByRole('button',{name:'Download Part Index'}).click();
     const indexDownload = await indexEvent;

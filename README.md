@@ -78,6 +78,8 @@ source, including blank lines and CRLF. A manifest records offsets and part orde
 Drop a UTF-8 TXT file onto the splitter or choose it with the file picker. The
 default leaves about 1,000 characters for the question; select one part at a time.
 The optional "Part Index" download is the manifest, not additional source text.
+"Download All ZIP" saves all numbered TXT parts and their index together. ZIP
+creation stays in the browser; the transcript is not uploaded to make the archive.
 Use Sources beside Snapshot to include/exclude previously attached originals
 for the next question without deleting them. Not every stored part is in model
 context at once, and earlier assistant analysis is not exact transcript evidence.
