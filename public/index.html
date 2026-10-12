@@ -1016,6 +1016,9 @@ body {
 .snapshot-menu { position: fixed; z-index: 100; width: 220px; max-width: calc(100vw - 16px); padding: 5px; border: 1px solid var(--dock-border); border-radius: 8px; background: var(--dock-bg); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
 .snapshot-menu button { display: block; width: 100%; min-height: 42px; padding: 9px 12px; border: 0; border-radius: 4px; background: transparent; color: var(--text-secondary); font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
 .snapshot-menu button:hover, .snapshot-menu button:focus-visible { background: rgba(45,140,240,0.12); color: var(--lake-light); }
+.source-menu { position: fixed; z-index: 100; width: 320px; max-width: calc(100vw - 16px); max-height: 240px; overflow: auto; padding: 8px; border: 1px solid var(--dock-border); border-radius: 8px; background: var(--dock-bg); }
+.source-menu label { display: flex; gap: 8px; align-items: center; min-height: 42px; font-size: 12px; padding: 6px; color: var(--text-secondary); overflow-wrap: anywhere; }
+.source-menu input { flex-shrink: 0; }
 .quick-action-btn[hidden] { display: none; }
 
 /* ── RESPONSIVE ── */
@@ -1279,6 +1282,7 @@ body {
           <button class="suggestions-toggle" onclick="toggleSuggestions()">💡 Prompt Suggestions ▾</button>
           <button class="quick-action-btn" onclick="tagPlayers()">🏷️ Tag Players</button>
           <button class="quick-action-btn" id="snapshotMenuButton" onclick="toggleSnapshotMenu()" aria-haspopup="menu" aria-expanded="false" aria-controls="snapshotMenu">📋 Snapshot ▾</button>
+          <button class="quick-action-btn" id="sourceMenuButton" onclick="toggleSourceMenu()" aria-expanded="false" aria-controls="sourceMenu" hidden>Sources</button>
           <button class="quick-action-btn" id="downloadSnapshotButton" onclick="downloadLatestSnapshot()" title="Download the latest snapshot" aria-label="Download latest snapshot" hidden>⬇</button>
         </div>
         <div class="suggestions-list" id="suggestionsList">
@@ -1314,6 +1318,7 @@ body {
         <button role="menuitem" onclick="createSnapshot('both')" title="Export both and explain this conversation's contribution">🔗 Both</button>
       </div>
       <div class="input-row">
+        <div class="source-menu" id="sourceMenu" hidden></div>
         <div class="input-wrap">
           <textarea class="lake-input" id="lakeInput"
             placeholder="Send a wave into The Lake..."
@@ -1369,6 +1374,7 @@ body {
     <div class="depths-section">
       <h4>💾 Backup &amp; Transfer</h4>
       <button class="depths-option backup-export" onclick="exportFullBackup()" title="Private full-data backup with original stored attachments and an AI transfer prompt">⬇ Export Full Data + Transfer Prompt</button>
+      <a class="depths-option" href="/transcript-splitter.html" target="_blank" rel="noopener" style="display:block;text-decoration:none">📄 Transcript Splitter</a>
     </div>
     <div class="depths-section">
       <h4>📱 App</h4>
@@ -1657,6 +1663,7 @@ function addSelectedFiles(files) {
 }
 
 function renderFilePreviews() {
+  renderSourceControls();
   const container = document.getElementById('filesPreviewContainer');
   if (!container) return;
   if (selectedFiles.length === 0) {
@@ -2171,6 +2178,7 @@ function loadTide(sessionId) {
   if (!session) return;
   currentSessionId = sessionId;
   chatHistory      = session.history || [];
+  renderSourceControls();
   document.getElementById('downloadSnapshotButton').hidden = !chatHistory.some(message => message.snapshot);
   applyMood(session.mood || 'calm');
   const container  = document.getElementById('wavesContainer');
@@ -2644,7 +2652,51 @@ function closeSnapshotMenu(restoreFocus = false) {
   if (restoreFocus) button.focus();
 }
 
+function closeSourceMenu() {
+  document.getElementById('sourceMenu').hidden = true;
+  document.getElementById('sourceMenuButton').setAttribute('aria-expanded','false');
+}
+
+function renderSourceControls() {
+  const button = document.getElementById('sourceMenuButton');
+  const menu = document.getElementById('sourceMenu');
+  if (!button || !menu) return;
+  const attachments = chatHistory.filter(message => message.role === 'user').flatMap(message => message.attachments || []).filter(file => file.data);
+  const sources = new Map();
+  attachments.forEach(file => sources.set(file.name + file.data,file));
+  button.hidden = sources.size === 0;
+  button.textContent = `Sources ${[...sources.values()].filter(file => !file.excluded).length}/${sources.size} ▾`;
+  menu.replaceChildren();
+  if (!sources.size) closeSourceMenu();
+  for (const [key,file] of sources) {
+    const label = document.createElement('label');
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox'; checkbox.checked = !file.excluded;
+    checkbox.onchange = () => {
+      attachments.filter(item => item.name + item.data === key).forEach(item => {item.excluded = !checkbox.checked;});
+      renderSourceControls();
+      saveSession().catch(error => showToast('Source selection could not be saved: ' + error.message));
+    };
+    label.append(checkbox,document.createTextNode(file.name));
+    menu.append(label);
+  }
+}
+
+function toggleSourceMenu() {
+  const menu = document.getElementById('sourceMenu');
+  if (!menu.hidden) {closeSourceMenu();return;}
+  closeSnapshotMenu();
+  renderSourceControls();
+  menu.hidden = false;
+  const button = document.getElementById('sourceMenuButton');
+  button.setAttribute('aria-expanded','true');
+  const anchor = button.getBoundingClientRect();
+  menu.style.left = Math.max(8,Math.min(anchor.right - menu.offsetWidth,window.innerWidth - menu.offsetWidth - 8)) + 'px';
+  menu.style.top = Math.max(8,anchor.top - menu.offsetHeight - 8) + 'px';
+}
+
 function toggleSnapshotMenu() {
+  closeSourceMenu();
   const menu = document.getElementById('snapshotMenu');
   if (!menu.hidden) { closeSnapshotMenu(true); return; }
   menu.hidden = false;
@@ -2657,9 +2709,11 @@ function toggleSnapshotMenu() {
 }
 
 document.addEventListener('click', event => {
+  if (!event.target.closest('#sourceMenu') && !event.target.closest('#sourceMenuButton')) closeSourceMenu();
   if (!event.target.closest('#snapshotMenu') && !event.target.closest('#snapshotMenuButton')) closeSnapshotMenu();
 });
 document.addEventListener('keydown', event => {
+  if (event.key === 'Escape') closeSourceMenu();
   const menu = document.getElementById('snapshotMenu');
   if (menu.hidden) return;
   if (event.key === 'Escape') { event.preventDefault(); closeSnapshotMenu(true); }
@@ -2672,6 +2726,7 @@ document.addEventListener('keydown', event => {
   if (event.key === 'Tab') closeSnapshotMenu();
 });
 window.addEventListener('resize', () => closeSnapshotMenu());
+window.addEventListener('resize', () => closeSourceMenu());
 
 async function createSnapshot(scope) {
   closeSnapshotMenu();
@@ -2850,7 +2905,7 @@ async function sendWave(options = {}) {
   const seenSources = new Set();
   if (options.reuseAttachments !== false) {
     for (const attachment of origin.history.filter(m => m.role === 'user').flatMap(m => m.attachments || [])) {
-      if (!attachment.data) continue;
+      if (!attachment.data || attachment.excluded) continue;
       const key = attachment.name + attachment.data;
       if (seenSources.has(key)) continue;
       seenSources.add(key);
@@ -2886,6 +2941,7 @@ async function sendWave(options = {}) {
   }
   renderFilePreviews();
   if (isRequestVisible(origin)) showRipple();
+  closeSourceMenu();
   await saveSession(origin);
   if (origin.discarded) return;
 

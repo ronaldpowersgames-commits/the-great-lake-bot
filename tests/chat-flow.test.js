@@ -338,6 +338,41 @@ test('repeated truncated summaries never reach the final analysis', async () => 
   assert.equal(requests.length,3);
 });
 
+test('ordinary transcript analysis passes exact text or rejects oversized batches without summarizing', async () => {
+  const {requests,handler} = routeContext();
+  const original = 'Sam: exact middle wording\r\n'.repeat(700) + 'Jo: last message';
+  let result; let status;
+  const res = {json(value){result=value;},status(value){status=value;return this;}};
+  await handler({body:{message:'Read the exact transcript'},files:[{originalname:'part.txt',mimetype:'text/plain',buffer:Buffer.from(original),size:Buffer.byteLength(original)}]},res);
+  assert.equal(requests.length,1);
+  assert.ok(requests[0].messages.at(-1).content.some(part => part.text?.includes(original)));
+  requests.length = 0;
+  await handler({body:{message:'Read all'},files:[{originalname:'large.txt',mimetype:'text/plain',buffer:Buffer.from('x'.repeat(60000)),size:60000}]},res);
+  assert.equal(status,413);
+  assert.match(result.details,/Nothing was summarized/);
+  assert.equal(requests.length,0);
+});
+
+test('splitter preserves every character including CRLF, blank lines, BOM and emoji', () => {
+  const {split} = require('../public/transcript-splitter');
+  for (const original of ['\ufeffSam: hello\r\n\r\nJo: emoji 😀\r\n'.repeat(2000),'x'.repeat(999) + '😀' + 'y'.repeat(4000),'']) {
+    const parts = split(original,1000);
+    assert.equal(parts.map(part => part.text).join(''),original);
+    assert.ok(parts.every(part => part.text.length <= 1000));
+    for (let index=1;index<parts.length;index++) assert.equal(parts[index].start,parts[index-1].end);
+  }
+  assert.throws(() => split('text',500),/1,000/);
+});
+
+test('unchecked source files remain in stored history but are not uploaded with follow-ups', async () => {
+  const context = browserContext();
+  vm.runInContext('chatHistory = [{role:"user",content:"Part one",attachments:[{name:"one.txt",type:"text/plain",data:"data:text/plain;base64,dGVzdA==",excluded:true}]},{role:"user",content:"Part two",attachments:[{name:"two.txt",type:"text/plain",data:"data:text/plain;base64,dGVzdA=="}]}];',context);
+  await vm.runInContext('sendWave({requestText:"Read the active part"})',context);
+  assert.equal(context.sent.getAll('file').length,1);
+  assert.equal(context.sent.getAll('file')[0].name,'two.txt');
+  assert.equal(vm.runInContext('chatHistory[0].attachments.length',context),1);
+});
+
 test('scanned PDFs reach vision instead of pretending text extraction succeeded', async () => {
   const { requests, handler, context } = routeContext();
   vm.runInContext('extractFileText = async () => "";', context);

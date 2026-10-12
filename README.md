@@ -69,10 +69,16 @@ names/handles in Depths, and correct uncertain identities in the conversation.
 
 PDFs include page images through the model's native PDF input. DOCX and EML
 contents are extracted; embedded email attachments must be uploaded separately.
-Long text files are processed in full using chunk summaries, with raw start/end
-excerpts retained. Summaries are lossy and cannot substantiate arbitrary exact
-quotes. Text inputs over 320,000 characters must be split, rather than silently
-truncated. API rate limits can still require smaller batches.
+Ordinary document analysis sends original extracted text, never automatic
+summaries. The total selected text plus the message is limited to 30,000
+characters per request; oversized batches are explicitly rejected. Use Settings
+> Transcript Splitter to produce lossless TXT parts (12,000 characters by default,
+preferring line boundaries). Parts concatenate exactly to the original UTF-8
+source, including blank lines and CRLF. A manifest records offsets and part order.
+Use Sources beside Snapshot to include/exclude previously attached originals
+for the next question without deleting them. Not every stored part is in model
+context at once, and earlier assistant analysis is not exact transcript evidence.
+API token/rate limits can still require smaller batches.
 
 History and original uploads are stored in IndexedDB on this browser/device.
 Desktop files can be dropped onto the composer or selected with the attachment
@@ -81,7 +87,7 @@ Existing localStorage history migrates only after a successful database write.
 Storage failures show a separate notice and do not turn a received reply into a
 chat error. This is local storage, not a cloud backup; export important tides.
 
-Long-document chunk summaries retry output-limit failures with bounded larger
+AI snapshot-export chunk summaries retry output-limit failures with bounded larger
 budgets. Completed summaries are reused for identical sources and processing
 purpose for up to ten minutes in a bounded server-memory cache. Failed or
 incomplete summaries are never cached or passed off as complete source coverage.
@@ -123,6 +129,8 @@ mobile controls. Set `LAKE_TEST_URL` to the local preview and
 `LAKE_PLAYWRIGHT_PATH` when Playwright is not installed in this repository.
 `tests/conversation-continuity.cjs` checks mood continuity, delayed replies,
 cross-profile isolation, deleted in-progress chats and full-data downloads.
+`tests/transcript-splitter.cjs` checks lossless UTF-8 part downloads, mobile
+layout and persistent source selection without deleting original attachments.
 
 ## Endpoints
 
