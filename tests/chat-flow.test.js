@@ -399,6 +399,21 @@ test('transcript discussions include guidance for exact splitting and ZIP import
   assert.match(requests.at(-1).messages[0].content,/do not repeat a tutorial in every reply/);
 });
 
+test('interaction analysis invites contextual clarification while respecting evidence, pacing and folder limits', async () => {
+  for (const mood of ['calm','analytical','stormy']) {
+    const {handler,requests} = routeContext();
+    await handler({body:{message:'Help me understand this meeting',mood},files:[]},{json(){},status(){return this;}});
+    const prompt=requests.at(-1).messages[0].content;
+    assert.match(prompt,/offer a useful initial reading/);
+    assert.match(prompt,/ask ONE short, specific context question/);
+    assert.match(prompt,/source evidence, user-provided background and the user's perceptions distinct/);
+    assert.match(prompt,/Identity clarification takes priority/);
+    assert.match(prompt,/do not append a context question mechanically/);
+    assert.match(prompt,/folder grouping is not proof/);
+    assert.match(prompt,/Never claim to have read all folder contents/);
+  }
+});
+
 test('meeting dates come from titles, preserve uncertainty and accept reviewed corrections', () => {
   const {dateOf} = require('../public/meeting-memory');
   assert.equal(dateOf('2026-08-31_Weekly-part-001-of-003.txt').date,'2026-08-31');
