@@ -46,7 +46,7 @@
     for(const person of crew || []) {
       const aliases=[person.name,person.codename,...String(person.nickname||'').split(/[,;/|]/)].map(normalize).filter(Boolean);
       if(aliases.some(alias => (' '+normalize(query)+' ').includes(' '+alias+' '))) {
-        relevantCrew.push({name:person.name,aliases,status:'user-reviewed directory aliases; resolve conflicting speaker labels before merging identities'});
+        relevantCrew.push({name:person.name,aliases,role:person.role || '',status:'user-reviewed directory aliases; resolve conflicting speaker labels before merging identities'});
         aliases.forEach(alias => {labels.add(alias);alias.split(' ').forEach(word => terms.add(word));});
       }
     }
@@ -65,10 +65,10 @@
         const previous=doc.text.charCodeAt(end-1);const next=doc.text.charCodeAt(end);
         if(previous>=0xd800 && previous<=0xdbff && next>=0xdc00 && next<=0xdfff)end--;
         const text=doc.text.slice(start,end);const normalized=normalize(text);
-        let score=0;
-        for(const term of terms)if((' '+normalized+' ').includes(' '+term+' '))score++;
+        let score=0;const title=normalize([doc.filename,doc.folderPath,doc.sessionTitle].join(' '));
+        for(const term of terms)if((' '+normalized+' ').includes(' '+term+' ') || (' '+title+' ').includes(' '+term+' '))score++;
         for(const label of labels)if((' '+normalized+' ').includes(' '+label+' '))score+=3;
-        rows.push({source_id:doc.id,session_id:doc.sessionId,filename:doc.filename,meeting_date:date,start,end,text,meeting,number: number++,score});
+        rows.push({source_id:doc.id,session_id:doc.sessionId,filename:doc.filename,folder_path:doc.folderPath || '',session_title:doc.sessionTitle || '',meeting_date:date,start,end,text,meeting,number: number++,score});
         start=end;
       }
     }

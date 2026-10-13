@@ -1,5 +1,5 @@
 (function (root) {
-  function build({ user, sessions, current, crew, suggestedCrew, profilePic, settings, now = new Date().toISOString() }) {
+  function build({ user, sessions, current, crew, suggestedCrew, profilePic, settings, folders = [], now = new Date().toISOString() }) {
     const conversations = [...sessions];
     if (current?.history?.length) {
       const index = conversations.findIndex(session => session.id === current.id);
@@ -24,6 +24,7 @@
         current_conversation_id: current?.id || null,
         settings,
         conversations,
+        folders,
         crew,
         suggested_crew: suggestedCrew
       }

@@ -6,13 +6,14 @@ const vm = require('node:vm');
 
 const root = path.join(__dirname, '..');
 const html = fs.readFileSync(path.join(root, 'public/index.html'), 'utf8');
-const script = html.match(/<script>([\s\S]*)<\/script>/)[1];
+const script = html.match(/<script>([\s\S]*?)<\/script>/)[1];
 
 function browserContext() {
   const elements = new Map();
   const context = vm.createContext({
     console, FormData, File, Blob, Date, atob, TextDecoder,
     LakeMeetingMemory: require('../public/meeting-memory'),
+    LakeOrganization: require('../public/organization'),
     window: {addEventListener() {}},
     document: { addEventListener() {}, getElementById(id) {
       if (!elements.has(id)) elements.set(id, { value: '', style: {}, textContent: '', remove() {}, setAttribute() {} });
@@ -31,7 +32,7 @@ function browserContext() {
       return { ok: true, json: async () => ({ reflection: 'Found Sam.', model: 'gpt-4o-test' }) };
     }
   });
-  vm.runInContext('let crewMembers = []; let suggestedCrew = []; let selectedFiles = []; let chatHistory = []; let allSessions = []; let currentSessionId = null; let currentUser = {name:"Ron"}; let currentMood = "calm"; let sessionLoadPromise = Promise.resolve(); let pendingFileLoads = 0;', context);
+  vm.runInContext('let crewMembers = []; let suggestedCrew = []; let selectedFiles = []; let chatHistory = []; let allSessions = []; let tideFolders = []; let currentSessionId = null; let currentUser = {name:"Ron"}; let currentMood = "calm"; let sessionLoadPromise = Promise.resolve(); let pendingFileLoads = 0;', context);
   vm.runInContext(script.slice(script.indexOf('const IGNORE_WORDS'), script.indexOf('// STORAGE HELPERS')), context);
   vm.runInContext(script.slice(script.indexOf('function triggerDailyPrinciple('), script.indexOf('// RENDER WAVES')), context);
   vm.runInContext('fileToBase64 = async file => "data:text/plain;base64,dGVzdA==";', context);
@@ -441,6 +442,34 @@ test('reviewed meeting dates are carried into the model request without using up
   assert.match(JSON.stringify(requests.at(-1).messages.at(-1).content),/2026-04-03/);
   assert.match(requests.at(-1).messages[0].content,/not upload dates/);
   assert.match(requests.at(-1).messages[0].content,/do not automatically merge|Do not automatically merge/);
+});
+
+test('transcript titles replace automatic message names but preserve manual and legacy custom names', () => {
+  const {titleFor}=require('../public/organization');
+  const history=[{role:'user',content:'Read this transcript',attachments:[{name:'2026-08-31_Weekly_UA_Sync-part-001-of-003.txt'}]}];
+  assert.equal(titleFor({name:'Read this transcript'},history).name,'2026-08-31_Weekly_UA_Sync');
+  assert.equal(titleFor({name:'My custom name',nameSource:'manual'},history).name,'My custom name');
+  assert.equal(titleFor({name:'Existing named chat'},history).name,'Existing named chat');
+});
+
+test('folder parenting rejects cycles and repairs orphaned legacy folders', () => {
+  const {canParent,cleanFolders,folderPath}=require('../public/organization');
+  const folders=[{id:'series',name:'Weekly UA',parentId:null},{id:'call',name:'August 31',parentId:'series'}];
+  assert.equal(canParent('series','call',folders),false);
+  assert.equal(canParent('call','call',folders),false);
+  assert.equal(folderPath('call',folders),'Weekly UA / August 31');
+  assert.equal(cleanFolders([{id:'bad',name:'Orphan',parentId:'missing'}])[0].parentId,null);
+});
+
+test('explicit Crew merging preserves aliases, roles, notes, dated observations and target visibility', () => {
+  const {mergeCrew}=require('../public/organization');
+  const target={name:'Robert Smith',nickname:'Robby',role:'CRM Lead',context:'Target notes',hidden:true,observations:[{sessionId:'one',evidence:'First call'}]};
+  const source={name:'Roby',nickname:'Robert',role:'CRM Analyst',context:'Source notes',observations:[{sessionId:'two',evidence:'Second call',meetingDates:[{date:'2026-08-31'}]}]};
+  const result=mergeCrew(target,source);
+  assert.equal(result.name,'Robert Smith');assert.equal(result.hidden,true);assert.equal(result.role,'CRM Lead');
+  assert.match(result.nickname,/Roby/);assert.match(result.context,/Source notes/);assert.match(result.context,/CRM Analyst/);
+  assert.equal(result.observations.length,2);assert.equal(result.observations[1].meetingDates[0].date,'2026-08-31');
+  assert.equal(source.name,'Roby');assert.equal(target.observations.length,1);
 });
 
 test('scanned PDFs reach vision instead of pretending text extraction succeeded', async () => {

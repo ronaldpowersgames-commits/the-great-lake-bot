@@ -1,10 +1,11 @@
 (function (root) {
-  function build({ scope, sessions, current, crew, user, now = new Date().toISOString() }) {
+  function build({ scope, sessions, current, crew, user, folders = [], now = new Date().toISOString() }) {
+    const organization = typeof module !== 'undefined' && module.exports ? require('./organization') : root.LakeOrganization;
     if (!['chat', 'total', 'both'].includes(scope)) throw new Error('Unknown snapshot scope');
     const available = [...sessions.filter(session => session.id !== current.id), current];
     const selected = scope === 'chat' ? [current] : available;
     const cleanSessions = selected.map(session => ({
-      id: session.id, name: session.name, time: session.time, current: session.id === current.id,
+      id: session.id, name: session.name, folder: organization.folderPath(session.folderId,folders), time: session.time, current: session.id === current.id,
       messages: (session.history || []).filter(message => !message.snapshot && !String(message.action || '').startsWith('snapshot-')).map((message, index) => ({
         sourceMessage: index + 1,
         role: message.role, content: String(message.content || ''), time: message.time,
@@ -21,7 +22,7 @@
       manifest,
       user: { name: user?.name || '', aliases: user?.aliases || '' },
       crew: scope === 'chat' ? [] : crew.map(member => ({
-        name: member.name, aliases: member.nickname, codename: member.codename, userNotes: member.context,
+        name: member.name, aliases: member.nickname, codename: member.codename, role: member.role, userNotes: member.context,
         reviewedObservations: (member.observations || []).filter(observation => observation.reviewed).map(observation => ({
           recordedAt: observation.date, sessionId: observation.sessionId, evidence: observation.evidence,
           note: observation.note, sources: observation.sources, meetingDates: observation.meetingDates || []

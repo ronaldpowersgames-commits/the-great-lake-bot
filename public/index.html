@@ -780,7 +780,9 @@ body {
   border-radius: 20px; padding: 8px 18px;
   font-size: 12px; color: var(--lake-light);
   opacity: 0; transition: all 0.3s; z-index: 9999;
-  pointer-events: none; white-space: nowrap;
+  pointer-events: none; white-space: normal;
+  width: max-content; max-width: calc(100vw - 32px);
+  overflow-wrap: anywhere; text-align: center;
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
@@ -1021,6 +1023,35 @@ body {
 .source-menu input { flex-shrink: 0; }
 .archive-source-btn { white-space: normal; max-width: 100%; text-align: left; border-radius: 4px; margin-top: 4px; min-height: 44px; font-size: 12px; }
 .archive-coverage { font-size: 11px; color: var(--text-secondary); line-height: 1.4; }
+.dock-library { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.dock-pane { display: flex; flex-direction: column; min-height: 72px; overflow: hidden; }
+.tides-pane { flex: var(--tides-share, 0.65) 1 0; }
+.crew-pane { flex: calc(1 - var(--tides-share, 0.65)) 1 0; }
+.dock-pane .past-tides, .dock-pane .crew-list { flex: 1; min-height: 0; max-height: none; overflow-y: auto; }
+.dock-divider { height: 12px; flex-shrink: 0; display: grid; place-items: center; cursor: row-resize; touch-action: none; border-top: 1px solid var(--dock-border); border-bottom: 1px solid var(--dock-border); }
+.dock-divider span { width: 40px; height: 3px; border-radius: 2px; background: var(--text-dim); }
+.dock-divider:hover span, .dock-divider:focus-visible span { background: var(--lake-light); }
+body.dock-resizing { user-select: none; cursor: row-resize; }
+.library-heading { display: flex; align-items: center; justify-content: space-between; }
+.library-icon { width: 28px; height: 28px; flex-shrink: 0; border: 0; background: transparent; color: var(--text-secondary); cursor: pointer; border-radius: 4px; }
+.library-icon:hover { background: var(--lake-shimmer); }
+.tide-folder { margin-left: 6px; }
+.tide-folder summary { display: flex; align-items: center; gap: 4px; min-height: 34px; cursor: pointer; color: var(--text-secondary); font-size: 12px; }
+.tide-folder summary::before { content: '▸'; flex-shrink: 0; }
+.tide-folder[open] > summary::before { content: '▾'; }
+.folder-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.folder-items { margin-left: 6px; }
+.unfiled-title { font-size: 10px; color: var(--text-dim); padding: 6px 10px; }
+.manager-row { padding: 12px 0; border-bottom: 1px solid var(--dock-border); }
+.manager-name { color: var(--text-primary); font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.manager-detail { font-size: 12px; color: var(--text-secondary); overflow-wrap: anywhere; }
+.manager-tools { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.manager-tools label { font-size: 12px; color: var(--text-secondary); display: flex; gap: 6px; align-items: center; }
+.manager-tools select { flex: 1; min-width: 0; background: var(--lake-mid); color: var(--text-secondary); border: 1px solid var(--dock-border); border-radius: 4px; padding: 8px; font: inherit; font-size: 12px; }
+.depths-tabs { display: flex; gap: 6px; padding: 10px 18px; border-bottom: 1px solid var(--dock-border); }
+.depths-tabs button { flex: 1; min-height: 34px; border: 1px solid var(--dock-border); border-radius: 4px; background: transparent; color: var(--text-secondary); cursor: pointer; }
+.depths-tabs button[aria-selected="true"] { background: var(--lake-mid); color: var(--lake-light); }
+.crew-modal-field input[type="checkbox"] { width: 16px; height: 16px; padding: 0; margin: 0 8px 0 0; }
 .quick-action-btn[hidden] { display: none; }
 
 /* ── RESPONSIVE ── */
@@ -1128,14 +1159,17 @@ body {
       <span class="sonar-icon">🔍</span>
       <input type="text" class="sonar-input" placeholder="Sonar — search the depths..." oninput="filterTides(this.value)">
     </div>
-    <div class="dock-section">
-      <div class="dock-section-title">🌙 Past Tides</div>
+    <div class="dock-library" id="dockLibrary">
+      <section class="dock-pane tides-pane">
+        <div class="dock-section-title library-heading">🌙 Past Tides <button class="library-icon" onclick="openFolderDialog('create')" title="New folder" aria-label="New folder">＋</button></div>
+        <div class="past-tides" id="pastTides"></div>
+      </section>
+      <div class="dock-divider" id="dockDivider" role="separator" aria-label="Resize Past Tides and Crew" aria-orientation="horizontal" aria-valuemin="15" aria-valuemax="85" aria-valuenow="65" tabindex="0" title="Resize Past Tides and Crew"><span></span></div>
+      <section class="dock-pane crew-pane">
+        <div class="dock-section-title library-heading">👥 The Crew <button class="library-icon" onclick="openCrewManager()" title="Manage Crew" aria-label="Manage Crew">⚙</button></div>
+        <div class="crew-list" id="crewList"></div>
+      </section>
     </div>
-    <div class="past-tides" id="pastTides"></div>
-    <div class="dock-section">
-      <div class="dock-section-title">👥 The Crew</div>
-    </div>
-    <div class="crew-list" id="crewList"></div>
     <div class="dock-footer">
       <div class="dock-user-area" onclick="toggleDepths()">
         <div class="dock-user-avatar" id="dockUserAvatar">🪶</div>
@@ -1144,7 +1178,7 @@ body {
           <div class="dock-user-status">● On the water</div>
         </div>
       </div>
-      <button class="dock-footer-btn" onclick="toggleDepths()" title="Settings">⚙️</button>
+      <button class="dock-footer-btn" onclick="openCrewManager()" title="Manage Crew and settings" aria-label="Manage Crew and settings">⚙️</button>
     </div>
   </aside>
 
@@ -1357,7 +1391,12 @@ body {
     <h3>⚙️ Depths</h3>
     <button class="depths-close" onclick="toggleDepths()">✕</button>
   </div>
+  <div class="depths-tabs" role="tablist" aria-label="Settings views">
+    <button id="settingsTab" role="tab" aria-selected="true" onclick="showDepthsTab('settings')">Settings</button>
+    <button id="crewTab" role="tab" aria-selected="false" onclick="showDepthsTab('crew')">Crew</button>
+  </div>
   <div class="depths-content">
+    <div id="depthsSettingsView">
     <div class="depths-profile" onclick="document.getElementById('profilePicInput').click()">
       <div class="depths-profile-pic" id="depthsProfilePic">🪶</div>
       <div class="depths-profile-name" id="depthsProfileName">Guest</div>
@@ -1396,6 +1435,12 @@ body {
       <div class="depths-info">Leadership Clarity Platform</div>
     </div>
     <button class="logout-btn" onclick="doLogout()">🚪 Leave The Lake</button>
+    </div>
+    <div id="crewManagerView" hidden>
+      <div class="crew-modal-field"><label for="crewManagerSearch">Crew</label><input id="crewManagerSearch" type="search" placeholder="Search names, aliases, roles…" oninput="renderCrewManager()"></div>
+      <button class="depths-option backup-export" onclick="openCrewModal('add')">＋ Add Crew Member</button>
+      <div id="crewManagerList"></div>
+    </div>
   </div>
 </div>
 
@@ -1405,6 +1450,8 @@ body {
     <h3 id="crewModalTitle">🪶 Add to The Crew</h3>
     <div class="crew-modal-field"><label>Real Name</label><input type="text" id="crewModalName" placeholder="How you know them..."></div>
     <div class="crew-modal-field"><label>Nicknames / Aliases <span style="color:var(--text-dim);font-weight:normal;font-size:10px">*optional</span></label><input type="text" id="crewModalNickname" placeholder="e.g. Punzle, Ronnie, Ron"></div>
+    <div class="crew-modal-field"><label for="crewModalRole">Role</label><input id="crewModalRole" type="text" placeholder="e.g. CRM Lead, teammate, client"></div>
+    <div class="crew-modal-field"><label><input id="crewModalVisible" type="checkbox" checked> Show in sidebar</label></div>
     <div class="crew-modal-field" id="crewMatchField" hidden><label for="crewMatchSelect">Link To Crew Member</label><select id="crewMatchSelect"></select></div>
     <div class="crew-modal-field"><label>Avatar Emoji <span style="color:var(--text-dim);font-weight:normal;font-size:10px">*optional</span></label><input type="text" id="crewModalEmoji" placeholder="e.g. 🦈 🌊 🔥 🦊"></div>
     <div class="crew-modal-field"><label>🎭 Codename</label><input type="text" id="crewModalCodename" placeholder="e.g. The Architect, Driftwood..."></div>
@@ -1418,6 +1465,14 @@ body {
 </div>
 
 <!-- CREW PROFILE CARD -->
+<div class="crew-modal-overlay" id="folderModalOverlay" onclick="if(event.target===this)closeFolderDialog()">
+  <div class="crew-modal" style="border-radius:8px">
+    <h3 id="folderModalTitle">New Folder</h3>
+    <div class="crew-modal-field" id="folderNameField"><label for="folderModalName">Name</label><input id="folderModalName" type="text" maxlength="120"></div>
+    <div class="crew-modal-field"><label for="folderModalParent">Location</label><select id="folderModalParent"></select></div>
+    <div class="crew-modal-actions"><button class="crew-modal-cancel" onclick="closeFolderDialog()">Cancel</button><button class="crew-modal-save" onclick="saveFolderDialog()">Save</button></div>
+  </div>
+</div>
 <div class="crew-card-overlay" id="crewCardOverlay" onclick="closeCrewCard(event)">
   <div class="crew-card">
     <div class="crew-card-header">
@@ -1539,6 +1594,7 @@ body {
 <script src="/snapshot-context.js"></script>
 <script src="/full-backup.js"></script>
 <script src="/meeting-memory.js"></script>
+<script src="/organization.js"></script>
 <script src="/vendor/jszip.min.js"></script>
 <script src="/transcript-archive.js"></script>
 <script>
@@ -1548,6 +1604,8 @@ body {
 let currentMood       = 'calm';
 let selectedFiles     = [];
 let chatHistory       = [];
+let tideFolders = [];
+let tideQuery = '';
 let currentSessionId  = null;
 let currentUser       = null;
 let currentProfilePic = null;
@@ -2068,6 +2126,7 @@ async function enterLake() {
 }
 
 function doLogout() {
+  closeFolderDialog();showDepthsTab('settings');
   localStorage.removeItem('lakeUser');
   currentUser = null; currentProfilePic = null; chatHistory = []; currentSessionId = null;
   document.getElementById('depthsPanel').classList.remove('show');
@@ -2126,7 +2185,9 @@ function loadSessionHistory() {
   if (sessionHistoryKey === key) return sessionLoadPromise;
   sessionHistoryKey = key;
   allSessions = [];
+  tideFolders=[];tideQuery='';document.querySelector('.sonar-input').value='';loadDockSplit();
   renderTides();
+  const folderKey=storageKey('folders');
   sessionLoadPromise = (async () => {
     let sessions;
     try { sessions = await LakeSessionStore.read(key); }
@@ -2136,9 +2197,18 @@ function loadSessionHistory() {
       showToast('Device history could not be opened. Keep this tab open and export important chats.');
       console.warn('Session storage unavailable:', error);
     }
+    let folders=[];
+    try {folders=await LakeSessionStore.read(folderKey);} catch(error) {folders=error.recoveredSessions||[];showToast('Folders could not be opened on this device.');console.warn(error);}
     if (storageKey('sessions') !== key) return;
-    allSessions = Array.isArray(sessions) ? sessions : [];
+    tideFolders=LakeOrganization.cleanFolders(folders);
+    let renamed=false;
+    allSessions = (Array.isArray(sessions) ? sessions : []).map(session=>{
+      const title=LakeOrganization.titleFor(session,session.history || []);
+      if(title.name!==session.name || title.nameSource!==session.nameSource)renamed=true;
+      return {...session,...title};
+    });
     renderTides();
+    if(renamed)await persistSessions(allSessions,key);
   })();
   return sessionLoadPromise;
 }
@@ -2166,7 +2236,7 @@ async function saveSession(target) {
   const sessionData = {
     ...(sessions[existingIdx] || {}),
     id,
-    name:    sessions[existingIdx]?.name || getSessionName(history),
+    ...LakeOrganization.titleFor(sessions[existingIdx],history),
     preview: history[0]?.content?.substring(0, 60) || '',
     time:    new Date().toISOString(),
     history,
@@ -2179,33 +2249,11 @@ async function saveSession(target) {
 }
 
 function getSessionName(history = chatHistory) {
-  const first = history.find(m => m.role === 'user');
-  if (first?.content) return first.content.substring(0, 40) + (first.content.length > 40 ? '...' : '');
-  return 'New Session';
+  return LakeOrganization.titleFor(null,history).name;
 }
 
 function renderTides() {
-  const container = document.getElementById('pastTides');
-  if (!container) return;
-  if (allSessions.length === 0) {
-    container.innerHTML = '<div style="padding:12px 16px;font-size:12px;color:var(--text-dim)">No past tides yet — cast a line!</div>';
-    return;
-  }
-  container.innerHTML = allSessions.map((s) => {
-    const timeAgo  = getTimeAgo(s.time);
-    const isActive = s.id === currentSessionId;
-    const icon     = s.type === 'email' ? '📧' : '🌊';
-    return `<div class="tide-item ${isActive ? 'active' : ''}" onclick="loadTide('${s.id}')">
-      <span class="tide-icon">${icon}</span>
-      <div class="tide-info">
-        <div class="tide-name">${escapeHTML(s.name)}</div>
-        <div class="tide-preview">${escapeHTML(s.preview)}</div>
-      </div>
-      <span class="tide-time">${timeAgo}</span>
-      <button class="tide-delete" onclick="deleteSession(event,'${s.id}')">🗑</button>
-      <button class="tide-rename" onclick="renameSession(event,'${s.id}')">✏️</button>
-    </div>`;
-  }).join('');
+  renderTideTree();
 }
 
 function getTimeAgo(isoStr) {
@@ -2264,6 +2312,7 @@ async function renameSession(e, sessionId) {
   const newName = prompt('Rename this tide:', session.name);
   if (!newName?.trim()) return;
   session.name = newName.trim();
+  session.nameSource='manual';
   await persistSessions();
   renderTides();
 }
@@ -2280,11 +2329,7 @@ async function clearHistory() {
 }
 
 function filterTides(query) {
-  document.querySelectorAll('.tide-item').forEach(item => {
-    const name    = item.querySelector('.tide-name')?.textContent.toLowerCase()    || '';
-    const preview = item.querySelector('.tide-preview')?.textContent.toLowerCase() || '';
-    item.style.display = (name.includes(query.toLowerCase()) || preview.includes(query.toLowerCase())) ? 'flex' : 'none';
-  });
+  tideQuery=String(query||'');renderTides();
 }
 
 // ============================================
@@ -2460,6 +2505,7 @@ function renderCrew() {
     </div>`;
   }
   const crewHTML = crewMembers.map((member, idx) => {
+    if(member.hidden)return '';
     const color       = colors[idx % colors.length];
     const initial     = member.emoji || member.name.trim()[0].toUpperCase();
     const displayName = member.codename || member.name;
@@ -2472,6 +2518,7 @@ function renderCrew() {
   }).join('');
   list.innerHTML = suggestedHTML + crewHTML +
     `<div class="crew-item" onclick="openCrewModal('add')" style="justify-content:center;color:var(--text-dim);">+ Add to The Crew</div>`;
+  renderCrewManager();
 }
 
 function approveSuggested(idx) { openCrewModal('approve', idx, suggestedCrew[idx]); }
@@ -2492,6 +2539,7 @@ function openCrewModal(mode, idx = -1, prefill = '') {
     const m = crewMembers[idx];
     document.getElementById('crewModalName').value     = m.name     || '';
     document.getElementById('crewModalNickname').value = m.nickname || '';
+    document.getElementById('crewModalRole').value=m.role||'';document.getElementById('crewModalVisible').checked=!m.hidden;
     document.getElementById('crewModalCodename').value = m.codename || '';
     document.getElementById('crewModalEmoji').value    = m.emoji    || '';
     document.getElementById('crewModalContext').value  = m.context  || '';
@@ -2500,6 +2548,7 @@ function openCrewModal(mode, idx = -1, prefill = '') {
     const suggested = typeof prefill === 'object' && prefill ? prefill : { name: prefill };
     document.getElementById('crewModalName').value     = suggested.name || '';
     document.getElementById('crewModalNickname').value = suggested.nickname || '';
+    document.getElementById('crewModalRole').value=suggested.role||'';document.getElementById('crewModalVisible').checked=!suggested.hidden;
     document.getElementById('crewModalCodename').value = suggested.codename || '';
     document.getElementById('crewModalEmoji').value    = suggested.emoji || '';
     document.getElementById('crewModalContext').value  = suggested.context || '';
@@ -2524,6 +2573,7 @@ function saveCrewFromModal() {
   const member = {
     name,
     nickname: document.getElementById('crewModalNickname').value.trim(),
+    role:document.getElementById('crewModalRole').value.trim(),hidden:!document.getElementById('crewModalVisible').checked,
     codename: document.getElementById('crewModalCodename').value.trim(),
     emoji:    document.getElementById('crewModalEmoji').value.trim(),
     context:  document.getElementById('crewModalContext').value.trim()
@@ -2538,6 +2588,7 @@ function saveCrewFromModal() {
       const existing = crewMembers[Number(matchIndex)];
       const aliases = [existing.nickname, member.name !== existing.name ? member.name : '', member.nickname].filter(Boolean).join(', ');
       existing.nickname = [...new Set(aliases.split(/[,;/|]+/).map(alias => alias.trim()).filter(Boolean))].join(', ');
+      if(member.role)existing.role=member.role;
       existing.context = [existing.context, member.context].filter(Boolean).join('\n\n');
       for (const observation of observations) {
         existing.observations = existing.observations || [];
@@ -2586,7 +2637,7 @@ function openCrewProfile(idx) {
   if (member.codename) { codenameEl.textContent = `"${member.codename}"`; codenameEl.style.display = 'inline-block'; }
   else codenameEl.style.display = 'none';
   const contextEl = document.getElementById('crewCardContext');
-  contextEl.textContent = member.context || 'No context note yet — tap Edit to add one.';
+  contextEl.textContent = [member.role ? `Role: ${member.role}` : '',member.context || 'No context note yet — tap Edit to add one.'].filter(Boolean).join('\n\n');
   contextEl.classList.toggle('empty', !member.context);
   document.getElementById('crewCardAsk').onclick = () => {
     let prompt = `Tell me what I should know about ${member.name}`;
@@ -2632,7 +2683,7 @@ function setMood(mood) {
 // ============================================
 // DEPTHS
 // ============================================
-function toggleDepths() { document.getElementById('depthsPanel').classList.toggle('show'); }
+function toggleDepths() { showDepthsTab('settings');document.getElementById('depthsPanel').classList.toggle('show'); }
 
 // ============================================
 // HOW THE LAKE SEES YOU
@@ -2710,7 +2761,7 @@ function readMeetingCurrents(queryOverride) {
       if(!/\.(txt|log)$/i.test(file.name) || !file.data) return;
       let text;
       try {text = new TextDecoder('utf-8',{fatal:true,ignoreBOM:true}).decode(Uint8Array.from(atob(file.data.split(',')[1]),char => char.charCodeAt(0)));} catch {text = null;}
-      documents.push({id:`${session.id}/${messageIndex}/${fileIndex}`,sessionId:session.id,filename:file.name,meetingDate:file.meetingDate,text});
+      documents.push({id:`${session.id}/${messageIndex}/${fileIndex}`,sessionId:session.id,filename:file.name,meetingDate:file.meetingDate,folderPath:LakeOrganization.folderPath(session.folderId,tideFolders),sessionTitle:session.name,text});
     }));
   }
   if(!documents.length) {showToast('Upload and send meeting TXT parts first. The archive uses transcripts stored on this device.');return;}
@@ -2843,9 +2894,10 @@ async function createSnapshot(scope) {
   if (!chatHistory.length && scope === 'chat') { showToast('Start a conversation first.'); return; }
   try {
     const current = {
-      id: currentSessionId || 'current', name: getSessionName(), time: new Date().toISOString(), history: chatHistory
+      ...allSessions.find(session=>session.id===currentSessionId),
+      id: currentSessionId || 'current', name: allSessions.find(session=>session.id===currentSessionId)?.name || getSessionName(), time: new Date().toISOString(), history: chatHistory
     };
-    const source = LakeSnapshotContext.build({ scope, sessions: allSessions, current, crew: crewMembers, user: currentUser });
+    const source = LakeSnapshotContext.build({ scope, sessions: allSessions, current, crew: crewMembers, user: currentUser,folders:tideFolders });
     const labels = { chat: 'this conversation', total: 'my total context on this device', both: 'this conversation and my total context, including how this chat contributed' };
     return await sendWave({
       visibleText: `Export an AI handoff snapshot of ${labels[scope]} so I can give it to another Lake or AI instance and pick up where we left off.`,
@@ -2880,9 +2932,9 @@ async function exportFullBackup() {
     await saveSession();
     const current = { id: currentSessionId, name: allSessions.find(session => session.id === currentSessionId)?.name || getSessionName(), history: chatHistory, mood: currentMood };
     const backup = LakeFullBackup.build({
-      user: currentUser, sessions: allSessions, current, crew: crewMembers, suggestedCrew,
+      user: currentUser, sessions: allSessions, current, crew: crewMembers, suggestedCrew,folders:tideFolders,
       profilePic: currentProfilePic,
-      settings: { mood: currentMood, defaultPromptBatch: localStorage.getItem('defaultBatch'), requestInProgress: waveInFlight }
+      settings: { mood: currentMood, defaultPromptBatch: localStorage.getItem('defaultBatch'), requestInProgress: waveInFlight,dockSplit }
     });
     const url = URL.createObjectURL(new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json;charset=utf-8' }));
     const link = document.createElement('a');
@@ -3004,7 +3056,7 @@ async function sendWave(options = {}) {
   origin = {
     id: currentSessionId, history: chatHistory, key: storageKey('sessions'), mood: currentMood,
     userName: currentUser?.name || '', userAliases: currentUser?.aliases || '',
-    crew: JSON.stringify(crewMembers.map(({ name, nickname, codename, context, observations }) => ({ name, nickname, codename, context, observations: (observations || []).slice(-10) })))
+    crew: JSON.stringify(crewMembers.map(({ name, nickname, codename, role, context, observations }) => ({ name, nickname, codename, role, context, observations: (observations || []).slice(-10) })))
   };
   activeWave = origin;
 
@@ -3572,5 +3624,6 @@ function setupSwipe() {
   });
 }
 </script>
+<script src="/library-ui.js"></script>
 </body>
 </html>

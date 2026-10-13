@@ -96,7 +96,7 @@ const { chromium } = require(process.env.LAKE_PLAYWRIGHT_PATH || 'playwright');
     await page.setViewportSize({ width: 390, height: 844 });
     await page.evaluate(() => openCrewModal('edit', 0));
     await page.screenshot({ path: path.join(screenshotDirectory, 'lake-bot-mobile.png'), animations: 'disabled' });
-    const modal = await page.locator('.crew-modal').boundingBox();
+    const modal = await page.locator('#crewModalOverlay .crew-modal').boundingBox();
     assert.ok(modal.y >= 0 && modal.y + modal.height <= 844);
     assert.deepEqual(errors, []);
     console.log('Browser regression checks passed: legacy migration, large attachments, reload, follow-ups, storage failure, reviewed relationship memory, desktop/mobile layouts.');

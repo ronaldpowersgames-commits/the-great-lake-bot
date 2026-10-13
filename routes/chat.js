@@ -463,6 +463,7 @@ router.post('/', receiveUploads, async function(req, res) {
           name: String(member.name || '').slice(0, 100),
           aliases: String(member.nickname || '').slice(0, 500),
           codename: String(member.codename || '').slice(0, 100),
+          role: String(member.role || '').slice(0, 150),
           userReviewedNotes: String(member.context || '').slice(0, 1500),
           reviewedObservations: Array.isArray(member.observations) ? member.observations.filter(item => item?.reviewed).slice(-10).map(item => ({
             recordedAt: String(item.date || ''), sessionId: String(item.sessionId || ''),

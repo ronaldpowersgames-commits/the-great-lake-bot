@@ -141,6 +141,25 @@ member. Nicknames act as aliases, and ambiguous matches require confirmation.
 Approved observations retain their source tide, filenames and date, and are
 included in later analysis as reviewed history, not unquestionable facts.
 
+## Tides And Crew Organization
+
+Transcript chats default to the original TXT/LOG filename, without splitter part
+suffixes. Manually renamed chats keep their names. Past Tides supports nested
+folders, chat moves, and search by folder, filename or chat text. These are virtual
+folders inside the app, not changes to Windows folders. Removing a folder moves
+its chats and subfolders to its parent; it does not delete their contents.
+
+Drag the separator between Past Tides and Crew to resize their sidebar space.
+Touch dragging and keyboard arrow keys work too; the split is saved per profile.
+Double-click the separator to restore its default split.
+
+The bottom cog opens Crew management, with a Settings tab alongside it. Edit
+roles, nicknames/aliases and notes, or hide a member from the sidebar. Hidden
+members remain available to analysis and backups. Connecting duplicate members
+requires explicit confirmation and preserves aliases, notes and dated evidence;
+original transcript speaker labels are unchanged. Full backups include folders,
+Crew visibility and roles, and the sidebar split.
+
 ## Models And Checks
 
 `OPENAI_MODEL` defaults to `chat-latest`, the official rolling alias for the
@@ -166,6 +185,9 @@ cross-profile isolation, deleted in-progress chats and full-data downloads.
 layout and persistent source selection without deleting original attachments.
 `tests/meeting-memory.cjs` checks date corrections, fuzzy speaker review, alias
 linking, dated cross-meeting retrieval, profile isolation and source navigation.
+`tests/library-organization.cjs` checks transcript titles, manual names, nested
+folders, safe folder removal, Crew management, backups, profile isolation and
+mouse/touch/keyboard sidebar resizing.
 
 ## Endpoints
 
