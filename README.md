@@ -160,6 +160,20 @@ requires explicit confirmation and preserves aliases, notes and dated evidence;
 original transcript speaker labels are unchanged. Full backups include folders,
 Crew visibility and roles, and the sidebar split.
 
+## Prompt Types
+
+The welcome carousel has seven Types: Social, Still Waters, Internal, Podcast
+Style, Parent, Learn and Hypnotist. Each has twelve quick prompts in two vertically
+scrolling, snap-aligned groups of six. Swipe horizontally or use the labelled dots
+to choose a Type. Every second group includes Use This Type, a practical usage
+guide. Long-press a prompt to save that Type as the welcome default.
+
+Types choose starting prompts; they do not select separate models, clear chat
+context or replace the Calm/Analytical/Stormy response style. Learn includes quiz
+and flashcard generation in chat, not automatic flashcard storage. Hypnotist
+supports educational explanations and voluntary scripts, with consent, stop
+options, clear endings and no clinical or guaranteed-effect claims.
+
 ## Models And Checks
 
 `OPENAI_MODEL` defaults to `chat-latest`, the official rolling alias for the
@@ -188,6 +202,8 @@ linking, dated cross-meeting retrieval, profile isolation and source navigation.
 `tests/library-organization.cjs` checks transcript titles, manual names, nested
 folders, safe folder removal, Crew management, backups, profile isolation and
 mouse/touch/keyboard sidebar resizing.
+`tests/prompt-types.cjs` checks all seven Types, twelve prompts each, usage-guide
+actions, new-session resets, wheel/touch group scrolling and mobile layouts.
 
 ## Endpoints
 

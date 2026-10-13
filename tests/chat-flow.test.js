@@ -414,6 +414,26 @@ test('interaction analysis invites contextual clarification while respecting evi
   }
 });
 
+test('prompt Types include twelve choices and a usage guide, with grounded specialist and subtext guidance', async () => {
+  const types=require('../public/prompt-types');
+  assert.equal(types.length,7);
+  for(const type of types) {
+    assert.equal((type.prompts?.length || 6)+type.more.length,12);
+    assert.equal(type.more.at(-1)[1],'Use This Type');
+    assert.match(type.more.at(-1)[2],/neither resets this chat/);
+  }
+  assert.ok(types.find(type=>type.name==='Learn').prompts.some(prompt=>prompt[1]==='Quiz Maker'));
+  assert.ok(types.find(type=>type.name==='Learn').prompts.some(prompt=>prompt[1]==='Flashcard Maker'));
+  const {handler,requests}=routeContext();
+  await handler({body:{message:'Help me interpret this exchange'},files:[]},{json(){},status(){return this;}});
+  const prompt=requests.at(-1).messages[0].content;
+  assert.match(prompt,/credible alternatives/);
+  assert.match(prompt,/Do not invent numerical probabilities/);
+  assert.match(prompt,/informed participation/);
+  assert.match(prompt,/Separate questions from answers/);
+  assert.match(prompt,/do not diagnose a child/);
+});
+
 test('meeting dates come from titles, preserve uncertainty and accept reviewed corrections', () => {
   const {dateOf} = require('../public/meeting-memory');
   assert.equal(dateOf('2026-08-31_Weekly-part-001-of-003.txt').date,'2026-08-31');

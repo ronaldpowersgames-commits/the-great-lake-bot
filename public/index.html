@@ -448,14 +448,16 @@ body {
   box-sizing: border-box; display: flex; flex-direction: column; gap: 4px;
 }
 .batch-label {
-  text-align: center; font-size: 0.7rem; letter-spacing: 0.08em;
+  text-align: center; font-size: 0.7rem; letter-spacing: 0;
   color: var(--lake-light); opacity: 0.5;
-  margin-top: 4px; margin-bottom: 4px; text-transform: uppercase;
+  margin-top: 4px; margin-bottom: 4px;
 }
 .welcome-prompts-grid {
   display: grid; grid-template-columns: 1fr 1fr; gap: 7px;
   width: 100%; box-sizing: border-box;
 }
+.prompt-group-scroll { height: 128px; overflow-y: auto; overflow-x: hidden; scroll-snap-type: y mandatory; overscroll-behavior-y: contain; scrollbar-width: thin; }
+.prompt-group-scroll .welcome-prompts-grid { height: 128px; grid-template-rows: repeat(3, 38px); scroll-snap-align: start; scroll-snap-stop: always; }
 .welcome-prompt-half {
   background: rgba(45,140,240,0.07); border: 1px solid rgba(45,140,240,0.13);
   border-radius: 13px; color: var(--text-secondary); font-size: 12px;
@@ -475,6 +477,8 @@ body {
   transition: background 0.25s ease, transform 0.25s ease;
 }
 .carousel-dot.active { background: var(--lake-light); transform: scale(1.3); }
+button.carousel-dot { border: 0; padding: 0; }
+button.welcome-prompt-half { font-family: inherit; width: 100%; }
 
 /* ── WAVE BUBBLES ── */
 .wave {
@@ -1595,6 +1599,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
 <script src="/full-backup.js"></script>
 <script src="/meeting-memory.js"></script>
 <script src="/organization.js"></script>
+<script src="/prompt-types.js"></script>
 <script src="/vendor/jszip.min.js"></script>
 <script src="/transcript-archive.js"></script>
 <script>
@@ -3556,13 +3561,46 @@ function initMic() {
 // CAROUSEL
 // ============================================
 let currentBatch = 1;
-const TOTAL_BATCHES = 4;
+const TOTAL_BATCHES = 7;
 let defaultBatch = parseInt(localStorage.getItem('defaultBatch') || '1');
 
 function initCarousel() {
-  currentBatch = defaultBatch;
   const track  = document.getElementById('promptCarouselTrack');
   if (!track) return;
+  if(!track.dataset.typesReady) {
+    const existing=track.querySelectorAll('.prompt-batch');
+    LakePromptTypes.forEach((type,index)=>{
+      let batch=existing[index];
+      if(!batch) {
+        batch=document.createElement('div');batch.className='prompt-batch';
+        const label=document.createElement('div');label.className='batch-label';batch.append(label);
+        const grid=document.createElement('div');grid.className='welcome-prompts-grid';
+        type.prompts.forEach(([icon,name,prompt])=>{
+          const button=document.createElement('button');button.type='button';button.className='welcome-prompt-half';
+          button.textContent=icon+' '+name;button.dataset.longPressBatch=String(index);
+          button.onclick=()=>sendPrompt(prompt);grid.append(button);
+        });
+        batch.append(grid);track.append(batch);
+      }
+      batch.querySelector('.batch-label').textContent=type.icon+' Type: '+type.name;
+      const groups=document.createElement('div');groups.className='prompt-group-scroll';groups.tabIndex=0;
+      groups.setAttribute('role','region');groups.setAttribute('aria-label',type.name+' prompt groups');
+      groups.append(batch.querySelector('.welcome-prompts-grid'));
+      const next=document.createElement('div');next.className='welcome-prompts-grid';
+      type.more.forEach(([icon,name,prompt])=>{
+        const button=document.createElement('button');button.type='button';button.className='welcome-prompt-half';
+        button.textContent=icon+' '+name;button.dataset.longPressBatch=String(index);button.onclick=()=>sendPrompt(prompt);next.append(button);
+      });
+      groups.append(next);batch.append(groups);
+    });
+    const dots=document.querySelector('.carousel-dots');dots.replaceChildren();
+    LakePromptTypes.forEach((type,index)=>{
+      const dot=document.createElement('button');dot.type='button';dot.className='carousel-dot';dot.dataset.batch=String(index);
+      dot.title='Type: '+type.name;dot.setAttribute('aria-label','Type: '+type.name);dots.append(dot);
+    });
+    track.dataset.typesReady='true';
+  }
+  currentBatch = Number.isInteger(defaultBatch) && defaultBatch>=0 && defaultBatch<TOTAL_BATCHES ? defaultBatch : 1;
   track.style.transition = 'none';
   track.style.transform  = `translateX(-${currentBatch * 100}%)`;
   requestAnimationFrame(() => { track.style.transition = ''; });
@@ -3587,7 +3625,7 @@ function goToBatch(index) {
 function setDefaultBatch(batchIndex) {
   defaultBatch = batchIndex;
   localStorage.setItem('defaultBatch', batchIndex);
-  showToast(`Default batch set ✓`);
+  showToast(`Default Type: ${LakePromptTypes[batchIndex].name}`);
 }
 
 function setupDotClicks() {
@@ -3616,11 +3654,11 @@ function setupLongPress() {
 function setupSwipe() {
   const container = document.querySelector('.prompt-carousel-container');
   if (!container) return;
-  let startX = 0;
-  container.addEventListener('touchstart', (e) => { startX = e.touches[0].clientX; }, { passive: true });
+  let startX = 0; let startY = 0;
+  container.addEventListener('touchstart', (e) => { startX = e.touches[0].clientX; startY=e.touches[0].clientY; }, { passive: true });
   container.addEventListener('touchend',   (e) => {
     const diff = startX - e.changedTouches[0].clientX;
-    if (Math.abs(diff) > 40) goToBatch(diff > 0 ? currentBatch + 1 : currentBatch - 1);
+    if (Math.abs(diff) > 40 && Math.abs(diff)>Math.abs(startY-e.changedTouches[0].clientY)) goToBatch(diff > 0 ? currentBatch + 1 : currentBatch - 1);
   });
 }
 </script>
