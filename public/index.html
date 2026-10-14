@@ -1456,6 +1456,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
     <div class="crew-modal-field"><label>Nicknames / Aliases <span style="color:var(--text-dim);font-weight:normal;font-size:10px">*optional</span></label><input type="text" id="crewModalNickname" placeholder="e.g. Punzle, Ronnie, Ron"></div>
     <div class="crew-modal-field"><label for="crewModalRole">Role</label><input id="crewModalRole" type="text" placeholder="e.g. CRM Lead, teammate, client"></div>
     <div class="crew-modal-field"><label><input id="crewModalVisible" type="checkbox" checked> Show in sidebar</label></div>
+    <div class="crew-modal-field"><label><input id="crewModalSelf" type="checkbox"> ⭐ This is me</label></div>
     <div class="crew-modal-field" id="crewMatchField" hidden><label for="crewMatchSelect">Link To Crew Member</label><select id="crewMatchSelect"></select></div>
     <div class="crew-modal-field"><label>Avatar Emoji <span style="color:var(--text-dim);font-weight:normal;font-size:10px">*optional</span></label><input type="text" id="crewModalEmoji" placeholder="e.g. 🦈 🌊 🔥 🦊"></div>
     <div class="crew-modal-field"><label>🎭 Codename</label><input type="text" id="crewModalCodename" placeholder="e.g. The Architect, Driftwood..."></div>
@@ -2517,7 +2518,7 @@ function renderCrew() {
     const nickname    = member.nickname ? `<span style="color:var(--text-dim);font-size:11px">${escapeHTML(member.nickname)}</span>` : '';
     return `<div class="crew-item" onclick="openCrewProfile(${idx})">
       <div class="crew-avatar" style="background:${member.emoji ? 'none' : `linear-gradient(135deg,${color})`}">${initial}</div>
-      <div style="flex:1;min-width:0"><div class="crew-name">${escapeHTML(displayName)}</div>${nickname}</div>
+      <div style="flex:1;min-width:0"><div class="crew-name">${member.isSelf ? '<span title="This is you" aria-label="This is you">⭐</span> ' : ''}${escapeHTML(displayName)}</div>${nickname}</div>
       <button class="tide-delete" onclick="removeCrew(event,${idx})">🗑</button>
     </div>`;
   }).join('');
@@ -2545,6 +2546,7 @@ function openCrewModal(mode, idx = -1, prefill = '') {
     document.getElementById('crewModalName').value     = m.name     || '';
     document.getElementById('crewModalNickname').value = m.nickname || '';
     document.getElementById('crewModalRole').value=m.role||'';document.getElementById('crewModalVisible').checked=!m.hidden;
+    document.getElementById('crewModalSelf').checked=m.isSelf===true;
     document.getElementById('crewModalCodename').value = m.codename || '';
     document.getElementById('crewModalEmoji').value    = m.emoji    || '';
     document.getElementById('crewModalContext').value  = m.context  || '';
@@ -2554,6 +2556,7 @@ function openCrewModal(mode, idx = -1, prefill = '') {
     document.getElementById('crewModalName').value     = suggested.name || '';
     document.getElementById('crewModalNickname').value = suggested.nickname || '';
     document.getElementById('crewModalRole').value=suggested.role||'';document.getElementById('crewModalVisible').checked=!suggested.hidden;
+    document.getElementById('crewModalSelf').checked=false;
     document.getElementById('crewModalCodename').value = suggested.codename || '';
     document.getElementById('crewModalEmoji').value    = suggested.emoji || '';
     document.getElementById('crewModalContext').value  = suggested.context || '';
@@ -2579,18 +2582,23 @@ function saveCrewFromModal() {
     name,
     nickname: document.getElementById('crewModalNickname').value.trim(),
     role:document.getElementById('crewModalRole').value.trim(),hidden:!document.getElementById('crewModalVisible').checked,
+    isSelf:document.getElementById('crewModalSelf').checked,
     codename: document.getElementById('crewModalCodename').value.trim(),
     emoji:    document.getElementById('crewModalEmoji').value.trim(),
     context:  document.getElementById('crewModalContext').value.trim()
   };
+  let savedMember;
   if (crewModalMode === 'edit' && crewModalIndex >= 0) {
     crewMembers[crewModalIndex] = { ...crewMembers[crewModalIndex], ...member };
+    savedMember=crewMembers[crewModalIndex];
   } else if (crewModalMode === 'approve' && crewModalIndex >= 0) {
     const suggestion = suggestedCrew[crewModalIndex];
     const observations = [suggestion.observation,...(suggestion.observations || [])].filter(Boolean);
     const matchIndex = document.getElementById('crewMatchSelect').value;
     if (matchIndex !== '') {
       const existing = crewMembers[Number(matchIndex)];
+      if(member.isSelf)existing.isSelf=true;
+      savedMember=existing;
       const aliases = [existing.nickname, member.name !== existing.name ? member.name : '', member.nickname].filter(Boolean).join(', ');
       existing.nickname = [...new Set(aliases.split(/[,;/|]+/).map(alias => alias.trim()).filter(Boolean))].join(', ');
       if(member.role)existing.role=member.role;
@@ -2604,11 +2612,14 @@ function saveCrewFromModal() {
     } else {
       if (observations.length) member.observations = observations.map(observation => ({...observation,reviewed:true}));
       crewMembers.push(member);
+      savedMember=member;
     }
     suggestedCrew.splice(crewModalIndex, 1); saveSuggestedCrew();
   } else {
     crewMembers.push(member);
+    savedMember=member;
   }
+  if(member.isSelf)crewMembers.forEach(person=>{person.isSelf=person===savedMember;});
   saveCrew(); renderCrew();
   document.getElementById('crewModalOverlay').classList.remove('show');
 }
@@ -2636,7 +2647,7 @@ function openCrewProfile(idx) {
   const color  = colors[idx % colors.length];
   document.getElementById('crewCardAvatar').style.background = member.emoji ? 'none' : `linear-gradient(135deg,${color})`;
   document.getElementById('crewCardAvatar').textContent   = member.emoji || member.name.trim()[0].toUpperCase();
-  document.getElementById('crewCardName').textContent     = member.name;
+  document.getElementById('crewCardName').textContent     = (member.isSelf ? '⭐ ' : '')+member.name;
   document.getElementById('crewCardNickname').textContent = member.nickname || '';
   const codenameEl = document.getElementById('crewCardCodename');
   if (member.codename) { codenameEl.textContent = `"${member.codename}"`; codenameEl.style.display = 'inline-block'; }
@@ -3061,6 +3072,7 @@ async function sendWave(options = {}) {
   origin = {
     id: currentSessionId, history: chatHistory, key: storageKey('sessions'), mood: currentMood,
     userName: currentUser?.name || '', userAliases: currentUser?.aliases || '',
+    userCrew:JSON.stringify(crewMembers.filter(member=>member.isSelf===true).slice(0,1).map(({name,nickname,codename,role})=>({name,aliases:nickname,codename,role}))),
     crew: JSON.stringify(crewMembers.map(({ name, nickname, codename, role, context, observations }) => ({ name, nickname, codename, role, context, observations: (observations || []).slice(-10) })))
   };
   activeWave = origin;
@@ -3123,6 +3135,7 @@ async function sendWave(options = {}) {
     formData.append('mood', origin.mood);
     formData.append('userName', origin.userName);
     formData.append('userAliases', origin.userAliases);
+    formData.append('userCrew', origin.userCrew);
     formData.append('crew', origin.crew);
     const historyToSend = origin.history.slice(-11, -1).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.content }));
     formData.append('history', JSON.stringify(historyToSend));

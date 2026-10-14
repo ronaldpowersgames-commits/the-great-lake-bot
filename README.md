@@ -160,6 +160,12 @@ requires explicit confirmation and preserves aliases, notes and dated evidence;
 original transcript speaker labels are unchanged. Full backups include folders,
 Crew visibility and roles, and the sidebar split.
 
+In a Crew member's editor, select This is me to identify yourself. Only one
+member per profile can be selected; selecting another moves the star, and
+unchecking clears it. The identity and aliases accompany chat analysis and AI
+handoffs, survive duplicate linking and full backups, and remain profile-local.
+Ambiguous transcript authorship still requires clarification.
+
 ## Prompt Types
 
 The welcome carousel has seven Types: Social, Still Waters, Internal, Podcast

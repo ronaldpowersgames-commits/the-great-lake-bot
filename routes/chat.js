@@ -501,7 +501,12 @@ router.post('/', receiveUploads, async function(req, res) {
     } catch {
       crewContext = '';
     }
-    const userIdentity = '\nUSER-SUPPLIED NAME/HANDLES (candidate speaker labels, not proof):\n' + JSON.stringify({name: sanitizeName(userName), aliases: String(req.body.userAliases || '').slice(0, 1000)});
+    let selfCrew=[];
+    try {
+      const selected=JSON.parse(req.body.userCrew || '[]');
+      if(Array.isArray(selected))selfCrew=selected.slice(0,1).filter(member=>member && typeof member==='object').map(member=>({name:sanitizeName(member.name),aliases:String(member.aliases||'').slice(0,1000),codename:sanitizeName(member.codename),role:String(member.role||'').slice(0,150)}));
+    } catch {}
+    const userIdentity = '\nUSER-SUPPLIED NAME/HANDLES (candidate speaker labels, not proof):\n' + JSON.stringify({name: sanitizeName(userName), aliases: String(req.body.userAliases || '').slice(0, 1000),selfCrew}) + '\nselfCrew is the Crew member explicitly marked by the user as themselves. Use their name and aliases to understand the user perspective, but still clarify conflicting or ambiguous transcript authorship; a matching label or face alone is not proof. Do not mark another Crew member as the user based on guesswork.\n';
     const openingContext = req.body.action === 'pro-tip' ? `
 HOMEPAGE WAVE: PRO-TIP CONVERSATION OPENER
 The user may have no topic in mind. Give one useful, concrete pro-tip in ONE sentence, followed by exactly ONE inviting, incisive open question. The one-sentence constraint applies to the tip, not the whole response. Keep the whole opening brief, with no headings, scores, questionnaire or grand promise.

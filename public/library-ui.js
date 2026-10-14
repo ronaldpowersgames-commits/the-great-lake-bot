@@ -131,7 +131,7 @@ function renderCrewManager() {
   for(const [index,member] of crewMembers.entries()) {
     if(![member.name,member.nickname,member.role,member.context,member.codename].join(' ').toLowerCase().includes(query))continue;
     const row=document.createElement('div');row.className='manager-row';
-    const name=document.createElement('div');name.className='manager-name';name.textContent=member.name;
+    const name=document.createElement('div');name.className='manager-name';name.textContent=(member.isSelf?'⭐ ':'')+member.name;if(member.isSelf)name.title='This is you';
     const detail=document.createElement('div');detail.className='manager-detail';detail.textContent=[member.role,member.nickname].filter(Boolean).join(' · ');
     const tools=document.createElement('div');tools.className='manager-tools';
     const label=document.createElement('label');const visible=document.createElement('input');visible.type='checkbox';visible.checked=!member.hidden;visible.setAttribute('aria-label','Show '+member.name+' in sidebar');

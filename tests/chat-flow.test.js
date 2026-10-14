@@ -434,6 +434,19 @@ test('prompt Types include twelve choices and a usage guide, with grounded speci
   assert.match(prompt,/do not diagnose a child/);
 });
 
+test('self Crew identity reaches analysis, snapshots and first-person meeting retrieval', async () => {
+  const {handler,requests}=routeContext();
+  await handler({body:{message:'What did I say?',userName:'Punzle',userCrew:JSON.stringify([{name:'Ronald Powers',aliases:'Ron, Ronnie',role:'CRM Lead'}])},files:[]},{json(){},status(){return this;}});
+  const prompt=requests.at(-1).messages[0].content;
+  assert.match(prompt,/Ronald Powers/);assert.match(prompt,/Ron, Ronnie/);assert.match(prompt,/explicitly marked by the user as themselves/);assert.match(prompt,/clarify conflicting or ambiguous transcript authorship/);
+  const crew=[{name:'Ronald Powers',nickname:'Ron, Ronnie',isSelf:true}];
+  const snapshot=require('../public/snapshot-context').build({scope:'chat',sessions:[],current:{id:'one',history:[]},crew,user:{name:'Punzle'}});
+  assert.match(snapshot.parts[0].text,/"selfCrew"/);assert.match(snapshot.parts[0].text,/Ronald Powers/);
+  const result=require('../public/meeting-memory').retrieve([],'What did I commit to?',crew);
+  assert.match(JSON.stringify(result),/Ronald Powers/);
+  const merged=require('../public/organization').mergeCrew({name:'Ronald Powers'},{name:'Ron',isSelf:true});assert.equal(merged.isSelf,true);
+});
+
 test('meeting dates come from titles, preserve uncertainty and accept reviewed corrections', () => {
   const {dateOf} = require('../public/meeting-memory');
   assert.equal(dateOf('2026-08-31_Weekly-part-001-of-003.txt').date,'2026-08-31');

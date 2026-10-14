@@ -20,9 +20,9 @@
     };
     const source = JSON.stringify({
       manifest,
-      user: { name: user?.name || '', aliases: user?.aliases || '' },
+      user: { name: user?.name || '', aliases: user?.aliases || '', selfCrew:crew.filter(member=>member.isSelf===true).slice(0,1).map(member=>({name:member.name,aliases:member.nickname,codename:member.codename,role:member.role})) },
       crew: scope === 'chat' ? [] : crew.map(member => ({
-        name: member.name, aliases: member.nickname, codename: member.codename, role: member.role, userNotes: member.context,
+        name: member.name, aliases: member.nickname, codename: member.codename, role: member.role, isUser: member.isSelf===true, userNotes: member.context,
         reviewedObservations: (member.observations || []).filter(observation => observation.reviewed).map(observation => ({
           recordedAt: observation.date, sessionId: observation.sessionId, evidence: observation.evidence,
           note: observation.note, sources: observation.sources, meetingDates: observation.meetingDates || []

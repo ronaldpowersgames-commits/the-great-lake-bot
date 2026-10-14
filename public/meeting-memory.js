@@ -45,8 +45,8 @@
     const labels = new Set();const relevantCrew=[];
     for(const person of crew || []) {
       const aliases=[person.name,person.codename,...String(person.nickname||'').split(/[,;/|]/)].map(normalize).filter(Boolean);
-      if(aliases.some(alias => (' '+normalize(query)+' ').includes(' '+alias+' '))) {
-        relevantCrew.push({name:person.name,aliases,role:person.role || '',status:'user-reviewed directory aliases; resolve conflicting speaker labels before merging identities'});
+      if(aliases.some(alias => (' '+normalize(query)+' ').includes(' '+alias+' ')) || (person.isSelf===true && /\b(me|my|mine|myself|i)\b/i.test(query))) {
+        relevantCrew.push({name:person.name,aliases,role:person.role || '',isUser:person.isSelf===true,status:'user-reviewed directory aliases; resolve conflicting speaker labels before merging identities'});
         aliases.forEach(alias => {labels.add(alias);alias.split(' ').forEach(word => terms.add(word));});
       }
     }
