@@ -1,7 +1,7 @@
 LAKE SCORE — DEFINITION
 
 Lake Score (X.X/10)
-A Lake Score is a single numerical rating (0.0–10.0) that reflects how "lakey" a person's communication or behavior is — meaning how closely it matches the qualities of a deep, calm, high-clarity thinker.
+A Lake Score is an interpretive communication rating (0.0–10.0) for a person, message or whole interaction in the supplied material. It describes clarity, depth, apparent authenticity, volatility management and cohesion in that context, not a person's worth or a validated psychological trait.
 
 A high Lake Score indicates:
 - Clarity (low noise, high signal)
@@ -24,16 +24,16 @@ The score is always expressed as X.X/10.
 
 LAKE SCORE — HOW TO CALCULATE (Internal Logic)
 
-When generating a Lake Score, evaluate the person or message across five dimensions:
+When generating a Lake Score, evaluate the person, message or overall interaction across five dimensions, each out of 10.0. The Lake Score is their arithmetic mean, rounded to one decimal. These are interpretive communication heuristics, not validated psychological measures.
 
-1. Clarity (0–2 points)
+1. Clarity (0.0–10.0)
    How clear, structured, and signal-rich is the communication?
    • Low ambiguity — direct language, no hedging
    • Explicit intent — they say what they mean
    • Evidence reference — claims backed by specifics
    • Logical sequencing — ideas flow in order
 
-2. Depth (0–2 points)
+2. Depth (0.0–10.0)
    How thoughtful, reflective, or insight-driven is it?
    • Multi-step reasoning — goes beyond surface
    • Context awareness — understands the system
@@ -41,7 +41,7 @@ When generating a Lake Score, evaluate the person or message across five dimensi
    • Root cause identification — finds the real driver
    • Anticipatory thinking — predicts downstream effects
 
-3. Authenticity (0–2 points)
+3. Authenticity (0.0–10.0)
    How honest, congruent, and grounded does it feel?
    • Consistency with evidence — story matches reality
    • Transparency — shows their working
@@ -49,7 +49,7 @@ When generating a Lake Score, evaluate the person or message across five dimensi
    • Tone consistency — same voice throughout
    • Accountability — takes responsibility
 
-4. Stillness (0–2 points)
+4. Volatility Management / Stillness (0.0–10.0; higher means better regulation)
    How calm, regulated, and non-reactive is the tone?
    • Tone stability — doesn't spike or escalate
    • Low emotional spikes — measured, not reactive
@@ -57,14 +57,14 @@ When generating a Lake Score, evaluate the person or message across five dimensi
    • Regulation under stress — steady under pressure
    • Predictable emotional pattern — readable, not erratic
 
-5. Symbolic Cohesion (0–2 points)
+5. Symbolic Cohesion (0.0–10.0)
    How well do the ideas connect into a coherent current?
    • Logical consistency — no contradictions
    • Evidence alignment — examples support claims
    • Narrative stability — story doesn't shift
    • Non-circular reasoning — doesn't loop back on itself
 
-Add them together to produce a score out of 10.
+Average the five scores to produce a score out of 10.
 Format: X.X/10
 
 ---
@@ -74,7 +74,7 @@ LAKE INFLUENCE SCORE — DEFINITION
 Lake Influence Score (Y.Y/10)
 A supplementary rating (separate from Lake Score) that measures how powerfully someone moves others and systems. Three dimensions working together:
 
-1. Influence Power (0–3.3 points)
+1. Influence Power (0.0–10.0)
    How persuasive and compelling is the communication?
    • Rhetorical strength — language lands hard
    • Credibility signals — they feel trustworthy
@@ -82,7 +82,7 @@ A supplementary rating (separate from Lake Score) that measures how powerfully s
    • Argument coherence — logic is airtight
    • Narrative momentum — pulls you forward
 
-2. Activation Energy (0–3.3 points)
+2. Activation Energy (0.0–10.0)
    How well do they move others toward action?
    • Clear calls to action — knows what they want
    • Friction reduction — removes obstacles
@@ -90,7 +90,7 @@ A supplementary rating (separate from Lake Score) that measures how powerfully s
    • Urgency without volatility — compelling but calm
    • Goal alignment — connects to what matters
 
-3. Clarity Reach (0–3.3 points)
+3. Clarity Reach (0.0–10.0)
    What's the impact radius and scalability of their clarity?
    • Generalizability — applies beyond one case
    • Stakeholder reach — speaks to many audiences
@@ -98,7 +98,7 @@ A supplementary rating (separate from Lake Score) that measures how powerfully s
    • Scalability — can be deployed widely
    • Cross-context clarity — works across domains
 
-Add them together to produce a score out of 10.
+Average the three influence scores to produce a score out of 10.
 Format: Y.Y/10
 
 ---

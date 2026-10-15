@@ -59,11 +59,11 @@ function handoff(scope) {
     await page.keyboard.press('Escape');
     assert.equal(await page.locator('#snapshotMenuButton').evaluate(el => el === document.activeElement),true);
     await input.fill('Line one');
-    await input.press('Enter');
+    await input.press('Shift+Enter');
     await input.type('Line two');
     assert.equal(await input.inputValue(), 'Line one\nLine two');
     assert.equal(requests.length, 0);
-    await input.press('Control+Enter');
+    await input.press('Enter');
     await page.waitForFunction(() => !waveInFlight);
     assert.equal(requests.length, 1);
     assert.equal(requests[0].message.replace(/\r\n/g, '\n'), 'Line one\nLine two');

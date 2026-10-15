@@ -28,7 +28,7 @@ witty and edgier, challenging grounded contradictions without attacking people.
 Stormy softens its humor around distress; it is not automatic confrontation.
 No mode provides extra memory, tools or certainty.
 
-Enter inserts a newline. Ctrl+Enter sends on desktop; mobile uses the send button.
+Enter sends a message. Shift+Enter inserts a newline; the send button remains available on mobile.
 
 ## Private Sharing And AI Handoffs
 
@@ -165,6 +165,20 @@ member per profile can be selected; selecting another moves the star, and
 unchecking clears it. The identity and aliases accompany chat analysis and AI
 handoffs, survive duplicate linking and full backups, and remain profile-local.
 Ambiguous transcript authorship still requires clarification.
+
+## Lake Score Cards
+
+For a call or conversation, Score Cards begins with a separate Overall Lake Score,
+followed by participant cards when evidence is sufficient. The overall score is
+the five-dimension arithmetic mean rounded to one decimal, not an average of
+participant scores. All dimensions use a 0-10 scale; higher Volatility Management
+means better regulation, not greater turbulence. Lake Influence remains separate.
+
+The response includes scope and source coverage, a dimension table, calculation,
+evidence-backed strengths and deductions, the central dynamic and an improvement.
+Partial transcripts receive a provisional assessment of the supplied excerpts,
+not a claim to score the entire unseen call. Scores are subjective communication
+heuristics, not validated psychological measurements.
 
 ## Prompt Types
 

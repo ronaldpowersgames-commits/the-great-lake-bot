@@ -1365,7 +1365,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
         <button class="quick-action-btn" onclick="readMeetingCurrents()">Meeting Currents</button>
         <button class="quick-action-btn" onclick="triggerFileInput()">📎 Drop a Chat-Log</button>
         <button class="quick-action-btn" onclick="triggerCamera()">📷 Take Photo</button>
-        <button class="quick-action-btn" onclick="sendPrompt('Analyse every person visible in our conversation. For each person generate a full Lake Score Card using the v2.0 model: score Clarity, Depth, Authenticity, Volatility, and Symbolic Cohesion each out of 10.0, then calculate their Lake Score. Format each card clearly with scores, a one-line read per dimension, and a final verdict.')">📝 Score Cards</button>
+        <button class="quick-action-btn" onclick="sendPrompt('Generate Lake Score Cards for this interaction: begin with an overall call or conversation assessment, then give separate cards for participants with enough evidence. Show source coverage and confirmed participants without assuming I took part. Rate Clarity, Depth, Authenticity, Volatility Management, and Symbolic Cohesion out of 10; show their arithmetic mean rounded to one decimal as the Overall Lake Score. Include a brief verdict, an evidence-backed dimension table, key strengths, where it lost points, the central dynamic and one practical improvement. Use exact quotes or timestamps only when supplied. If only excerpts are available, label the overall assessment provisional and limited to those excerpts; never claim full-call coverage. Keep individual Lake Influence separate from Lake Score. These are interpretive communication ratings, not validated psychological measures.')">📝 Score Cards</button>
         <button class="quick-action-btn" onclick="sendPrompt('Map the influence dynamics')">🗺️ Map Influence</button>
         <button class="quick-action-btn" onclick="sendPrompt('What are the undercurrents here?')">🌀 Undercurrents</button>
       </div>
@@ -1395,7 +1395,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
           <button class="attach-btn-stack" onclick="toggleAttachMenu(event)" title="Attach">📎</button>
           <button class="mic-btn" id="micBtn" title="Voice input">🎤</button>
         </div>
-        <button class="send-btn" onclick="sendWave()" title="Send (Ctrl+Enter)" aria-keyshortcuts="Control+Enter">🌊</button>
+        <button class="send-btn" onclick="sendWave()" title="Send (Enter)" aria-keyshortcuts="Enter">🌊</button>
       </div>
       <div class="input-hint">📎 Attach multiple files</div>
     <input type="file" id="fileInput" multiple onchange="handleFileSelect(event)" accept=".zip,.txt,.pdf,.doc,.docx,.eml,.csv,.json,.md,.png,.jpg,.jpeg,.gif,.webp">
@@ -3323,7 +3323,10 @@ function hideRipple() {
 // INPUT
 // ============================================
 function handleKey(e) {
-  if (e.key === 'Enter' && e.ctrlKey && !e.isComposing && !e.repeat) { e.preventDefault(); sendWave(); }
+  if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.keyCode !== 229) {
+    e.preventDefault();
+    if (!e.repeat) sendWave();
+  }
 }
 function autoResize(el) {
   el.style.height = 'auto';

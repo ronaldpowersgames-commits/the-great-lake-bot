@@ -74,19 +74,21 @@ test('late Crew suggestions retain the originating conversation and file evidenc
   assert.equal(vm.runInContext('suggestedCrew[0].observation.sources[0]',context),'original.txt');
 });
 
-test('Enter makes a newline; Ctrl+Enter sends unless composing or repeating', () => {
+test('Enter sends and Shift+Enter makes a newline without sending during IME or repeats', () => {
   const context = browserContext();
   vm.runInContext(script.slice(script.indexOf('function handleKey('), script.indexOf('function autoResize(')), context);
   vm.runInContext('let sendCount = 0; sendWave = () => sendCount++;', context);
   let prevented = 0;
-  context.handleKey({ key: 'Enter', preventDefault() { prevented++; } });
+  context.handleKey({ key: 'Enter', shiftKey: true, preventDefault() { prevented++; } });
   assert.equal(prevented, 0);
-  for (const flags of [{ isComposing: true }, { repeat: true }]) {
-    context.handleKey({ key: 'Enter', ctrlKey: true, ...flags, preventDefault() { prevented++; } });
+  for (const flags of [{ isComposing: true }, { keyCode: 229 }]) {
+    context.handleKey({ key: 'Enter', ...flags, preventDefault() { prevented++; } });
   }
   assert.equal(prevented, 0);
-  context.handleKey({ key: 'Enter', ctrlKey: true, preventDefault() { prevented++; } });
+  context.handleKey({ key: 'Enter', preventDefault() { prevented++; } });
   assert.equal(prevented, 1);
+  context.handleKey({key:'Enter',repeat:true,preventDefault(){prevented++;}});
+  assert.equal(prevented,2);
   assert.equal(vm.runInContext('sendCount', context), 1);
 });
 
@@ -445,6 +447,27 @@ test('self Crew identity reaches analysis, snapshots and first-person meeting re
   const result=require('../public/meeting-memory').retrieve([],'What did I commit to?',crew);
   assert.match(JSON.stringify(result),/Ronald Powers/);
   const merged=require('../public/organization').mergeCrew({name:'Ronald Powers'},{name:'Ron',isSelf:true});assert.equal(merged.isSelf,true);
+});
+
+test('score cards separate whole-call and participant ratings with coverage limits and consistent arithmetic', async () => {
+  for(const mood of ['calm','analytical','stormy']) {
+    const {handler,requests}=routeContext();
+    await handler({body:{message:'Give me Lake Score Cards for this call',mood},files:[]},{json(){},status(){return this;}});
+    const prompt=requests.at(-1).messages[0].content;
+    assert.match(prompt,/separate Overall Lake Score/);
+    assert.match(prompt,/not an average of participant scores/);
+    assert.match(prompt,/rounded to one decimal/);
+    assert.match(prompt,/provisional and limited to that material/);
+    assert.match(prompt,/Never assume the user attended/);
+    assert.match(prompt,/not validated psychological measures/);
+    assert.match(prompt,/Higher Volatility Management means better regulation/);
+  }
+  const schema=require('../core/model/lake_score_model.json').lake_model_schema;
+  assert.equal(schema.scoring_methods.lake_score_formula,'(clarity + depth + authenticity + volatility + symbolic_cohesion) / 5');
+  assert.ok(schema.scoring_methods.whole_interaction);
+  const button=html.match(/onclick="sendPrompt\('([^']*Overall Lake Score[^']*)'\)"/);
+  assert.ok(button,'Score Cards quick action requests the whole-interaction score');
+  assert.match(button[1],/separate cards for participants/);
 });
 
 test('meeting dates come from titles, preserve uncertainty and accept reviewed corrections', () => {

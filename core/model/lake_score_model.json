@@ -39,7 +39,7 @@
         "range": "0.0 - 10.0"
       },
       "volatility": {
-        "description": "Measures emotional stability and reactivity under pressure.",
+        "description": "Volatility Management: higher scores mean better emotional regulation and management of turbulence, not more volatility.",
         "features": [
           "tone_stability",
           "low_emotional_spikes",
@@ -104,6 +104,13 @@
     "scoring_methods": {
       "lake_score_formula": "(clarity + depth + authenticity + volatility + symbolic_cohesion) / 5",
       "lake_influence_score_formula": "(influence_power + activation_energy + clarity_reach) / 3",
+      "whole_interaction": {
+        "scope": "Assess the supplied exchange separately from individual participant cards; do not average participant scores.",
+        "rounding": "One decimal place after calculating the five-dimension arithmetic mean.",
+        "coverage": "State source coverage and confirmed participants; partial evidence produces a provisional excerpt-only score, not a full-call claim.",
+        "output": ["overall_score_and_verdict", "dimension_table", "calculation", "evidence_backed_strengths", "where_points_were_lost", "central_dynamic", "one_practical_improvement"],
+        "limitations": "Subjective communication heuristic, not a validated psychological measure. Do not invent scores when evidence is insufficient."
+      },
       "interpretation": {
         "lake_score": {
           "8.0-10.0": "Deep-water thinker; high clarity, stability, and coherence.",
