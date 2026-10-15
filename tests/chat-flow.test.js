@@ -470,6 +470,19 @@ test('score cards separate whole-call and participant ratings with coverage limi
   assert.match(button[1],/separate cards for participants/);
 });
 
+test('follow-up directions stay occasional, compact and subordinate to the user pace', async () => {
+  for(const mood of ['calm','analytical','stormy']) {
+    const {handler,requests}=routeContext();
+    await handler({body:{message:'Read this exchange',mood},files:[]},{json(){},status(){return this;}});
+    const prompt=requests.at(-1).messages[0].content;
+    assert.match(prompt,/one or at most two concrete next directions/);
+    assert.match(prompt,/Do not append suggestions to every response/);
+    assert.match(prompt,/suggestion OR the most useful Socratic question/);
+    assert.match(prompt,/explicit final-answer or no-follow-up requests/);
+    assert.match(prompt,/Never withhold the requested answer/);
+  }
+});
+
 test('meeting dates come from titles, preserve uncertainty and accept reviewed corrections', () => {
   const {dateOf} = require('../public/meeting-memory');
   assert.equal(dateOf('2026-08-31_Weekly-part-001-of-003.txt').date,'2026-08-31');
