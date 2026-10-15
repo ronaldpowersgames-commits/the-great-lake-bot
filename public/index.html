@@ -458,6 +458,22 @@ body {
 }
 .prompt-group-scroll { height: 128px; overflow-y: auto; overflow-x: hidden; scroll-snap-type: y mandatory; overscroll-behavior-y: contain; scrollbar-width: thin; }
 .prompt-group-scroll .welcome-prompts-grid { height: 128px; grid-template-rows: repeat(3, 38px); scroll-snap-align: start; scroll-snap-stop: always; }
+.prompt-group-scroll, .crew-list, .past-tides, .depths-content {
+  scrollbar-width: thin;
+  scrollbar-color: #355773 transparent;
+}
+.prompt-group-scroll:hover, .crew-list:hover, .past-tides:hover, .depths-content:hover,
+.prompt-group-scroll:focus-within, .crew-list:focus-within, .past-tides:focus-within, .depths-content:focus-within {
+  scrollbar-color: #648fac transparent;
+}
+:is(.prompt-group-scroll, .crew-list, .past-tides, .depths-content)::-webkit-scrollbar { width: 6px; }
+:is(.prompt-group-scroll, .crew-list, .past-tides, .depths-content)::-webkit-scrollbar-track { background: transparent; }
+:is(.prompt-group-scroll, .crew-list, .past-tides, .depths-content)::-webkit-scrollbar-thumb { background: #355773; border-radius: 6px; }
+:is(.prompt-group-scroll, .crew-list, .past-tides, .depths-content)::-webkit-scrollbar-thumb:hover { background: #648fac; }
+:is(.prompt-group-scroll, .crew-list, .past-tides, .depths-content)::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+@media (forced-colors: active) {
+  .prompt-group-scroll, .crew-list, .past-tides, .depths-content { scrollbar-color: auto; }
+}
 .welcome-prompt-half {
   background: rgba(45,140,240,0.07); border: 1px solid rgba(45,140,240,0.13);
   border-radius: 13px; color: var(--text-secondary); font-size: 12px;
