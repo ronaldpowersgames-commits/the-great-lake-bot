@@ -476,7 +476,8 @@ test('follow-up directions are specific, compact and subordinate to the user pac
     const {handler,requests}=routeContext();
     await handler({body:{message:'Read this exchange',mood},files:[]},{json(){},status(){return this;}});
     const prompt=requests.at(-1).messages[0].content;
-    assert.match(prompt,/one or at most two concrete next directions/);
+    assert.match(prompt,/one or two concrete next directions/);
+    assert.match(prompt,/use up to three when the paths are genuinely distinct/);
     assert.match(prompt,/Do not append suggestions to every response/);
     assert.match(prompt,/suggestion OR the most useful Socratic question/);
     assert.match(prompt,/explicit final-answer or no-follow-up requests/);

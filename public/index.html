@@ -939,46 +939,51 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
 /* ── CREW CARD ── */
 .crew-card-overlay {
   display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7);
-  z-index: 600; align-items: flex-end; justify-content: center;
-  backdrop-filter: blur(4px); padding: 20px;
+  z-index: 600; align-items: center; justify-content: center;
+  backdrop-filter: blur(4px); padding: 16px;
 }
 .crew-card-overlay.show { display: flex; }
 .crew-card {
   background: var(--dock-bg); border: 1px solid var(--dock-border);
-  border-radius: 24px 24px 16px 16px; padding: 26px 22px 30px;
-  width: 100%; max-width: 420px;
+  border-radius: 8px; padding: 0;
+  width: 100%; max-width: 560px; max-height: calc(100dvh - 32px);
+  display: flex; flex-direction: column; overflow: hidden; min-height: 0;
   box-shadow: 0 -8px 48px rgba(0,0,0,0.5); animation: slideUpCard 0.3s ease-out;
 }
-.crew-card-header  { display: flex; align-items: center; gap: 15px; margin-bottom: 18px; }
+.crew-card-header  { display: flex; align-items: center; gap: 14px; padding: 18px; border-bottom: 1px solid var(--dock-border); flex-shrink: 0; max-height: 170px; overflow: auto; }
 .crew-card-avatar  { width: 54px; height: 54px; border-radius: 17px; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 800; color: white; flex-shrink: 0; }
 .crew-card-info    { flex: 1; min-width: 0; }
-.crew-card-name    { font-size: 17px; font-weight: 700; color: var(--text-primary); margin-bottom: 2px; }
-.crew-card-nickname { font-size: 12px; color: var(--text-secondary); }
+.crew-card-name    { font-size: 17px; font-weight: 700; color: var(--text-primary); margin-bottom: 2px; overflow-wrap: anywhere; }
+.crew-card-nickname { font-size: 12px; color: var(--text-secondary); overflow-wrap: anywhere; }
 .crew-card-codename {
-  display: inline-block; margin-top: 5px; padding: 3px 9px;
-  background: rgba(79,195,247,0.1); border: 1px solid rgba(79,195,247,0.2);
-  border-radius: 20px; font-size: 11px; color: var(--lake-light); font-style: italic;
+  display: block; margin-top: 5px;
+  font-size: 12px; color: var(--lake-light); overflow-wrap: anywhere;
 }
+.crew-card-body { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 16px 18px; scrollbar-width: thin; scrollbar-color: #355773 transparent; }
 .crew-card-context {
-  padding: 12px 14px; background: rgba(255,255,255,0.03);
-  border: 1px solid var(--dock-border); border-radius: 11px;
   font-size: 13px; color: var(--text-secondary); line-height: 1.6;
-  margin-bottom: 18px; font-style: italic;
+  white-space: pre-wrap; overflow-wrap: anywhere;
 }
+.crew-profile-section + .crew-profile-section { border-top: 1px solid var(--dock-border); margin-top: 16px; padding-top: 14px; }
+.crew-profile-section h4 { font-size: 12px; margin: 0 0 8px; color: var(--lake-light); }
+.crew-profile-section summary { cursor: pointer; color: var(--text-primary); font-size: 13px; padding: 8px 0; overflow-wrap: anywhere; }
+.crew-note-preview, .crew-evidence-meta { color: var(--text-secondary); font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
+.crew-evidence-item { border-bottom: 1px solid var(--dock-border); padding: 8px 0; }
+.crew-evidence-item blockquote { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; border-left: 2px solid var(--dock-border); margin: 8px 0; padding-left: 10px; }
 .crew-card-context.empty { color: var(--text-dim); }
-.crew-card-actions { display: flex; gap: 9px; }
+.crew-card-actions { display: flex; gap: 8px; padding: 12px 18px; border-top: 1px solid var(--dock-border); flex-shrink: 0; }
 .crew-card-ask {
   flex: 1; padding: 12px;
   background: linear-gradient(135deg, var(--lake-glow), var(--lake-light));
-  border: none; border-radius: 11px;
+  border: none; border-radius: 6px;
   color: var(--lake-deep); font-size: 14px; font-weight: 700;
   cursor: pointer; transition: all 0.2s;
 }
 .crew-card-ask:hover { transform: translateY(-1px); }
 .crew-card-edit,
 .crew-card-close {
-  padding: 12px 15px; background: transparent;
-  border: 1px solid var(--dock-border); border-radius: 11px;
+  width: 44px; height: 44px; padding: 0; flex-shrink: 0; background: transparent;
+  border: 1px solid var(--dock-border); border-radius: 6px;
   color: var(--text-secondary); font-size: 14px; cursor: pointer;
 }
 .crew-card-edit:hover,
@@ -1502,7 +1507,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
   </div>
 </div>
 <div class="crew-card-overlay" id="crewCardOverlay" onclick="closeCrewCard(event)">
-  <div class="crew-card">
+  <div class="crew-card" role="dialog" aria-modal="true" aria-labelledby="crewCardName">
     <div class="crew-card-header">
       <div class="crew-card-avatar" id="crewCardAvatar"></div>
       <div class="crew-card-info">
@@ -1511,11 +1516,13 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
         <div class="crew-card-codename" id="crewCardCodename" style="display:none"></div>
       </div>
     </div>
-    <div class="crew-card-context" id="crewCardContext"></div>
+    <div class="crew-card-body" id="crewCardBody" tabindex="0" role="region" aria-label="Crew profile notes and evidence">
+      <div id="crewCardSections"></div>
+    </div>
     <div class="crew-card-actions">
       <button class="crew-card-ask" id="crewCardAsk">🌊 Ask The Lake</button>
-      <button class="crew-card-edit" onclick="editFromCard()">✏️ Edit</button>
-      <button class="crew-card-close" onclick="closeCrewCard()">✕</button>
+      <button class="crew-card-edit" onclick="editFromCard()" title="Edit Crew member" aria-label="Edit Crew member">✎</button>
+      <button class="crew-card-close" onclick="closeCrewCard()" title="Close Crew profile" aria-label="Close Crew profile">✕</button>
     </div>
   </div>
 </div>
@@ -2156,6 +2163,7 @@ async function enterLake() {
 }
 
 function doLogout() {
+  closeCrewCard();
   closeFolderDialog();showDepthsTab('settings');
   localStorage.removeItem('lakeUser');
   currentUser = null; currentProfilePic = null; chatHistory = []; currentSessionId = null;
@@ -2663,10 +2671,12 @@ function removeCrew(e, idx) {
 }
 
 let crewCardIndex = -1;
+let crewCardReturnFocus=null;
 function openCrewProfile(idx) {
   const member = crewMembers[idx];
   if (!member) return;
   crewCardIndex = idx;
+  crewCardReturnFocus=document.activeElement;
   const colors = ['#4fc3f7,#0288d1','#ce93d8,#7b1fa2','#ffb74d,#f57c00','#81c784,#388e3c','#ff8a80,#d32f2f','#80cbc4,#00796b'];
   const color  = colors[idx % colors.length];
   document.getElementById('crewCardAvatar').style.background = member.emoji ? 'none' : `linear-gradient(135deg,${color})`;
@@ -2676,25 +2686,17 @@ function openCrewProfile(idx) {
   const codenameEl = document.getElementById('crewCardCodename');
   if (member.codename) { codenameEl.textContent = `"${member.codename}"`; codenameEl.style.display = 'inline-block'; }
   else codenameEl.style.display = 'none';
-  const contextEl = document.getElementById('crewCardContext');
-  contextEl.textContent = [member.role ? `Role: ${member.role}` : '',member.context || 'No context note yet — tap Edit to add one.'].filter(Boolean).join('\n\n');
-  contextEl.classList.toggle('empty', !member.context);
-  document.getElementById('crewCardAsk').onclick = () => {
-    let prompt = `Tell me what I should know about ${member.name}`;
-    if (member.codename) prompt += ` (codename: "${member.codename}")`;
-    if (member.context)  prompt += `. Context: ${member.context}`;
-    prompt += ` — their patterns, influence style, and what to watch for.`;
-    closeCrewCard();
-    if(allSessions.some(session => (session.history || []).some(message => (message.attachments || []).some(file => /\.(txt|log)$/i.test(file.name))))) readMeetingCurrents(prompt);
-    else sendPrompt(prompt);
-    if (window.innerWidth <= 768) toggleDock();
-  };
+  renderCrewProfileSections(member);
+  document.getElementById('crewCardAsk').onclick=askCrewProfile;
+  document.getElementById('crewCardBody').scrollTop=0;
   document.getElementById('crewCardOverlay').classList.add('show');
+  document.querySelector('.crew-card-close').focus();
 }
 
 function closeCrewCard(e) {
   if (e && e.target !== document.getElementById('crewCardOverlay')) return;
   document.getElementById('crewCardOverlay').classList.remove('show');
+  if(crewCardReturnFocus?.isConnected)crewCardReturnFocus.focus();
 }
 function editFromCard() { closeCrewCard(); setTimeout(() => openCrewModal('edit', crewCardIndex), 150); }
 
@@ -3020,6 +3022,17 @@ document.addEventListener('click', event => {
   if (!event.target.closest('#snapshotMenu') && !event.target.closest('#snapshotMenuButton')) closeSnapshotMenu();
 });
 document.addEventListener('keydown', event => {
+  const card=document.getElementById('crewCardOverlay');
+  if(card.classList.contains('show')) {
+    if(event.key==='Escape'){event.preventDefault();closeCrewCard();return;}
+    if(event.key==='Tab') {
+      const items=[...card.querySelectorAll('button, summary, [tabindex="0"]')].filter(item=>item.getClientRects().length);
+      const first=items[0],last=items.at(-1);
+      if(event.shiftKey && document.activeElement===first){event.preventDefault();last.focus();}
+      else if(!event.shiftKey && document.activeElement===last){event.preventDefault();first.focus();}
+    }
+    return;
+  }
   if (event.key === 'Escape') closeSourceMenu();
   const menu = document.getElementById('snapshotMenu');
   if (menu.hidden) return;

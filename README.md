@@ -166,6 +166,13 @@ unchecking clears it. The identity and aliases accompany chat analysis and AI
 handoffs, survive duplicate linking and full backups, and remain profile-local.
 Ambiguous transcript authorship still requires clarification.
 
+Crew profiles keep their header and actions visible while notes and meeting
+evidence scroll inside the dialog. Long legacy notes are collapsible without
+rewriting stored text; individual evidence entries expand to show dates, source
+filenames and quotes. Escape closes the profile and keyboard focus stays inside
+the open dialog. Suggested next directions appear in the Lake's responses, not
+as extra profile shortcuts, with up to three distinct options when useful.
+
 ## Transcript Coverage And Guided Review
 
 With TXT/LOG attachments, the composer shows attached, selected and successfully
@@ -258,6 +265,8 @@ actions, new-session resets, wheel/touch group scrolling and mobile layouts.
 persistent meeting-wide follow-up records, exact excerpt retrieval and profile
 isolation. Model calls are mocked in these checks; they do not prove live model
 comprehension or eliminate the information loss of compressed records.
+`tests/crew-profile.cjs` checks very long notes, grouped evidence, fixed actions,
+keyboard navigation and desktop/compact-mobile layouts without modifying notes.
 
 ## Endpoints
 

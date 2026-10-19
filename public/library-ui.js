@@ -1,6 +1,46 @@
 let folderDialog = null;
 let dockSplit = 0.65;
 
+function renderCrewProfileSections(member) {
+  const container=document.getElementById('crewCardSections');container.replaceChildren();
+  function section(title) {
+    const node=document.createElement('section');node.className='crew-profile-section';
+    const heading=document.createElement('h4');heading.textContent=title;node.append(heading);container.append(node);return node;
+  }
+  if(member.role) {const role=section('Role');const text=document.createElement('div');text.className='crew-card-context';text.textContent=member.role;role.append(text);}
+  const notes=section('Saved Notes');
+  const text=document.createElement('div');text.className='crew-card-context';text.id='crewCardContext';text.textContent=member.context || 'No saved notes.';
+  if((member.context||'').length>900) {
+    const preview=document.createElement('div');preview.className='crew-note-preview';preview.textContent=member.context.slice(0,220)+'…';notes.append(preview);
+    const details=document.createElement('details');const summary=document.createElement('summary');summary.textContent='Show complete notes';details.append(summary,text);notes.append(details);
+  }else notes.append(text);
+  const unique=new Map();
+  for(const observation of member.observations||[])unique.set(JSON.stringify([observation.sessionId,observation.evidence,observation.note,observation.sources,observation.meetingDates]),observation);
+  if(unique.size) {
+    const evidence=section(`Meeting Evidence · ${unique.size}`);
+    for(const observation of [...unique.values()].reverse()) {
+      const row=document.createElement('details');row.className='crew-evidence-item';
+      const summary=document.createElement('summary');summary.textContent=observation.note || 'Source observation';row.append(summary);
+      const meta=document.createElement('div');meta.className='crew-evidence-meta';
+      const dates=(observation.meetingDates||[]).map(item=>[item.date||'Unknown meeting date',item.status].filter(Boolean).join(' · '));
+      meta.textContent=[observation.reviewed?'User-reviewed observation':'Unconfirmed observation',...dates,...(observation.sources||[]),observation.date?'Recorded: '+observation.date:''].filter(Boolean).join('\n');meta.style.whiteSpace='pre-wrap';row.append(meta);
+      if(observation.evidence){const quote=document.createElement('blockquote');quote.textContent=observation.evidence;row.append(quote);}
+      evidence.append(row);
+    }
+  }
+}
+
+function askCrewProfile() {
+  const member=crewMembers[crewCardIndex];if(!member)return;
+  const prompt=`About ${String(member.name).slice(0,200)}${member.nickname?' (aliases: '+String(member.nickname).slice(0,700)+')':''}: Summarize the most useful supported communication patterns, influence and things to watch. Use relevant reviewed Crew notes and distinguish them from source evidence.`;
+  closeCrewCard();
+  const sameConversationComplete=LakeTranscriptReview.memory(transcriptSources(),chatHistory).complete;
+  const hasArchive=allSessions.some(session=>(session.history||[]).some(message=>(message.attachments||[]).some(file=>/\.(txt|log)$/i.test(file.name))));
+  if(hasArchive && !sameConversationComplete)readMeetingCurrents(prompt);
+  else sendPrompt(prompt);
+  if(window.innerWidth<=768 && document.getElementById('dock').classList.contains('open'))toggleDock();
+}
+
 function libraryButton(symbol,title,action) {
   const button=document.createElement('button');button.className='library-icon';button.textContent=symbol;
   button.title=title;button.setAttribute('aria-label',title);
