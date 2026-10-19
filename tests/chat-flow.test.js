@@ -471,7 +471,7 @@ test('score cards separate whole-call and participant ratings with coverage limi
   assert.match(button[1],/separate cards for participants/);
 });
 
-test('follow-up directions stay occasional, compact and subordinate to the user pace', async () => {
+test('follow-up directions are specific, compact and subordinate to the user pace', async () => {
   for(const mood of ['calm','analytical','stormy']) {
     const {handler,requests}=routeContext();
     await handler({body:{message:'Read this exchange',mood},files:[]},{json(){},status(){return this;}});
@@ -481,6 +481,11 @@ test('follow-up directions stay occasional, compact and subordinate to the user 
     assert.match(prompt,/suggestion OR the most useful Socratic question/);
     assert.match(prompt,/explicit final-answer or no-follow-up requests/);
     assert.match(prompt,/Never withhold the requested answer/);
+    assert.match(prompt,/regular part of engaged exploratory conversations/);
+    assert.match(prompt,/Name the actual person, unresolved thread or decision/);
+    assert.match(prompt,/Only offer paths the available material and tools can support/);
+    assert.match(prompt,/never repeat the same menu unchanged/);
+    assert.match(prompt,/If the user picks an angle, do that work directly/);
   }
 });
 
