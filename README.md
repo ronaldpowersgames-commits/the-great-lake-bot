@@ -173,8 +173,11 @@ sent file counts. Numbered splitter filenames expose missing parts. Sources
 distinguishes Included next from Saved only and explains that unchecked files
 stay stored but are not included in the next request.
 
-Read next part selects only the next unsent original and submits it, keeping the
-user's draft intact. Failed requests do not advance the count. Successful-send
+Read next part reads the next original into a compact meeting-wide working
+record, keeping the user's draft intact. Read whole transcript processes every
+remaining part sequentially and then analyzes the entire record. It confirms the
+number of model requests, can be stopped after a part, and resumes from saved
+records after a failure. Failed requests do not advance the record. Successful-send
 receipts persist per conversation and source version; older replies without
 receipts are not retroactively counted as proof that a file was read.
 
@@ -184,8 +187,14 @@ does not summarize oversized material. Sending all parts separately does not put
 all original text into later context; the source menu explains this, and the bot
 receives an inventory so it does not request already attached parts again or
 claim whole-call coverage from earlier replies. Meeting Currents retrieves cited
-excerpts, not an exhaustive full-call reread. Numbering alone cannot prove that a
-transcript captures the entire real meeting.
+excerpts, not an exhaustive full-call reread. Once every attached part has a valid
+working record, ordinary follow-ups automatically include ALL part records plus
+question-relevant exact excerpts from the originals, regardless of the last
+selected source. The records are compressed and lossy, not perfect recall;
+answers display that distinction. Changed/new source versions invalidate the
+complete-record state until read. Older chats require Read whole transcript once
+to build their record. Numbering alone cannot prove that a transcript captures
+the entire real meeting.
 
 ## Lake Score Cards
 
@@ -245,6 +254,10 @@ folders, safe folder removal, Crew management, backups, profile isolation and
 mouse/touch/keyboard sidebar resizing.
 `tests/prompt-types.cjs` checks all seven Types, twelve prompts each, usage-guide
 actions, new-session resets, wheel/touch group scrolling and mobile layouts.
+`tests/whole-transcript.cjs` checks sequential all-part reading, failed-part resume,
+persistent meeting-wide follow-up records, exact excerpt retrieval and profile
+isolation. Model calls are mocked in these checks; they do not prove live model
+comprehension or eliminate the information loss of compressed records.
 
 ## Endpoints
 

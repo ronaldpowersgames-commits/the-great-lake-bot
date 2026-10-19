@@ -26,6 +26,14 @@
     return {attached:sources.length,selected:sources.filter(file=>!file.excluded).length,sent:sources.filter(file=>receipts.has(file.sourceId)).length,
       missing,numberedComplete:groups.size>0 && missing.length===0,next:ordered.find(file=>!receipts.has(file.sourceId)),receipts};
   }
-  if(typeof module!=='undefined' && module.exports)module.exports={inventory,status};
-  else root.LakeTranscriptReview={inventory,status};
+  function memory(sources,history) {
+    const records=new Map();
+    for(const message of history)if(message.role==='assistant' && message.transcriptMemory && typeof message.transcriptMemory.notes==='string' && message.transcriptMemory.notes.length<=1800)records.set(message.transcriptMemory.sourceId,message.transcriptMemory);
+    const ordered=[...sources].sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true}));
+    const parts=ordered.filter(file=>records.has(file.sourceId)).map(file=>({sourceId:file.sourceId,filename:file.name,notes:records.get(file.sourceId).notes}));
+    const complete=sources.length>0 && sources.length<=20 && parts.length===sources.length && status(sources,history).missing.length===0;
+    return {parts,complete,total:sources.length,next:ordered.find(file=>!records.has(file.sourceId))};
+  }
+  if(typeof module!=='undefined' && module.exports)module.exports={inventory,status,memory};
+  else root.LakeTranscriptReview={inventory,status,memory};
 })(typeof window==='undefined'?globalThis:window);

@@ -506,6 +506,45 @@ test('analysis distinguishes attached inventory from current original files and 
   assert.match(prompt,/Never claim full-context analysis simply because every part was previously sent/);
 });
 
+test('stitched meeting guidance improves room reads without invented continuity or personality claims', async () => {
+  for(const mood of ['calm','analytical','stormy']) {
+    const {handler,requests}=routeContext();
+    await handler({body:{message:'Read the room across these transcript parts',mood,userName:'Sally'},files:[]},{json(){},status(){return this;}});
+    const prompt=requests.at(-1).messages[0].content;
+    assert.match(prompt,/Stitch only original source parts actually available in this request/);
+    assert.match(prompt,/flag gaps and timestamp resets/);
+    assert.match(prompt,/exact first and last visible messages/);
+    assert.match(prompt,/Distinguish airtime, formal authority and demonstrated influence/);
+    assert.match(prompt,/Silence alone is not withdrawal or disengagement/);
+    assert.match(prompt,/Do not infer IQ/);
+    assert.match(prompt,/never assume every user is Ronnie/);
+    assert.match(prompt,/full[\s\S]*speaker breakdown/);
+    assert.match(prompt,/spectrum work co-pilot for Sally/);
+    assert.match(prompt,/Quick questions, explicit brevity, source limitations and the existing scoring rules take priority/);
+  }
+});
+
+test('whole-transcript records require every exact source and persist independent of selected part', () => {
+  const review=require('../public/transcript-review');const sources=[1,2,3].map(number=>({name:`call-part-00${number}-of-003.txt`,sourceId:String(number),excluded:number!==2}));
+  const history=[{role:'assistant',transcriptMemory:{sourceId:'1',notes:'Erin raised an issue.'}},{role:'assistant',transcriptMemory:{sourceId:'2',notes:'The issue was debated.'}}];
+  assert.equal(review.memory(sources,history).complete,false);
+  history.push({role:'assistant',transcriptMemory:{sourceId:'3',notes:'The team agreed a next step.'}});
+  assert.equal(review.memory(sources,history).complete,true);assert.equal(review.memory(sources,history).parts.length,3);
+  sources[0].sourceId='changed';assert.equal(review.memory(sources,history).complete,false);
+});
+
+test('part-record extraction reads exact original text, validates output and whole analysis receives every record', async () => {
+  const {handler,requests}=routeContext(()=>JSON.stringify({notes:'Erin asks for an owner; Robby commits to follow up.'}));let result;let status;
+  const res={json(value){result=value;},status(value){status=value;return this;}};
+  const file={originalname:'call-part-001-of-003.txt',mimetype:'text/plain',buffer:Buffer.from('[00:01] Erin: Who owns this?\n[00:02] Robby: I will follow up.'),size:58};
+  await handler({body:{message:'Read',action:'transcript-memory'},files:[file]},res);
+  assert.match(requests.at(-1).messages[1].content,/Who owns this/);assert.equal(result.transcriptMemory.filename,file.originalname);
+  assert.equal(requests.at(-1).response_format.type,'json_schema');
+  const bad=routeContext(()=>JSON.stringify({notes:'x'.repeat(1801)}));await bad.handler({body:{action:'transcript-memory'},files:[file]},res);assert.equal(status,502);
+  await handler({body:{message:'Compare Erin across the meeting',transcriptWorkingMemory:JSON.stringify({complete:true,total:3,parts:[{filename:'one.txt',notes:'Erin raised an issue.'},{filename:'two.txt',notes:'Erin challenged the timing.'},{filename:'three.txt',notes:'Erin secured an owner.'}]})},files:[]},res);
+  const prompt=requests.at(-1).messages[0].content;assert.match(prompt,/Erin raised an issue/);assert.match(prompt,/Erin secured an owner/);assert.match(prompt,/analyze across ALL these part records together/);assert.match(prompt,/compressed, lossy/);
+});
+
 test('meeting dates come from titles, preserve uncertainty and accept reviewed corrections', () => {
   const {dateOf} = require('../public/meeting-memory');
   assert.equal(dateOf('2026-08-31_Weekly-part-001-of-003.txt').date,'2026-08-31');

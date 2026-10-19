@@ -2319,7 +2319,7 @@ function loadTide(sessionId) {
   }
   chatHistory.forEach(msg => {
     if (msg.role === 'user') appendUserWave(msg.content, msg.time, false, msg.attachments || []);
-    else if (msg.role === 'assistant') appendLakeWave(msg.content, msg.time, false, msg.snapshot, msg.archiveCoverage, msg.archiveSources);
+    else if (msg.role === 'assistant') appendLakeWave(msg.content, msg.time, false, msg.snapshot, msg.archiveCoverage, msg.archiveSources, msg.transcriptContext);
   });
   container.scrollTop = container.scrollHeight;
   renderTides();
@@ -2838,17 +2838,51 @@ function transcriptSources(history=chatHistory,pending=selectedFiles) {
   return LakeTranscriptReview.inventory(history,pending,()=>crypto.randomUUID());
 }
 
+let wholeTranscriptJob=null;
+async function readWholeTranscript() {
+  if(wholeTranscriptJob || waveInFlight || pendingFileLoads)return;
+  const sources=transcriptSources();const state=LakeTranscriptReview.status(sources,chatHistory);
+  if(state.missing.length){showToast('Attach the missing numbered parts first.');return;}
+  if(!sources.length || sources.length>20){showToast('Review up to 20 TXT parts in one conversation.');return;}
+  const memory=LakeTranscriptReview.memory(sources,chatHistory);
+  if(!confirm(`Read ${sources.length-memory.parts.length} remaining part(s), then analyze the meeting as a whole? This makes one model request per unread part plus a synthesis request. Original files stay saved; the combined working record is compressed, not perfect verbatim memory. You can stop and resume.`))return;
+  const job={id:currentSessionId,key:storageKey('sessions'),cancelled:false};wholeTranscriptJob=job;renderTranscriptStatus();
+  const visible=()=>!job.cancelled && job.id===currentSessionId && job.key===storageKey('sessions');
+  try {
+    for(let i=0;i<sources.length && visible();i++) {
+      const before=LakeTranscriptReview.memory(transcriptSources(),chatHistory);if(before.complete)break;
+      await readNextTranscriptPart(true);
+      if(!visible())return;
+      const after=LakeTranscriptReview.memory(transcriptSources(),chatHistory);
+      if(after.parts.length<=before.parts.length){showToast('Whole-transcript reading stopped on this part. Earlier records are saved; retry to resume.');return;}
+    }
+    if(visible() && LakeTranscriptReview.memory(transcriptSources(),chatHistory).complete)await sendWave({action:'whole-transcript-analysis',reuseAttachments:false,preserveDraft:true,
+      visibleText:'Analyze the whole transcript',requestText:document.getElementById('lakeInput').value.trim() || 'Analyze the meeting as a whole across every part in the complete working record. Connect the people, evolving positions, decisions, unresolved threads and behavioral subtext. Give the strongest useful reading with supporting evidence and alternatives, then ask one relevant context question if needed. Label this as analysis of a compressed meeting-wide record, not a verbatim full-transcript reread.'});
+  }finally{if(wholeTranscriptJob===job)wholeTranscriptJob=null;renderTranscriptStatus();}
+}
+
 function renderTranscriptStatus() {
   const panel=document.getElementById('transcriptStatus');if(!panel)return;
   const sources=transcriptSources();const state=LakeTranscriptReview.status(sources,chatHistory);
+  const memory=LakeTranscriptReview.memory(sources,chatHistory);
   panel.hidden=!sources.length;panel.replaceChildren();if(!sources.length)return;
   const text=document.createElement('div');text.className='transcript-status-text';
   const missing=state.missing.map(group=>`${group.name}: missing part${group.parts.length===1?'':'s'} ${group.parts.slice(0,12).join(', ')}${group.parts.length>12?'…':''} of ${group.total}`).join('; ');
   text.textContent=`Transcript: ${state.attached} attached · ${state.selected} selected · ${state.sent} sent successfully. `+(state.numberedComplete?'Numbered set complete. ':'')+(missing || (state.sent<state.attached?'Not every attached part has been sent yet.':'All attached text files have been sent. Only selected files are included now.'));
   panel.append(text);
+  const progress=document.createElement('span');progress.textContent=`Whole-meeting record: ${memory.parts.length}/${sources.length} parts.`;text.append(document.createTextNode(' '),progress);
+  if(memory.complete) {
+    text.textContent=`Whole-transcript context ready: ${memory.parts.length}/${sources.length} parts. Follow-ups use every part record plus relevant original excerpts, not just the selected file.`;
+    document.getElementById('sourceMenuButton').textContent=`Context ${memory.parts.length}/${sources.length} ▾`;
+  }
+  if(wholeTranscriptJob) {
+    const stop=document.createElement('button');stop.className='quick-action-btn';stop.textContent='Stop after this part';stop.onclick=()=>{wholeTranscriptJob.cancelled=true;};panel.append(stop);
+  }else if(!state.missing.length && sources.length<=20) {
+    const whole=document.createElement('button');whole.className='quick-action-btn';whole.textContent=memory.complete?'Analyze whole transcript':'Read whole transcript';whole.disabled=waveInFlight || pendingFileLoads>0;whole.onclick=readWholeTranscript;panel.append(whole);
+  }
   if(state.next) {
     const next=document.createElement('button');next.className='quick-action-btn';next.textContent='Read next part';next.title=state.next.name;
-    next.disabled=waveInFlight || pendingFileLoads>0;next.onclick=readNextTranscriptPart;panel.append(next);
+    next.disabled=waveInFlight || pendingFileLoads>0 || Boolean(wholeTranscriptJob);next.onclick=()=>readNextTranscriptPart();panel.append(next);
   }
   if(state.missing.length) {
     const add=document.createElement('button');add.className='quick-action-btn';add.textContent='Attach missing parts';add.onclick=triggerFileInput;panel.append(add);
@@ -2873,17 +2907,17 @@ async function readTranscriptTogether() {
     if(chars>30000){showToast(`These originals plus your question total ${chars.toLocaleString()} characters; the limit is 30,000. Use Read next part for separate reviews, or select the exact parts needed for a focused question. Nothing was sent or summarized.`);return;}
     const ids=new Set(sources.map(file=>file.sourceId));
     for(const file of [...chatHistory.flatMap(message=>message.attachments||[]),...selectedFiles])file.excluded=!ids.has(file.sourceId);
-    renderFilePreviews();await sendWave({requestText:prompt,visibleText:prompt});
+    renderFilePreviews();await sendWave({requestText:prompt,visibleText:prompt,exactTranscripts:true});
   }catch(error){if(session===currentSessionId && profile===storageKey('sessions'))showToast('Could not read transcript text: '+error.message);}
 }
 
-async function readNextTranscriptPart() {
+async function readNextTranscriptPart(buildRecord=true) {
   if(waveInFlight || pendingFileLoads)return;
-  const sources=transcriptSources();const state=LakeTranscriptReview.status(sources,chatHistory);if(!state.next)return;
+  const sources=transcriptSources();const state=buildRecord?LakeTranscriptReview.memory(sources,chatHistory):LakeTranscriptReview.status(sources,chatHistory);if(!state.next)return;
   const id=state.next.sourceId;
   for(const file of [...chatHistory.flatMap(message=>message.attachments||[]),...selectedFiles])file.excluded=file.sourceId!==id;
   renderFilePreviews();
-  await sendWave({action:'transcript-part',visibleText:`Read transcript part: ${state.next.name}`,preserveDraft:true,
+  await sendWave({action:buildRecord?'transcript-memory':'transcript-part',visibleText:`Read transcript part: ${state.next.name}`,preserveDraft:true,
     requestText:'Read the selected original transcript part. Give a compact, source-grounded reading of its key events, speakers, decisions and unresolved threads. Use the supplied source inventory to distinguish attached, selected and previously sent files. Do not ask me to re-upload parts already attached, and do not claim they are all in context. Hold whole-call scores or final conclusions while numbered parts are missing or unsent; prior replies are not substitutes for original text. Ask at most one useful identity or background question when needed.'});
 }
 
@@ -2895,6 +2929,7 @@ function renderSourceControls() {
   const sources = new Map();
   const keyOf = file => file.data ? file.name + file.data : 'pending:' + selectedFiles.indexOf(file);
   attachments.forEach(file => sources.set(keyOf(file),file));
+  const wholeContext=LakeTranscriptReview.memory(transcriptSources(),chatHistory).complete;
   button.hidden = sources.size === 0;
   button.textContent = `Sources ${[...sources.values()].filter(file => !file.excluded).length}/${sources.size} ▾`;
   menu.replaceChildren();
@@ -2902,7 +2937,8 @@ function renderSourceControls() {
   if(sources.size) {
     const heading=document.createElement('strong');heading.textContent='Files for the next message';menu.append(heading);
     const summary=document.createElement('div');summary.className='source-summary';
-    summary.textContent=`${sources.size} attached; ${[...sources.values()].filter(file=>!file.excluded).length} included next. Unchecked files stay saved but are not sent. Text files and your question share a 30,000-character limit. For numbered transcripts, use Read next part to work through each file.`;menu.append(summary);
+    summary.textContent=wholeContext?'Whole-transcript context is active: ordinary follow-ups use ALL part records plus question-relevant exact excerpts. Checkboxes below apply when you choose Read selected originals for an exact reread.':'All attached files stay saved. Checked files go with the next message; unchecked files are not sent. Text files and your question share a 30,000-character limit. Use Read whole transcript to build lasting context across every part.';menu.append(summary);
+    const exact=document.createElement('button');exact.className='quick-action-btn';exact.textContent='Read selected originals';exact.disabled=waveInFlight;exact.onclick=()=>sendWave({exactTranscripts:true,requestText:document.getElementById('lakeInput').value.trim() || 'Read only the selected original files for this exact-source question. State the coverage and ground the answer in these originals.'});menu.append(exact);
     const detail=document.createElement('details');const title=document.createElement('summary');title.textContent='What counts as full context?';
     const note=document.createElement('div');note.className='source-summary';note.textContent='Attach all numbered parts, preferably together as the splitter ZIP. Check for missing parts below. Sent successfully means a request containing that exact file completed, not proof of comprehension. Earlier replies may be shortened in later requests: sending every part separately does not keep the entire transcript in context. For an exact whole-call analysis, all original text must fit in one selected batch. Otherwise use targeted parts or Meeting Currents for cited excerpts; neither is a full-call reread.';
     detail.append(title,note);menu.append(detail);
@@ -2926,7 +2962,7 @@ function renderSourceControls() {
     label.append(checkbox,document.createTextNode(file.name));
     row.append(label);
     const state=document.createElement('div');state.className='source-state';
-    state.textContent=(file.excluded?'Saved only':'Included next')+(/\.(txt|log)$/i.test(file.name)?' · '+(reviewState.receipts.has(file.sourceId)?'Sent successfully before':'Not yet tracked as sent'):'');row.append(state);
+    state.textContent=(file.excluded?'Saved only':wholeContext?'Selected for exact reread':'Included next')+(/\.(txt|log)$/i.test(file.name)?' · '+(reviewState.receipts.has(file.sourceId)?'Sent successfully before':'Not yet tracked as sent'):'');row.append(state);
     if(/\.(txt|log)$/i.test(file.name)) {
       const dateLabel = document.createElement('label');
       const date = LakeMeetingMemory.dateOf(file.name,file.meetingDate);
@@ -3174,6 +3210,22 @@ async function sendWave(options = {}) {
   const reviewInventory=transcriptSources(origin.history,selectedFiles).map(file=>({id:file.sourceId,name:file.name,selected:!file.excluded}));
   origin.sourceInventory=reviewInventory;
   origin.previousReceipts=[...LakeTranscriptReview.status(transcriptSources(origin.history,selectedFiles),origin.history).receipts];
+  const transcriptWorkingMemory=LakeTranscriptReview.memory(transcriptSources(origin.history,selectedFiles),origin.history);
+  const useWholeMemory=transcriptWorkingMemory.complete && !options.snapshot && !options.exactTranscripts && !['transcript-memory','meeting-currents'].includes(options.action);
+  if(useWholeMemory) {
+    const includeOriginalEvidence=options.reuseAttachments!==false || options.action==='whole-transcript-analysis';
+    options={...options,reuseAttachments:false};
+    origin.transcriptWorkingMemory=transcriptWorkingMemory;
+    const documents=[];
+    for(const file of transcriptSources(origin.history,selectedFiles)) {
+      const bytes=file.data?Uint8Array.from(atob(file.data.split(',')[1]),char=>char.charCodeAt(0)):new Uint8Array(await file.arrayBuffer());
+      documents.push({id:file.sourceId,sessionId:origin.id,filename:file.name,meetingDate:file.meetingDate,text:new TextDecoder('utf-8',{fatal:true,ignoreBOM:true}).decode(bytes)});
+    }
+    if(includeOriginalEvidence) {
+      const evidence=LakeMeetingMemory.retrieve(documents,text,crewMembers,18000);
+      options.sourceFiles=[...(options.sourceFiles||[]),new File([JSON.stringify(evidence)],'meeting-evidence.json',{type:'application/json'})];
+    }
+  }
   activeWave = origin;
 
   const timeStr         = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -3194,7 +3246,7 @@ async function sendWave(options = {}) {
       filesToSend.push(original);
     }
   }
-  filesToSend.push(...newFiles.filter(file => !file.excluded));
+  if(!useWholeMemory)filesToSend.push(...newFiles.filter(file => !file.excluded));
   filesToSend.push(...(options.sourceFiles || []));
   origin.usedSources = filesToSend.map(file=>({filename:file.name,...LakeMeetingMemory.dateOf(file.name,file.meetingDate)}));
   origin.archiveSources = options.archiveSources;
@@ -3241,6 +3293,7 @@ async function sendWave(options = {}) {
     formData.append('history', JSON.stringify(historyToSend));
     formData.append('sourceMetadata',JSON.stringify(filesToSend.map(file => ({filename:file.name,meetingDate:file.meetingDate || ''}))));
     if(!options.snapshot && options.action!=='meeting-currents')formData.append('transcriptInventory',JSON.stringify({files:origin.sourceInventory,previouslySent:origin.previousReceipts,currentFiles:filesToSend.map(file=>file.sourceId).filter(Boolean)}));
+    if(useWholeMemory)formData.append('transcriptWorkingMemory',JSON.stringify({parts:transcriptWorkingMemory.parts,complete:true,total:transcriptWorkingMemory.total}));
     filesToSend.forEach(file => formData.append('file', file));
 
     const response = await fetch('/chat', { method: 'POST', body: formData });
@@ -3252,6 +3305,8 @@ async function sendWave(options = {}) {
       const cleanReflection = options.snapshot ? JSON.stringify(data.handoff || JSON.parse(data.reflection), null, 2) : stripPlayerTagsJson(data.reflection);
       const reflectionTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       const reply = { role: 'assistant', content: cleanReflection, time: reflectionTime,
+        ...(data.transcriptMemory && options.action==='transcript-memory' && filesToSend.length===1 ? {transcriptMemory:{...data.transcriptMemory,sourceId:filesToSend[0].sourceId}} : {}),
+        ...(useWholeMemory ? {transcriptContext:{parts:transcriptWorkingMemory.total}} : {}),
         ...(!options.snapshot && options.action!=='meeting-currents' ? {sourceReceipts:filesToSend.filter(file=>/\.(txt|log)$/i.test(file.name) && file.sourceId).map(file=>file.sourceId)} : {}),
         ...(options.archiveCoverage ? {archiveCoverage:options.archiveCoverage} : {}),
         ...(options.archiveSources ? {archiveSources:options.archiveSources} : {}),
@@ -3259,7 +3314,7 @@ async function sendWave(options = {}) {
       origin.history.push(reply);
       await saveSession(origin);
       if (isRequestVisible(origin)) {
-        appendLakeWave(cleanReflection, reflectionTime, true, reply.snapshot, reply.archiveCoverage, reply.archiveSources);
+        appendLakeWave(cleanReflection, reflectionTime, true, reply.snapshot, reply.archiveCoverage, reply.archiveSources, reply.transcriptContext);
         if (!options.snapshot) updateCurrents(text);
       } else showReplyNotice(origin, reply);
       try { if (!options.snapshot && !origin.discarded && origin.key === storageKey('sessions')) processNamesFromResponse(data.reflection, origin); }
@@ -3328,7 +3383,7 @@ function appendUserWave(text, timeStr, scroll, attachments = []) {
   if (scroll) container.scrollTop = container.scrollHeight;
 }
 
-function appendLakeWave(text, timeStr, scroll, snapshot, archiveCoverage, archiveSources) {
+function appendLakeWave(text, timeStr, scroll, snapshot, archiveCoverage, archiveSources, transcriptContext) {
   const container = document.getElementById('wavesContainer');
   const ripple    = document.getElementById('ripple');
   const div       = document.createElement('div');
@@ -3360,6 +3415,9 @@ function appendLakeWave(text, timeStr, scroll, snapshot, archiveCoverage, archiv
       details.append(button);
     }
     div.querySelector('.wave-content').append(details);
+  }
+  if(transcriptContext) {
+    const coverage=document.createElement('div');coverage.className='wave-time archive-coverage';coverage.textContent=`Whole-meeting context: ${transcriptContext.parts} attached parts represented in a compressed working record. Original excerpts are retrieved for detail; this is not perfect verbatim recall.`;div.querySelector('.wave-content').append(coverage);
   }
   if (snapshot) {
     const download = document.createElement('button');
