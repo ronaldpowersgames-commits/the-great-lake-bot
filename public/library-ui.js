@@ -23,8 +23,8 @@ function renderTideTree() {
     const preview=document.createElement('div');preview.className='tide-preview';preview.textContent=session.preview||'';
     info.append(name,preview);
     const time=document.createElement('span');time.className='tide-time';time.textContent=getTimeAgo(session.time);
-    row.append(info,time,libraryButton('↪','Move chat',()=>openFolderDialog('move',session.id)),libraryButton('✎','Rename chat',event=>renameSession(event,session.id)));
-    const remove=libraryButton('×','Delete chat',event=>deleteSession(event,session.id));remove.classList.add('tide-delete');row.append(remove);
+    const remove=libraryButton('🗑','Delete chat',event=>deleteSession(event,session.id));remove.classList.add('tide-delete');
+    row.append(info,time,remove,libraryButton('↪','Move chat',()=>openFolderDialog('move',session.id)),libraryButton('✎','Rename chat',event=>renameSession(event,session.id)));
     parent.append(row);
   }
   function addLevel(parent,parentId,ancestorMatches=false) {

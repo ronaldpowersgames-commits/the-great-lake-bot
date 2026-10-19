@@ -1038,11 +1038,17 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
 .snapshot-menu { position: fixed; z-index: 100; width: 220px; max-width: calc(100vw - 16px); padding: 5px; border: 1px solid var(--dock-border); border-radius: 8px; background: var(--dock-bg); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
 .snapshot-menu button { display: block; width: 100%; min-height: 42px; padding: 9px 12px; border: 0; border-radius: 4px; background: transparent; color: var(--text-secondary); font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
 .snapshot-menu button:hover, .snapshot-menu button:focus-visible { background: rgba(45,140,240,0.12); color: var(--lake-light); }
-.source-menu { position: fixed; z-index: 100; width: 320px; max-width: calc(100vw - 16px); max-height: 240px; overflow: auto; padding: 8px; border: 1px solid var(--dock-border); border-radius: 8px; background: var(--dock-bg); }
+.source-menu { position: fixed; z-index: 100; width: 360px; max-width: calc(100vw - 16px); max-height: min(460px, 55vh); overflow: auto; padding: 8px; border: 1px solid var(--dock-border); border-radius: 8px; background: var(--dock-bg); scrollbar-width: thin; scrollbar-color: #355773 transparent; }
 .source-menu label { display: flex; gap: 8px; align-items: center; min-height: 42px; font-size: 12px; padding: 6px; color: var(--text-secondary); overflow-wrap: anywhere; }
 .source-menu input { flex-shrink: 0; }
 .archive-source-btn { white-space: normal; max-width: 100%; text-align: left; border-radius: 4px; margin-top: 4px; min-height: 44px; font-size: 12px; }
 .archive-coverage { font-size: 11px; color: var(--text-secondary); line-height: 1.4; }
+.transcript-status { border-top: 1px solid var(--dock-border); padding: 6px 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.transcript-status[hidden] { display: none; }
+.transcript-status-text { flex: 1; min-width: 180px; font-size: 11px; color: var(--text-secondary); overflow-wrap: anywhere; }
+.source-menu .source-summary { font-size: 12px; color: var(--text-secondary); line-height: 1.45; margin-bottom: 10px; }
+.source-menu .source-state { font-size: 11px; color: var(--text-secondary); margin: 3px 0 8px 20px; }
+.source-menu .source-file { border-top: 1px solid var(--dock-border); padding: 8px 0; }
 .dock-library { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .dock-pane { display: flex; flex-direction: column; min-height: 72px; overflow: hidden; }
 .tides-pane { flex: var(--tides-share, 0.65) 1 0; }
@@ -1374,6 +1380,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
         <button role="menuitem" onclick="createSnapshot('total')" title="Export this device's context for another AI instance">🗂️ Total Snapshot</button>
         <button role="menuitem" onclick="createSnapshot('both')" title="Export both and explain this conversation's contribution">🔗 Both</button>
       </div>
+      <div class="transcript-status" id="transcriptStatus" hidden aria-live="polite"></div>
       <div class="input-row">
         <div class="source-menu" id="sourceMenu" hidden></div>
         <div class="input-wrap">
@@ -1619,6 +1626,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
 <script src="/prompt-types.js"></script>
 <script src="/vendor/jszip.min.js"></script>
 <script src="/transcript-archive.js"></script>
+<script src="/transcript-review.js"></script>
 <script>
 // ============================================
 // STATE
@@ -1761,7 +1769,7 @@ async function addSelectedFiles(files) {
         chatHistory.flatMap(message => message.attachments || []).forEach(source => {source.excluded = true;});
         target.forEach(source => {source.excluded = true;});
         target.push(...imported);
-        showToast(`Imported ${parts.length} TXT parts. First part active; previous sources paused. Choose parts in Sources.`);
+        showToast(`Attached ${parts.length} TXT parts. Only the first is selected. Use Read next part to work through them; Sources shows what is included.`);
         await saveSession();
       } catch(error) {if(profile === storageKey('sessions'))showToast('ZIP could not be imported: ' + error.message);}
       finally {pendingFileLoads--;}
@@ -2826,6 +2834,59 @@ function closeSourceMenu() {
   document.getElementById('sourceMenuButton').setAttribute('aria-expanded','false');
 }
 
+function transcriptSources(history=chatHistory,pending=selectedFiles) {
+  return LakeTranscriptReview.inventory(history,pending,()=>crypto.randomUUID());
+}
+
+function renderTranscriptStatus() {
+  const panel=document.getElementById('transcriptStatus');if(!panel)return;
+  const sources=transcriptSources();const state=LakeTranscriptReview.status(sources,chatHistory);
+  panel.hidden=!sources.length;panel.replaceChildren();if(!sources.length)return;
+  const text=document.createElement('div');text.className='transcript-status-text';
+  const missing=state.missing.map(group=>`${group.name}: missing part${group.parts.length===1?'':'s'} ${group.parts.slice(0,12).join(', ')}${group.parts.length>12?'…':''} of ${group.total}`).join('; ');
+  text.textContent=`Transcript: ${state.attached} attached · ${state.selected} selected · ${state.sent} sent successfully. `+(state.numberedComplete?'Numbered set complete. ':'')+(missing || (state.sent<state.attached?'Not every attached part has been sent yet.':'All attached text files have been sent. Only selected files are included now.'));
+  panel.append(text);
+  if(state.next) {
+    const next=document.createElement('button');next.className='quick-action-btn';next.textContent='Read next part';next.title=state.next.name;
+    next.disabled=waveInFlight || pendingFileLoads>0;next.onclick=readNextTranscriptPart;panel.append(next);
+  }
+  if(state.missing.length) {
+    const add=document.createElement('button');add.className='quick-action-btn';add.textContent='Attach missing parts';add.onclick=triggerFileInput;panel.append(add);
+  }
+  if(sources.length>1 && !state.missing.length) {
+    const together=document.createElement('button');together.className='quick-action-btn';together.textContent='Read together';together.title='Include all attached text files in one request if they fit the exact-text limit';
+    together.disabled=waveInFlight || pendingFileLoads>0;together.onclick=readTranscriptTogether;panel.append(together);
+  }
+}
+
+async function readTranscriptTogether() {
+  if(waveInFlight || pendingFileLoads)return;
+  const session=currentSessionId;const profile=storageKey('sessions');const sources=transcriptSources();
+  const prompt=document.getElementById('lakeInput').value.trim() || 'Analyze all selected original transcript parts together. State the supplied coverage, join the discussion cautiously across part boundaries and combine the evidence with relevant user context. Do not assume numbered files prove the entire meeting was captured.';
+  try {
+    let chars=prompt.length;
+    for(const file of sources) {
+      const bytes=file.data?Uint8Array.from(atob(file.data.split(',')[1]),char=>char.charCodeAt(0)):new Uint8Array(await file.arrayBuffer());
+      chars+=new TextDecoder('utf-8',{fatal:true,ignoreBOM:true}).decode(bytes).length;
+    }
+    if(session!==currentSessionId || profile!==storageKey('sessions'))return;
+    if(chars>30000){showToast(`These originals plus your question total ${chars.toLocaleString()} characters; the limit is 30,000. Use Read next part for separate reviews, or select the exact parts needed for a focused question. Nothing was sent or summarized.`);return;}
+    const ids=new Set(sources.map(file=>file.sourceId));
+    for(const file of [...chatHistory.flatMap(message=>message.attachments||[]),...selectedFiles])file.excluded=!ids.has(file.sourceId);
+    renderFilePreviews();await sendWave({requestText:prompt,visibleText:prompt});
+  }catch(error){if(session===currentSessionId && profile===storageKey('sessions'))showToast('Could not read transcript text: '+error.message);}
+}
+
+async function readNextTranscriptPart() {
+  if(waveInFlight || pendingFileLoads)return;
+  const sources=transcriptSources();const state=LakeTranscriptReview.status(sources,chatHistory);if(!state.next)return;
+  const id=state.next.sourceId;
+  for(const file of [...chatHistory.flatMap(message=>message.attachments||[]),...selectedFiles])file.excluded=file.sourceId!==id;
+  renderFilePreviews();
+  await sendWave({action:'transcript-part',visibleText:`Read transcript part: ${state.next.name}`,preserveDraft:true,
+    requestText:'Read the selected original transcript part. Give a compact, source-grounded reading of its key events, speakers, decisions and unresolved threads. Use the supplied source inventory to distinguish attached, selected and previously sent files. Do not ask me to re-upload parts already attached, and do not claim they are all in context. Hold whole-call scores or final conclusions while numbered parts are missing or unsent; prior replies are not substitutes for original text. Ask at most one useful identity or background question when needed.'});
+}
+
 function renderSourceControls() {
   const button = document.getElementById('sourceMenuButton');
   const menu = document.getElementById('sourceMenu');
@@ -2838,17 +2899,34 @@ function renderSourceControls() {
   button.textContent = `Sources ${[...sources.values()].filter(file => !file.excluded).length}/${sources.size} ▾`;
   menu.replaceChildren();
   if (!sources.size) closeSourceMenu();
+  if(sources.size) {
+    const heading=document.createElement('strong');heading.textContent='Files for the next message';menu.append(heading);
+    const summary=document.createElement('div');summary.className='source-summary';
+    summary.textContent=`${sources.size} attached; ${[...sources.values()].filter(file=>!file.excluded).length} included next. Unchecked files stay saved but are not sent. Text files and your question share a 30,000-character limit. For numbered transcripts, use Read next part to work through each file.`;menu.append(summary);
+    const detail=document.createElement('details');const title=document.createElement('summary');title.textContent='What counts as full context?';
+    const note=document.createElement('div');note.className='source-summary';note.textContent='Attach all numbered parts, preferably together as the splitter ZIP. Check for missing parts below. Sent successfully means a request containing that exact file completed, not proof of comprehension. Earlier replies may be shortened in later requests: sending every part separately does not keep the entire transcript in context. For an exact whole-call analysis, all original text must fit in one selected batch. Otherwise use targeted parts or Meeting Currents for cited excerpts; neither is a full-call reread.';
+    detail.append(title,note);menu.append(detail);
+  }
+  const reviewSources=transcriptSources();const reviewState=LakeTranscriptReview.status(reviewSources,chatHistory);
+  if(reviewState.missing.length) {
+    const missing=document.createElement('div');missing.className='source-summary';
+    missing.textContent=reviewState.missing.map(group=>`Missing from ${group.name}: part${group.parts.length===1?'':'s'} ${group.parts.slice(0,12).join(', ')} of ${group.total}.`).join(' ');menu.append(missing);
+  }
   for (const [key,file] of sources) {
+    const row=document.createElement('div');row.className='source-file';
     const label = document.createElement('label');
     const checkbox = document.createElement('input');
     checkbox.type = 'checkbox'; checkbox.checked = !file.excluded;
+    checkbox.setAttribute('aria-label',file.name);
     checkbox.onchange = () => {
       attachments.filter(item => keyOf(item) === key).forEach(item => {item.excluded = !checkbox.checked;});
       renderFilePreviews();
       saveSession().catch(error => showToast('Source selection could not be saved: ' + error.message));
     };
     label.append(checkbox,document.createTextNode(file.name));
-    menu.append(label);
+    row.append(label);
+    const state=document.createElement('div');state.className='source-state';
+    state.textContent=(file.excluded?'Saved only':'Included next')+(/\.(txt|log)$/i.test(file.name)?' · '+(reviewState.receipts.has(file.sourceId)?'Sent successfully before':'Not yet tracked as sent'):'');row.append(state);
     if(/\.(txt|log)$/i.test(file.name)) {
       const dateLabel = document.createElement('label');
       const date = LakeMeetingMemory.dateOf(file.name,file.meetingDate);
@@ -2868,9 +2946,11 @@ function renderSourceControls() {
         saveSession().catch(error => showToast('Meeting date could not be saved: ' + error.message));
       };
       dateLabel.append(document.createTextNode(date.status==='user-reviewed'?'Reviewed date':date.status==='ambiguous'?'Date needs confirmation':date.status==='unknown'?'Meeting date':'Date from title'),input);
-      menu.append(dateLabel);
+      row.append(dateLabel);
     }
+    menu.append(row);
   }
+  renderTranscriptStatus();
 }
 
 function toggleSourceMenu() {
@@ -3091,6 +3171,9 @@ async function sendWave(options = {}) {
     userCrew:JSON.stringify(crewMembers.filter(member=>member.isSelf===true).slice(0,1).map(({name,nickname,codename,role})=>({name,aliases:nickname,codename,role}))),
     crew: JSON.stringify(crewMembers.map(({ name, nickname, codename, role, context, observations }) => ({ name, nickname, codename, role, context, observations: (observations || []).slice(-10) })))
   };
+  const reviewInventory=transcriptSources(origin.history,selectedFiles).map(file=>({id:file.sourceId,name:file.name,selected:!file.excluded}));
+  origin.sourceInventory=reviewInventory;
+  origin.previousReceipts=[...LakeTranscriptReview.status(transcriptSources(origin.history,selectedFiles),origin.history).receipts];
   activeWave = origin;
 
   const timeStr         = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -3107,6 +3190,7 @@ async function sendWave(options = {}) {
       const bytes = Uint8Array.from(atob(encoded), character => character.charCodeAt(0));
       const original = new File([bytes], attachment.name, { type: attachment.type || 'application/octet-stream' });
       original.meetingDate = attachment.meetingDate;
+      original.sourceId=attachment.sourceId;
       filesToSend.push(original);
     }
   }
@@ -3124,7 +3208,7 @@ async function sendWave(options = {}) {
   for (const file of newFiles) {
     try {
       const data = await fileToBase64(file);
-      base64Attachments.push({ name: file.name, type: file.type, size: file.size, data, ...(file.excluded ? {excluded:true} : {}),...(file.meetingDate ? {meetingDate:file.meetingDate} : {}) });
+      base64Attachments.push({ name: file.name, type: file.type, size: file.size, data, ...(file.sourceId ? {sourceId:file.sourceId} : {}),...(file.excluded ? {excluded:true} : {}),...(file.meetingDate ? {meetingDate:file.meetingDate} : {}) });
     } catch(e) { console.warn('Could not convert file:', file.name, e); }
   }
 
@@ -3156,6 +3240,7 @@ async function sendWave(options = {}) {
     const historyToSend = origin.history.slice(-11, -1).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.content }));
     formData.append('history', JSON.stringify(historyToSend));
     formData.append('sourceMetadata',JSON.stringify(filesToSend.map(file => ({filename:file.name,meetingDate:file.meetingDate || ''}))));
+    if(!options.snapshot && options.action!=='meeting-currents')formData.append('transcriptInventory',JSON.stringify({files:origin.sourceInventory,previouslySent:origin.previousReceipts,currentFiles:filesToSend.map(file=>file.sourceId).filter(Boolean)}));
     filesToSend.forEach(file => formData.append('file', file));
 
     const response = await fetch('/chat', { method: 'POST', body: formData });
@@ -3167,6 +3252,7 @@ async function sendWave(options = {}) {
       const cleanReflection = options.snapshot ? JSON.stringify(data.handoff || JSON.parse(data.reflection), null, 2) : stripPlayerTagsJson(data.reflection);
       const reflectionTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       const reply = { role: 'assistant', content: cleanReflection, time: reflectionTime,
+        ...(!options.snapshot && options.action!=='meeting-currents' ? {sourceReceipts:filesToSend.filter(file=>/\.(txt|log)$/i.test(file.name) && file.sourceId).map(file=>file.sourceId)} : {}),
         ...(options.archiveCoverage ? {archiveCoverage:options.archiveCoverage} : {}),
         ...(options.archiveSources ? {archiveSources:options.archiveSources} : {}),
         ...(options.snapshot ? { snapshot: options.snapshot } : {}) };
@@ -3193,6 +3279,7 @@ async function sendWave(options = {}) {
   } finally {
     waveInFlight = false;
     activeWave = null;
+    renderTranscriptStatus();
   }
 }
 

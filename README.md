@@ -166,6 +166,27 @@ unchecking clears it. The identity and aliases accompany chat analysis and AI
 handoffs, survive duplicate linking and full backups, and remain profile-local.
 Ambiguous transcript authorship still requires clarification.
 
+## Transcript Coverage And Guided Review
+
+With TXT/LOG attachments, the composer shows attached, selected and successfully
+sent file counts. Numbered splitter filenames expose missing parts. Sources
+distinguishes Included next from Saved only and explains that unchecked files
+stay stored but are not included in the next request.
+
+Read next part selects only the next unsent original and submits it, keeping the
+user's draft intact. Failed requests do not advance the count. Successful-send
+receipts persist per conversation and source version; older replies without
+receipts are not retroactively counted as proof that a file was read.
+
+Read together checks the exact UTF-8 text plus the question against the 30,000
+character request limit before submitting all attached text files together. It
+does not summarize oversized material. Sending all parts separately does not put
+all original text into later context; the source menu explains this, and the bot
+receives an inventory so it does not request already attached parts again or
+claim whole-call coverage from earlier replies. Meeting Currents retrieves cited
+excerpts, not an exhaustive full-call reread. Numbering alone cannot prove that a
+transcript captures the entire real meeting.
+
 ## Lake Score Cards
 
 For a call or conversation, Score Cards begins with a separate Overall Lake Score,

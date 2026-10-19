@@ -11,7 +11,8 @@ const script = html.match(/<script>([\s\S]*?)<\/script>/)[1];
 function browserContext() {
   const elements = new Map();
   const context = vm.createContext({
-    console, FormData, File, Blob, Date, atob, TextDecoder,
+    console, FormData, File, Blob, Date, atob, TextDecoder, crypto:require('node:crypto').webcrypto,
+    LakeTranscriptReview: require('../public/transcript-review'),
     LakeMeetingMemory: require('../public/meeting-memory'),
     LakeOrganization: require('../public/organization'),
     window: {addEventListener() {}},
@@ -20,7 +21,7 @@ function browserContext() {
       return elements.get(id);
     } },
     saveSuggestedCrew() {}, renderCrew() {}, hideRipple() {}, showRipple() {},
-    renderFilePreviews() {}, saveSession() {}, updateCurrents() {}, showToast() {},
+    renderFilePreviews() {}, renderTranscriptStatus() {}, saveSession() {}, updateCurrents() {}, showToast() {},
     storageKey(key) { return 'lake_test_' + key; },
     showBackendModel(model) { context.document.getElementById('backendModelInfo').textContent = `\ud83e\udd16 Model: ${model}`; },
     appendUserWave(text) { context.visibleMessages.push(text); },
@@ -35,7 +36,7 @@ function browserContext() {
   vm.runInContext('let crewMembers = []; let suggestedCrew = []; let selectedFiles = []; let chatHistory = []; let allSessions = []; let tideFolders = []; let currentSessionId = null; let currentUser = {name:"Ron"}; let currentMood = "calm"; let sessionLoadPromise = Promise.resolve(); let pendingFileLoads = 0;', context);
   vm.runInContext(script.slice(script.indexOf('const IGNORE_WORDS'), script.indexOf('// STORAGE HELPERS')), context);
   vm.runInContext(script.slice(script.indexOf('function triggerDailyPrinciple('), script.indexOf('// RENDER WAVES')), context);
-  vm.runInContext('fileToBase64 = async file => "data:text/plain;base64,dGVzdA==";', context);
+  vm.runInContext('fileToBase64 = async file => "data:text/plain;base64,dGVzdA=="; renderTranscriptStatus=()=>{};', context);
   return context;
 }
 
@@ -481,6 +482,28 @@ test('follow-up directions stay occasional, compact and subordinate to the user 
     assert.match(prompt,/explicit final-answer or no-follow-up requests/);
     assert.match(prompt,/Never withhold the requested answer/);
   }
+});
+
+test('transcript inventory detects missing parts and counts only exact successful source receipts', () => {
+  const review=require('../public/transcript-review');let id=0;
+  const one={name:'call-part-001-of-003.txt',data:'data:text/plain;base64,b25l'};
+  const copy={...one};const three={name:'call-part-003-of-003.txt',data:'data:text/plain;base64,dGhyZWU=',excluded:true};
+  const history=[{role:'user',attachments:[one,copy,three]},{role:'assistant',content:'I read everything'}];
+  const sources=review.inventory(history,[],()=>String(++id));assert.equal(sources.length,2);assert.equal(one.sourceId,copy.sourceId);
+  let state=review.status(sources,history);assert.equal(state.sent,0);assert.deepEqual(state.missing[0].parts,[2]);
+  history.push({role:'assistant',sourceReceipts:[one.sourceId]});state=review.status(sources,history);assert.equal(state.sent,1);assert.equal(state.next.name,three.name);
+  const changed={name:one.name,data:'data:text/plain;base64,Y2hhbmdlZA=='};
+  const changedSources=review.inventory(history,[changed],()=>String(++id));assert.notEqual(changed.sourceId,one.sourceId);assert.equal(review.status(changedSources,history).sent,1);
+});
+
+test('analysis distinguishes attached inventory from current original files and prior sends', async () => {
+  const {handler,requests}=routeContext();
+  await handler({body:{message:'Read part one',transcriptInventory:JSON.stringify({files:[{id:'one',name:'call-part-001-of-003.txt'},{id:'two',name:'call-part-002-of-003.txt'}],previouslySent:['two'],currentFiles:['one','two']})},files:[{originalname:'call-part-001-of-003.txt',mimetype:'text/plain',buffer:Buffer.from('Exact text.'),size:11}]},{json(){},status(){return this;}});
+  const prompt=requests.at(-1).messages[0].content;
+  assert.match(prompt,/"filename":"call-part-001-of-003.txt","included_now":true/);
+  assert.match(prompt,/"filename":"call-part-002-of-003.txt","included_now":false,"previously_sent":true/);
+  assert.match(prompt,/Do not ask the user to upload a listed attached part again/);
+  assert.match(prompt,/Never claim full-context analysis simply because every part was previously sent/);
 });
 
 test('meeting dates come from titles, preserve uncertainty and accept reviewed corrections', () => {
