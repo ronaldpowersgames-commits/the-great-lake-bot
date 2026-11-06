@@ -177,6 +177,7 @@ test('modes have distinct conversational behaviors and Stormy keeps the edge off
   assert.match(stormy, /confident, mischievous openers/);
   assert.match(stormy, /never the person's worth/);
   assert.match(stormy, /Dial down the wit for grief, distress/);
+  assert.match(stormy, /15–20% fewer words/);
   assert.equal(context.getMoodContext('unknown'), calm);
 });
 
@@ -496,6 +497,10 @@ test('follow-up directions are specific, compact and subordinate to the user pac
     assert.match(prompt,/suggestion OR the most useful Socratic question/);
     assert.match(prompt,/explicit final-answer or no-follow-up requests/);
     assert.match(prompt,/Never withhold the requested answer/);
+    assert.match(prompt,/READABLE ANSWER SHAPE/);
+    assert.match(prompt,/begin with a genuinely quick read/);
+    assert.match(prompt,/bold supported people's names/);
+    assert.match(prompt,/Preserve the useful suggested next move at the end/);
     assert.match(prompt,/regular part of engaged exploratory conversations/);
     assert.match(prompt,/Name the actual person, unresolved thread or decision/);
     assert.match(prompt,/Only offer paths the available material and tools can support/);

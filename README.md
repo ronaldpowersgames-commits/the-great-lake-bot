@@ -29,6 +29,12 @@ Stormy softens its humor around distress; it is not automatic confrontation.
 No mode provides extra memory, tools or certainty.
 
 Enter sends a message. Shift+Enter inserts a newline; the send button remains available on mobile.
+Android text selection and correction stay under the native editor's control; the
+app does not force-scroll the conversation when the keyboard viewport changes.
+
+Printable transcript / PDF opens a normal same-origin transcript page with a
+Print / Save PDF action. Because it is no longer an `about:blank` document,
+browser extensions can recognize it for full-page screenshots.
 
 ## Private Sharing And AI Handoffs
 
@@ -176,7 +182,8 @@ as extra profile shortcuts, with up to three distinct options when useful.
 ## Adaptive Next Moves
 
 After substantive replies, the Lake can surface up to three compact, contextual
-next moves above the composer. Suggestions may drill into evidence, branch to a
+next moves above the composer. They appear as right-aligned mood-colored pills
+that echo the send button without dominating the composer. Suggestions may drill into evidence, branch to a
 credible alternative, reinforce a transferable skill, quiz judgment, design a
 test, challenge the current interpretation or turn insight into action. They are
 grounded in the current people, decision and unresolved thread rather than drawn

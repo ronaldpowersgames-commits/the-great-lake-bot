@@ -604,30 +604,27 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
 
 /* ── PROMPT SUGGESTIONS ── */
 .adaptive-suggestions {
-  border: 1px solid color-mix(in srgb, var(--lake-glow) 34%, transparent);
-  border-radius: 11px; padding: 6px 7px;
-  background: color-mix(in srgb, var(--lake-glow) 5%, var(--dock-bg));
-  box-shadow: 0 0 13px color-mix(in srgb, var(--lake-glow) 12%, transparent);
+  display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
+  padding: 2px 1px 4px;
 }
 .adaptive-suggestions[hidden] { display: none; }
-.adaptive-suggestions-head { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
-.adaptive-suggestions-title { flex: 1; color: var(--text-secondary); font-size: 9px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; }
-.adaptive-suggestions-close { width: 24px; height: 24px; border: 0; border-radius: 7px; background: transparent; color: var(--text-dim); cursor: pointer; font-size: 15px; }
+.adaptive-suggestions-head { display: flex; align-items: center; justify-content: flex-end; gap: 4px; min-height: 18px; }
+.adaptive-suggestions-title { color: var(--text-dim); font-size: 8px; font-weight: 650; letter-spacing: .35px; }
+.adaptive-suggestions-close { width: 20px; height: 20px; border: 0; border-radius: 999px; background: transparent; color: var(--text-dim); cursor: pointer; font-size: 13px; line-height: 1; }
 .adaptive-suggestions-close:hover { background: rgba(255,255,255,.07); color: var(--text-primary); }
-.adaptive-suggestions-list { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+.adaptive-suggestions-list { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; max-width: 100%; }
 .adaptive-suggestions-list::-webkit-scrollbar { display: none; }
-.adaptive-suggestion { position: relative; display: flex; flex: 0 0 auto; max-width: min(290px, 78vw); }
+.adaptive-suggestion { position: relative; display: flex; max-width: min(420px, 88vw); }
 .adaptive-suggestion-main {
-  min-height: 34px; padding: 7px 31px 7px 10px; border: 0; border-radius: 10px;
-  background: linear-gradient(135deg, color-mix(in srgb, var(--lake-glow) 82%, #16284a), color-mix(in srgb, var(--lake-light) 74%, #17304a));
-  color: #fff; box-shadow: 0 3px 12px color-mix(in srgb, var(--lake-glow) 21%, transparent);
-  cursor: pointer; font: inherit; font-size: 11px; font-weight: 650; line-height: 1.25; text-align: left;
+  min-height: 30px; padding: 6px 29px 6px 11px;
+  border: 1px solid color-mix(in srgb, var(--lake-glow) 46%, var(--dock-border)); border-radius: 999px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--lake-glow) 30%, var(--dock-bg)), color-mix(in srgb, var(--lake-light) 20%, var(--lake-mid)));
+  color: var(--text-primary); box-shadow: 0 2px 10px color-mix(in srgb, var(--lake-glow) 17%, transparent);
+  cursor: pointer; font: inherit; font-size: 10.5px; font-weight: 600; line-height: 1.2; text-align: left;
 }
-.adaptive-suggestion-main:hover, .adaptive-suggestion-main:focus-visible { filter: brightness(1.1); box-shadow: 0 4px 16px color-mix(in srgb, var(--lake-glow) 34%, transparent); }
-.adaptive-suggestion-dismiss { position: absolute; top: 5px; right: 5px; width: 22px; height: 22px; border: 0; border-radius: 6px; background: rgba(4,18,36,.28); color: rgba(255,255,255,.72); cursor: pointer; }
-.adaptive-suggestion-dismiss:hover { background: rgba(4,18,36,.58); color: #fff; }
-.adaptive-suggestions[data-mood="analytical"] .adaptive-suggestion-main { background: linear-gradient(135deg,#6246d8,#856df0); }
-.adaptive-suggestions[data-mood="stormy"] .adaptive-suggestion-main { background: linear-gradient(135deg,#d94b2b,#ff8059); }
+.adaptive-suggestion-main:hover, .adaptive-suggestion-main:focus-visible { filter: brightness(1.13); border-color: var(--lake-light); box-shadow: 0 3px 14px color-mix(in srgb, var(--lake-glow) 28%, transparent); }
+.adaptive-suggestion-dismiss { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; border: 0; border-radius: 999px; background: transparent; color: color-mix(in srgb, var(--text-primary) 62%, transparent); cursor: pointer; }
+.adaptive-suggestion-dismiss:hover { background: color-mix(in srgb, var(--lake-glow) 24%, transparent); color: #fff; }
 .adaptive-suggestion-main:focus-visible, .adaptive-suggestion-dismiss:focus-visible, .adaptive-suggestions-close:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 .suggestions-top-row {
   display: flex; align-items: center; gap: 6px;
@@ -1289,7 +1286,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
       <div class="share-menu" id="shareMenu">
         <div onclick="shareAsGroupSession()">🔗 Share Session Link</div>
         <div onclick="exportAsTxt()">📄 Export as .txt</div>
-        <div onclick="exportAsPDF()">📊 Export as PDF</div>
+        <div onclick="exportAsPDF()">📊 Printable transcript / PDF</div>
       </div>
       <!-- Mood selector -->
       <div class="mood-selector" id="moodSelector">
@@ -1399,7 +1396,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
       <div class="files-preview-container" id="filesPreviewContainer"></div>
       <section class="adaptive-suggestions" id="adaptiveSuggestions" aria-label="Suggested next moves" hidden>
         <div class="adaptive-suggestions-head">
-          <span aria-hidden="true">💡</span><span class="adaptive-suggestions-title">The Lake sees a useful next move</span>
+          <span class="adaptive-suggestions-title">Suggested next move</span>
           <button class="adaptive-suggestions-close" onclick="dismissAdaptiveSuggestions()" aria-label="Dismiss all suggestions" title="Dismiss suggestions">×</button>
         </div>
         <div class="adaptive-suggestions-list" id="adaptiveSuggestionsList"></div>
@@ -3690,41 +3687,36 @@ function exportAsTxt() {
 
 function exportAsPDF() {
   const waves = document.querySelectorAll('.wave');
-  let html = `<html><head><style>
-    body{font-family:'Segoe UI',sans-serif;padding:40px;background:#0a1628;color:#c8dff0;}
-    h1{color:#5bc4f5;border-bottom:2px solid #1e3a5f;padding-bottom:10px;}
-    .meta{color:#4a6d8c;font-size:13px;margin-bottom:30px;}
-    .msg{margin-bottom:20px;}
-    .sender{font-weight:bold;font-size:12px;margin-bottom:4px;}
-    .sender.user{color:#4a9eff;} .sender.lake{color:#5bc4f5;}
-    .text{background:#0d1f3c;padding:12px 16px;border-radius:10px;font-size:14px;line-height:1.6;}
-  </style></head><body>
-  <h1>🌊 The Great Lake — Session Transcript</h1>
-  <div class="meta">Exported: ${new Date().toLocaleString()}</div>`;
+  const messages=[];
   waves.forEach(wave => {
     const isUser = wave.classList.contains('user-wave');
     const time   = wave.querySelector('.wave-time')?.innerText || '';
     const text   = wave.querySelector('.wave-bubble')?.innerText || '';
-    if (text) html += `<div class="msg">
-      <div class="sender ${isUser ? 'user' : 'lake'}">${isUser ? '👤 You' : '🌊 The Lake'} ${time ? '· ' + time : ''}</div>
-      <div class="text">${text.replace(/\n/g, '<br>')}</div>
-    </div>`;
+    if(text)messages.push({sender:isUser?'You':'The Lake',role:isUser?'user':'lake',time,text});
   });
-  html += '</body></html>';
-  const win = window.open('', '_blank');
-  win.document.write(html); win.document.close(); win.print();
+  const id='lake-transcript-'+Date.now()+'-'+Math.random().toString(36).slice(2,8);
+  try {
+    const now=Date.now();
+    for(let index=localStorage.length-1;index>=0;index--) {
+      const key=localStorage.key(index);if(!key?.startsWith('lake-transcript-'))continue;
+      try {const saved=JSON.parse(localStorage.getItem(key)||'null');if(!saved?.created || now-saved.created>86400000)localStorage.removeItem(key);}
+      catch {localStorage.removeItem(key);}
+    }
+    localStorage.setItem(id,JSON.stringify({created:now,exported:new Date(now).toLocaleString(),messages}));
+    window.open('/transcript-print.html?id='+encodeURIComponent(id),'_blank','noopener');
+  } catch(error) {
+    showToast('Could not prepare the printable transcript on this device.');
+    console.warn('Transcript export failed:',error);
+  }
   document.getElementById('shareMenu').style.display = 'none';
 }
 
 // ============================================
-// MOBILE KEYBOARD FIX
+// MOBILE KEYBOARD STABILITY
 // ============================================
-if ('visualViewport' in window) {
-  window.visualViewport.addEventListener('resize', () => {
-    const container = document.getElementById('wavesContainer');
-    if (container) container.scrollTop = container.scrollHeight;
-  });
-}
+// Do not force-scroll on visualViewport resize. Android fires resize events while
+// selecting text, opening correction tools and changing keyboard suggestions; moving
+// the chat at those moments can interrupt the native editor and dismiss the keyboard.
 
 // ============================================
 // MOBILE BACK BUTTON
