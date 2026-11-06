@@ -205,6 +205,12 @@ next move to explain what scored well, what scored poorly and the interaction
 flow pattern behind the score. The interface supplies this fallback even if the
 model omits optional suggestion metadata.
 
+The first assistant reply in every new tide also shows two or three suggested
+next waves so a new user immediately sees how to drill down, test a reading or
+turn it into action. The model supplies contextual moves when possible; the
+interface provides a safe varied fallback if none arrive. Explicit requests for
+no follow-up, no suggestions or a one-word answer suppress this onboarding set.
+
 ## Transcript Coverage And Guided Review
 
 With TXT/LOG attachments, the composer shows attached, selected and successfully

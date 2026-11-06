@@ -32,6 +32,16 @@ test('an actual Lake score always gains the standard diagnostic follow-up',()=>{
   assert.equal(existing.suggestions.length,1);
 });
 
+test('a first reply always has useful onboarding moves when the model omits them',()=>{
+  const first=suggestions.ensureFirstResponse({text:'Welcome to the Lake.',suggestions:[]},true);
+  assert.deepEqual(first.suggestions.map(item=>item.kind),['drill_down','counterpoint','action']);
+  assert.match(first.suggestions[0].label,/strongest signal/i);
+  const later=suggestions.ensureFirstResponse({text:'Later reply.',suggestions:[]},false);
+  assert.deepEqual(later.suggestions,[]);
+  const modelSet=[{label:'Specific move',prompt:'Explore the actual decision.',kind:'branch'}];
+  assert.deepEqual(suggestions.ensureFirstResponse({text:'First reply.',suggestions:modelSet},true).suggestions,modelSet);
+});
+
 test('tap and dismissal signals stay bounded and non-identifying',()=>{
   let profile=suggestions.record({},'chosen',{kind:'test'});
   profile=suggestions.record(profile,'chosen',{kind:'test'});

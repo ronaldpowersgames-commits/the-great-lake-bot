@@ -79,7 +79,16 @@ test('adaptive prompt metadata is hidden from chat and stored as tappable next m
   assert.equal(context.replies[0],'Useful answer.');
   assert.equal(vm.runInContext('chatHistory.at(-1).promptSuggestions[0].kind',context),'test');
   assert.doesNotMatch(vm.runInContext('chatHistory.at(-1).content',context),/LAKE_PROMPTS_JSON/);
+  assert.equal(context.sent.get('firstResponse'),'true');
   assert.deepEqual(JSON.parse(context.sent.get('suggestionProfile')),{chosen:{},dismissed:{},recent_chosen_kinds:[]});
+});
+
+test('the interface supplies onboarding moves on a first reply without model suggestions',async()=>{
+  const context=browserContext();
+  context.fetch=async (url,options)=>{context.sent=options.body;return {ok:true,json:async()=>({reflection:'A useful first answer.',model:'gpt-4o-test'})};};
+  await vm.runInContext('sendWave({requestText:"Help me understand this situation"})',context);
+  assert.equal(vm.runInContext('chatHistory.at(-1).promptSuggestions.length',context),3);
+  assert.equal(vm.runInContext('chatHistory.at(-1).promptSuggestions[0].kind',context),'drill_down');
 });
 
 test('late Crew suggestions retain the originating conversation and file evidence', () => {
@@ -489,7 +498,7 @@ test('score cards separate whole-call and participant ratings with coverage limi
 test('follow-up directions are specific, compact and subordinate to the user pace', async () => {
   for(const mood of ['calm','analytical','stormy']) {
     const {handler,requests}=routeContext();
-    await handler({body:{message:'Read this exchange',mood,suggestionProfile:JSON.stringify({chosen:{test:3},dismissed:{quiz:2},recent_chosen_kinds:['test']})},files:[]},{json(){},status(){return this;}});
+    await handler({body:{message:'Read this exchange',mood,firstResponse:'true',suggestionProfile:JSON.stringify({chosen:{test:3},dismissed:{quiz:2},recent_chosen_kinds:['test']})},files:[]},{json(){},status(){return this;}});
     const prompt=requests.at(-1).messages[0].content;
     assert.match(prompt,/one or two concrete next directions/);
     assert.match(prompt,/use up to three when the paths are genuinely distinct/);
@@ -510,6 +519,7 @@ test('follow-up directions are specific, compact and subordinate to the user pac
     assert.match(prompt,/drill_down\|branch\|reinforce\|quiz\|test\|counterpoint\|action/);
     assert.match(prompt,/What scored well\/poorly and the flow pattern explanation/);
     assert.match(prompt,/This score explanation is required/);
+    assert.match(prompt,/FIRST RESPONSE ONBOARDING: This is the first assistant reply in a new tide/);
     assert.match(prompt,/LOCAL SUGGESTION INTERACTION SIGNALS/);
     assert.match(prompt,/"test":3/);
     assert.match(prompt,/"quiz":2/);

@@ -1978,8 +1978,9 @@ function stripPlayerTagsJson(text) {
   return String(text || '').replace(/PLAYER_TAGS_JSON[\s\S]*?(?:END_PLAYER_TAGS_JSON|$)/gi, '').trim();
 }
 
-function extractAdaptiveSuggestions(text) {
-  return LakeAdaptiveSuggestions.ensureScoreBreakdown(LakeAdaptiveSuggestions.extract(stripPlayerTagsJson(text)));
+function extractAdaptiveSuggestions(text,firstResponse=false) {
+  const result=LakeAdaptiveSuggestions.ensureScoreBreakdown(LakeAdaptiveSuggestions.extract(stripPlayerTagsJson(text)));
+  return LakeAdaptiveSuggestions.ensureFirstResponse(result,firstResponse);
 }
 
 function normalizePersonKey(value) {
@@ -3344,6 +3345,7 @@ async function sendWave(options = {}) {
     userCrew:JSON.stringify(crewMembers.filter(member=>member.isSelf===true).slice(0,1).map(({name,nickname,codename,role})=>({name,aliases:nickname,codename,role}))),
     crew: JSON.stringify(crewMembers.map(({ name, nickname, codename, role, context, observations }) => ({ name, nickname, codename, role, context, observations: (observations || []).slice(-10) })))
   };
+  origin.firstResponseSuggestions=!options.snapshot && !origin.history.some(message=>message.role==='assistant') && !/\b(?:no follow[- ]?up|no suggestions?|just answer|one word)\b/i.test(text);
   const reviewInventory=transcriptSources(origin.history,selectedFiles).map(file=>({id:file.sourceId,name:file.name,selected:!file.excluded}));
   origin.sourceInventory=reviewInventory;
   origin.previousReceipts=[...LakeTranscriptReview.status(transcriptSources(origin.history,selectedFiles),origin.history).receipts];
@@ -3426,6 +3428,7 @@ async function sendWave(options = {}) {
     formData.append('userAliases', origin.userAliases);
     formData.append('userCrew', origin.userCrew);
     formData.append('crew', origin.crew);
+    formData.append('firstResponse',origin.firstResponseSuggestions?'true':'false');
     formData.append('suggestionProfile',JSON.stringify(suggestionPreferencePayload()));
     const historyToSend = origin.history.slice(-11, -1).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.content }));
     formData.append('history', JSON.stringify(historyToSend));
@@ -3440,7 +3443,7 @@ async function sendWave(options = {}) {
     hideRipple();
 
     if (data.reflection) {
-      const suggestionResult=options.snapshot?{text:JSON.stringify(data.handoff || JSON.parse(data.reflection), null, 2),suggestions:[]}:extractAdaptiveSuggestions(data.reflection);
+      const suggestionResult=options.snapshot?{text:JSON.stringify(data.handoff || JSON.parse(data.reflection), null, 2),suggestions:[]}:extractAdaptiveSuggestions(data.reflection,origin.firstResponseSuggestions);
       const cleanReflection = suggestionResult.text;
       const reflectionTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       const reply = { role: 'assistant', content: cleanReflection, time: reflectionTime,

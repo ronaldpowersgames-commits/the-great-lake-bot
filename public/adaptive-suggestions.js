@@ -33,6 +33,12 @@
     why:'A score becomes useful when its strongest, weakest and interaction-level causes are visible.'
   };
 
+  const FIRST_RESPONSE_MOVES=[
+    {label:'Drill into the strongest signal',prompt:'Help me drill into the strongest signal in your answer and explain why it matters.',kind:'drill_down',why:'Shows how the Lake can move from a broad read into the governing detail.'},
+    {label:'Pressure-test the Lake’s read',prompt:'Give me the strongest credible alternative explanation and what evidence would distinguish it.',kind:'counterpoint',why:'Demonstrates that a Lake read can be tested rather than simply accepted.'},
+    {label:'Turn this into one practical move',prompt:'Turn this analysis into the single most useful practical next move for me.',kind:'action',why:'Shows how to convert reflection into a proportionate action.'}
+  ];
+
   function ensureScoreBreakdown(result){
     const value=result && typeof result==='object'?result:{text:String(result||''),suggestions:[]};
     const visible=String(value.text||'');
@@ -40,6 +46,12 @@
     const suggestions=Array.isArray(value.suggestions)?value.suggestions.slice(0,3):[];
     if(!isLakeScore || suggestions.some(item=>/scored well|scored poorly|flow pattern/i.test(`${item.label} ${item.prompt}`)))return {...value,suggestions};
     return {...value,suggestions:[SCORE_BREAKDOWN,...suggestions].slice(0,3)};
+  }
+
+  function ensureFirstResponse(result,required){
+    const value=result && typeof result==='object'?result:{text:String(result||''),suggestions:[]};
+    const suggestions=Array.isArray(value.suggestions)?value.suggestions.slice(0,3):[];
+    return required && !suggestions.length?{...value,suggestions:FIRST_RESPONSE_MOVES.map(item=>({...item}))}:{...value,suggestions};
   }
 
   function normalizeProfile(value){
@@ -62,5 +74,5 @@
     return {chosen:nonzero(profile.chosen),dismissed:nonzero(profile.dismissed),recent_chosen_kinds:profile.recent};
   }
 
-  return {KINDS:[...KINDS],SCORE_BREAKDOWN,extract,ensureScoreBreakdown,normalizeProfile,record,summary};
+  return {KINDS:[...KINDS],SCORE_BREAKDOWN,FIRST_RESPONSE_MOVES,extract,ensureScoreBreakdown,ensureFirstResponse,normalizeProfile,record,summary};
 });
