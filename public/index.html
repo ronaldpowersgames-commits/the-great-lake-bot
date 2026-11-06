@@ -637,6 +637,33 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
 .quick-action-btn:hover, .quick-action-btn:active {
   background: rgba(45,140,240,0.12); color: var(--lake-light); border-color: rgba(45,140,240,0.25);
 }
+.transcript-primary-action {
+  padding: 7px 12px; border-radius: 9px;
+  background: linear-gradient(135deg, #2563eb, #0891b2);
+  border: 1px solid rgba(147, 226, 255, 0.72);
+  color: #fff; font-size: 11px; font-weight: 750;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.12), 0 5px 16px rgba(8, 145, 178, 0.28);
+}
+.transcript-primary-action:hover, .transcript-primary-action:active {
+  background: linear-gradient(135deg, #3b82f6, #06b6d4);
+  border-color: #bae6fd; color: #fff;
+  transform: translateY(-1px);
+}
+.transcript-primary-action:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.transcript-primary-action.needs-reading { animation: transcriptPrimaryPulse 2.2s ease-in-out infinite; }
+.transcript-primary-action .transcript-action-icon { font-size: 14px; }
+.transcript-primary-action .transcript-action-badge {
+  margin-left: 3px; padding: 2px 5px; border-radius: 4px;
+  background: rgba(3, 27, 54, 0.45); color: #e0f2fe;
+  font-size: 8px; font-weight: 800; letter-spacing: 0.45px;
+}
+@keyframes transcriptPrimaryPulse {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.12), 0 5px 16px rgba(8, 145, 178, 0.28); }
+  50% { box-shadow: 0 0 0 5px rgba(56, 189, 248, 0.19), 0 7px 22px rgba(8, 145, 178, 0.42); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .transcript-primary-action.needs-reading { animation: none; }
+}
 
 /* ── FILE PREVIEWS ── */
 .files-preview-container { display: none; flex-wrap: wrap; gap: 7px; padding: 4px 0; }
@@ -2880,7 +2907,13 @@ function renderTranscriptStatus() {
   if(wholeTranscriptJob) {
     const stop=document.createElement('button');stop.className='quick-action-btn';stop.textContent='Stop after this part';stop.onclick=()=>{wholeTranscriptJob.cancelled=true;};panel.append(stop);
   }else if(!state.missing.length && sources.length<=20) {
-    const whole=document.createElement('button');whole.className='quick-action-btn';whole.textContent=memory.complete?'Analyze whole transcript':'Read whole transcript';whole.disabled=waveInFlight || pendingFileLoads>0;whole.onclick=readWholeTranscript;panel.append(whole);
+    const whole=document.createElement('button');const wholeLabel=memory.complete?'Analyze whole transcript':'Read whole transcript';
+    whole.className='quick-action-btn transcript-primary-action'+(memory.complete?'':' needs-reading');whole.setAttribute('aria-label',wholeLabel);
+    const wholeIcon=document.createElement('span');wholeIcon.className='transcript-action-icon';wholeIcon.setAttribute('aria-hidden','true');wholeIcon.textContent=memory.complete?'✨':'📖';
+    const wholeBadge=document.createElement('span');wholeBadge.className='transcript-action-badge';wholeBadge.setAttribute('aria-hidden','true');wholeBadge.textContent=memory.complete?'READY':'START HERE';
+    whole.append(wholeIcon,document.createTextNode(wholeLabel),wholeBadge);
+    whole.title=memory.complete?'Run a fresh whole-meeting analysis':'Recommended: read every numbered part safely, then analyze the meeting as a whole';
+    whole.disabled=waveInFlight || pendingFileLoads>0;whole.onclick=readWholeTranscript;panel.append(whole);
   }
   if(state.next) {
     const next=document.createElement('button');next.className='quick-action-btn';next.textContent='Read next part';next.title=state.next.name;

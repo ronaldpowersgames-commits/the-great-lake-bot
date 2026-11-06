@@ -539,6 +539,14 @@ test('whole-transcript records require every exact source and persist independen
   sources[0].sourceId='changed';assert.equal(review.memory(sources,history).complete,false);
 });
 
+test('whole-transcript reading is presented as the primary transcript action', () => {
+  assert.match(html, /\.transcript-primary-action\s*\{/);
+  assert.match(html, /linear-gradient\(135deg, #2563eb, #0891b2\)/);
+  assert.match(script, /transcript-primary-action/);
+  assert.match(script, /START HERE/);
+  assert.match(script, /Recommended: read every numbered part safely/);
+});
+
 test('part-record extraction reads exact original text, validates output and whole analysis receives every record', async () => {
   const {handler,requests}=routeContext(()=>JSON.stringify({notes:'Erin asks for an owner; Robby commits to follow up.'}));let result;let status;
   const res={json(value){result=value;},status(value){status=value;return this;}};
