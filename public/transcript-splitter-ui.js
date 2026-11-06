@@ -67,9 +67,7 @@ document.getElementById('split').addEventListener('click',() => {
     const size = Number(document.getElementById('size').value);
     const parts = LakeTranscriptSplitter.split(text,size);
     if (parts.map(part => part.text).join('') !== text) throw new Error('Verification failed. No parts exported.');
-    const stem = filename.replace(/\.txt$/i,'').replace(/[\\/:*?"<>|]/g,'_').trim() || 'transcript';
-    const digits = Math.max(3,String(parts.length).length);
-    const entries = parts.map((part,index) => ({...part,filename:`${stem}-part-${String(index+1).padStart(digits,'0')}-of-${String(parts.length).padStart(digits,'0')}.txt`}));
+    const entries = parts.map((part,index) => ({...part,filename:LakeExportNames.transcriptPart(filename,index+1,parts.length)}));
     exportEntries = entries;
     manifest = {format:'lake-verbatim-transcript/1',filename,total_characters:text.length,part_count:parts.length,target_characters:size,character_unit:'UTF-16 code units',lossless:true,parts:entries.map(({text,...part}) => part)};
     for (const [index,part] of entries.entries()) {
@@ -84,7 +82,7 @@ document.getElementById('split').addEventListener('click',() => {
     status.textContent = `${text.length.toLocaleString()} characters in ${parts.length} parts. Exact reconstruction verified.`;
   } catch(error) {status.textContent = error.message;}
 });
-document.getElementById('manifest').onclick = () => {if(manifest)download('transcript-manifest.json',JSON.stringify(manifest,null,2),'application/json');};
+document.getElementById('manifest').onclick = () => {if(manifest)download(LakeExportNames.transcriptIndex(manifest.filename),JSON.stringify(manifest,null,2),'application/json');};
 document.getElementById('zip').onclick = async () => {
   if (!manifest || !exportEntries.length) return;
   const button = document.getElementById('zip');
@@ -94,9 +92,8 @@ document.getElementById('zip').onclick = async () => {
     const zip = new JSZip();
     for (const part of exportEntries) zip.file(part.filename,part.text);
     zip.file('transcript-manifest.json',JSON.stringify(manifest,null,2));
-    const name = manifest.filename.replace(/\.txt$/i,'').replace(/[\\/:*?"<>|]/g,'_').trim() || 'transcript';
     const blob = await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}});
-    download(`${name}-parts.zip`,blob,'application/zip');
+    download(LakeExportNames.transcriptZip(manifest.filename),blob,'application/zip');
   } catch(error) {status.textContent = 'ZIP download failed: ' + error.message;}
   finally {button.disabled = false;button.removeAttribute('aria-busy');}
 };

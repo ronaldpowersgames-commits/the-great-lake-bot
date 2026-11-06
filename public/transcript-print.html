@@ -40,6 +40,7 @@
     <div class="meta" id="meta"></div>
     <section id="messages"></section>
   </main>
+  <script src="/export-names.js"></script>
   <script>
     (()=>{
       const id=new URLSearchParams(location.search).get('id');
@@ -50,6 +51,7 @@
         meta.textContent='Transcript data is unavailable or has expired.';
         const empty=document.createElement('div');empty.className='empty';empty.textContent='Return to The Lake and export the transcript again.';messages.append(empty);return;
       }
+      document.title=LakeExportNames.sessionTranscript('pdf',data.created || data.exported).replace(/\.pdf$/,'');
       meta.textContent='Exported: '+data.exported+' · Screenshot-friendly page';
       data.messages.forEach(message=>{
         const article=document.createElement('article');article.className='msg';

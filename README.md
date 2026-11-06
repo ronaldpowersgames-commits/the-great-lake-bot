@@ -35,6 +35,9 @@ app does not force-scroll the conversation when the keyboard viewport changes.
 Printable transcript / PDF opens a normal same-origin transcript page with a
 Print / Save PDF action. Because it is no longer an `about:blank` document,
 browser extensions can recognize it for full-page screenshots.
+All user-facing downloads use the `the-great-lake-<artifact>-<date>` convention.
+Transcript parts retain a safe source label and numbered part suffix beneath the
+same prefix so related files remain grouped together.
 
 ## Private Sharing And AI Handoffs
 
