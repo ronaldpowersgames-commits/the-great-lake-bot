@@ -9,10 +9,11 @@ const html=fs.readFileSync(path.join(root,'public','index.html'),'utf8');
 const printPage=fs.readFileSync(path.join(root,'public','transcript-print.html'),'utf8');
 
 test('machine prompt blocks become bounded visible suggestions',()=>{
-  const result=suggestions.extract(`Useful answer.\nLAKE_PROMPTS_JSON\n{"suggestions":[{"label":"Design the next observation","prompt":"Help me identify the cheapest observation that distinguishes novelty from repeat engagement.","kind":"test","why":"The current signal has several explanations."},{"label":"Audit my contribution modes","prompt":"Quiz me on which contribution mode moved the room and where I left value on the table.","kind":"quiz","why":"This reinforces transferable judgment."}]}\nEND_LAKE_PROMPTS_JSON`);
+  const result=suggestions.extract(`Useful answer.\nLAKE_PROMPTS_JSON\n{"suggestions":[{"label":"🧪💡 Design the next observation","prompt":"Help me identify the cheapest observation that distinguishes novelty from repeat engagement.","kind":"test","why":"The current signal has several explanations."},{"label":"Audit my contribution modes","prompt":"Quiz me on which contribution mode moved the room and where I left value on the table.","kind":"quiz","why":"This reinforces transferable judgment."}]}\nEND_LAKE_PROMPTS_JSON`);
   assert.equal(result.text,'Useful answer.');
   assert.equal(result.suggestions.length,2);
   assert.equal(result.suggestions[0].kind,'test');
+  assert.equal(result.suggestions[0].label,'🧪 Design the next observation');
   assert.doesNotMatch(result.text,/LAKE_PROMPTS_JSON/);
 });
 
@@ -35,7 +36,7 @@ test('an actual Lake score always gains the standard diagnostic follow-up',()=>{
 test('a first reply always has useful onboarding moves when the model omits them',()=>{
   const first=suggestions.ensureFirstResponse({text:'Welcome to the Lake.',suggestions:[]},true);
   assert.deepEqual(first.suggestions.map(item=>item.kind),['drill_down','counterpoint','action']);
-  assert.match(first.suggestions[0].label,/strongest signal/i);
+  assert.equal(first.suggestions[0].label,'Follow the strongest current');
   const later=suggestions.ensureFirstResponse({text:'Later reply.',suggestions:[]},false);
   assert.deepEqual(later.suggestions,[]);
   const modelSet=[{label:'Specific move',prompt:'Explore the actual decision.',kind:'branch'}];
@@ -60,6 +61,8 @@ test('adaptive UI uses compact mood-colored chips and remains dismissible',()=>{
   assert.match(html,/flex-flow: row wrap/);
   assert.match(html,/@media \(max-width: 640px\)/);
   assert.doesNotMatch(html,/adaptive-suggestions\[data-mood="stormy"\]/);
+  assert.doesNotMatch(html,/const icons=\{drill_down/);
+  assert.match(html,/id="responseLanguage"/);
 });
 
 test('transcript export opens a normal screenshot-friendly page',()=>{

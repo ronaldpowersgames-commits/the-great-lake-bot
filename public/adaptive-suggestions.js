@@ -6,6 +6,10 @@
   const KINDS=new Set(['drill_down','branch','reinforce','quiz','test','counterpoint','action']);
 
   function text(value,limit){return String(value||'').replace(/\s+/g,' ').trim().slice(0,limit);}
+  function label(value){
+    let found=false;
+    return text(value,80).replace(/\p{Extended_Pictographic}\uFE0F?/gu,emoji=>{if(found)return '';found=true;return emoji;}).replace(/\s+/g,' ').trim().slice(0,64);
+  }
 
   function extract(value){
     const source=String(value||'');
@@ -15,7 +19,7 @@
     try {
       const parsed=JSON.parse(match[1]);
       const suggestions=(Array.isArray(parsed.suggestions)?parsed.suggestions:[]).slice(0,3).map(item=>({
-        label:text(item?.label,64),
+        label:label(item?.label),
         prompt:text(item?.prompt,600),
         kind:KINDS.has(item?.kind)?item.kind:'branch',
         why:text(item?.why,180)
@@ -34,9 +38,9 @@
   };
 
   const FIRST_RESPONSE_MOVES=[
-    {label:'Drill into the strongest signal',prompt:'Help me drill into the strongest signal in your answer and explain why it matters.',kind:'drill_down',why:'Shows how the Lake can move from a broad read into the governing detail.'},
-    {label:'Pressure-test the Lake’s read',prompt:'Give me the strongest credible alternative explanation and what evidence would distinguish it.',kind:'counterpoint',why:'Demonstrates that a Lake read can be tested rather than simply accepted.'},
-    {label:'Turn this into one practical move',prompt:'Turn this analysis into the single most useful practical next move for me.',kind:'action',why:'Shows how to convert reflection into a proportionate action.'}
+    {label:'Follow the strongest current',prompt:'Help me drill into the strongest signal in your answer and explain why it matters.',kind:'drill_down',why:'Shows how the Lake can move from a broad read into the governing detail.'},
+    {label:'Test the water from another angle',prompt:'Give me the strongest credible alternative explanation and what evidence would distinguish it.',kind:'counterpoint',why:'Demonstrates that a Lake read can be tested rather than simply accepted.'},
+    {label:'Bring one practical move to shore',prompt:'Turn this analysis into the single most useful practical next move for me.',kind:'action',why:'Shows how to convert reflection into a proportionate action.'}
   ];
 
   function ensureScoreBreakdown(result){

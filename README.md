@@ -28,6 +28,12 @@ witty and edgier, challenging grounded contradictions without attacking people.
 Stormy softens its humor around distress; it is not automatic confrontation.
 No mode provides extra memory, tools or certainty.
 
+Settings includes a persistent Response language & spelling control. Auto follows
+the conversation naturally, while explicit US, UK, Canadian or Australian English
+overrides spelling inferred from slang. Spanish, French, German, Italian and
+Brazilian Portuguese are also available. The preference is sent with each response
+and included in full backups.
+
 Enter sends a message. Shift+Enter inserts a newline; the send button remains available on mobile.
 Android text selection and correction stay under the native editor's control; the
 app does not force-scroll the conversation when the keyboard viewport changes.
@@ -192,6 +198,8 @@ credible alternative, reinforce a transferable skill, quiz judgment, design a
 test, challenge the current interpretation or turn insight into action. They are
 grounded in the current people, decision and unresolved thread rather than drawn
 from a generic engagement menu.
+Pill labels use at most one emoji and usually rely on concise wording instead.
+Occasional subtle Lake metaphors add character without forcing a water pun.
 
 Each move can be used or dismissed individually, and the entire strip can be
 closed. Chosen and dismissed suggestion kinds are stored locally as bounded,

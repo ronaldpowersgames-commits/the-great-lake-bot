@@ -80,6 +80,7 @@ test('adaptive prompt metadata is hidden from chat and stored as tappable next m
   assert.equal(vm.runInContext('chatHistory.at(-1).promptSuggestions[0].kind',context),'test');
   assert.doesNotMatch(vm.runInContext('chatHistory.at(-1).content',context),/LAKE_PROMPTS_JSON/);
   assert.equal(context.sent.get('firstResponse'),'true');
+  assert.equal(context.sent.get('responseLanguage'),'auto');
   assert.deepEqual(JSON.parse(context.sent.get('suggestionProfile')),{chosen:{},dismissed:{},recent_chosen_kinds:[]});
 });
 
@@ -188,6 +189,15 @@ test('modes have distinct conversational behaviors and Stormy keeps the edge off
   assert.match(stormy, /Dial down the wit for grief, distress/);
   assert.match(stormy, /15–20% fewer words/);
   assert.equal(context.getMoodContext('unknown'), calm);
+});
+
+test('response language settings override slang-based inference',()=>{
+  const {context}=routeContext();
+  assert.match(context.getLanguageContext('en-US'),/US spelling and usage/);
+  assert.match(context.getLanguageContext('en-US'),/overrides language or spelling inferred from the user's slang/);
+  assert.match(context.getLanguageContext('en-GB'),/UK spelling and usage/);
+  assert.match(context.getLanguageContext('es'),/Respond in Spanish/);
+  assert.match(context.getLanguageContext('auto'),/one slang word/);
 });
 
 test('full backups preserve original files and complete history without exporting login secrets', () => {
@@ -519,6 +529,8 @@ test('follow-up directions are specific, compact and subordinate to the user pac
     assert.match(prompt,/drill_down\|branch\|reinforce\|quiz\|test\|counterpoint\|action/);
     assert.match(prompt,/What scored well\/poorly and the flow pattern explanation/);
     assert.match(prompt,/This score explanation is required/);
+    assert.match(prompt,/Suggestion labels use at most one emoji/);
+    assert.match(prompt,/one restrained Lake metaphor/);
     assert.match(prompt,/FIRST RESPONSE ONBOARDING: This is the first assistant reply in a new tide/);
     assert.match(prompt,/LOCAL SUGGESTION INTERACTION SIGNALS/);
     assert.match(prompt,/"test":3/);

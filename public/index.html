@@ -1498,6 +1498,22 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
       <label for="myChatAliases">My Chat Names / Handles</label>
       <input id="myChatAliases" type="text" placeholder="User, Ronnie, Ron" onchange="saveMyChatAliases()">
     </div>
+    <div class="depths-section crew-modal-field">
+      <label for="responseLanguage">Response language &amp; spelling</label>
+      <select id="responseLanguage" onchange="saveResponseLanguage()">
+        <option value="auto">Auto — mirror the conversation</option>
+        <option value="en-US">English (US)</option>
+        <option value="en-GB">English (UK)</option>
+        <option value="en-CA">English (Canada)</option>
+        <option value="en-AU">English (Australia)</option>
+        <option value="es">Spanish</option>
+        <option value="fr">French</option>
+        <option value="de">German</option>
+        <option value="it">Italian</option>
+        <option value="pt-BR">Portuguese (Brazil)</option>
+      </select>
+      <div class="mode-continuity"><strong>Auto follows your wording.</strong> A selection overrides inferred language and spelling.</div>
+    </div>
     <div class="depths-section">
       <h4>🌊 Lake Mood</h4>
       <div class="depths-option active" data-mood="calm" onclick="setMood('calm',event)">🌊 Calm — gentle, reflective</div>
@@ -2142,11 +2158,10 @@ function renderAdaptiveSuggestions() {
   const reply=latestSuggestionReply();const suggestions=reply?.promptSuggestions || [];
   panel.hidden=!suggestions.length;panel.dataset.mood=currentMood;list.replaceChildren();
   if(!suggestions.length)return;
-  const icons={drill_down:'🔎',branch:'↗️',reinforce:'⚓',quiz:'🧠',test:'🧪',counterpoint:'⚖️',action:'🎯'};
   suggestions.forEach((suggestion,index)=>{
     const item=document.createElement('div');item.className='adaptive-suggestion';
     const main=document.createElement('button');main.className='adaptive-suggestion-main';main.type='button';main.title=suggestion.why || suggestion.prompt;
-    main.textContent=`${icons[suggestion.kind] || '💡'} ${suggestion.label}`;main.onclick=()=>chooseAdaptiveSuggestion(index);
+    main.textContent=suggestion.label;main.onclick=()=>chooseAdaptiveSuggestion(index);
     const dismiss=document.createElement('button');dismiss.className='adaptive-suggestion-dismiss';dismiss.type='button';dismiss.textContent='×';
     dismiss.setAttribute('aria-label',`Dismiss suggestion: ${suggestion.label}`);dismiss.onclick=event=>dismissAdaptiveSuggestion(index,event);
     item.append(main,dismiss);list.append(item);
@@ -2252,14 +2267,14 @@ function doLogin() {
     i.focus(); i.style.borderColor = 'var(--danger)';
     setTimeout(() => i.style.borderColor = '', 1500); return;
   }
-  currentUser = { name, email, guest: false };
+  currentUser = { name, email, guest: false, responseLanguage: 'auto' };
   try { localStorage.setItem('lakeUser', JSON.stringify(currentUser)); }
   catch { showToast('Signed in for this visit. This device could not save the profile.'); }
   enterLake();
 }
 
 function doGuestLogin() {
-  currentUser = { name: 'Guest', email: 'guest_' + Date.now(), guest: true };
+  currentUser = { name: 'Guest', email: 'guest_' + Date.now(), guest: true, responseLanguage: 'auto' };
   enterLake();
 }
 
@@ -2268,6 +2283,7 @@ async function enterLake() {
   document.getElementById('dockUserName').textContent    = currentUser.name;
   document.getElementById('depthsProfileName').textContent = currentUser.name;
   document.getElementById('myChatAliases').value = currentUser.aliases || '';
+  document.getElementById('responseLanguage').value = currentUser.responseLanguage || 'auto';
   const savedPic = localStorage.getItem(storageKey('profilePic'));
   if (savedPic) { currentProfilePic = savedPic; updateAllProfilePics(savedPic); }
   await loadSessionHistory();
@@ -2294,6 +2310,16 @@ function saveMyChatAliases() {
   currentUser.aliases = document.getElementById('myChatAliases').value.trim();
   try { localStorage.setItem('lakeUser', JSON.stringify(currentUser)); }
   catch { showToast('Names updated for this visit, but could not be saved on this device.'); }
+}
+
+function saveResponseLanguage() {
+  if (!currentUser) return;
+  const allowed=['auto','en-US','en-GB','en-CA','en-AU','es','fr','de','it','pt-BR'];
+  const selected=document.getElementById('responseLanguage').value;
+  currentUser.responseLanguage=allowed.includes(selected)?selected:'auto';
+  try { if(!currentUser.guest)localStorage.setItem('lakeUser',JSON.stringify(currentUser)); }
+  catch { showToast('Language updated for this visit, but could not be saved on this device.'); }
+  showToast(currentUser.responseLanguage==='auto'?'Language set to Auto.':'Response language updated.');
 }
 
 async function loadBackendStatus() {
@@ -3219,7 +3245,7 @@ async function exportFullBackup() {
     const backup = LakeFullBackup.build({
       user: currentUser, sessions: allSessions, current, crew: crewMembers, suggestedCrew,folders:tideFolders,
       profilePic: currentProfilePic,
-      settings: { mood: currentMood, defaultPromptBatch: localStorage.getItem('defaultBatch'), requestInProgress: waveInFlight,dockSplit }
+      settings: { mood: currentMood, responseLanguage: currentUser?.responseLanguage || 'auto', defaultPromptBatch: localStorage.getItem('defaultBatch'), requestInProgress: waveInFlight,dockSplit }
     });
     const url = URL.createObjectURL(new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json;charset=utf-8' }));
     const link = document.createElement('a');
@@ -3340,7 +3366,7 @@ async function sendWave(options = {}) {
   if (welcome) welcome.remove();
   if (!currentSessionId) currentSessionId = 'session_' + Date.now();
   origin = {
-    id: currentSessionId, history: chatHistory, key: storageKey('sessions'), mood: currentMood,
+    id: currentSessionId, history: chatHistory, key: storageKey('sessions'), mood: currentMood, responseLanguage: currentUser?.responseLanguage || 'auto',
     userName: currentUser?.name || '', userAliases: currentUser?.aliases || '',
     userCrew:JSON.stringify(crewMembers.filter(member=>member.isSelf===true).slice(0,1).map(({name,nickname,codename,role})=>({name,aliases:nickname,codename,role}))),
     crew: JSON.stringify(crewMembers.map(({ name, nickname, codename, role, context, observations }) => ({ name, nickname, codename, role, context, observations: (observations || []).slice(-10) })))
@@ -3424,6 +3450,7 @@ async function sendWave(options = {}) {
     formData.append('message', text);
     if (options.action) formData.append('action', options.action);
     formData.append('mood', origin.mood);
+    formData.append('responseLanguage',origin.responseLanguage);
     formData.append('userName', origin.userName);
     formData.append('userAliases', origin.userAliases);
     formData.append('userCrew', origin.userCrew);

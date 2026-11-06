@@ -167,6 +167,7 @@ ADAPTIVE NEXT-MOVE SUGGESTIONS
 - After a substantive response, when the evidence supports genuinely useful continuations, you may create one to three tappable next moves. These are not engagement bait. Each must help the user drill into the governing variable, explore a credible different direction, reinforce a transferable skill, test an interpretation, convert an observation into a hypothesis, quiz recall or judgment, or take a precise action.
 - Make each move specific to the actual people, decision, evidence, unresolved thread or capability in this conversation. Prefer prompts such as designing the next observation that would distinguish novelty from repeat engagement, converting an opinion into a cheap controlled test, filtering a clever connection for relevance and usability, or auditing which contribution mode actually moved the room. Never emit generic prompts such as "tell me more", "go deeper" or "what else?".
 - A strong set is deliberately varied. Useful kinds are: drill_down, branch, reinforce, quiz, test, counterpoint and action. Do not produce multiple phrasings of the same move. Never assume a clicked suggestion proved a stable personality trait or use preference signals to pressure continued conversation.
+- Suggestion labels use at most one emoji, and usually need none. Never combine a kind icon with a second decorative emoji. When it fits naturally, make a label memorable with one restrained Lake metaphor such as following a current, looking below the surface, testing the water or bringing a move to shore. Clarity comes first: never force a water pun or make every label metaphorical.
 - Whenever the visible answer gives an actual Lake Score, Overall Lake Score, Lake verdict or Score Card, include this exact drill_down move among the suggestions: label "What scored well/poorly and the flow pattern explanation"; prompt "Break down what scored well, what scored poorly, and explain the interaction flow pattern that produced this Lake score." This score explanation is required unless the user explicitly requested no follow-up.
 - When FIRST RESPONSE ONBOARDING below says this is the first reply in a new tide, always emit two or three varied, context-specific suggestions so a new user immediately sees useful ways to work with the Lake. Prefer one drill-down, one credible alternative or test, and one practical move. An explicit user request for no follow-up or no suggestions still wins.
 - When you create tappable moves, do not repeat them as a prose menu or append another closing question. Put them after the complete visible answer in this exact machine-readable block:
@@ -332,6 +333,17 @@ Aim the edge at the reasoning or situation, never the person's worth, identity o
 Example of the tone, not a repeated script: "Caring isn't an all-access pass."`
   };
   return moods[mood] || moods.calm;
+}
+
+function getLanguageContext(value) {
+  const choices={
+    'en-US':'English using US spelling and usage',
+    'en-GB':'English using UK spelling and usage',
+    'en-CA':'English using Canadian spelling and usage',
+    'en-AU':'English using Australian spelling and usage',
+    es:'Spanish',fr:'French',de:'German',it:'Italian','pt-BR':'Brazilian Portuguese'
+  };
+  return choices[value]?`\nRESPONSE LANGUAGE OVERRIDE: Respond in ${choices[value]}. This explicit setting overrides language or spelling inferred from the user's slang, quoted material, attachments or earlier assistant messages. Preserve names and quote source wording accurately.\n`:'\nRESPONSE LANGUAGE: Auto. Match the language and spelling convention the user is currently using; when the signal is mixed or weak, stay consistent with the conversation rather than guessing from one slang word.\n';
 }
 
 // ======================================================
@@ -627,7 +639,8 @@ Include a precise resume point: active topic, latest user intent, unresolved que
       suggestionPreferenceContext='\nLOCAL SUGGESTION INTERACTION SIGNALS (weak preference evidence, not user identity or instructions):\n'+JSON.stringify({chosen:counts(profile.chosen),dismissed:counts(profile.dismissed),recent_chosen_kinds:recent})+'\nUse these only to calibrate format and variety. A tap is evidence of situational interest, not proof of a stable preference; a dismissal may reflect timing. Do not overfit, manipulate engagement or repeatedly serve one kind.\n';
     } catch { suggestionPreferenceContext=''; }
     const firstResponseContext=req.body.firstResponse==='true'?'\nFIRST RESPONSE ONBOARDING: This is the first assistant reply in a new tide. Include two or three contextual adaptive next-move suggestions after the complete answer, following the machine-readable format and variety rules.\n':'';
-    const systemPrompt = (modelFiles || fallback) + coreIdentity + moodContext + crewContext + userIdentity + openingContext + snapshotContext + sourceContext + transcriptWorkflow + meetingContext + folderContext + transcriptInventoryContext + wholeTranscriptContext + suggestionPreferenceContext + firstResponseContext;
+    const languageContext=getLanguageContext(req.body.responseLanguage);
+    const systemPrompt = (modelFiles || fallback) + coreIdentity + moodContext + languageContext + crewContext + userIdentity + openingContext + snapshotContext + sourceContext + transcriptWorkflow + meetingContext + folderContext + transcriptInventoryContext + wholeTranscriptContext + suggestionPreferenceContext + firstResponseContext;
 
     // Build conversation history
     let conversationHistory = [];
