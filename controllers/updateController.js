@@ -2,7 +2,7 @@
  * The Great Lake Bot - Update Controller
  * POST /updates - Rules 11 (Update Syntax), 12 (Safety Filter)
  */
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID } = require('node:crypto');
 const store = require('../store/memoryStore');
 const { validateUpdate } = require('../validators');
 
@@ -48,7 +48,7 @@ async function submitUpdate(req, res) {
   }
 
   var updateRecord = {
-    id: uuidv4(), userId: req.user.id, command: req.body.updateCommand,
+    id: randomUUID(), userId: req.user.id, command: req.body.updateCommand,
     status: 'accepted', processedAt: new Date().toISOString(),
   };
   store.addUpdate(updateRecord);

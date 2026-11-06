@@ -3,7 +3,6 @@
  * POST /onboarding
  * Governance Rules: 21 (Character Context), 4 (Domain-Agnostic), 5 (Clarity First)
  */
-const { v4: uuidv4 } = require('uuid');
 const store = require('../store/memoryStore');
 const { validateOnboarding } = require('../validators');
 

@@ -2,7 +2,7 @@
  * The Great Lake Bot - Character Controller
  * POST /characters - Rules 21, 7  |  GET /characters - Rule 21
  */
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID } = require('node:crypto');
 const store = require('../store/memoryStore');
 const { validateCharacter } = require('../validators');
 
@@ -13,7 +13,7 @@ async function addOrUpdateCharacter(req, res) {
   }
 
   const { name, summary, nickname } = req.body;
-  const characterId = uuidv4();
+  const characterId = randomUUID();
 
   const character = store.setCharacter(req.user.id, characterId, {
     name: name, summary: summary, nickname: nickname || null,

@@ -3,7 +3,7 @@
  * POST /template
  * Governance Rules: 3 (Structural Metaphor), 4 (Domain-Agnostic), 5 (Clarity First)
  */
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID } = require('node:crypto');
 const store = require('../store/memoryStore');
 const { validateTemplate } = require('../validators');
 
@@ -14,7 +14,7 @@ async function submitTemplate(req, res) {
   }
 
   const { volatility, rtp, symbols, features, waterCost, incentives, trajectory } = req.body;
-  const templateId = uuidv4();
+  const templateId = randomUUID();
 
   const template = store.setTemplate(templateId, {
     userId: req.user.id,

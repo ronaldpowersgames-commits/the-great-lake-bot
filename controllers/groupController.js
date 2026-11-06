@@ -4,7 +4,7 @@
  * POST /groups/:groupId/messages - Rules 23-26
  * GET  /groups/:groupId/messages - Rules 23-26
  */
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID } = require('node:crypto');
 const store = require('../store/memoryStore');
 const { validateGroup, validateGroupMessage } = require('../validators');
 
@@ -15,7 +15,7 @@ async function createGroup(req, res) {
   }
 
   const { groupName, members } = req.body;
-  const groupId = uuidv4();
+  const groupId = randomUUID();
   const memberList = members ? [req.user.id].concat(members) : [req.user.id];
   const uniqueMembers = Array.from(new Set(memberList));
 
@@ -43,7 +43,7 @@ async function postMessage(req, res) {
   }
 
   const messageRecord = {
-    id: uuidv4(), groupId: groupId, userId: req.user.id,
+    id: randomUUID(), groupId: groupId, userId: req.user.id,
     message: req.body.message, nicknameReferences: req.body.nicknameReferences || [],
     timestamp: new Date().toISOString(),
   };
