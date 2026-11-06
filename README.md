@@ -173,6 +173,22 @@ filenames and quotes. Escape closes the profile and keyboard focus stays inside
 the open dialog. Suggested next directions appear in the Lake's responses, not
 as extra profile shortcuts, with up to three distinct options when useful.
 
+## Adaptive Next Moves
+
+After substantive replies, the Lake can surface up to three compact, contextual
+next moves above the composer. Suggestions may drill into evidence, branch to a
+credible alternative, reinforce a transferable skill, quiz judgment, design a
+test, challenge the current interpretation or turn insight into action. They are
+grounded in the current people, decision and unresolved thread rather than drawn
+from a generic engagement menu.
+
+Each move can be used or dismissed individually, and the entire strip can be
+closed. Chosen and dismissed suggestion kinds are stored locally as bounded,
+non-identifying preference counts. They lightly tune later variety but are never
+treated as personality facts. Machine-readable suggestion metadata is stripped
+from visible chat, malformed metadata is discarded, and ordinary prompt-library
+shortcuts remain available separately.
+
 ## Transcript Coverage And Guided Review
 
 With TXT/LOG attachments, the composer shows attached, selected and successfully

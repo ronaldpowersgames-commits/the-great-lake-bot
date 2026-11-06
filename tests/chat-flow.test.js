@@ -15,13 +15,14 @@ function browserContext() {
     LakeTranscriptReview: require('../public/transcript-review'),
     LakeMeetingMemory: require('../public/meeting-memory'),
     LakeOrganization: require('../public/organization'),
+    LakeAdaptiveSuggestions: require('../public/adaptive-suggestions'),
     window: {addEventListener() {}},
     document: { addEventListener() {}, getElementById(id) {
       if (!elements.has(id)) elements.set(id, { value: '', style: {}, textContent: '', remove() {}, setAttribute() {} });
       return elements.get(id);
     } },
     saveSuggestedCrew() {}, renderCrew() {}, hideRipple() {}, showRipple() {},
-    renderFilePreviews() {}, renderTranscriptStatus() {}, saveSession() {}, updateCurrents() {}, showToast() {},
+    renderFilePreviews() {}, renderTranscriptStatus() {}, renderAdaptiveSuggestions() {}, retireAdaptiveSuggestions() {}, suggestionPreferencePayload() { return {chosen:{},dismissed:{},recent_chosen_kinds:[]}; }, saveSession() {}, updateCurrents() {}, showToast() {},
     storageKey(key) { return 'lake_test_' + key; },
     showBackendModel(model) { context.document.getElementById('backendModelInfo').textContent = `\ud83e\udd16 Model: ${model}`; },
     appendUserWave(text) { context.visibleMessages.push(text); },
@@ -66,6 +67,19 @@ test('Tag Players shows a short message and resends the latest interaction attac
 test('machine player data is removed from visible replies', () => {
   const context = browserContext();
   assert.equal(vm.runInContext('stripPlayerTagsJson(`Sam needs confirmation.\nPLAYER_TAGS_JSON {"players":[]} END_PLAYER_TAGS_JSON`)', context), 'Sam needs confirmation.');
+});
+
+test('adaptive prompt metadata is hidden from chat and stored as tappable next moves', async () => {
+  const context=browserContext();
+  context.fetch=async (url,options)=>{
+    context.sent=options.body;
+    return {ok:true,json:async()=>({reflection:'Useful answer.\nLAKE_PROMPTS_JSON\n{"suggestions":[{"label":"Design the next observation","prompt":"Help me design the next observation that distinguishes novelty from repeat engagement.","kind":"test","why":"The current signal has several explanations."}]}\nEND_LAKE_PROMPTS_JSON',model:'gpt-4o-test'})};
+  };
+  await vm.runInContext('sendWave({requestText:"What should I examine next?"})',context);
+  assert.equal(context.replies[0],'Useful answer.');
+  assert.equal(vm.runInContext('chatHistory.at(-1).promptSuggestions[0].kind',context),'test');
+  assert.doesNotMatch(vm.runInContext('chatHistory.at(-1).content',context),/LAKE_PROMPTS_JSON/);
+  assert.deepEqual(JSON.parse(context.sent.get('suggestionProfile')),{chosen:{},dismissed:{},recent_chosen_kinds:[]});
 });
 
 test('late Crew suggestions retain the originating conversation and file evidence', () => {
@@ -474,7 +488,7 @@ test('score cards separate whole-call and participant ratings with coverage limi
 test('follow-up directions are specific, compact and subordinate to the user pace', async () => {
   for(const mood of ['calm','analytical','stormy']) {
     const {handler,requests}=routeContext();
-    await handler({body:{message:'Read this exchange',mood},files:[]},{json(){},status(){return this;}});
+    await handler({body:{message:'Read this exchange',mood,suggestionProfile:JSON.stringify({chosen:{test:3},dismissed:{quiz:2},recent_chosen_kinds:['test']})},files:[]},{json(){},status(){return this;}});
     const prompt=requests.at(-1).messages[0].content;
     assert.match(prompt,/one or two concrete next directions/);
     assert.match(prompt,/use up to three when the paths are genuinely distinct/);
@@ -487,6 +501,12 @@ test('follow-up directions are specific, compact and subordinate to the user pac
     assert.match(prompt,/Only offer paths the available material and tools can support/);
     assert.match(prompt,/never repeat the same menu unchanged/);
     assert.match(prompt,/If the user picks an angle, do that work directly/);
+    assert.match(prompt,/LAKE_PROMPTS_JSON/);
+    assert.match(prompt,/drill_down\|branch\|reinforce\|quiz\|test\|counterpoint\|action/);
+    assert.match(prompt,/LOCAL SUGGESTION INTERACTION SIGNALS/);
+    assert.match(prompt,/"test":3/);
+    assert.match(prompt,/"quiz":2/);
+    assert.match(prompt,/A tap is evidence of situational interest, not proof of a stable preference/);
   }
 });
 
