@@ -22,6 +22,16 @@ test('malformed interface data is hidden instead of leaking into chat',()=>{
   assert.deepEqual(result.suggestions,[]);
 });
 
+test('an actual Lake score always gains the standard diagnostic follow-up',()=>{
+  const scored=suggestions.ensureScoreBreakdown(suggestions.extract('## Overall Lake Score: 8.7/10\nStrong result.'));
+  assert.equal(scored.suggestions[0].label,'What scored well/poorly and the flow pattern explanation');
+  assert.match(scored.suggestions[0].prompt,/what scored well, what scored poorly/i);
+  const ordinary=suggestions.ensureScoreBreakdown(suggestions.extract('Strong result without a score.'));
+  assert.deepEqual(ordinary.suggestions,[]);
+  const existing=suggestions.ensureScoreBreakdown({text:'Lake verdict: 9.1/10',suggestions:[{label:'Explain what scored well',prompt:'Explain what scored well and the flow pattern.',kind:'drill_down'}]});
+  assert.equal(existing.suggestions.length,1);
+});
+
 test('tap and dismissal signals stay bounded and non-identifying',()=>{
   let profile=suggestions.record({},'chosen',{kind:'test'});
   profile=suggestions.record(profile,'chosen',{kind:'test'});
@@ -37,6 +47,8 @@ test('adaptive UI uses compact mood-colored chips and remains dismissible',()=>{
   assert.match(html,/align-items: flex-end/);
   assert.match(html,/border-radius: 999px/);
   assert.match(html,/linear-gradient\(135deg, color-mix\(in srgb, var\(--lake-glow\)/);
+  assert.match(html,/flex-flow: row wrap/);
+  assert.match(html,/@media \(max-width: 640px\)/);
   assert.doesNotMatch(html,/adaptive-suggestions\[data-mood="stormy"\]/);
 });
 

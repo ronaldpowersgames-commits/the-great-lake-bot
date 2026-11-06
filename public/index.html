@@ -612,9 +612,9 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
 .adaptive-suggestions-title { color: var(--text-dim); font-size: 8px; font-weight: 650; letter-spacing: .35px; }
 .adaptive-suggestions-close { width: 20px; height: 20px; border: 0; border-radius: 999px; background: transparent; color: var(--text-dim); cursor: pointer; font-size: 13px; line-height: 1; }
 .adaptive-suggestions-close:hover { background: rgba(255,255,255,.07); color: var(--text-primary); }
-.adaptive-suggestions-list { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; max-width: 100%; }
+.adaptive-suggestions-list { width: 100%; display: flex; flex-flow: row wrap; justify-content: flex-end; align-items: flex-start; gap: 5px; max-width: 100%; }
 .adaptive-suggestions-list::-webkit-scrollbar { display: none; }
-.adaptive-suggestion { position: relative; display: flex; max-width: min(420px, 88vw); }
+.adaptive-suggestion { position: relative; display: flex; max-width: min(330px, 88vw); }
 .adaptive-suggestion-main {
   min-height: 30px; padding: 6px 29px 6px 11px;
   border: 1px solid color-mix(in srgb, var(--lake-glow) 46%, var(--dock-border)); border-radius: 999px;
@@ -626,6 +626,9 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
 .adaptive-suggestion-dismiss { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; border: 0; border-radius: 999px; background: transparent; color: color-mix(in srgb, var(--text-primary) 62%, transparent); cursor: pointer; }
 .adaptive-suggestion-dismiss:hover { background: color-mix(in srgb, var(--lake-glow) 24%, transparent); color: #fff; }
 .adaptive-suggestion-main:focus-visible, .adaptive-suggestion-dismiss:focus-visible, .adaptive-suggestions-close:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+@media (max-width: 640px) {
+  .adaptive-suggestions-list { flex-direction: column; align-items: flex-end; }
+}
 .suggestions-top-row {
   display: flex; align-items: center; gap: 6px;
   flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px;
@@ -1976,7 +1979,7 @@ function stripPlayerTagsJson(text) {
 }
 
 function extractAdaptiveSuggestions(text) {
-  return LakeAdaptiveSuggestions.extract(stripPlayerTagsJson(text));
+  return LakeAdaptiveSuggestions.ensureScoreBreakdown(LakeAdaptiveSuggestions.extract(stripPlayerTagsJson(text)));
 }
 
 function normalizePersonKey(value) {

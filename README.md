@@ -186,7 +186,8 @@ as extra profile shortcuts, with up to three distinct options when useful.
 
 After substantive replies, the Lake can surface up to three compact, contextual
 next moves above the composer. They appear as right-aligned mood-colored pills
-that echo the send button without dominating the composer. Suggestions may drill into evidence, branch to a
+that echo the send button without dominating the composer. Pills share a row when
+space allows and wrap or stack on narrower screens. Suggestions may drill into evidence, branch to a
 credible alternative, reinforce a transferable skill, quiz judgment, design a
 test, challenge the current interpretation or turn insight into action. They are
 grounded in the current people, decision and unresolved thread rather than drawn
@@ -198,6 +199,11 @@ non-identifying preference counts. They lightly tune later variety but are never
 treated as personality facts. Machine-readable suggestion metadata is stripped
 from visible chat, malformed metadata is discarded, and ordinary prompt-library
 shortcuts remain available separately.
+
+Every reply containing an actual Lake Score or Score Card includes a diagnostic
+next move to explain what scored well, what scored poorly and the interaction
+flow pattern behind the score. The interface supplies this fallback even if the
+model omits optional suggestion metadata.
 
 ## Transcript Coverage And Guided Review
 

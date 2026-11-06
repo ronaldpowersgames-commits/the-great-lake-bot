@@ -508,6 +508,8 @@ test('follow-up directions are specific, compact and subordinate to the user pac
     assert.match(prompt,/If the user picks an angle, do that work directly/);
     assert.match(prompt,/LAKE_PROMPTS_JSON/);
     assert.match(prompt,/drill_down\|branch\|reinforce\|quiz\|test\|counterpoint\|action/);
+    assert.match(prompt,/What scored well\/poorly and the flow pattern explanation/);
+    assert.match(prompt,/This score explanation is required/);
     assert.match(prompt,/LOCAL SUGGESTION INTERACTION SIGNALS/);
     assert.match(prompt,/"test":3/);
     assert.match(prompt,/"quiz":2/);

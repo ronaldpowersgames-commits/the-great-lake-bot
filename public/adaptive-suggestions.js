@@ -26,6 +26,22 @@
     }
   }
 
+  const SCORE_BREAKDOWN={
+    label:'What scored well/poorly and the flow pattern explanation',
+    prompt:'Break down what scored well, what scored poorly, and explain the interaction flow pattern that produced this Lake score.',
+    kind:'drill_down',
+    why:'A score becomes useful when its strongest, weakest and interaction-level causes are visible.'
+  };
+
+  function ensureScoreBreakdown(result){
+    const value=result && typeof result==='object'?result:{text:String(result||''),suggestions:[]};
+    const visible=String(value.text||'');
+    const isLakeScore=/(?:\b(?:overall\s+)?lake score\b|\blake verdict\b|\bscore card\b)/i.test(visible) && /\b\d+(?:\.\d+)?\s*\/\s*10\b/.test(visible);
+    const suggestions=Array.isArray(value.suggestions)?value.suggestions.slice(0,3):[];
+    if(!isLakeScore || suggestions.some(item=>/scored well|scored poorly|flow pattern/i.test(`${item.label} ${item.prompt}`)))return {...value,suggestions};
+    return {...value,suggestions:[SCORE_BREAKDOWN,...suggestions].slice(0,3)};
+  }
+
   function normalizeProfile(value){
     const profile=value && typeof value==='object'?value:{};
     const counts=source=>Object.fromEntries([...KINDS].map(kind=>[kind,Math.max(0,Math.min(100,Number(source?.[kind])||0))]));
@@ -46,5 +62,5 @@
     return {chosen:nonzero(profile.chosen),dismissed:nonzero(profile.dismissed),recent_chosen_kinds:profile.recent};
   }
 
-  return {KINDS:[...KINDS],extract,normalizeProfile,record,summary};
+  return {KINDS:[...KINDS],SCORE_BREAKDOWN,extract,ensureScoreBreakdown,normalizeProfile,record,summary};
 });
