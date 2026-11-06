@@ -64,12 +64,16 @@ function loadSystemPrompt() {
   if (cachedModelFiles) return cachedModelFiles;
 
   const modelDir = path.join(__dirname, '..', 'core', 'model');
+  // Runtime directives are deliberately ordered by authority and usefulness.
+  // master_doc.txt is retained as the long-form Lake bible/reference, but is
+  // not injected: at 140k+ it previously consumed the entire prompt budget and
+  // silently cut off the newer modular rules that followed it.
   const files = [
-    'master_doc.txt','identity.txt','tone.txt','metaphors.txt',
-    'governance.txt','clarity_engine.txt','influence_engine.txt',
-    'output_format.txt','file_handling.txt','group_mode.txt',
-    'safety.txt','behavior_rules.txt','onboarding.txt',
-    'update_syntax.txt','lake_score.txt','lake_score_model.json'
+    'cognitive_architecture_v3.txt',
+    'identity.txt','tone.txt','governance.txt','safety.txt',
+    'behavior_rules.txt','clarity_engine.txt','influence_engine.txt',
+    'output_format.txt','file_handling.txt','group_mode.txt','metaphors.txt',
+    'onboarding.txt','update_syntax.txt','lake_score.txt'
   ];
 
   if (!fs.existsSync(modelDir)) {
@@ -77,27 +81,31 @@ function loadSystemPrompt() {
     return null;
   }
 
-  let systemPrompt = '';
+  const MAX_PROMPT_CHARS = 50000;
+  const sections = [];
+  let promptLength = 0;
 
   for (const file of files) {
     const filePath = path.join(modelDir, file);
     if (fs.existsSync(filePath)) {
-      systemPrompt += fs.readFileSync(filePath, 'utf-8') + '\n\n';
+      const section = fs.readFileSync(filePath, 'utf-8').trim();
+      const separatorLength = sections.length ? 2 : 0;
+      if (promptLength + separatorLength + section.length > MAX_PROMPT_CHARS) {
+        console.warn('⚠️ Skipped model file outside prompt budget:', file);
+        continue;
+      }
+      sections.push(section);
+      promptLength += separatorLength + section.length;
       console.log('✅ Loaded:', file);
     } else {
       console.warn('⚠️ Missing model file:', file);
     }
   }
 
+  const systemPrompt = sections.join('\n\n');
   if (!systemPrompt.trim()) {
     console.warn('⚠️ No model files loaded — using fallback prompt');
     return null;
-  }
-
-  const MAX_PROMPT_CHARS = 12000;
-  if (systemPrompt.length > MAX_PROMPT_CHARS) {
-    systemPrompt = systemPrompt.substring(0, MAX_PROMPT_CHARS);
-    console.warn('⚠️ System prompt trimmed to fit context window');
   }
 
   cachedModelFiles = systemPrompt;

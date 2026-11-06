@@ -42,10 +42,10 @@ function browserContext() {
 
 test('alias matches remain reviewable, and similar full names are not merged', () => {
   const context = browserContext();
-  vm.runInContext('crewMembers = [{name:"Ronald Powers",nickname:"Punzle, Ronnie, Ron"},{name:"Sam Jones"}];', context);
-  assert.equal(vm.runInContext('findCrewAliasMatch({name:"Punzle"}).length', context), 1);
+  vm.runInContext('crewMembers = [{name:"Ronald Powers",nickname:"User, Ronnie, Ron"},{name:"Sam Jones"}];', context);
+  assert.equal(vm.runInContext('findCrewAliasMatch({name:"User"}).length', context), 1);
   assert.equal(vm.runInContext('findCrewAliasMatch({name:"Sam Smith"}).length', context), 0);
-  vm.runInContext('processNamesFromResponse(`PLAYER_TAGS_JSON {"players":[{"name":"Punzle","confidence":"high"}]} END_PLAYER_TAGS_JSON`);', context);
+  vm.runInContext('processNamesFromResponse(`PLAYER_TAGS_JSON {"players":[{"name":"User","confidence":"high"}]} END_PLAYER_TAGS_JSON`);', context);
   assert.equal(vm.runInContext('suggestedCrew[0].confidence', context), 'needs confirmation');
   assert.equal(vm.runInContext('crewMembers.length', context), 2);
   assert.equal(vm.runInContext('normalizePersonKey("Jos\u00e9")', context), 'jose');
@@ -53,12 +53,12 @@ test('alias matches remain reviewable, and similar full names are not merged', (
 
 test('Tag Players shows a short message and resends the latest interaction attachment', async () => {
   const context = browserContext();
-  vm.runInContext('crewMembers = [{name:"Ronald Powers",nickname:"Punzle, Ron"}]; chatHistory = [{role:"user",content:"Read this",attachments:[{name:"chat.txt",type:"text/plain",data:"data:text/plain;base64,dGVzdA=="}]}];', context);
+  vm.runInContext('crewMembers = [{name:"Ronald Powers",nickname:"User, Ron"}]; chatHistory = [{role:"user",content:"Read this",attachments:[{name:"chat.txt",type:"text/plain",data:"data:text/plain;base64,dGVzdA=="}]}];', context);
   await vm.runInContext('sendWave({visibleText:"Tag players",requestText:"Hidden identity instructions",reuseAttachments:true})', context);
   assert.equal(context.visibleMessages[0], 'Tag players');
   assert.equal(context.sent.get('message'), 'Hidden identity instructions');
   assert.equal(context.sent.getAll('file').length, 1);
-  assert.match(context.sent.get('crew'), /Punzle, Ron/);
+  assert.match(context.sent.get('crew'), /User, Ron/);
   assert.equal(context.document.getElementById('backendModelInfo').textContent, '\ud83e\udd16 Model: gpt-4o-test');
   assert.equal(vm.runInContext('waveInFlight', context), false);
 });
@@ -278,7 +278,7 @@ test('chat reads every attachment and includes the user Crew aliases', async () 
   const {requests, handler} = routeContext();
   let result;
   const res = { json(value) { result = value; }, status() { return this; } };
-  await handler({ body: {message:'Tag players',crew:JSON.stringify([{name:'Ronald Powers',nickname:'Punzle, Ron'}])}, files:[
+  await handler({ body: {message:'Tag players',crew:JSON.stringify([{name:'Ronald Powers',nickname:'User, Ron'}])}, files:[
     {originalname:'chat.png',mimetype:'image/png',buffer:Buffer.from('image'),size:5},
     {originalname:'email.txt',mimetype:'text/plain',buffer:Buffer.from('Sam said hello'),size:14},
     {originalname:'notes.pdf',mimetype:'application/pdf',buffer:Buffer.from('pdf'),size:3}
@@ -287,7 +287,7 @@ test('chat reads every attachment and includes the user Crew aliases', async () 
   assert.equal(content.filter(part => part.type === 'image_url').length, 1);
   assert.match(JSON.stringify(content), /Sam said hello/);
   assert.ok(content.some(part => part.type === 'file' && part.file.filename === 'notes.pdf'));
-  assert.match(requests.at(-1).messages[0].content, /Punzle, Ron/);
+  assert.match(requests.at(-1).messages[0].content, /User, Ron/);
   assert.equal(result.model, 'gpt-4o-test');
 });
 
@@ -439,11 +439,11 @@ test('prompt Types include twelve choices and a usage guide, with grounded speci
 
 test('self Crew identity reaches analysis, snapshots and first-person meeting retrieval', async () => {
   const {handler,requests}=routeContext();
-  await handler({body:{message:'What did I say?',userName:'Punzle',userCrew:JSON.stringify([{name:'Ronald Powers',aliases:'Ron, Ronnie',role:'CRM Lead'}])},files:[]},{json(){},status(){return this;}});
+  await handler({body:{message:'What did I say?',userName:'User',userCrew:JSON.stringify([{name:'Ronald Powers',aliases:'Ron, Ronnie',role:'CRM Lead'}])},files:[]},{json(){},status(){return this;}});
   const prompt=requests.at(-1).messages[0].content;
   assert.match(prompt,/Ronald Powers/);assert.match(prompt,/Ron, Ronnie/);assert.match(prompt,/explicitly marked by the user as themselves/);assert.match(prompt,/clarify conflicting or ambiguous transcript authorship/);
   const crew=[{name:'Ronald Powers',nickname:'Ron, Ronnie',isSelf:true}];
-  const snapshot=require('../public/snapshot-context').build({scope:'chat',sessions:[],current:{id:'one',history:[]},crew,user:{name:'Punzle'}});
+  const snapshot=require('../public/snapshot-context').build({scope:'chat',sessions:[],current:{id:'one',history:[]},crew,user:{name:'User'}});
   assert.match(snapshot.parts[0].text,/"selfCrew"/);assert.match(snapshot.parts[0].text,/Ronald Powers/);
   const result=require('../public/meeting-memory').retrieve([],'What did I commit to?',crew);
   assert.match(JSON.stringify(result),/Ronald Powers/);

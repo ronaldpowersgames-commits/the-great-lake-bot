@@ -6,7 +6,7 @@ const {chromium}=require(process.env.LAKE_PLAYWRIGHT_PATH || 'playwright');
   try {
     const context=await browser.newContext({viewport:{width:390,height:844}});
     await context.addInitScript(()=>{
-      localStorage.setItem('lakeUser',JSON.stringify({name:'Punzle',email:'self@example.test'}));
+      localStorage.setItem('lakeUser',JSON.stringify({name:'User',email:'self@example.test'}));
       if(!localStorage.getItem('lake_self@example.test_crew'))localStorage.setItem('lake_self@example.test_crew',JSON.stringify([{name:'Ronald Powers',nickname:'Ron, Ronnie'},{name:'Sally'}]));
     });
     const page=await context.newPage();const errors=[];const sent=[];

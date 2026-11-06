@@ -12,11 +12,11 @@ const { chromium } = require(process.env.LAKE_PLAYWRIGHT_PATH || 'playwright');
     await page.addInitScript(() => {
       if (localStorage.getItem('lake-regression-seeded')) return;
       localStorage.setItem('lake-regression-seeded', 'yes');
-      localStorage.setItem('lakeUser', JSON.stringify({ name: 'Ron', email: 'test@example.com', aliases: 'Punzle, Ronnie' }));
+      localStorage.setItem('lakeUser', JSON.stringify({ name: 'Ron', email: 'test@example.com', aliases: 'User, Ronnie' }));
       localStorage.setItem('lake_test@example.com_sessions', JSON.stringify([
         { id: 'legacy', name: 'Older tide', time: '2026-07-08', history: [{ role: 'user', content: 'Original history' }] }
       ]));
-      localStorage.setItem('lake_test@example.com_crew', JSON.stringify([{ name: 'Ronald Powers', nickname: 'Punzle, Ron' }]));
+      localStorage.setItem('lake_test@example.com_crew', JSON.stringify([{ name: 'Ronald Powers', nickname: 'User, Ron' }]));
       const originalSet = Storage.prototype.setItem;
       Storage.prototype.setItem = function (key, value) {
         if (key.endsWith('_sessions')) throw new DOMException('Storage full', 'QuotaExceededError');
@@ -27,7 +27,7 @@ const { chromium } = require(process.env.LAKE_PLAYWRIGHT_PATH || 'playwright');
       const body = route.request().postDataBuffer().toString('utf8');
       uploads.push((body.match(/filename="/g) || []).length);
       return route.fulfill({ json: {
-        reflection: 'Coverage: six files supplied. First: Sam said "Hello". Last: Ron said "Thanks". User identity needs confirmation.\nPLAYER_TAGS_JSON\n{"players":[{"name":"Punzle","confidence":"needs confirmation","needs_confirmation":true,"evidence":"source-1.txt: sender label Punzle","relationship_note":"Tentative pattern to review"}]}\nEND_PLAYER_TAGS_JSON',
+        reflection: 'Coverage: six files supplied. First: Sam said "Hello". Last: Ron said "Thanks". User identity needs confirmation.\nPLAYER_TAGS_JSON\n{"players":[{"name":"User","confidence":"needs confirmation","needs_confirmation":true,"evidence":"source-1.txt: sender label User","relationship_note":"Tentative pattern to review"}]}\nEND_PLAYER_TAGS_JSON',
         model: 'latest-model-test'
       } });
     });
@@ -85,7 +85,7 @@ const { chromium } = require(process.env.LAKE_PLAYWRIGHT_PATH || 'playwright');
     assert.equal(uploads[2], 6);
     assert.doesNotMatch(await page.locator('#wavesContainer').innerText(), /hit a snag|setItem|exceeded the quota/);
     assert.match(await page.locator('#toast').innerText(), /could not save the chat/);
-    await page.locator('.suggested-item').filter({hasText:'Punzle'}).getByRole('button', { name: 'Review player', exact: true }).click();
+    await page.locator('.suggested-item').filter({hasText:'User'}).getByRole('button', { name: 'Review player', exact: true }).click();
     await page.locator('#crewMatchSelect').selectOption('0');
     await page.evaluate(() => saveCrewFromModal());
     assert.equal(await page.evaluate(() => crewMembers.length), 1);
