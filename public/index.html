@@ -635,7 +635,7 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
   background: linear-gradient(135deg, rgba(45,140,240,.34), rgba(100,181,246,.24));
   color: var(--text-primary); box-shadow: 0 2px 10px color-mix(in srgb, var(--lake-glow) 17%, transparent);
   cursor: pointer; font: inherit; font-size: 10.5px; font-weight: 600; line-height: 1.2; text-align: left;
-  color: var(--lake-light); text-shadow: 0 0 4px var(--lake-light), 0 0 9px var(--lake-glow);
+  color: #fff; text-shadow: 0 0 4px var(--lake-light), 0 0 9px var(--lake-glow);
   font-weight: 760; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .adaptive-suggestion-main:hover, .adaptive-suggestion-main:focus-visible { filter: brightness(1.13); border-color: var(--lake-light); box-shadow: 0 3px 14px color-mix(in srgb, var(--lake-glow) 28%, transparent); }
@@ -1113,7 +1113,7 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
 .mode-continuity strong { color: var(--text-secondary); font-weight: 500; }
 .backup-export { width: 100%; min-height: 44px; border: 1px solid var(--dock-border); border-radius: 8px; background: transparent; text-align: left; font: inherit; white-space: normal; }
 .shore-dock.file-drag-over .lake-input { outline: 2px solid var(--lake-light); background: rgba(45,140,240,0.12); }
-.reply-notice { position: sticky; bottom: 8px; margin-top: auto; align-self: center; width: min(100%, 440px); flex-shrink: 0; padding: 10px 13px; border: 1px solid var(--lake-light); border-radius: 8px; background: var(--dock-bg); color: var(--text-primary); text-align: left; cursor: pointer; font: inherit; z-index: 2; }
+.reply-notice { position: sticky; bottom: 8px; margin-top: auto; align-self: center; width: min(100%, 440px); flex-shrink: 0; padding: 10px 13px; border: 1px solid var(--lake-light); border-radius: 8px; background: var(--dock-bg); color: var(--text-primary); text-align: left; cursor: pointer; font: inherit; z-index: 2; transition: transform .25s ease, opacity .25s ease; touch-action: pan-y; }
 .reply-notice span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
 .reply-notice .reply-preview { margin-top: 3px; color: var(--text-secondary); }
 .snapshot-menu { position: fixed; z-index: 100; width: 220px; max-width: calc(100vw - 16px); padding: 5px; border: 1px solid var(--dock-border); border-radius: 8px; background: var(--dock-bg); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
@@ -3388,7 +3388,11 @@ function showReplyNotice(origin, reply) {
   preview.textContent = reply.snapshot ? 'AI handoff ready' : reply.content.replace(/[*#]/g, '').slice(0, 110);
   notice.append(title, preview);
   notice.onclick = () => loadTide(origin.id);
+  let startX=null;
+  notice.addEventListener('touchstart',event=>{startX=event.touches[0].clientX;},{passive:true});
+  notice.addEventListener('touchend',event=>{if(startX===null)return;const dx=event.changedTouches[0].clientX-startX;startX=null;if(Math.abs(dx)>45){notice.style.transform=`translateX(${dx>0?'120%':'-120%'})`;notice.style.opacity='0';setTimeout(()=>notice.remove(),260);}},{passive:true});
   container.appendChild(notice);
+  setTimeout(()=>{if(!notice.isConnected)return;notice.style.opacity='0';setTimeout(()=>notice.remove(),260);},9000);
   container.scrollTop = container.scrollHeight;
 }
 
