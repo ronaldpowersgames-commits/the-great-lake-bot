@@ -2360,7 +2360,7 @@ function saveResponseLanguage() {
   showToast(currentUser.responseLanguage==='auto'?'Language set to Auto.':'Response language updated.');
 }
 function saveRailSwipeMode(){localStorage.setItem(storageKey('railSwipeMode'),document.getElementById('railSwipeMode').value);renderAdaptiveSuggestions();}
-function loadRailSwipeMode(){const el=document.getElementById('railSwipeMode');if(el)el.value=localStorage.getItem(storageKey('railSwipeMode'))||'up';}
+function loadRailSwipeMode(){const el=document.getElementById('railSwipeMode');if(!el)return;let mode=localStorage.getItem(storageKey('railSwipeMode'))||'up';if(mode==='normal')mode='up';if(mode==='reverse')mode='down';if(!['up','down'].includes(mode))mode='up';el.value=mode;localStorage.setItem(storageKey('railSwipeMode'),mode);}
 
 async function loadBackendStatus() {
   const modelInfo = document.getElementById('backendModelInfo');
