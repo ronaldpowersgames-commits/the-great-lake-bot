@@ -54,12 +54,12 @@ test('tap and dismissal signals stay bounded and non-identifying',()=>{
 test('adaptive UI uses compact mood-colored chips and remains dismissible',()=>{
   assert.match(html,/id="adaptiveSuggestions"/);
   assert.match(html,/dismissAdaptiveSuggestions\(\)/);
-  assert.match(html,/dismissAdaptiveSuggestion\(index,event\)/);
+  assert.match(html,/toggleAdaptiveSuggestions\(\)/);
   assert.match(html,/align-items: flex-end/);
   assert.match(html,/border-radius: 999px/);
   assert.match(html,/linear-gradient\(135deg, color-mix\(in srgb, var\(--lake-glow\)/);
-  assert.match(html,/flex-flow: row wrap/);
-  assert.match(html,/@media \(max-width: 640px\)/);
+  assert.match(html,/grid-template-rows: repeat\(2/);
+  assert.match(html,/overflow-x: auto/);
   assert.doesNotMatch(html,/adaptive-suggestions\[data-mood="stormy"\]/);
   assert.doesNotMatch(html,/const icons=\{drill_down/);
   assert.match(html,/id="responseLanguage"/);

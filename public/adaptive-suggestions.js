@@ -42,6 +42,14 @@
     {label:'Test the water from another angle',prompt:'Give me the strongest credible alternative explanation and what evidence would distinguish it.',kind:'counterpoint',why:'Demonstrates that a Lake read can be tested rather than simply accepted.'},
     {label:'Bring one practical move to shore',prompt:'Turn this analysis into the single most useful practical next move for me.',kind:'action',why:'Shows how to convert reflection into a proportionate action.'}
   ];
+  const ALWAYS_MOVES=[
+    {label:'Clarify the core signal',prompt:'Clarify the core signal in your answer and why it matters most.',kind:'drill_down',why:'Separates the governing point from surrounding detail.'},
+    {label:'Show me the other reading',prompt:'Show me the strongest alternative reading of this situation.',kind:'counterpoint',why:'Keeps a useful interpretation testable.'},
+    {label:'What would change the read?',prompt:'What evidence would change or weaken this reading?',kind:'test',why:'Turns confidence into a practical test.'},
+    {label:'Bring it down to one move',prompt:'Turn your answer into one practical next move I can take.',kind:'action',why:'Converts reflection into an actionable next step.'},
+    {label:'Make the pattern memorable',prompt:'Give me the shortest memorable explanation of the pattern here.',kind:'reinforce',why:'Leaves the useful pattern easy to carry forward.'},
+    {label:'Quiz me on the judgment',prompt:'Quiz me with one useful question about the judgment call in this answer.',kind:'quiz',why:'Checks whether the insight has landed.'}
+  ];
 
   function ensureScoreBreakdown(result){
     const value=result && typeof result==='object'?result:{text:String(result||''),suggestions:[]};
@@ -56,6 +64,14 @@
     const value=result && typeof result==='object'?result:{text:String(result||''),suggestions:[]};
     const suggestions=Array.isArray(value.suggestions)?value.suggestions.slice(0,3):[];
     return required && !suggestions.length?{...value,suggestions:FIRST_RESPONSE_MOVES.map(item=>({...item}))}:{...value,suggestions};
+  }
+  function ensureAlwaysSuggestions(result,enabled){
+    const value=result && typeof result==='object'?result:{text:String(result||''),suggestions:[]};
+    const suggestions=Array.isArray(value.suggestions)?value.suggestions.slice(0,8):[];
+    if(!enabled)return {...value,suggestions};
+    const labels=new Set(suggestions.map(item=>String(item?.label||'').toLowerCase()));
+    for(const item of ALWAYS_MOVES){ if(suggestions.length>=6)break; if(!labels.has(item.label.toLowerCase())){suggestions.push({...item});labels.add(item.label.toLowerCase());} }
+    return {...value,suggestions:suggestions.slice(0,8)};
   }
 
   function normalizeProfile(value){
@@ -78,5 +94,5 @@
     return {chosen:nonzero(profile.chosen),dismissed:nonzero(profile.dismissed),recent_chosen_kinds:profile.recent};
   }
 
-  return {KINDS:[...KINDS],SCORE_BREAKDOWN,FIRST_RESPONSE_MOVES,extract,ensureScoreBreakdown,ensureFirstResponse,normalizeProfile,record,summary};
+  return {KINDS:[...KINDS],SCORE_BREAKDOWN,FIRST_RESPONSE_MOVES,ALWAYS_MOVES,extract,ensureScoreBreakdown,ensureFirstResponse,ensureAlwaysSuggestions,normalizeProfile,record,summary};
 });

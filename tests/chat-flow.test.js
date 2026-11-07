@@ -88,7 +88,7 @@ test('the interface supplies onboarding moves on a first reply without model sug
   const context=browserContext();
   context.fetch=async (url,options)=>{context.sent=options.body;return {ok:true,json:async()=>({reflection:'A useful first answer.',model:'gpt-4o-test'})};};
   await vm.runInContext('sendWave({requestText:"Help me understand this situation"})',context);
-  assert.equal(vm.runInContext('chatHistory.at(-1).promptSuggestions.length',context),3);
+  assert.equal(vm.runInContext('chatHistory.at(-1).promptSuggestions.length',context),6);
   assert.equal(vm.runInContext('chatHistory.at(-1).promptSuggestions[0].kind',context),'drill_down');
 });
 

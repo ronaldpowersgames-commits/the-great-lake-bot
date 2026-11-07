@@ -610,25 +610,20 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
 .adaptive-suggestions[hidden] { display: none; }
 .adaptive-suggestions-head { display: flex; align-items: center; justify-content: flex-end; gap: 4px; min-height: 18px; }
 .adaptive-suggestions-title { color: var(--text-dim); font-size: 8px; font-weight: 650; letter-spacing: .35px; }
-.adaptive-suggestions-close { width: 20px; height: 20px; border: 0; border-radius: 999px; background: transparent; color: var(--text-dim); cursor: pointer; font-size: 13px; line-height: 1; }
+.adaptive-suggestions-close { width: 24px; height: 20px; border: 0; border-radius: 999px; background: transparent; color: var(--text-dim); cursor: pointer; font-size: 14px; line-height: 1; }
 .adaptive-suggestions-close:hover { background: rgba(255,255,255,.07); color: var(--text-primary); }
-.adaptive-suggestions-list { width: 100%; display: flex; flex-flow: row wrap; justify-content: flex-end; align-items: flex-start; gap: 5px; max-width: 100%; }
+.adaptive-suggestions-list { width: 100%; display: grid; grid-template-rows: repeat(2, minmax(30px, auto)); grid-auto-flow: column; grid-auto-columns: minmax(190px, 1fr); gap: 5px; overflow-x: auto; overflow-y: hidden; justify-content: start; max-width: 100%; padding-bottom: 2px; }
 .adaptive-suggestions-list::-webkit-scrollbar { display: none; }
-.adaptive-suggestion { position: relative; display: flex; max-width: min(330px, 88vw); }
+.adaptive-suggestion { position: relative; display: flex; min-width: 0; }
 .adaptive-suggestion-main {
-  min-height: 30px; padding: 6px 29px 6px 11px;
+  min-height: 30px; padding: 6px 11px;
   border: 1px solid color-mix(in srgb, var(--lake-glow) 46%, var(--dock-border)); border-radius: 999px;
   background: linear-gradient(135deg, color-mix(in srgb, var(--lake-glow) 30%, var(--dock-bg)), color-mix(in srgb, var(--lake-light) 20%, var(--lake-mid)));
   color: var(--text-primary); box-shadow: 0 2px 10px color-mix(in srgb, var(--lake-glow) 17%, transparent);
   cursor: pointer; font: inherit; font-size: 10.5px; font-weight: 600; line-height: 1.2; text-align: left;
 }
 .adaptive-suggestion-main:hover, .adaptive-suggestion-main:focus-visible { filter: brightness(1.13); border-color: var(--lake-light); box-shadow: 0 3px 14px color-mix(in srgb, var(--lake-glow) 28%, transparent); }
-.adaptive-suggestion-dismiss { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; border: 0; border-radius: 999px; background: transparent; color: color-mix(in srgb, var(--text-primary) 62%, transparent); cursor: pointer; }
-.adaptive-suggestion-dismiss:hover { background: color-mix(in srgb, var(--lake-glow) 24%, transparent); color: #fff; }
 .adaptive-suggestion-main:focus-visible, .adaptive-suggestion-dismiss:focus-visible, .adaptive-suggestions-close:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
-@media (max-width: 640px) {
-  .adaptive-suggestions-list { flex-direction: column; align-items: flex-end; }
-}
 .suggestions-top-row {
   display: flex; align-items: center; gap: 6px;
   flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px;
@@ -1399,8 +1394,8 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
       <div class="files-preview-container" id="filesPreviewContainer"></div>
       <section class="adaptive-suggestions" id="adaptiveSuggestions" aria-label="Suggested next moves" hidden>
         <div class="adaptive-suggestions-head">
-          <span class="adaptive-suggestions-title">Suggested next move</span>
-          <button class="adaptive-suggestions-close" onclick="dismissAdaptiveSuggestions()" aria-label="Dismiss all suggestions" title="Dismiss suggestions">×</button>
+          <span class="adaptive-suggestions-title">Suggested next waves</span>
+          <button class="adaptive-suggestions-close" onclick="toggleAdaptiveSuggestions()" aria-label="Collapse suggestions" title="Collapse suggestions" aria-expanded="true">⌃</button>
         </div>
         <div class="adaptive-suggestions-list" id="adaptiveSuggestionsList"></div>
       </section>
@@ -1994,9 +1989,9 @@ function stripPlayerTagsJson(text) {
   return String(text || '').replace(/PLAYER_TAGS_JSON[\s\S]*?(?:END_PLAYER_TAGS_JSON|$)/gi, '').trim();
 }
 
-function extractAdaptiveSuggestions(text,firstResponse=false) {
+function extractAdaptiveSuggestions(text,firstResponse=false,always=true) {
   const result=LakeAdaptiveSuggestions.ensureScoreBreakdown(LakeAdaptiveSuggestions.extract(stripPlayerTagsJson(text)));
-  return LakeAdaptiveSuggestions.ensureFirstResponse(result,firstResponse);
+  return LakeAdaptiveSuggestions.ensureAlwaysSuggestions(LakeAdaptiveSuggestions.ensureFirstResponse(result,firstResponse),always);
 }
 
 function normalizePersonKey(value) {
@@ -2157,25 +2152,24 @@ function renderAdaptiveSuggestions() {
   if(!panel || !list || typeof list.replaceChildren!=='function')return;
   const reply=latestSuggestionReply();const suggestions=reply?.promptSuggestions || [];
   panel.hidden=!suggestions.length;panel.dataset.mood=currentMood;list.replaceChildren();
+  const collapsed=panel.dataset.collapsed==='true';panel.classList.toggle('is-collapsed',collapsed);
+  const toggle=panel.querySelector('.adaptive-suggestions-close');if(toggle){toggle.textContent=collapsed?'⌄':'⌃';toggle.setAttribute('aria-expanded',collapsed?'false':'true');}
   if(!suggestions.length)return;
   suggestions.forEach((suggestion,index)=>{
     const item=document.createElement('div');item.className='adaptive-suggestion';
     const main=document.createElement('button');main.className='adaptive-suggestion-main';main.type='button';main.title=suggestion.why || suggestion.prompt;
     main.textContent=suggestion.label;main.onclick=()=>chooseAdaptiveSuggestion(index);
-    const dismiss=document.createElement('button');dismiss.className='adaptive-suggestion-dismiss';dismiss.type='button';dismiss.textContent='×';
-    dismiss.setAttribute('aria-label',`Dismiss suggestion: ${suggestion.label}`);dismiss.onclick=event=>dismissAdaptiveSuggestion(index,event);
-    item.append(main,dismiss);list.append(item);
+    item.append(main);list.append(item);
   });
 }
+function toggleAdaptiveSuggestions(){const panel=document.getElementById('adaptiveSuggestions');if(!panel)return;panel.dataset.collapsed=panel.dataset.collapsed==='true'?'false':'true';renderAdaptiveSuggestions();}
 function dismissAdaptiveSuggestion(index,event) {
   event?.stopPropagation();const reply=latestSuggestionReply();const suggestion=reply?.promptSuggestions?.[index];if(!suggestion)return;
   saveSuggestionSignal('dismissed',suggestion);reply.promptSuggestions.splice(index,1);if(!reply.promptSuggestions.length)reply.promptSuggestionsDismissed=true;
   renderAdaptiveSuggestions();saveSession().catch(error=>console.warn('Suggestion dismissal could not be saved:',error));
 }
 function dismissAdaptiveSuggestions() {
-  const reply=latestSuggestionReply();if(!reply)return;
-  reply.promptSuggestions.forEach(suggestion=>saveSuggestionSignal('dismissed',suggestion));reply.promptSuggestionsDismissed=true;
-  renderAdaptiveSuggestions();saveSession().catch(error=>console.warn('Suggestion dismissal could not be saved:',error));
+  toggleAdaptiveSuggestions();
 }
 function retireAdaptiveSuggestions() {
   const reply=latestSuggestionReply();if(!reply)return;reply.promptSuggestionsDismissed=true;renderAdaptiveSuggestions();
@@ -2468,7 +2462,7 @@ function loadTide(sessionId) {
   }
   chatHistory.forEach(msg => {
     if (msg.role === 'user') appendUserWave(msg.content, msg.time, false, msg.attachments || []);
-    else if (msg.role === 'assistant') appendLakeWave(msg.content, msg.time, false, msg.snapshot, msg.archiveCoverage, msg.archiveSources, msg.transcriptContext);
+    else if (msg.role === 'assistant') { if(!msg.snapshot){const parsed=extractAdaptiveSuggestions(msg.content,false,true);msg.content=parsed.text;if(parsed.suggestions.length)msg.promptSuggestions=msg.promptSuggestions||parsed.suggestions;} appendLakeWave(msg.content, msg.time, false, msg.snapshot, msg.archiveCoverage, msg.archiveSources, msg.transcriptContext); }
   });
   renderAdaptiveSuggestions();
   container.scrollTop = container.scrollHeight;
@@ -3372,6 +3366,7 @@ async function sendWave(options = {}) {
     crew: JSON.stringify(crewMembers.map(({ name, nickname, codename, role, context, observations }) => ({ name, nickname, codename, role, context, observations: (observations || []).slice(-10) })))
   };
   origin.firstResponseSuggestions=!options.snapshot && !origin.history.some(message=>message.role==='assistant') && !/\b(?:no follow[- ]?up|no suggestions?|just answer|one word)\b/i.test(text);
+  origin.showAdaptiveSuggestions=!options.snapshot && !/\b(?:no follow[- ]?up|no suggestions?|just answer|one word)\b/i.test(text);
   const reviewInventory=transcriptSources(origin.history,selectedFiles).map(file=>({id:file.sourceId,name:file.name,selected:!file.excluded}));
   origin.sourceInventory=reviewInventory;
   origin.previousReceipts=[...LakeTranscriptReview.status(transcriptSources(origin.history,selectedFiles),origin.history).receipts];
@@ -3456,6 +3451,7 @@ async function sendWave(options = {}) {
     formData.append('userCrew', origin.userCrew);
     formData.append('crew', origin.crew);
     formData.append('firstResponse',origin.firstResponseSuggestions?'true':'false');
+    formData.append('showSuggestions',origin.showAdaptiveSuggestions?'true':'false');
     formData.append('suggestionProfile',JSON.stringify(suggestionPreferencePayload()));
     const historyToSend = origin.history.slice(-11, -1).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.content }));
     formData.append('history', JSON.stringify(historyToSend));
@@ -3470,7 +3466,7 @@ async function sendWave(options = {}) {
     hideRipple();
 
     if (data.reflection) {
-      const suggestionResult=options.snapshot?{text:JSON.stringify(data.handoff || JSON.parse(data.reflection), null, 2),suggestions:[]}:extractAdaptiveSuggestions(data.reflection,origin.firstResponseSuggestions);
+      const suggestionResult=options.snapshot?{text:JSON.stringify(data.handoff || JSON.parse(data.reflection), null, 2),suggestions:[]}:extractAdaptiveSuggestions(data.reflection,origin.firstResponseSuggestions,origin.showAdaptiveSuggestions);
       const cleanReflection = suggestionResult.text;
       const reflectionTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       const reply = { role: 'assistant', content: cleanReflection, time: reflectionTime,
@@ -3556,6 +3552,7 @@ function appendUserWave(text, timeStr, scroll, attachments = []) {
 }
 
 function appendLakeWave(text, timeStr, scroll, snapshot, archiveCoverage, archiveSources, transcriptContext) {
+  if(!snapshot) text=LakeAdaptiveSuggestions.extract(String(text||'')).text;
   const container = document.getElementById('wavesContainer');
   const ripple    = document.getElementById('ripple');
   const div       = document.createElement('div');
