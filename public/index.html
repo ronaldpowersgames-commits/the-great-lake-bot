@@ -520,6 +520,13 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
   font-size: 14px; line-height: 1.5;
   word-wrap: break-word; word-break: break-word;
 }
+.reflection-sections { margin-top: 7px; }
+.reflection-section { border-top: 1px solid color-mix(in srgb, var(--dock-border) 72%, transparent); }
+.reflection-section summary { cursor: pointer; list-style: none; padding: 8px 2px 6px; color: var(--lake-light); font-weight: 700; }
+.reflection-section summary::-webkit-details-marker { display: none; }
+.reflection-section summary::before { content: '›'; display: inline-block; width: 14px; color: var(--text-dim); transition: transform .15s ease; }
+.reflection-section[open] summary::before { transform: rotate(90deg); }
+.reflection-section-body { padding: 0 2px 7px; }
 .lake-wave .wave-bubble {
   background: var(--lake-surface); border: 1px solid var(--dock-border);
   border-top-left-radius: 4px; color: var(--text-primary);
@@ -3604,6 +3611,20 @@ function appendLakeWave(text, timeStr, scroll, snapshot, archiveCoverage, archiv
 }
 
 function formatReflection(text) {
+  const lines=String(text||'').split(/\r?\n/);
+  const sectionAt=line=>/^(#{2,4}\s+.+|\d+(?:\.\d+)*\.\s+[^\n]{3,100})$/.test(line.trim());
+  const sections=[];let lead=[];let current=null;
+  for(const line of lines){
+    if(sectionAt(line)) { current={heading:line.trim().replace(/^#{2,4}\s+/, '').replace(/^\d+(?:\.\d+)*\.\s+/,''),body:[]};sections.push(current); }
+    else if(current) current.body.push(line); else lead.push(line);
+  }
+  if(sections.length<2)return formatReflectionInline(text);
+  let html=formatReflectionInline(lead.join('\n'));
+  html+='<div class="reflection-sections">';
+  sections.forEach((section,index)=>{html+=`<details class="reflection-section" ${index===0?'open':''}><summary>${formatReflectionInline(section.heading)}</summary><div class="reflection-section-body">${formatReflectionInline(section.body.join('\n'))}</div></details>`;});
+  return html+'</div>';
+}
+function formatReflectionInline(text) {
   let html = escapeHTML(text);
   html = html.replace(/^### (.+)$/gm, '<h4 class="reflection-h4">$1</h4>');
   html = html.replace(/^## (.+)$/gm,  '<h3 class="reflection-h3">$1</h3>');
@@ -3615,6 +3636,12 @@ function formatReflection(text) {
   html = html.replace(/\n\n/g, '<div class="reflection-gap"></div>');
   html = html.replace(/\n/g,   '<br>');
   return html;
+}
+
+function toggleReflectionSections(bubble,force) {
+  const sections=bubble?.querySelectorAll('.reflection-section'); if(!sections?.length)return;
+  const open=force ?? ![...sections].every(section=>section.open);
+  sections.forEach(section=>section.open=open);
 }
 
 // ============================================
@@ -3871,6 +3898,7 @@ function attachBubbleActions(waveEl) {
   if (bubble) {
     bubble.style.cursor = 'pointer';
     bubble.addEventListener('click', () => toggleBubbleActions(actions));
+    bubble.addEventListener('dblclick', event => { event.preventDefault(); toggleReflectionSections(bubble); });
   }
 }
 
