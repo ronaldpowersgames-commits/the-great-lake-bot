@@ -498,7 +498,7 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
 
 /* ── WAVE BUBBLES ── */
 .wave {
-  display: flex; gap: 9px; max-width: 96%; width: 96%;
+  display: flex; gap: 9px; max-width: 100%; width: 100%;
   animation: waveIn 0.35s ease-out; flex-shrink: 0;
 }
 .wave.user-wave { align-self: flex-end; flex-direction: row-reverse; }
@@ -600,7 +600,7 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
 .shore-dock {
   flex-shrink: 0;
   width: 100%;
-  background: rgba(9, 20, 32, 0.4);
+  background: transparent;
   border-top: 1px solid var(--dock-border);
   padding: 8px 10px;
   padding-bottom: calc(8px + var(--safe-bottom));
@@ -614,7 +614,7 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
 .adaptive-suggestions {
   display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
   padding: 2px 1px 4px; border-radius: 10px;
-  background: rgba(9, 20, 32, 0.25);
+  background: rgba(9, 20, 32, 0.05);
 }
 .adaptive-suggestions[hidden] { display: none; }
 .adaptive-suggestions.is-collapsed .adaptive-suggestions-list { display: none; }
@@ -635,6 +635,10 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
 }
 .adaptive-suggestion-main:hover, .adaptive-suggestion-main:focus-visible { filter: brightness(1.13); border-color: var(--lake-light); box-shadow: 0 3px 14px color-mix(in srgb, var(--lake-glow) 28%, transparent); }
 .adaptive-suggestion-main:focus-visible, .adaptive-suggestion-dismiss:focus-visible, .adaptive-suggestions-close:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+@media (min-width: 769px) {
+  .adaptive-suggestions { align-self: flex-end; max-width: min(760px, 72%); }
+  .adaptive-suggestions-list { width: auto; max-width: 100%; grid-auto-columns: minmax(175px, 1fr); justify-content: end; }
+}
 .suggestions-top-row {
   display: flex; align-items: center; gap: 6px;
   flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px;
@@ -3669,6 +3673,7 @@ function hideRipple() {
 // INPUT
 // ============================================
 function handleKey(e) {
+  if (e.key === 'Enter' && window.matchMedia && window.matchMedia('(max-width: 768px)').matches) return;
   if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.keyCode !== 229) {
     e.preventDefault();
     if (!e.repeat) sendWave();
