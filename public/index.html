@@ -498,7 +498,7 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
 
 /* ── WAVE BUBBLES ── */
 .wave {
-  display: flex; gap: 9px; max-width: 100%; width: 100%;
+  display: flex; gap: 9px; max-width: 84%; width: auto;
   animation: waveIn 0.35s ease-out; flex-shrink: 0;
 }
 .wave.user-wave { align-self: flex-end; flex-direction: row-reverse; }
@@ -598,6 +598,7 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
 
 /* ── SHORE DOCK ── */
 .shore-dock {
+  position: relative;
   flex-shrink: 0;
   width: 100%;
   background: transparent;
@@ -612,6 +613,7 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
 
 /* ── PROMPT SUGGESTIONS ── */
 .adaptive-suggestions {
+  position: absolute; bottom: 100%; right: 10px; width: min(600px, calc(100% - 20px)); z-index: 10;
   display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
   padding: 2px 1px 4px; border-radius: 10px;
   background: rgba(9, 20, 32, 0.05);
@@ -1162,7 +1164,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
   .dock.open      { transform: translateX(0); }
   .dock-toggle    { display: flex; }
   .lake-header    { padding-left: 64px; }
-  .wave           { max-width: 90%; }
+  .wave           { max-width: 100%; width: 100%; }
   .welcome-title  { font-size: 20px; }
   .depths-panel   { width: 100%; }
   .input-hint     { display: none; }
@@ -2167,6 +2169,14 @@ function renderAdaptiveSuggestions() {
   const panel=document.getElementById('adaptiveSuggestions');const list=document.getElementById('adaptiveSuggestionsList');
   if(!panel || !list || typeof list.replaceChildren!=='function')return;
   const reply=latestSuggestionReply();const suggestions=reply?.promptSuggestions || [];
+  if(reply && suggestions.length<4){reply.promptSuggestions=LakeAdaptiveSuggestions.ensureAlwaysSuggestions({suggestions},true).suggestions;return renderAdaptiveSuggestions();}
+  if(!panel.dataset.gestures){
+    panel.dataset.gestures='true';let start=null;
+    panel.addEventListener('dblclick',event=>{if(event.target.closest('button'))return;toggleAdaptiveSuggestions();});
+    panel.addEventListener('touchstart',event=>{const t=event.touches[0];start={x:t.clientX,y:t.clientY};},{passive:true});
+    panel.addEventListener('touchend',event=>{if(!start)return;const t=event.changedTouches[0],dy=t.clientY-start.y,dx=t.clientX-start.x;start=null;if(Math.abs(dy)>30 && Math.abs(dy)>Math.abs(dx)){panel.dataset.collapsed=dy>0?'true':'false';renderAdaptiveSuggestions();}},{passive:true});
+    panel.title='Swipe down to collapse, up to expand · double-click the rail to toggle';
+  }
   panel.hidden=!suggestions.length;panel.dataset.mood=currentMood;list.replaceChildren();
   const collapsed=panel.dataset.collapsed==='true';panel.classList.toggle('is-collapsed',collapsed);
   const toggle=panel.querySelector('.adaptive-suggestions-close');if(toggle){toggle.textContent=collapsed?'⌄':'⌃';toggle.setAttribute('aria-expanded',collapsed?'false':'true');}
