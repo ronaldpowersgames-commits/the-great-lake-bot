@@ -608,15 +608,17 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
   padding: 2px 1px 4px;
 }
 .adaptive-suggestions[hidden] { display: none; }
+.adaptive-suggestions.is-collapsed .adaptive-suggestions-list { display: none; }
+.adaptive-suggestions.is-collapsed { padding-bottom: 1px; }
 .adaptive-suggestions-head { display: flex; align-items: center; justify-content: flex-end; gap: 4px; min-height: 18px; }
 .adaptive-suggestions-title { color: var(--text-dim); font-size: 8px; font-weight: 650; letter-spacing: .35px; }
 .adaptive-suggestions-close { width: 24px; height: 20px; border: 0; border-radius: 999px; background: transparent; color: var(--text-dim); cursor: pointer; font-size: 14px; line-height: 1; }
 .adaptive-suggestions-close:hover { background: rgba(255,255,255,.07); color: var(--text-primary); }
-.adaptive-suggestions-list { width: 100%; display: grid; grid-template-rows: repeat(2, minmax(30px, auto)); grid-auto-flow: column; grid-auto-columns: minmax(190px, 1fr); gap: 5px; overflow-x: auto; overflow-y: hidden; justify-content: start; max-width: 100%; padding-bottom: 2px; }
+.adaptive-suggestions-list { width: 100%; display: grid; grid-template-rows: repeat(2, minmax(28px, auto)); grid-auto-flow: column; grid-auto-columns: minmax(170px, 1fr); gap: 4px; overflow-x: auto; overflow-y: hidden; justify-content: start; max-width: 100%; padding-bottom: 1px; }
 .adaptive-suggestions-list::-webkit-scrollbar { display: none; }
 .adaptive-suggestion { position: relative; display: flex; min-width: 0; }
 .adaptive-suggestion-main {
-  min-height: 30px; padding: 6px 11px;
+  min-height: 28px; padding: 5px 10px;
   border: 1px solid color-mix(in srgb, var(--lake-glow) 46%, var(--dock-border)); border-radius: 999px;
   background: linear-gradient(135deg, color-mix(in srgb, var(--lake-glow) 30%, var(--dock-bg)), color-mix(in srgb, var(--lake-light) 20%, var(--lake-mid)));
   color: var(--text-primary); box-shadow: 0 2px 10px color-mix(in srgb, var(--lake-glow) 17%, transparent);
@@ -1520,6 +1522,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
       <h4>💾 Backup &amp; Transfer</h4>
       <button class="depths-option backup-export" onclick="exportFullBackup()" title="Private full-data backup with original stored attachments and an AI transfer prompt">⬇ Export Full Data + Transfer Prompt</button>
       <a class="depths-option" href="/transcript-splitter.html" target="_blank" rel="noopener" style="display:block;text-decoration:none">📄 Transcript Splitter</a>
+      <a class="depths-option" href="/meeting-studio/" target="_blank" rel="noopener" style="display:block;text-decoration:none">🎙️ Meeting Studio</a>
     </div>
     <div class="depths-section">
       <h4>📱 App</h4>

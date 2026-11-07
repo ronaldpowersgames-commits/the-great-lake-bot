@@ -60,6 +60,7 @@ test('adaptive UI uses compact mood-colored chips and remains dismissible',()=>{
   assert.match(html,/linear-gradient\(135deg, color-mix\(in srgb, var\(--lake-glow\)/);
   assert.match(html,/grid-template-rows: repeat\(2/);
   assert.match(html,/overflow-x: auto/);
+  assert.match(html,/adaptive-suggestions\.is-collapsed \.adaptive-suggestions-list/);
   assert.doesNotMatch(html,/adaptive-suggestions\[data-mood="stormy"\]/);
   assert.doesNotMatch(html,/const icons=\{drill_down/);
   assert.match(html,/id="responseLanguage"/);
