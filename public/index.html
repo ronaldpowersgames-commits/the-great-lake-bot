@@ -521,6 +521,7 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
   word-wrap: break-word; word-break: break-word;
 }
 .reflection-sections { margin-top: 7px; }
+.reflection-hint { padding: 2px 2px 5px; color: var(--text-dim); font-size: 9px; font-style: italic; }
 .reflection-section { border-top: 1px solid color-mix(in srgb, var(--dock-border) 72%, transparent); }
 .reflection-section summary { cursor: pointer; list-style: none; padding: 8px 2px 6px; color: var(--lake-light); font-weight: 700; }
 .reflection-section summary::-webkit-details-marker { display: none; }
@@ -3620,7 +3621,7 @@ function formatReflection(text) {
   }
   if(sections.length<2)return formatReflectionInline(text);
   let html=formatReflectionInline(lead.join('\n'));
-  html+='<div class="reflection-sections">';
+  html+='<div class="reflection-sections"><div class="reflection-hint">Double-tap to expand or collapse sections · hold to hear aloud</div>';
   sections.forEach((section,index)=>{html+=`<details class="reflection-section" ${index===0?'open':''}><summary>${formatReflectionInline(section.heading)}</summary><div class="reflection-section-body">${formatReflectionInline(section.body.join('\n'))}</div></details>`;});
   return html+'</div>';
 }
@@ -3897,8 +3898,17 @@ function attachBubbleActions(waveEl) {
   const bubble  = waveEl.querySelector('.wave-bubble');
   if (bubble) {
     bubble.style.cursor = 'pointer';
-    bubble.addEventListener('click', () => toggleBubbleActions(actions));
+    let held=false;
+    bubble.addEventListener('click', () => { if(held){held=false;return;} toggleBubbleActions(actions); });
     bubble.addEventListener('dblclick', event => { event.preventDefault(); toggleReflectionSections(bubble); });
+    let holdTimer=null;
+    const cancelHold=()=>{if(holdTimer){clearTimeout(holdTimer);holdTimer=null;}};
+    bubble.addEventListener('pointerdown', event=>{
+      if(!isLake || event.button>0)return;
+      held=false; cancelHold();
+      holdTimer=setTimeout(()=>{held=true; const speakProxy={textContent:'🔊 Speak',classList:{add(){},remove(){}} ,closest:()=>waveEl}; speakText(bubble.innerText.replace(/Double-tap to expand or collapse sections · hold to hear aloud/g,'').trim(),speakProxy); showToast('Reading this wave aloud');},650);
+    });
+    bubble.addEventListener('pointerup',cancelHold); bubble.addEventListener('pointerleave',cancelHold); bubble.addEventListener('pointercancel',cancelHold);
   }
 }
 
