@@ -498,7 +498,7 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
 
 /* ── WAVE BUBBLES ── */
 .wave {
-  display: flex; gap: 9px; max-width: 84%;
+  display: flex; gap: 9px; max-width: 96%; width: 96%;
   animation: waveIn 0.35s ease-out; flex-shrink: 0;
 }
 .wave.user-wave { align-self: flex-end; flex-direction: row-reverse; }
@@ -511,7 +511,7 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
 .wave-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 .wave.lake-wave .wave-avatar { background: linear-gradient(135deg, var(--lake-glow), var(--lake-light)); }
 .wave.user-wave .wave-avatar { background: linear-gradient(135deg, var(--sand), var(--driftwood)); }
-.wave-content { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.wave-content { display: flex; flex: 1 1 auto; flex-direction: column; gap: 2px; min-width: 0; }
 .wave-sender { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
 .lake-wave .wave-sender { color: var(--lake-light); }
 .user-wave .wave-sender { color: var(--sand); text-align: right; }
@@ -605,7 +605,8 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
 /* ── PROMPT SUGGESTIONS ── */
 .adaptive-suggestions {
   display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
-  padding: 2px 1px 4px;
+  padding: 2px 1px 4px; border-radius: 10px;
+  background: color-mix(in srgb, var(--dock-bg) 38%, transparent);
 }
 .adaptive-suggestions[hidden] { display: none; }
 .adaptive-suggestions.is-collapsed .adaptive-suggestions-list { display: none; }
