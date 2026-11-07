@@ -3594,6 +3594,7 @@ function appendUserWave(text, timeStr, scroll, attachments = []) {
   else container.appendChild(div);
 
   attachBubbleActions(div);
+  showLatestBubbleActions();
   if (scroll) container.scrollTop = container.scrollHeight;
 }
 
@@ -3617,6 +3618,7 @@ function appendLakeWave(text, timeStr, scroll, snapshot, archiveCoverage, archiv
   else container.appendChild(div);
 
   if (!snapshot) attachBubbleActions(div);
+  showLatestBubbleActions();
   if(archiveCoverage) {
     const coverage = document.createElement('div');coverage.className='wave-time archive-coverage';
     coverage.textContent=`Archive evidence: ${archiveCoverage.retrieved_passages} passages from ${archiveCoverage.represented_meetings}/${archiveCoverage.indexed_meetings} indexed meetings. Not the complete archive in context.`;
@@ -3895,6 +3897,12 @@ function toggleBubbleActions(actionsEl) {
   const isShowing = actionsEl.classList.contains('show');
   document.querySelectorAll('.bubble-actions.show').forEach(el => el.classList.remove('show'));
   if (!isShowing) actionsEl.classList.add('show');
+}
+function showLatestBubbleActions() {
+  const waves=[...document.querySelectorAll('#wavesContainer .wave')];
+  document.querySelectorAll('.bubble-actions.show').forEach(el=>el.classList.remove('show'));
+  const latest=waves[waves.length-1];
+  latest?.querySelector('.bubble-actions')?.classList.add('show');
 }
 
 function buildBubbleActions(waveEl, isLake) {
