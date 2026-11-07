@@ -624,7 +624,7 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
 .adaptive-suggestions-head { display: flex; align-items: center; justify-content: flex-end; gap: 4px; min-height: 18px; }
 .adaptive-suggestions-title { color: var(--text-dim); font-size: 8px; font-weight: 650; letter-spacing: .35px; }
 .adaptive-suggestions-close { width: 24px; height: 20px; border: 0; border-radius: 999px; background: transparent; color: var(--text-dim); cursor: pointer; font-size: 14px; line-height: 1; }
-.adaptive-suggestions-close { color: var(--lake-light); filter: drop-shadow(0 0 5px var(--lake-glow)); }
+.adaptive-suggestions-close { color: var(--lake-light) !important; filter: drop-shadow(0 0 6px var(--lake-glow)); text-shadow: 0 0 8px var(--lake-glow); }
 .adaptive-suggestions-close:hover { background: rgba(255,255,255,.07); color: var(--text-primary); }
 .adaptive-suggestions-list { width: 100%; display: grid; grid-template-rows: repeat(2, minmax(28px, auto)); grid-auto-flow: column; grid-auto-columns: minmax(170px, 1fr); gap: 4px; overflow-x: auto; overflow-y: hidden; justify-content: start; max-width: 100%; padding-bottom: 1px; }
 .adaptive-suggestions-list::-webkit-scrollbar { display: none; }
@@ -635,6 +635,7 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
   background: linear-gradient(135deg, rgba(45,140,240,.22), rgba(100,181,246,.12));
   color: var(--text-primary); box-shadow: 0 2px 10px color-mix(in srgb, var(--lake-glow) 17%, transparent);
   cursor: pointer; font: inherit; font-size: 10.5px; font-weight: 600; line-height: 1.2; text-align: left;
+  color: var(--lake-light); text-shadow: 0 0 5px color-mix(in srgb, var(--lake-glow) 55%, transparent);
 }
 .adaptive-suggestion-main:hover, .adaptive-suggestion-main:focus-visible { filter: brightness(1.13); border-color: var(--lake-light); box-shadow: 0 3px 14px color-mix(in srgb, var(--lake-glow) 28%, transparent); }
 .adaptive-suggestion-main:focus-visible, .adaptive-suggestion-dismiss:focus-visible, .adaptive-suggestions-close:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
@@ -647,6 +648,7 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
   .adaptive-suggestions { align-self: flex-end; max-width: min(760px, 72%); }
   .adaptive-suggestions-list { width: auto; max-width: 100%; grid-auto-columns: minmax(175px, 1fr); justify-content: end; }
 }
+.adaptive-suggestions.rail-dockward { top: 0; bottom: auto; transform: translateY(-1px); }
 .suggestions-top-row {
   display: flex; align-items: center; gap: 6px;
   flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px;
@@ -1519,8 +1521,8 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
     <div class="depths-section crew-modal-field">
       <label for="railSwipeMode">Suggested waves swipe test</label>
       <select id="railSwipeMode" onchange="saveRailSwipeMode()">
-        <option value="normal">Swipe up to expand, down to collapse</option>
-        <option value="reverse">Swipe up to cover the chat, down toward the shore dock</option>
+        <option value="up">Expand upward to cover the chat thread</option>
+        <option value="down">Expand downward to cover the shore controls</option>
       </select>
       <div class="mode-continuity">Test setting only; the composer stays clear for typing and sending.</div>
     </div>
@@ -2177,7 +2179,8 @@ function saveSuggestionSignal(action,suggestion) {
 }
 function suggestionPreferencePayload() { return LakeAdaptiveSuggestions.summary(loadSuggestionProfile()); }
 function latestSuggestionReply() {
-  return [...chatHistory].reverse().find(message=>message.role==='assistant' && Array.isArray(message.promptSuggestions) && message.promptSuggestions.length && !message.promptSuggestionsDismissed);
+  const latest=[...chatHistory].reverse().find(message=>message.role==='assistant');
+  return latest && Array.isArray(latest.promptSuggestions) && latest.promptSuggestions.length && !latest.promptSuggestionsDismissed ? latest : null;
 }
 function renderAdaptiveSuggestions() {
   const panel=document.getElementById('adaptiveSuggestions');const list=document.getElementById('adaptiveSuggestionsList');
@@ -2188,10 +2191,10 @@ function renderAdaptiveSuggestions() {
     panel.dataset.gestures='true';let start=null;
     panel.addEventListener('dblclick',event=>{if(event.target.closest('button'))return;toggleAdaptiveSuggestions();});
     panel.addEventListener('touchstart',event=>{const t=event.touches[0];start={x:t.clientX,y:t.clientY};},{passive:true});
-    panel.addEventListener('touchend',event=>{if(!start)return;const t=event.changedTouches[0],dy=t.clientY-start.y,dx=t.clientX-start.x;start=null;if(Math.abs(dy)>30 && Math.abs(dy)>Math.abs(dx)){const reverse=localStorage.getItem(storageKey('railSwipeMode'))==='reverse';panel.dataset.collapsed=(reverse?dy<0:dy>0)?'true':'false';renderAdaptiveSuggestions();}},{passive:true});
+    panel.addEventListener('touchend',event=>{if(!start)return;const t=event.changedTouches[0],dy=t.clientY-start.y,dx=t.clientX-start.x;start=null;if(Math.abs(dy)>30 && Math.abs(dy)>Math.abs(dx)){const down=localStorage.getItem(storageKey('railSwipeMode'))==='down';panel.dataset.collapsed=(down?dy<0:dy>0)?'true':'false';renderAdaptiveSuggestions();}},{passive:true});
     panel.title='Swipe down to collapse, up to expand · double-click the rail to toggle';
   }
-  panel.hidden=!suggestions.length;panel.dataset.mood=currentMood;list.replaceChildren();
+  panel.hidden=!suggestions.length;panel.dataset.mood=currentMood;panel.classList.toggle('rail-dockward',localStorage.getItem(storageKey('railSwipeMode'))==='down');list.replaceChildren();
   const collapsed=panel.dataset.collapsed==='true';panel.classList.toggle('is-collapsed',collapsed);
   const toggle=panel.querySelector('.adaptive-suggestions-close');if(toggle){toggle.textContent=collapsed?'⌄':'⌃';toggle.setAttribute('aria-expanded',collapsed?'false':'true');}
   if(!suggestions.length)return;
@@ -2356,8 +2359,8 @@ function saveResponseLanguage() {
   catch { showToast('Language updated for this visit, but could not be saved on this device.'); }
   showToast(currentUser.responseLanguage==='auto'?'Language set to Auto.':'Response language updated.');
 }
-function saveRailSwipeMode(){localStorage.setItem(storageKey('railSwipeMode'),document.getElementById('railSwipeMode').value);}
-function loadRailSwipeMode(){const el=document.getElementById('railSwipeMode');if(el)el.value=localStorage.getItem(storageKey('railSwipeMode'))||'normal';}
+function saveRailSwipeMode(){localStorage.setItem(storageKey('railSwipeMode'),document.getElementById('railSwipeMode').value);renderAdaptiveSuggestions();}
+function loadRailSwipeMode(){const el=document.getElementById('railSwipeMode');if(el)el.value=localStorage.getItem(storageKey('railSwipeMode'))||'up';}
 
 async function loadBackendStatus() {
   const modelInfo = document.getElementById('backendModelInfo');
