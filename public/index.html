@@ -1394,11 +1394,17 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
             <button type="button" class="welcome-start" onclick="startHomepageWave('manual')">📖 Chat Manual</button>
             <button type="button" class="welcome-start" onclick="startHomepageWave('personalize')">🎛️ Personalize</button>
           </div>
+          <div class="welcome-pack">
+            <button type="button" class="welcome-start" onclick="startHomepageWave('solve')">⚡ Solve a Problem</button>
+            <button type="button" class="welcome-start" onclick="startHomepageWave('decide')">🧭 Make a Decision</button>
+          </div>
+          <div class="welcome-pack">
+            <button type="button" class="welcome-start" onclick="sendPrompt('I want to understand myself better. Ask me questions — one at a time — that help me see my patterns, values, blind spots and strengths. Build a picture of who I am as we go.')">🪞 My Persona</button>
+            <button type="button" class="welcome-start" onclick="sendPrompt('It\'s journal time. Ask me to describe my day — what happened, how I felt, what\'s sitting with me. Ask follow up questions as we go. Help me process it like a journal entry.')">📓 Today's Journal</button>
+          </div>
         </div>
         <div class="welcome-sub">A surprising fact or one easy question. Swipe for more, or <button type="button" class="welcome-ride-link" onclick="rideAWave()">Ride a Wave</button>.</div>
         <div class="welcome-prompts">
-          <div class="welcome-prompt-featured" onclick="sendPrompt('I want to understand myself better. Ask me questions — one at a time — that help me see my patterns, values, blind spots and strengths. Build a picture of who I am as we go.')">🪞 My Persona</div>
-          <div class="welcome-prompt-featured" onclick="sendPrompt('It\'s journal time. Ask me to describe my day — what happened, how I felt, what\'s sitting with me. Ask follow up questions as we go. Help me process it like a journal entry.')">📓 Today's Journal</div>
           <!-- CAROUSEL -->
           <div class="prompt-carousel-container">
             <div class="prompt-carousel-track" id="promptCarouselTrack">
@@ -2788,11 +2794,17 @@ function newSession() {
           <button type="button" class="welcome-start" onclick="startHomepageWave('manual')">📖 Chat Manual</button>
           <button type="button" class="welcome-start" onclick="startHomepageWave('personalize')">🎛️ Personalize</button>
         </div>
+        <div class="welcome-pack">
+          <button type="button" class="welcome-start" onclick="startHomepageWave('solve')">⚡ Solve a Problem</button>
+          <button type="button" class="welcome-start" onclick="startHomepageWave('decide')">🧭 Make a Decision</button>
+        </div>
+        <div class="welcome-pack">
+          <button type="button" class="welcome-start" onclick="sendPrompt('I want to understand myself better. Ask me questions — one at a time — that help me see my patterns, values, blind spots and strengths. Build a picture of who I am as we go.')">🪞 My Persona</button>
+          <button type="button" class="welcome-start" onclick="sendPrompt('It\\'s journal time. Ask me to describe my day — what happened, how I felt, what\\'s sitting with me. Ask follow up questions as we go. Help me process it like a journal entry.')">📓 Today's Journal</button>
+        </div>
       </div>
       <div class="welcome-sub">A surprising fact or one easy question. Swipe for more, or <button type="button" class="welcome-ride-link" onclick="rideAWave()">Ride a Wave</button>.</div>
       <div class="welcome-prompts">
-        <div class="welcome-prompt-featured" onclick="sendPrompt('I want to understand myself better. Ask me questions — one at a time — that help me see my patterns, values, blind spots and strengths. Build a picture of who I am as we go.')">🪞 My Persona</div>
-        <div class="welcome-prompt-featured" onclick="sendPrompt('It\\'s journal time. Ask me to describe my day — what happened, how I felt, what\\'s sitting with me. Ask follow up questions as we go. Help me process it like a journal entry.')">📓 Today's Journal</div>
         <div class="prompt-carousel-container">
           <div class="prompt-carousel-track" id="promptCarouselTrack">
             <div class="prompt-batch">
@@ -3179,7 +3191,9 @@ function startHomepageWave(kind){
     splash:['💦 Splash','Give me one short, surprising, accurate fact. Pick something likely to spark my curiosity based on interests or examples I have shared. If little is known, choose an accessible subject. A brief connection to something I might enjoy noticing about myself is welcome when it fits. No quiz or follow-up question.'],
     riptide:['🌊 Riptide','Ask exactly one light, natural, easy-to-answer question that might reveal something about what I enjoy, notice or choose. Use relevant context if available. No intro, analysis, or extra question.'],
     manual:['📖 Chat Manual','Give me a practical chat manual for The Great Lake. Explain starters and Ride a Wave, Next Waves, moods and slash commands, creative types, attachments and transcript workflows, Crew and memory controls, and Past Tides and Recovery. Start with three easy ways in, then group details by task. Give example prompts. Only describe supported features.'],
-    personalize:['🎛️ Personalize','Help me explain optional preferences for how The Lake works with me. Ask one easy question about a goal, preferred tone, or metaphor. Keep defaults available. If I want a persistent explicit override, show me where to edit Personal memory in Settings. Do not claim a change has been saved unless confirmed.']
+    personalize:['🎛️ Personalize','Help me explain optional preferences for how The Lake works with me. Ask one easy question about a goal, preferred tone, or metaphor. Keep defaults available. If I want a persistent explicit override, show me where to edit Personal memory in Settings. Do not claim a change has been saved unless confirmed.'],
+    solve:['⚡ Solve a Problem','Ask what is stuck if the problem is unclear. Then isolate the real constraint, challenge the assumption keeping me stuck, and give me one concrete move I can take today. Be sharp and direct.'],
+    decide:['🧭 Make a Decision','Ask what I am choosing between and what matters if unclear. Identify the decisive tradeoff, recommend a direction when supported, and give me one next action. If a critical fact is missing, suggest the smallest reversible test.']
   };
   const [visibleText,requestText]=starters[kind];
   return sendWave({visibleText,requestText,reuseAttachments:false});
