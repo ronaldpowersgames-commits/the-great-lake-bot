@@ -820,7 +820,7 @@ Include a precise resume point: active topic, latest user intent, unresolved que
                 preferences:String(req.body.suggestionProfile||'').slice(0,1000)
               })}
             ]
-          },{timeout:6000,maxRetries:0});
+          },{timeout:12000,maxRetries:0});
           const generated=adaptiveSuggestions.extract('LAKE_PROMPTS_JSON\n'+(retry.choices?.[0]?.message?.content||'')+'\nEND_LAKE_PROMPTS_JSON').suggestions;
           const combined=adaptiveSuggestions.ensureAlwaysSuggestions({suggestions:[...existing,...generated]},false).suggestions;
           if(combined.length>existing.length)reflection=parsed.text+'\nLAKE_PROMPTS_JSON\n'+JSON.stringify({suggestions:combined})+'\nEND_LAKE_PROMPTS_JSON';

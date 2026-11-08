@@ -2333,8 +2333,8 @@ function renderAdaptiveSuggestions() {
       if(latestSuggestionReply()!==reply || typeof reply?.suggestionsCollapsed==='boolean')return;
       const composer=document.getElementById('lakeInput');
       const editingDraft=document.activeElement===composer && Boolean(composer?.value.trim());
-      if(document.hidden || waveInFlight || panel.matches(':hover, :focus-within') ||
-          (suggestionCyclePhase!=='waiting' && editingDraft)){
+      if(document.hidden || waveInFlight ||
+          (suggestionCyclePhase!=='waiting' && (editingDraft || panel.matches(':hover, :focus-within')))){
         suggestionCycleTimer=setTimeout(advance,750);
         return;
       }
@@ -2346,7 +2346,7 @@ function renderAdaptiveSuggestions() {
   }
   const manual=typeof reply?.suggestionsCollapsed==='boolean';
   const collapsed=manual ? reply.suggestionsCollapsed : suggestionCyclePhase!=='expanded';
-  panel.hidden=!suggestions.length || (!manual && suggestionCyclePhase==='waiting');
+  panel.hidden=!suggestions.length;
   panel.classList.toggle('is-collapsed',collapsed);
   list.inert=collapsed;
   panel.querySelectorAll('.adaptive-suggestions-close').forEach(toggle=>{toggle.textContent=collapsed?'⌃':'⌄';toggle.setAttribute('aria-expanded',collapsed?'false':'true');toggle.setAttribute('aria-label',collapsed?'Expand suggestions':'Collapse suggestions');});
