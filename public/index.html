@@ -554,11 +554,18 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
   border-top-left-radius: 4px; color: var(--text-primary);
 }
 .user-wave .wave-bubble {
-  background: #153a36;
-  border: 1px solid #315e55;
+  background: color-mix(in srgb, #272334 83%, var(--sent-mood, #a393bc));
+  border: 1px solid color-mix(in srgb, #42384e 65%, var(--sent-mood, #a393bc));
+  border-inline-end: 3px solid var(--sent-mood, #a393bc);
   border-top-right-radius: 4px; color: var(--text-primary);
   white-space: pre-wrap;
 }
+.user-wave[data-sent-mood="drip"] { --sent-mood:#facc15; }
+.user-wave[data-sent-mood="shallow"] { --sent-mood:#35c98a; }
+.user-wave[data-sent-mood="calm"] { --sent-mood:#4fc3f7; }
+.user-wave[data-sent-mood="analytical"] { --sent-mood:#9b7aff; }
+.user-wave[data-sent-mood="stormy"] { --sent-mood:#ff805c; }
+.reflection-section[open] .reflection-section-body { padding-top: 6px; }
 .wave-time { font-size: 9px; color: var(--text-dim); }
 .user-wave .wave-time { text-align: right; }
 
@@ -1371,6 +1378,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
           <span class="mood-dot" style="background:var(--stormy)"></span>⛈️ Stormy — write with bite
         </div>
         <div class="mode-continuity"><strong>Same chat. Different lens.</strong> Expect replies in the selected mood’s tone, depth, and length.</div>
+        <div class="mode-continuity">Use /drip, /shallow, /calm, /deepdive, or /stormy at either end of your message.</div>
       </div>
     </div>
 
@@ -1936,7 +1944,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const prompt=event.dataTransfer?.getData('application/x-lake-next-wave');
       if(!prompt)return;
       event.preventDefault();
-      lakeInput.value=lakeInput.value.trimEnd() ? lakeInput.value.trimEnd()+'\n\n'+prompt : prompt;
+      lakeInput.value=lakeInput.value.trimEnd() ? lakeInput.value.trimEnd()+'\n\n'+prompt+'\n\n' : prompt+'\n\n';
       lakeInput.focus();
       lakeInput.setSelectionRange(lakeInput.value.length,lakeInput.value.length);
       scheduleInputResize(lakeInput);
@@ -2362,6 +2370,10 @@ function renderAdaptiveSuggestions() {
     list.addEventListener('pointerleave',()=>{if(drag && !drag.moved)finish();});
     list.addEventListener('click',event=>{if(list.dataset.justDragged==='true'){event.preventDefault();event.stopPropagation();}},true);
   }
+  const composer=document.getElementById('lakeInput');
+  if(composer)composer.placeholder=suggestions.length
+    ? (window.matchMedia?.('(pointer: fine)')?.matches ? 'Send a wave · drag a pill here or type W1' : 'Send a wave · type W1 to use a suggestion')
+    : 'Send a wave into The Lake...';
   panel.hidden=!suggestions.length;panel.dataset.mood=currentMood;panel.classList.toggle('rail-dockward',localStorage.getItem(storageKey('railSwipeMode'))==='down');list.replaceChildren();
   if(suggestionCycleReply!==reply){
     clearTimeout(suggestionCycleTimer);
@@ -2392,18 +2404,19 @@ function renderAdaptiveSuggestions() {
   suggestions.forEach((suggestion,index)=>{
     const item=document.createElement('div');item.className='adaptive-suggestion';
     const main=document.createElement('button');main.className='adaptive-suggestion-main';main.type='button';main.title=suggestion.why || suggestion.prompt;
+    const waveNumber='W'+(index+1);
     const moodLabel=suggestion.mood && suggestion.mood!==currentMood
       ? (suggestion.mood==='analytical' ? 'Deep Dive' : suggestion.mood[0].toUpperCase()+suggestion.mood.slice(1)) : '';
     const label=suggestion.prompt.includes('Focus specifically on this passage from your last answer:')
       ? suggestion.label.split(' — ',1)[0] : suggestion.label;
-    main.textContent=moodLabel ? label+' · '+moodLabel : label;
+    main.textContent=waveNumber+' · '+(moodLabel ? label+' · '+moodLabel : label);
     main.onclick=()=>chooseAdaptiveSuggestion(index);
     main.draggable=true;
     main.addEventListener('dragstart',event=>{
       if(!event.dataTransfer)return;
       panel.dataset.draggingWave='true';
       event.dataTransfer.effectAllowed='copy';
-      event.dataTransfer.setData('application/x-lake-next-wave',suggestion.prompt);
+      event.dataTransfer.setData('application/x-lake-next-wave',waveNumber+'- '+suggestion.prompt);
     });
     main.addEventListener('dragend',()=>{delete panel.dataset.draggingWave;});
     item.append(main);list.append(item);
@@ -3984,6 +3997,17 @@ async function sendWave(options = {}) {
     if(!text){if(options.requestText==null)input.value='';return;}
   }
   const visibleText = options.visibleText ?? text;
+  if(options.requestText==null){
+    const shortcut=text.match(/^W(10|[1-9])(?:\s+(?:and\s+)?W?(10|[1-9]))?(?=\s|$)/i);
+    if(shortcut){
+      const suggestions=latestSuggestionReply()?.promptSuggestions || [];
+      const numbers=[...new Set(shortcut.slice(1).filter(Boolean))];
+      if(numbers.every(number=>suggestions[Number(number)-1])){
+        const prompts=numbers.map(number=>'W'+number+'- '+suggestions[Number(number)-1].prompt);
+        text=[...prompts,text.slice(shortcut[0].length).trim()].filter(Boolean).join('\n\n');
+      }
+    }
+  }
   if (!text && selectedFiles.length === 0) return;
   waveInFlight = true;
   let origin;
@@ -4060,7 +4084,7 @@ async function sendWave(options = {}) {
     } catch(e) { console.warn('Could not convert file:', file.name, e); }
   }
 
-  const userMessage={ role: 'user', content: visibleText + attachmentLabel, time: timeStr, attachments: base64Attachments,
+  const userMessage={ role: 'user', mood:origin.mood, content: visibleText + attachmentLabel, time: timeStr, attachments: base64Attachments,
     ...(globalThis.pendingReplySource?{replyTo:globalThis.pendingReplySource}:{}),...(globalThis.pendingBranchSource?{branchSource:globalThis.pendingBranchSource}:{}),
     ...(options.action ? { action: options.action } : {}) };
   globalThis.pendingReplySource=null;globalThis.pendingBranchSource=null;
@@ -4191,6 +4215,7 @@ function appendUserWave(text, timeStr, scroll, attachments = [],messageRef=null)
   const ripple    = document.getElementById('ripple');
   const div       = document.createElement('div');
   div.className   = 'wave user-wave';
+  if(messageRef?.mood)div.dataset.sentMood=messageRef.mood;
   div._lakeMessageContent=String(text||'');div._lakeMessageRef=messageRef;
 
   let attachHTML = '';
@@ -4297,7 +4322,7 @@ function formatReflection(text,expandAll=false) {
   if(sections.length<2)return formatReflectionInline(text);
   let html=formatReflectionInline(lead.join('\n'));
   html+='<div class="reflection-sections"><div class="reflection-hint">Tap a headline to open its section. Double-tap the message to open or close all sections.</div>';
-  sections.forEach((section,index)=>{html+=`<details class="reflection-section" ${expandAll || index===sections.length-1 ? 'open' : ''}><summary>${formatReflectionInline(section.heading)}</summary><div class="reflection-section-body">${formatReflectionInline(section.body.join('\n'))}</div></details>`;});
+  sections.forEach((section,index)=>{html+=`<details class="reflection-section" ${expandAll || index===sections.length-1 ? 'open' : ''}><summary>${formatReflectionInline(section.heading)}</summary><div class="reflection-section-body">${formatReflectionInline(section.body.join('\n').trim())}</div></details>`;});
   return html+'</div>';
 }
 function formatReflectionInline(text) {
