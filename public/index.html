@@ -617,9 +617,6 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
   gap: 5px;
   box-sizing: border-box;
 }
-.jump-top-btn { display:none; position:absolute; right:12px; bottom:calc(100% + 8px); z-index:9; width:34px; height:34px; border-radius:50%; border:1px solid var(--lake-glow); background:rgba(9,20,32,.9); color:#fff; cursor:pointer; box-shadow:0 0 10px color-mix(in srgb,var(--lake-glow) 35%,transparent); }
-.jump-top-btn.show { display:block; }
-
 /* ── PROMPT SUGGESTIONS ── */
 .adaptive-suggestions {
   position: absolute; bottom: 100%; right: 10px; width: min(600px, calc(100% - 20px)); z-index: 10;
@@ -634,6 +631,9 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
 .adaptive-suggestions-title { color: var(--text-dim); font-size: 8px; font-weight: 650; letter-spacing: .35px; }
 .adaptive-suggestions-close { width: 24px; height: 20px; border: 0; border-radius: 999px; background: transparent; color: var(--text-dim); cursor: pointer; font-size: 14px; line-height: 1; }
 .adaptive-suggestions-close { color: var(--lake-light) !important; filter: drop-shadow(0 0 6px var(--lake-glow)); text-shadow: 0 0 5px var(--lake-light), 0 0 10px var(--lake-glow); }
+.adaptive-suggestions-close { animation: nextWaveArrowPulse 1.9s ease-in-out infinite; }
+@keyframes nextWaveArrowPulse { 0%,100% { filter:drop-shadow(0 0 4px var(--lake-glow)); } 50% { filter:drop-shadow(0 0 10px var(--lake-glow)); text-shadow:0 0 7px var(--lake-light),0 0 14px var(--lake-glow); } }
+@media (prefers-reduced-motion:reduce){.adaptive-suggestions-close{animation:none;}}
 .adaptive-suggestions-close:hover { background: rgba(255,255,255,.07); color: var(--text-primary); }
 .adaptive-suggestions-list { width: 100%; display: grid; grid-template-rows: repeat(2, minmax(28px, auto)); grid-auto-flow: column; grid-auto-columns: minmax(170px, 1fr); gap: 4px; overflow-x: auto; overflow-y: hidden; justify-content: start; max-width: 100%; padding-bottom: 1px; }
 .adaptive-suggestions-list::-webkit-scrollbar { display: none; }
@@ -641,7 +641,7 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
 .adaptive-suggestion-main {
   min-height: 28px; padding: 5px 10px;
   border: 1px solid color-mix(in srgb, var(--lake-glow) 46%, var(--dock-border)); border-radius: 999px;
-  background: linear-gradient(135deg, rgba(215,245,233,.88), rgba(145,220,193,.80));
+  background: linear-gradient(135deg, rgba(45,140,240,.48), rgba(100,181,246,.38));
   color: #073b2f; box-shadow: 0 2px 10px color-mix(in srgb, var(--lake-glow) 17%, transparent);
   cursor: pointer; font: inherit; font-size: 10.5px; font-weight: 600; line-height: 1.2; text-align: left;
   text-shadow: 0 1px 0 rgba(255,255,255,.65), 0 0 5px rgba(255,255,255,.35);
@@ -1436,7 +1436,6 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
 
     <!-- SHORE DOCK -->
     <div class="shore-dock">
-      <button class="jump-top-btn" id="jumpTopButton" type="button" onclick="jumpToChatTop()" aria-label="Jump to the top of this chat" title="Jump to top">↑</button>
       <div class="speech-player" id="speechPlayer" role="region" aria-label="Read aloud controls">
         <button type="button" onclick="speechPrevious()" title="Previous passage">⏮</button>
         <button type="button" id="speechPlayPause" onclick="speechPlayPause()" title="Play or pause">▶</button>
@@ -1884,10 +1883,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
-  const wavesContainer=document.getElementById('wavesContainer');
-  wavesContainer?.addEventListener('scroll',()=>{
-    document.getElementById('jumpTopButton')?.classList.toggle('show',wavesContainer.scrollTop>Math.max(500,wavesContainer.clientHeight));
-  },{passive:true});
 });
 
 // ============================================
@@ -3790,7 +3785,6 @@ function autoResize(el) {
   el.style.height = 'auto';
   el.style.height = Math.min(el.scrollHeight, 140) + 'px';
 }
-function jumpToChatTop(){const container=document.getElementById('wavesContainer');container?.scrollTo({top:0,behavior:'smooth'});}
 function escapeHTML(str) {
   if (!str) return '';
   const div = document.createElement('div');
@@ -3956,6 +3950,7 @@ function speechSetRate(value){speechState.rate=Number(value)||1;if(speechState.p
 
 async function shareMessage(waveEl){const text=messageActionText(waveEl);try{if(navigator.share)await navigator.share({title:'The Great Lake',text});else{await navigator.clipboard.writeText(text);showToast('Message copied for sharing');}}catch(error){if(error?.name!=='AbortError')showToast('Could not share this message.');}}
 function messageSource(waveEl){return {sessionId:currentSessionId,role:waveEl.classList.contains('lake-wave')?'assistant':'user',time:waveEl.querySelector('.wave-time')?.textContent||'',content:canonicalMessageText(waveEl)};}
+function jumpToMessageTop(waveEl){waveEl?.scrollIntoView({behavior:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});}
 function replyToMessage(waveEl){const source=messageSource(waveEl);globalThis.pendingReplySource=source;const input=document.getElementById('lakeInput');input.value=`Regarding this wave:\n“${source.content.slice(0,500)}${source.content.length>500?'…':''}”\n\n`;input.focus();scheduleInputResize(input);}
 function branchFromMessage(waveEl){const source=messageSource(waveEl);newSession();globalThis.pendingBranchSource=source;const input=document.getElementById('lakeInput');input.value=`Start a new current from this wave:\n“${source.content.slice(0,900)}${source.content.length>900?'…':''}”\n\n`;input.focus();scheduleInputResize(input);}
 function exportMessage(waveEl){const text=messageActionText(waveEl);const link=document.createElement('a');link.href=URL.createObjectURL(new Blob([text],{type:'text/plain'}));link.download=LakeExportNames.sessionTranscript('txt').replace(/\.txt$/,'-message.txt');link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000);}
@@ -4022,7 +4017,7 @@ function buildBubbleActions(waveEl, isLake) {
     pinBtn.className = 'bubble-action-btn'; pinBtn.innerHTML = '📌 Pin';
     pinBtn.onclick = () => pinToCurrents(messageActionText(waveEl));
     actions.appendChild(pinBtn);
-    const actionSpecs=[['↗ Share',()=>shareMessage(waveEl)],['⬇ Export',()=>exportMessage(waveEl)],['↩ Reply To',()=>replyToMessage(waveEl)],['🌊 New Current',()=>branchFromMessage(waveEl)]];
+    const actionSpecs=[['↑ Message top',()=>jumpToMessageTop(waveEl)],['↗ Share',()=>shareMessage(waveEl)],['⬇ Export',()=>exportMessage(waveEl)],['↩ Reply To',()=>replyToMessage(waveEl)],['🌊 New Current',()=>branchFromMessage(waveEl)]];
     actionSpecs.forEach(([label,handler])=>{const button=document.createElement('button');button.className='bubble-action-btn';button.textContent=label;button.onclick=handler;actions.append(button);});
     const favorite=document.createElement('button');favorite.className='bubble-action-btn';favorite.textContent=waveEl._lakeMessageRef?.favorite?'★ Favorite':'☆ Favorite';favorite.onclick=()=>toggleFavorite(waveEl,favorite);actions.append(favorite);
     const regenBtn = document.createElement('button');regenBtn.className = 'bubble-action-btn'; regenBtn.innerHTML = '🔁 Regenerate';regenBtn.onclick = () => regenerateMessage(waveEl);actions.appendChild(regenBtn);
@@ -4033,7 +4028,7 @@ function buildBubbleActions(waveEl, isLake) {
     copyBtn.onclick = () => copyText(messageActionText(waveEl));
     actions.appendChild(copyBtn);
     const pinBtn=document.createElement('button');pinBtn.className='bubble-action-btn';pinBtn.textContent='📌 Pin';pinBtn.onclick=()=>pinToCurrents(messageActionText(waveEl));actions.append(pinBtn);
-    [['↗ Share',()=>shareMessage(waveEl)],['⬇ Export',()=>exportMessage(waveEl)],['↩ Reply To',()=>replyToMessage(waveEl)],['🌊 New Current',()=>branchFromMessage(waveEl)]].forEach(([label,handler])=>{const button=document.createElement('button');button.className='bubble-action-btn';button.textContent=label;button.onclick=handler;actions.append(button);});
+    [['↑ Message top',()=>jumpToMessageTop(waveEl)],['↗ Share',()=>shareMessage(waveEl)],['⬇ Export',()=>exportMessage(waveEl)],['↩ Reply To',()=>replyToMessage(waveEl)],['🌊 New Current',()=>branchFromMessage(waveEl)]].forEach(([label,handler])=>{const button=document.createElement('button');button.className='bubble-action-btn';button.textContent=label;button.onclick=handler;actions.append(button);});
     const favorite=document.createElement('button');favorite.className='bubble-action-btn';favorite.textContent=waveEl._lakeMessageRef?.favorite?'★ Favorite':'☆ Favorite';favorite.onclick=()=>toggleFavorite(waveEl,favorite);actions.append(favorite);
     const editBtn = document.createElement('button');
     editBtn.className = 'bubble-action-btn'; editBtn.innerHTML = '✏️ Edit';
