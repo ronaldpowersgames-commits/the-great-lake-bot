@@ -542,7 +542,8 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
 .user-wave .wave-time { text-align: right; }
 
 /* ── BUBBLE ACTIONS ── */
-.bubble-actions { display: none; gap: 5px; margin-top: 5px; flex-wrap: wrap; }
+.bubble-actions { display: none; gap: 5px; margin-top: 5px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+.bubble-actions::-webkit-scrollbar { display: none; }
 .bubble-actions.show { display: flex; }
 .bubble-action-btn {
   padding: 4px 9px; background: rgba(45,140,240,0.08);
@@ -552,6 +553,12 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
 }
 .bubble-action-btn:hover { background: rgba(45,140,240,0.18); color: var(--lake-light); }
 .speaking .wave-bubble { border-color: var(--lake-glow); box-shadow: 0 0 12px rgba(45,140,240,0.2); }
+.speech-player { display:none; align-items:center; gap:6px; padding:6px 8px; border:1px solid var(--dock-border); border-radius:10px; background:rgba(9,20,32,.92); }
+.speech-player.show { display:flex; }
+.speech-player button,.speech-player select { border:1px solid var(--dock-border); border-radius:999px; background:rgba(45,140,240,.10); color:var(--text-primary); min-height:28px; }
+.speech-player button { min-width:30px; cursor:pointer; }
+.speech-player-progress { flex:1; min-width:50px; accent-color:var(--lake-glow); }
+.speech-player-status { color:var(--text-secondary); font-size:9px; white-space:nowrap; }
 
 /* ── ATTACHMENTS ── */
 .wave-attachments { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
@@ -610,6 +617,8 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
   gap: 5px;
   box-sizing: border-box;
 }
+.jump-top-btn { display:none; position:absolute; right:12px; bottom:calc(100% + 8px); z-index:9; width:34px; height:34px; border-radius:50%; border:1px solid var(--lake-glow); background:rgba(9,20,32,.9); color:#fff; cursor:pointer; box-shadow:0 0 10px color-mix(in srgb,var(--lake-glow) 35%,transparent); }
+.jump-top-btn.show { display:block; }
 
 /* ── PROMPT SUGGESTIONS ── */
 .adaptive-suggestions {
@@ -632,10 +641,10 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
 .adaptive-suggestion-main {
   min-height: 28px; padding: 5px 10px;
   border: 1px solid color-mix(in srgb, var(--lake-glow) 46%, var(--dock-border)); border-radius: 999px;
-  background: linear-gradient(135deg, rgba(45,140,240,.48), rgba(100,181,246,.38));
-  color: var(--text-primary); box-shadow: 0 2px 10px color-mix(in srgb, var(--lake-glow) 17%, transparent);
+  background: linear-gradient(135deg, rgba(215,245,233,.88), rgba(145,220,193,.80));
+  color: #073b2f; box-shadow: 0 2px 10px color-mix(in srgb, var(--lake-glow) 17%, transparent);
   cursor: pointer; font: inherit; font-size: 10.5px; font-weight: 600; line-height: 1.2; text-align: left;
-  color: #fff; text-shadow: 0 0 4px var(--lake-light), 0 0 9px var(--lake-glow);
+  text-shadow: 0 1px 0 rgba(255,255,255,.65), 0 0 5px rgba(255,255,255,.35);
   font-weight: 760; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .adaptive-suggestion-main:hover, .adaptive-suggestion-main:focus-visible { filter: brightness(1.13); border-color: var(--lake-light); box-shadow: 0 3px 14px color-mix(in srgb, var(--lake-glow) 28%, transparent); }
@@ -645,10 +654,19 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
 .reflection-table th, .reflection-table td { padding: 7px 9px; border-bottom: 1px solid rgba(100,181,246,.16); text-align: left; vertical-align: top; }
 .reflection-table th { background: rgba(45,140,240,.14); color: var(--lake-light); font-weight: 700; }
 .reflection-table tr:nth-child(even) td { background: rgba(255,255,255,.025); }
+@media (max-width:768px){
+  .reflection-table { min-width:0; }
+  .reflection-table thead { display:none; }
+  .reflection-table,.reflection-table tbody,.reflection-table tr,.reflection-table td { display:block; width:100%; }
+  .reflection-table tr { padding:5px 7px; border-bottom:1px solid rgba(100,181,246,.22); }
+  .reflection-table td { display:grid; grid-template-columns:minmax(80px,34%) 1fr; gap:8px; padding:5px 2px; border:0; }
+  .reflection-table td::before { content:attr(data-label); color:var(--lake-light); font-weight:700; }
+}
 @media (min-width: 769px) {
-  .adaptive-suggestions { align-self: flex-end; max-width: min(760px, 72%); }
+  .adaptive-suggestions { align-self: flex-end; width:min(1100px,calc(100% - 20px)); max-width:calc(100% - 20px); }
   .adaptive-suggestions-head { align-self: flex-end; }
-  .adaptive-suggestions-list { width: auto; max-width: 100%; grid-auto-columns: minmax(175px, 1fr); justify-content: end; }
+  .adaptive-suggestions-list { width: 100%; max-width: 100%; grid-auto-columns:minmax(145px,max-content); justify-content: start; cursor:grab; scroll-behavior:smooth; }
+  .adaptive-suggestions-list.is-dragging { cursor:grabbing; scroll-behavior:auto; user-select:none; }
 }
 .adaptive-suggestions.rail-dockward .adaptive-suggestions-list { position: absolute; top: 100%; right: 0; width: 100%; }
 .suggestions-top-row {
@@ -1297,7 +1315,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
           <h2>The Lake</h2>
           <div class="lake-header-status">
             <span class="status-dot"></span>
-            <span id="lakeStatus">Still waters — ready to reflect</span>
+          <span id="lakeStatus">Shallow water — short splashes</span>
           </div>
         </div>
       </div>
@@ -1316,7 +1334,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
       <!-- Mood selector -->
       <div class="mood-selector" id="moodSelector">
         <div class="mood-option active" data-mood="calm" onclick="setMood('calm',event)">
-          <span class="mood-dot" style="background:var(--calm)"></span>🌊 Calm — gentle, reflective
+          <span class="mood-dot" style="background:#35c98a"></span>💧 Shallow — short splashes
         </div>
         <div class="mood-option" data-mood="analytical" onclick="setMood('analytical',event)">
           <span class="mood-dot" style="background:var(--analytical)"></span>🔍 Analytical — read precisely
@@ -1418,6 +1436,16 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
 
     <!-- SHORE DOCK -->
     <div class="shore-dock">
+      <button class="jump-top-btn" id="jumpTopButton" type="button" onclick="jumpToChatTop()" aria-label="Jump to the top of this chat" title="Jump to top">↑</button>
+      <div class="speech-player" id="speechPlayer" role="region" aria-label="Read aloud controls">
+        <button type="button" onclick="speechPrevious()" title="Previous passage">⏮</button>
+        <button type="button" id="speechPlayPause" onclick="speechPlayPause()" title="Play or pause">▶</button>
+        <button type="button" onclick="stopSpeech()" title="Stop">⏹</button>
+        <button type="button" onclick="speechNext()" title="Next passage">⏭</button>
+        <input class="speech-player-progress" id="speechProgress" type="range" min="0" max="1" value="0" oninput="speechSeek(this.value)" aria-label="Reading progress">
+        <span class="speech-player-status" id="speechStatus">Ready</span>
+        <select id="speechRate" onchange="speechSetRate(this.value)" aria-label="Reading speed"><option value="0.75">0.75×</option><option value="1" selected>1×</option><option value="1.25">1.25×</option><option value="1.5">1.5×</option><option value="2">2×</option></select>
+      </div>
       <div class="files-preview-container" id="filesPreviewContainer"></div>
       <section class="adaptive-suggestions" id="adaptiveSuggestions" aria-label="Suggested next moves" hidden>
         <div class="adaptive-suggestions-head">
@@ -1474,6 +1502,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
           <textarea class="lake-input" id="lakeInput"
             placeholder="Send a wave into The Lake..."
             rows="3"
+            autocomplete="on" autocorrect="on" autocapitalize="sentences" spellcheck="true" inputmode="text"
             onkeydown="handleKey(event)"
             oninput="autoResize(this)"></textarea>
           <!-- Attach menu anchored to input-wrap -->
@@ -1546,7 +1575,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
     </div>
     <div class="depths-section">
       <h4>🌊 Lake Mood</h4>
-      <div class="depths-option active" data-mood="calm" onclick="setMood('calm',event)">🌊 Calm — gentle, reflective</div>
+      <div class="depths-option active" data-mood="calm" onclick="setMood('calm',event)">💧 Shallow — short splashes</div>
       <div class="depths-option" data-mood="analytical" onclick="setMood('analytical',event)">🔍 Analytical — read precisely</div>
       <div class="depths-option" data-mood="stormy" onclick="setMood('stormy',event)">⛈️ Stormy — write with bite</div>
       <div class="mode-continuity"><strong>Same chat. Different lens.</strong></div>
@@ -1834,6 +1863,8 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   const lakeInput = document.getElementById('lakeInput');
   if (lakeInput) {
+    lakeInput.addEventListener('compositionstart',()=>{lakeInput.dataset.composing='true';});
+    lakeInput.addEventListener('compositionend',()=>{lakeInput.dataset.composing='false';scheduleInputResize(lakeInput);});
     lakeInput.addEventListener('paste', async (e) => {
       const items = e.clipboardData && e.clipboardData.items;
       if (!items) return;
@@ -1853,6 +1884,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+  const wavesContainer=document.getElementById('wavesContainer');
+  wavesContainer?.addEventListener('scroll',()=>{
+    document.getElementById('jumpTopButton')?.classList.toggle('show',wavesContainer.scrollTop>Math.max(500,wavesContainer.clientHeight));
+  },{passive:true});
 });
 
 // ============================================
@@ -2193,12 +2228,20 @@ function renderAdaptiveSuggestions() {
     panel.dataset.gestures='true';let start=null;
     panel.addEventListener('dblclick',event=>{if(event.target.closest('button'))return;toggleAdaptiveSuggestions();});
     panel.addEventListener('touchstart',event=>{const t=event.touches[0];start={x:t.clientX,y:t.clientY};},{passive:true});
-    panel.addEventListener('touchend',event=>{if(!start)return;const t=event.changedTouches[0],dy=t.clientY-start.y,dx=t.clientX-start.x;start=null;if(Math.abs(dy)>30 && Math.abs(dy)>Math.abs(dx)){const down=localStorage.getItem(storageKey('railSwipeMode'))==='down';panel.dataset.collapsed=(down?dy<0:dy>0)?'true':'false';renderAdaptiveSuggestions();}},{passive:true});
+    panel.addEventListener('touchend',event=>{if(!start)return;const t=event.changedTouches[0],dy=t.clientY-start.y,dx=t.clientX-start.x;start=null;if(Math.abs(dy)>30 && Math.abs(dy)>Math.abs(dx)){const down=localStorage.getItem(storageKey('railSwipeMode'))==='down';const reply=latestSuggestionReply();if(reply)reply.suggestionsCollapsed=(down?dy<0:dy>0);renderAdaptiveSuggestions();saveSession().catch(()=>{});}},{passive:true});
     panel.title='Swipe down to collapse, up to expand · double-click the rail to toggle';
   }
+  if(!list.dataset.dragReady){
+    list.dataset.dragReady='true';let drag=null;
+    list.addEventListener('pointerdown',event=>{if(event.pointerType==='touch')return;drag={x:event.clientX,left:list.scrollLeft,moved:false};list.setPointerCapture?.(event.pointerId);list.classList.add('is-dragging');});
+    list.addEventListener('pointermove',event=>{if(!drag)return;const delta=event.clientX-drag.x;if(Math.abs(delta)>4)drag.moved=true;list.scrollLeft=drag.left-delta;});
+    const finish=()=>{if(!drag)return;list.dataset.justDragged=drag.moved?'true':'false';drag=null;list.classList.remove('is-dragging');setTimeout(()=>delete list.dataset.justDragged,0);};
+    list.addEventListener('pointerup',finish);list.addEventListener('pointercancel',finish);
+    list.addEventListener('click',event=>{if(list.dataset.justDragged==='true'){event.preventDefault();event.stopPropagation();}},true);
+  }
   panel.hidden=!suggestions.length;panel.dataset.mood=currentMood;panel.classList.toggle('rail-dockward',localStorage.getItem(storageKey('railSwipeMode'))==='down');list.replaceChildren();
-  const collapsed=panel.dataset.collapsed==='true';panel.classList.toggle('is-collapsed',collapsed);
-  const toggle=panel.querySelector('.adaptive-suggestions-close');if(toggle){toggle.textContent=collapsed?'⌄':'⌃';toggle.setAttribute('aria-expanded',collapsed?'false':'true');}
+  const collapsed=Boolean(reply?.suggestionsCollapsed);panel.classList.toggle('is-collapsed',collapsed);
+  const toggle=panel.querySelector('.adaptive-suggestions-close');if(toggle){toggle.textContent=collapsed?'⌃':'⌄';toggle.setAttribute('aria-expanded',collapsed?'false':'true');}
   if(!suggestions.length)return;
   suggestions.forEach((suggestion,index)=>{
     const item=document.createElement('div');item.className='adaptive-suggestion';
@@ -2207,7 +2250,7 @@ function renderAdaptiveSuggestions() {
     item.append(main);list.append(item);
   });
 }
-function toggleAdaptiveSuggestions(){const panel=document.getElementById('adaptiveSuggestions');if(!panel)return;panel.dataset.collapsed=panel.dataset.collapsed==='true'?'false':'true';renderAdaptiveSuggestions();}
+function toggleAdaptiveSuggestions(){const reply=latestSuggestionReply();if(!reply)return;reply.suggestionsCollapsed=!reply.suggestionsCollapsed;renderAdaptiveSuggestions();saveSession().catch(()=>{});}
 function dismissAdaptiveSuggestion(index,event) {
   event?.stopPropagation();const reply=latestSuggestionReply();const suggestion=reply?.promptSuggestions?.[index];if(!suggestion)return;
   saveSuggestionSignal('dismissed',suggestion);reply.promptSuggestions.splice(index,1);if(!reply.promptSuggestions.length)reply.promptSuggestionsDismissed=true;
@@ -2509,8 +2552,8 @@ function loadTide(sessionId) {
     }
   }
   chatHistory.forEach(msg => {
-    if (msg.role === 'user') appendUserWave(msg.content, msg.time, false, msg.attachments || []);
-    else if (msg.role === 'assistant') { if(!msg.snapshot){const parsed=extractAdaptiveSuggestions(msg.content,false,true);msg.content=parsed.text;if(parsed.suggestions.length)msg.promptSuggestions=msg.promptSuggestions||parsed.suggestions;} appendLakeWave(msg.content, msg.time, false, msg.snapshot, msg.archiveCoverage, msg.archiveSources, msg.transcriptContext); }
+    if (msg.role === 'user') appendUserWave(msg.content, msg.time, false, msg.attachments || [],msg);
+    else if (msg.role === 'assistant') { if(!msg.snapshot){const parsed=extractAdaptiveSuggestions(msg.content,false,true);msg.content=parsed.text;if(parsed.suggestions.length)msg.promptSuggestions=msg.promptSuggestions||parsed.suggestions;} appendLakeWave(msg.content, msg.time, false, msg.snapshot, msg.archiveCoverage, msg.archiveSources, msg.transcriptContext,msg); }
   });
   renderAdaptiveSuggestions();
   container.scrollTop = container.scrollHeight;
@@ -2893,10 +2936,10 @@ function toggleMoodSelector() { document.getElementById('moodSelector').classLis
 function applyMood(mood) {
   if (!['calm', 'analytical', 'stormy'].includes(mood)) mood = 'calm';
   currentMood = mood;
-  const glowColors = { calm: '#4fc3f7', analytical: '#7c4dff', stormy: '#ff6e40' };
+  const glowColors = { calm: '#35c98a', analytical: '#7c4dff', stormy: '#ff6e40' };
   document.documentElement.style.setProperty('--lake-glow', glowColors[mood]);
   document.querySelectorAll('[data-mood]').forEach(el => el.classList.toggle('active', el.dataset.mood === mood));
-  const statusMap = { calm: 'Still waters — ready to reflect', analytical: 'Precision mode — read the evidence', stormy: 'Rough waters — playful bite, straight talk' };
+  const statusMap = { calm: 'Shallow water — short splashes', analytical: 'Precision mode — read the evidence', stormy: 'Rough waters — playful bite, straight talk' };
   const statusEl = document.getElementById('lakeStatus');
   if (statusEl) statusEl.textContent = statusMap[mood];
   renderAdaptiveSuggestions();
@@ -3476,9 +3519,12 @@ async function sendWave(options = {}) {
     } catch(e) { console.warn('Could not convert file:', file.name, e); }
   }
 
-  if (isRequestVisible(origin)) appendUserWave(visibleText || '📎 Files attached', timeStr, true, base64Attachments);
-  origin.history.push({ role: 'user', content: visibleText + attachmentLabel, time: timeStr, attachments: base64Attachments,
-    ...(options.action ? { action: options.action } : {}) });
+  const userMessage={ role: 'user', content: visibleText + attachmentLabel, time: timeStr, attachments: base64Attachments,
+    ...(globalThis.pendingReplySource?{replyTo:globalThis.pendingReplySource}:{}),...(globalThis.pendingBranchSource?{branchSource:globalThis.pendingBranchSource}:{}),
+    ...(options.action ? { action: options.action } : {}) };
+  globalThis.pendingReplySource=null;globalThis.pendingBranchSource=null;
+  origin.history.push(userMessage);
+  if (isRequestVisible(origin)) appendUserWave(visibleText || '📎 Files attached', timeStr, true, base64Attachments,userMessage);
 
   if (!options.snapshot && isRequestVisible(origin)) {
     if(!options.preserveDraft) {input.value='';input.style.height='auto';}
@@ -3532,7 +3578,7 @@ async function sendWave(options = {}) {
       origin.history.push(reply);
       await saveSession(origin);
       if (isRequestVisible(origin)) {
-        appendLakeWave(cleanReflection, reflectionTime, true, reply.snapshot, reply.archiveCoverage, reply.archiveSources, reply.transcriptContext);
+        appendLakeWave(cleanReflection, reflectionTime, true, reply.snapshot, reply.archiveCoverage, reply.archiveSources, reply.transcriptContext,reply);
         renderAdaptiveSuggestions();
         if (!options.snapshot) updateCurrents(text);
       } else showReplyNotice(origin, reply);
@@ -3561,11 +3607,12 @@ async function sendWave(options = {}) {
 // ============================================
 // RENDER WAVES
 // ============================================
-function appendUserWave(text, timeStr, scroll, attachments = []) {
+function appendUserWave(text, timeStr, scroll, attachments = [],messageRef=null) {
   const container = document.getElementById('wavesContainer');
   const ripple    = document.getElementById('ripple');
   const div       = document.createElement('div');
   div.className   = 'wave user-wave';
+  div._lakeMessageContent=String(text||'');div._lakeMessageRef=messageRef;
 
   let attachHTML = '';
   if (attachments.length > 0) {
@@ -3604,19 +3651,20 @@ function appendUserWave(text, timeStr, scroll, attachments = []) {
   if (scroll) container.scrollTop = container.scrollHeight;
 }
 
-function appendLakeWave(text, timeStr, scroll, snapshot, archiveCoverage, archiveSources, transcriptContext) {
+function appendLakeWave(text, timeStr, scroll, snapshot, archiveCoverage, archiveSources, transcriptContext,messageRef=null) {
   if(!snapshot) text=LakeAdaptiveSuggestions.extract(String(text||'')).text;
   const container = document.getElementById('wavesContainer');
   const ripple    = document.getElementById('ripple');
   const div       = document.createElement('div');
   div.className   = 'wave lake-wave';
+  div._lakeMessageContent=String(text||'');div._lakeMessageRef=messageRef;
   div.innerHTML   = `
     <div class="wave-avatar">🌊</div>
     <div class="wave-content">
       <div class="wave-sender">The Lake</div>
       <div class="wave-bubble">${snapshot
         ? `<strong>AI handoff ready</strong><div>${snapshot.sessionCount} conversation${snapshot.sessionCount === 1 ? '' : 's'} · ${snapshot.messageCount} source messages</div><details class="snapshot-details"><summary>View JSON</summary><pre class="snapshot-json">${escapeHTML(text)}</pre></details>`
-        : formatReflection(text)}</div>
+        : formatReflection(text,scroll || messageRef?.sectionsExpanded)}</div>
       <div class="wave-time">${timeStr}</div>
     </div>`;
 
@@ -3624,6 +3672,12 @@ function appendLakeWave(text, timeStr, scroll, snapshot, archiveCoverage, archiv
   else container.appendChild(div);
 
   if (!snapshot) attachBubbleActions(div);
+  if(!snapshot && messageRef){
+    div.querySelectorAll('.reflection-section').forEach(section=>section.addEventListener('toggle',()=>{
+      messageRef.sectionsExpanded=[...div.querySelectorAll('.reflection-section')].every(item=>item.open);
+      saveSession().catch(()=>{});
+    }));
+  }
   showLatestBubbleActions();
   if(archiveCoverage) {
     const coverage = document.createElement('div');coverage.className='wave-time archive-coverage';
@@ -3653,7 +3707,7 @@ function appendLakeWave(text, timeStr, scroll, snapshot, archiveCoverage, archiv
   if (scroll) container.scrollTop = container.scrollHeight;
 }
 
-function formatReflection(text) {
+function formatReflection(text,expandAll=false) {
   const lines=String(text||'').split(/\r?\n/);
   const sectionAt=line=>/^(#{2,4}\s+.+|\d+(?:\.\d+)*\.\s+[^\n]{3,100})$/.test(line.trim());
   const sections=[];let lead=[];let current=null;
@@ -3664,7 +3718,7 @@ function formatReflection(text) {
   if(sections.length<2)return formatReflectionInline(text);
   let html=formatReflectionInline(lead.join('\n'));
   html+='<div class="reflection-sections"><div class="reflection-hint">Double-tap to expand or collapse sections · hold to hear aloud</div>';
-  sections.forEach((section,index)=>{html+=`<details class="reflection-section" ${index===0?'open':''}><summary>${formatReflectionInline(section.heading)}</summary><div class="reflection-section-body">${formatReflectionInline(section.body.join('\n'))}</div></details>`;});
+  sections.forEach((section,index)=>{html+=`<details class="reflection-section" ${(expandAll || index===0)?'open':''}><summary>${formatReflectionInline(section.heading)}</summary><div class="reflection-section-body">${formatReflectionInline(section.body.join('\n'))}</div></details>`;});
   return html+'</div>';
 }
 function formatReflectionInline(text) {
@@ -3673,7 +3727,7 @@ function formatReflectionInline(text) {
     if(lines[i].includes('|') && i+1<lines.length && /^\s*\|?\s*:?-{2,}/.test(lines[i+1])){
       const rows=[lines[i]]; i++; rows.push(lines[i]); while(i+1<lines.length && lines[i+1].includes('|'))rows.push(lines[++i]);
       const cells=row=>row.replace(/^\s*\|/,'').replace(/\|\s*$/,'').split('|').map(cell=>cell.trim()); const head=cells(rows[0]);
-      const body=rows.slice(2).map(cells).map(row=>'<tr>'+head.map((_,n)=>`<td>${escapeHTML(row[n]||'')}</td>`).join('')+'</tr>').join('');
+      const body=rows.slice(2).map(cells).map(row=>'<tr>'+head.map((heading,n)=>`<td data-label="${escapeHTML(heading)}">${escapeHTML(row[n]||'')}</td>`).join('')+'</tr>').join('');
       const table='<div class="reflection-table-wrap"><table class="reflection-table"><thead><tr>'+head.map(cell=>`<th>${escapeHTML(cell)}</th>`).join('')+'</tr></thead><tbody>'+body+'</tbody></table></div>';
       const token=`LAKE_TABLE_TOKEN_${tableTokens.length}`;tableTokens.push(table);kept.push(token);
     } else kept.push(lines[i]);
@@ -3713,7 +3767,7 @@ function showRipple() {
 function hideRipple() {
   const ripple = document.getElementById('ripple');
   if (ripple) ripple.classList.remove('show');
-  const moods  = { calm: 'Still waters — ready to reflect', analytical: 'Deep scan mode — precision active', stormy: 'Rough waters — direct, evidence-led' };
+  const moods  = { calm: 'Shallow water — short splashes', analytical: 'Deep scan mode — precision active', stormy: 'Rough waters — direct, evidence-led' };
   const statusEl = document.getElementById('lakeStatus');
   if (statusEl) statusEl.textContent = moods[currentMood];
 }
@@ -3722,16 +3776,21 @@ function hideRipple() {
 // INPUT
 // ============================================
 function handleKey(e) {
+  if(e.target?.dataset?.composing==='true')return;
   if (e.key === 'Enter' && window.matchMedia && window.matchMedia('(max-width: 768px)').matches) return;
   if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.keyCode !== 229) {
     e.preventDefault();
     if (!e.repeat) sendWave();
   }
 }
+let inputResizeFrame=0;
+function scheduleInputResize(el){cancelAnimationFrame(inputResizeFrame);inputResizeFrame=requestAnimationFrame(()=>autoResize(el));}
 function autoResize(el) {
+  if(el.dataset.composing==='true')return;
   el.style.height = 'auto';
   el.style.height = Math.min(el.scrollHeight, 140) + 'px';
 }
+function jumpToChatTop(){const container=document.getElementById('wavesContainer');container?.scrollTo({top:0,behavior:'smooth'});}
 function escapeHTML(str) {
   if (!str) return '';
   const div = document.createElement('div');
@@ -3792,7 +3851,7 @@ function exportAsTxt() {
     const isUser = wave.classList.contains('user-wave');
     const sender = isUser ? '👤 YOU' : '🌊 THE LAKE';
     const time   = wave.querySelector('.wave-time')?.innerText || '';
-    const text   = wave.querySelector('.wave-bubble')?.innerText || '';
+    const text   = canonicalMessageText(wave);
     if (text) transcript += `[${time}] ${sender}:\n${text}\n\n`;
   });
   const a  = document.createElement('a');
@@ -3808,7 +3867,7 @@ function exportAsPDF() {
   waves.forEach(wave => {
     const isUser = wave.classList.contains('user-wave');
     const time   = wave.querySelector('.wave-time')?.innerText || '';
-    const text   = wave.querySelector('.wave-bubble')?.innerText || '';
+    const text   = canonicalMessageText(wave);
     if(text)messages.push({sender:isUser?'You':'The Lake',role:isUser?'user':'lake',time,text});
   });
   const id='lake-transcript-'+Date.now()+'-'+Math.random().toString(36).slice(2,8);
@@ -3839,32 +3898,68 @@ function exportAsPDF() {
 // MOBILE BACK BUTTON
 // ============================================
 history.pushState({ lake: true }, '');
-window.addEventListener('popstate', () => {
-  if (document.getElementById('welcomeScreen')) return;
-  newSession();
-  history.pushState({ lake: true }, '');
-});
+function closeTopmostLayer(){
+  const shown=(id,selector='.show')=>document.getElementById(id)?.matches(selector);
+  if(shown('attachmentLightbox')){document.getElementById('attachmentLightbox').classList.remove('show');return true;}
+  if(shown('crewCardOverlay')){closeCrewCard();return true;}
+  if(shown('crewModalOverlay')){document.getElementById('crewModalOverlay').classList.remove('show');return true;}
+  if(shown('folderModalOverlay')){closeFolderDialog();return true;}
+  if(shown('helpOverlay')){closeHelp();return true;}
+  if(shown('depthsPanel')){document.getElementById('depthsPanel').classList.remove('show');return true;}
+  if(shown('moodSelector')){document.getElementById('moodSelector').classList.remove('show');return true;}
+  const menus=[['attachMenu','show'],['shareMenu','display'],['snapshotMenu','hidden'],['sourceMenu','hidden']];
+  for(const [id,mode] of menus){const el=document.getElementById(id);if(!el)continue;if((mode==='show'&&el.classList.contains('show'))||(mode==='display'&&getComputedStyle(el).display!=='none')||(mode==='hidden'&&!el.hidden)){if(mode==='show')el.classList.remove('show');else if(mode==='display')el.style.display='none';else el.hidden=true;return true;}}
+  const dock=document.getElementById('dock');if(dock?.classList.contains('open')){toggleDock();return true;}
+  return false;
+}
+window.addEventListener('popstate', () => {if(closeTopmostLayer())history.pushState({lake:true},'');});
+document.addEventListener('keydown',event=>{if(event.key==='Escape'&&closeTopmostLayer()){event.preventDefault();event.stopPropagation();}});
 
 // ============================================
 // BUBBLE ACTIONS
 // ============================================
 let currentUtterance = null;
+const speechState={wave:null,chunks:[],index:0,rate:1,paused:false,playing:false};
+globalThis.pendingReplySource=null;globalThis.pendingBranchSource=null;
+
+function canonicalMessageText(waveEl){return String(waveEl?._lakeMessageContent||waveEl?.querySelector('.wave-bubble')?.innerText||'').trim();}
+function selectedMessageText(waveEl){
+  const selection=window.getSelection?.();if(!selection || selection.isCollapsed || !selection.toString().trim())return '';
+  const range=selection.rangeCount?selection.getRangeAt(0):null;const bubble=waveEl?.querySelector('.wave-bubble');
+  return range && bubble && bubble.contains(range.commonAncestorContainer)?selection.toString().trim():'';
+}
+function messageActionText(waveEl){return selectedMessageText(waveEl)||canonicalMessageText(waveEl);}
 
 function copyText(text) { navigator.clipboard.writeText(text).then(() => showToast('Copied 📋')); }
 
-function speakText(text, btn) {
-  if (window.speechSynthesis.speaking) {
-    window.speechSynthesis.cancel();
-    document.querySelectorAll('.bubble-action-btn.speaking-btn').forEach(b => b.textContent = '🔊 Speak');
-    if (currentUtterance?.text === text) return;
-  }
-  const utterance  = new SpeechSynthesisUtterance(text);
-  utterance.rate   = 0.93; utterance.pitch = 1;
-  currentUtterance = utterance;
-  utterance.onstart = () => { btn.textContent = '⏹ Stop'; btn.classList.add('speaking-btn'); btn.closest('.wave')?.classList.add('speaking'); };
-  utterance.onend   = () => { btn.textContent = '🔊 Speak'; btn.classList.remove('speaking-btn'); btn.closest('.wave')?.classList.remove('speaking'); };
-  window.speechSynthesis.speak(utterance);
+function speechChunks(text){const pieces=String(text||'').match(/[^.!?\n]+(?:[.!?]+|\n+|$)/g)||[];return pieces.map(item=>item.trim()).filter(Boolean);}
+function updateSpeechPlayer(){
+  const player=document.getElementById('speechPlayer'),button=document.getElementById('speechPlayPause'),progress=document.getElementById('speechProgress'),status=document.getElementById('speechStatus');
+  if(!player)return;player.classList.toggle('show',Boolean(speechState.chunks.length));button.textContent=speechState.playing&&!speechState.paused?'⏸':'▶';progress.max=Math.max(1,speechState.chunks.length);progress.value=Math.min(speechState.index,speechState.chunks.length);status.textContent=speechState.chunks.length?`${Math.min(speechState.index+1,speechState.chunks.length)} / ${speechState.chunks.length}`:'Ready';
 }
+function speakCurrentChunk(){
+  window.speechSynthesis.cancel();if(!speechState.chunks.length)return;
+  speechState.index=Math.max(0,Math.min(speechState.index,speechState.chunks.length-1));
+  const utterance=new SpeechSynthesisUtterance(speechState.chunks[speechState.index]);utterance.rate=speechState.rate;currentUtterance=utterance;
+  utterance.onstart=()=>{speechState.playing=true;speechState.paused=false;speechState.wave?.classList.add('speaking');updateSpeechPlayer();};
+  utterance.onend=()=>{if(!speechState.playing)return;if(speechState.index<speechState.chunks.length-1){speechState.index++;speakCurrentChunk();}else stopSpeech(false);};
+  utterance.onerror=()=>stopSpeech(false);window.speechSynthesis.speak(utterance);
+}
+function speakMessage(waveEl){stopSpeech(false);speechState.wave=waveEl;speechState.chunks=speechChunks(messageActionText(waveEl));speechState.index=0;speechState.rate=Number(document.getElementById('speechRate')?.value)||1;updateSpeechPlayer();speakCurrentChunk();}
+function speakText(text,btn){const wave=btn?.closest?.('.wave');if(wave){speakMessage(wave);return;}stopSpeech(false);speechState.wave=null;speechState.chunks=speechChunks(text);speechState.index=0;updateSpeechPlayer();speakCurrentChunk();}
+function speechPlayPause(){if(!speechState.chunks.length)return;if(speechState.playing&&!speechState.paused){window.speechSynthesis.pause();speechState.paused=true;}else if(speechState.paused){window.speechSynthesis.resume();speechState.paused=false;}else speakCurrentChunk();updateSpeechPlayer();}
+function stopSpeech(clear=true){window.speechSynthesis.cancel();speechState.wave?.classList.remove('speaking');speechState.playing=false;speechState.paused=false;if(clear){speechState.chunks=[];speechState.index=0;speechState.wave=null;}updateSpeechPlayer();}
+function speechPrevious(){if(!speechState.chunks.length)return;speechState.index=Math.max(0,speechState.index-1);speakCurrentChunk();}
+function speechNext(){if(!speechState.chunks.length)return;speechState.index=Math.min(speechState.chunks.length-1,speechState.index+1);speakCurrentChunk();}
+function speechSeek(value){if(!speechState.chunks.length)return;speechState.index=Math.max(0,Math.min(speechState.chunks.length-1,Number(value)||0));speakCurrentChunk();}
+function speechSetRate(value){speechState.rate=Number(value)||1;if(speechState.playing)speakCurrentChunk();}
+
+async function shareMessage(waveEl){const text=messageActionText(waveEl);try{if(navigator.share)await navigator.share({title:'The Great Lake',text});else{await navigator.clipboard.writeText(text);showToast('Message copied for sharing');}}catch(error){if(error?.name!=='AbortError')showToast('Could not share this message.');}}
+function messageSource(waveEl){return {sessionId:currentSessionId,role:waveEl.classList.contains('lake-wave')?'assistant':'user',time:waveEl.querySelector('.wave-time')?.textContent||'',content:canonicalMessageText(waveEl)};}
+function replyToMessage(waveEl){const source=messageSource(waveEl);globalThis.pendingReplySource=source;const input=document.getElementById('lakeInput');input.value=`Regarding this wave:\n“${source.content.slice(0,500)}${source.content.length>500?'…':''}”\n\n`;input.focus();scheduleInputResize(input);}
+function branchFromMessage(waveEl){const source=messageSource(waveEl);newSession();globalThis.pendingBranchSource=source;const input=document.getElementById('lakeInput');input.value=`Start a new current from this wave:\n“${source.content.slice(0,900)}${source.content.length>900?'…':''}”\n\n`;input.focus();scheduleInputResize(input);}
+function exportMessage(waveEl){const text=messageActionText(waveEl);const link=document.createElement('a');link.href=URL.createObjectURL(new Blob([text],{type:'text/plain'}));link.download=LakeExportNames.sessionTranscript('txt').replace(/\.txt$/,'-message.txt');link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000);}
+function toggleFavorite(waveEl,button){const ref=waveEl._lakeMessageRef;const next=!(ref?.favorite||waveEl.dataset.favorite==='true');waveEl.dataset.favorite=String(next);if(ref)ref.favorite=next;button.textContent=next?'★ Favorite':'☆ Favorite';saveSession().catch(()=>{});showToast(next?'Saved to favorites':'Removed from favorites');}
 
 function regenerateMessage(waveEl) {
   waveEl.remove();
@@ -3912,34 +4007,37 @@ function showLatestBubbleActions() {
 }
 
 function buildBubbleActions(waveEl, isLake) {
-  const text    = waveEl.querySelector('.wave-bubble')?.innerText || '';
   const actions = document.createElement('div');
   actions.className = 'bubble-actions';
   if (isLake) {
     const speakBtn = document.createElement('button');
     speakBtn.className = 'bubble-action-btn'; speakBtn.innerHTML = '🔊 Speak';
-    speakBtn.onclick = () => speakText(text, speakBtn);
+    speakBtn.onclick = () => speakMessage(waveEl);
     actions.appendChild(speakBtn);
     const copyBtn = document.createElement('button');
     copyBtn.className = 'bubble-action-btn'; copyBtn.innerHTML = '📋 Copy';
-    copyBtn.onclick = () => copyText(text);
+    copyBtn.onclick = () => copyText(messageActionText(waveEl));
     actions.appendChild(copyBtn);
-    const regenBtn = document.createElement('button');
-    regenBtn.className = 'bubble-action-btn'; regenBtn.innerHTML = '🔁 Regenerate';
-    regenBtn.onclick = () => regenerateMessage(waveEl);
-    actions.appendChild(regenBtn);
     const pinBtn = document.createElement('button');
     pinBtn.className = 'bubble-action-btn'; pinBtn.innerHTML = '📌 Pin';
-    pinBtn.onclick = () => pinToCurrents(text);
+    pinBtn.onclick = () => pinToCurrents(messageActionText(waveEl));
     actions.appendChild(pinBtn);
+    const actionSpecs=[['↗ Share',()=>shareMessage(waveEl)],['⬇ Export',()=>exportMessage(waveEl)],['↩ Reply To',()=>replyToMessage(waveEl)],['🌊 New Current',()=>branchFromMessage(waveEl)]];
+    actionSpecs.forEach(([label,handler])=>{const button=document.createElement('button');button.className='bubble-action-btn';button.textContent=label;button.onclick=handler;actions.append(button);});
+    const favorite=document.createElement('button');favorite.className='bubble-action-btn';favorite.textContent=waveEl._lakeMessageRef?.favorite?'★ Favorite':'☆ Favorite';favorite.onclick=()=>toggleFavorite(waveEl,favorite);actions.append(favorite);
+    const regenBtn = document.createElement('button');regenBtn.className = 'bubble-action-btn'; regenBtn.innerHTML = '🔁 Regenerate';regenBtn.onclick = () => regenerateMessage(waveEl);actions.appendChild(regenBtn);
   } else {
+    const speakBtn=document.createElement('button');speakBtn.className='bubble-action-btn';speakBtn.textContent='🔊 Speak';speakBtn.onclick=()=>speakMessage(waveEl);actions.append(speakBtn);
     const copyBtn = document.createElement('button');
     copyBtn.className = 'bubble-action-btn'; copyBtn.innerHTML = '📋 Copy';
-    copyBtn.onclick = () => copyText(text);
+    copyBtn.onclick = () => copyText(messageActionText(waveEl));
     actions.appendChild(copyBtn);
+    const pinBtn=document.createElement('button');pinBtn.className='bubble-action-btn';pinBtn.textContent='📌 Pin';pinBtn.onclick=()=>pinToCurrents(messageActionText(waveEl));actions.append(pinBtn);
+    [['↗ Share',()=>shareMessage(waveEl)],['⬇ Export',()=>exportMessage(waveEl)],['↩ Reply To',()=>replyToMessage(waveEl)],['🌊 New Current',()=>branchFromMessage(waveEl)]].forEach(([label,handler])=>{const button=document.createElement('button');button.className='bubble-action-btn';button.textContent=label;button.onclick=handler;actions.append(button);});
+    const favorite=document.createElement('button');favorite.className='bubble-action-btn';favorite.textContent=waveEl._lakeMessageRef?.favorite?'★ Favorite':'☆ Favorite';favorite.onclick=()=>toggleFavorite(waveEl,favorite);actions.append(favorite);
     const editBtn = document.createElement('button');
     editBtn.className = 'bubble-action-btn'; editBtn.innerHTML = '✏️ Edit';
-    editBtn.onclick = () => editAndResend(text);
+    editBtn.onclick = () => editAndResend(canonicalMessageText(waveEl));
     actions.appendChild(editBtn);
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'bubble-action-btn'; deleteBtn.innerHTML = '🗑️ Delete';
@@ -3966,7 +4064,7 @@ function attachBubbleActions(waveEl) {
     bubble.addEventListener('pointerdown', event=>{
       if(!isLake || event.button>0)return;
       held=false; cancelHold();
-      holdTimer=setTimeout(()=>{held=true; const speakProxy={textContent:'🔊 Speak',classList:{add(){},remove(){}} ,closest:()=>waveEl}; speakText(bubble.innerText.replace(/Double-tap to expand or collapse sections · hold to hear aloud/g,'').trim(),speakProxy); showToast('Reading this wave aloud');},650);
+      holdTimer=setTimeout(()=>{held=true;speakMessage(waveEl);showToast('Reading this wave aloud');},650);
     });
     bubble.addEventListener('pointerup',cancelHold); bubble.addEventListener('pointerleave',cancelHold); bubble.addEventListener('pointercancel',cancelHold);
   }

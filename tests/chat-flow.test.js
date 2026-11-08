@@ -88,7 +88,7 @@ test('the interface supplies onboarding moves on a first reply without model sug
   const context=browserContext();
   context.fetch=async (url,options)=>{context.sent=options.body;return {ok:true,json:async()=>({reflection:'A useful first answer.',model:'gpt-4o-test'})};};
   await vm.runInContext('sendWave({requestText:"Help me understand this situation"})',context);
-  assert.equal(vm.runInContext('chatHistory.at(-1).promptSuggestions.length',context),6);
+  assert.equal(vm.runInContext('chatHistory.at(-1).promptSuggestions.length',context),8);
   assert.equal(vm.runInContext('chatHistory.at(-1).promptSuggestions[0].kind',context),'drill_down');
 });
 
@@ -181,7 +181,8 @@ test('modes have distinct conversational behaviors and Stormy keeps the edge off
   const calm = context.getMoodContext('calm');
   const analytical = context.getMoodContext('analytical');
   const stormy = context.getMoodContext('stormy');
-  assert.match(calm, /room for the user to find their own words/);
+  assert.match(calm, /CURRENT LAKE MOOD: SHALLOW/);
+  assert.match(calm, /short splashes/);
   assert.match(analytical, /what evidence would distinguish them/);
   assert.match(stormy, /dry wit/);
   assert.match(stormy, /confident, mischievous openers/);
@@ -510,11 +511,10 @@ test('follow-up directions are specific, compact and subordinate to the user pac
     const {handler,requests}=routeContext();
     await handler({body:{message:'Read this exchange',mood,firstResponse:'true',suggestionProfile:JSON.stringify({chosen:{test:3},dismissed:{quiz:2},recent_chosen_kinds:['test']})},files:[]},{json(){},status(){return this;}});
     const prompt=requests.at(-1).messages[0].content;
-    assert.match(prompt,/one or two concrete next directions/);
-    assert.match(prompt,/use up to three when the paths are genuinely distinct/);
-    assert.match(prompt,/Do not append suggestions to every response/);
-    assert.match(prompt,/suggestion OR the most useful Socratic question/);
-    assert.match(prompt,/explicit final-answer or no-follow-up requests/);
+    assert.match(prompt,/even set of 6, 8 or 10/);
+    assert.match(prompt,/default to 8/i);
+    assert.match(prompt,/visible answer should stay clean/);
+    assert.match(prompt,/explicitly asks for no follow-up/);
     assert.match(prompt,/Never withhold the requested answer/);
     assert.match(prompt,/READABLE ANSWER SHAPE/);
     assert.match(prompt,/begin with a genuinely quick read/);

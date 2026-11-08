@@ -43,6 +43,15 @@ test('a first reply always has useful onboarding moves when the model omits them
   assert.deepEqual(suggestions.ensureFirstResponse({text:'First reply.',suggestions:modelSet},true).suggestions,modelSet);
 });
 
+test('the rail normalizes suggestions to a unique even set with eight by default',()=>{
+  const result=suggestions.ensureAlwaysSuggestions({text:'Answer',suggestions:[
+    {label:'Specific evidence',prompt:'Trace the evidence in this answer.',kind:'drill_down'},
+    {label:'Specific evidence',prompt:'Trace the evidence in this answer.',kind:'drill_down'}
+  ]},true);
+  assert.equal(result.suggestions.length,8);
+  assert.equal(new Set(result.suggestions.map(item=>`${item.label}|${item.prompt}`.toLowerCase())).size,8);
+});
+
 test('tap and dismissal signals stay bounded and non-identifying',()=>{
   let profile=suggestions.record({},'chosen',{kind:'test'});
   profile=suggestions.record(profile,'chosen',{kind:'test'});
@@ -57,7 +66,7 @@ test('adaptive UI uses compact mood-colored chips and remains dismissible',()=>{
   assert.match(html,/toggleAdaptiveSuggestions\(\)/);
   assert.match(html,/align-items: flex-end/);
   assert.match(html,/border-radius: 999px/);
-  assert.match(html,/linear-gradient\(135deg, rgba\(45,140,240/);
+  assert.match(html,/color: #073b2f/);
   assert.match(html,/grid-template-rows: repeat\(2/);
   assert.match(html,/overflow-x: auto/);
   assert.match(html,/adaptive-suggestions\.is-collapsed \.adaptive-suggestions-list/);

@@ -18,7 +18,7 @@
     if(!match)return {text:visible,suggestions:[]};
     try {
       const parsed=JSON.parse(match[1]);
-      const suggestions=(Array.isArray(parsed.suggestions)?parsed.suggestions:[]).slice(0,3).map(item=>({
+      const suggestions=(Array.isArray(parsed.suggestions)?parsed.suggestions:[]).slice(0,10).map(item=>({
         label:label(item?.label),
         prompt:text(item?.prompt,600),
         kind:KINDS.has(item?.kind)?item.kind:'branch',
@@ -48,30 +48,44 @@
     {label:'What would change the read?',prompt:'What evidence would change or weaken this reading?',kind:'test',why:'Turns confidence into a practical test.'},
     {label:'Bring it down to one move',prompt:'Turn your answer into one practical next move I can take.',kind:'action',why:'Converts reflection into an actionable next step.'},
     {label:'Make the pattern memorable',prompt:'Give me the shortest memorable explanation of the pattern here.',kind:'reinforce',why:'Leaves the useful pattern easy to carry forward.'},
-    {label:'Quiz me on the judgment',prompt:'Quiz me with one useful question about the judgment call in this answer.',kind:'quiz',why:'Checks whether the insight has landed.'}
+    {label:'Quiz me on the judgment',prompt:'Quiz me with one useful question about the judgment call in this answer.',kind:'quiz',why:'Checks whether the insight has landed.'},
+    {label:'Trace the evidence',prompt:'Trace the strongest evidence behind this answer and separate it from inference.',kind:'drill_down',why:'Makes the reasoning easier to inspect.'},
+    {label:'Pressure-test the next move',prompt:'Pressure-test the proposed next move and show me its main risk or trade-off.',kind:'test',why:'Tests whether the action survives contact with the constraints.'}
   ];
 
   function ensureScoreBreakdown(result){
     const value=result && typeof result==='object'?result:{text:String(result||''),suggestions:[]};
     const visible=String(value.text||'');
     const isLakeScore=/(?:\b(?:overall\s+)?lake score\b|\blake verdict\b|\bscore card\b)/i.test(visible) && /\b\d+(?:\.\d+)?\s*\/\s*10\b/.test(visible);
-    const suggestions=Array.isArray(value.suggestions)?value.suggestions.slice(0,3):[];
+    const suggestions=Array.isArray(value.suggestions)?value.suggestions.slice(0,10):[];
     if(!isLakeScore || suggestions.some(item=>/scored well|scored poorly|flow pattern/i.test(`${item.label} ${item.prompt}`)))return {...value,suggestions};
-    return {...value,suggestions:[SCORE_BREAKDOWN,...suggestions].slice(0,3)};
+    return {...value,suggestions:[SCORE_BREAKDOWN,...suggestions].slice(0,10)};
   }
 
   function ensureFirstResponse(result,required){
     const value=result && typeof result==='object'?result:{text:String(result||''),suggestions:[]};
-    const suggestions=Array.isArray(value.suggestions)?value.suggestions.slice(0,3):[];
+    const suggestions=Array.isArray(value.suggestions)?value.suggestions.slice(0,10):[];
     return required && !suggestions.length?{...value,suggestions:FIRST_RESPONSE_MOVES.map(item=>({...item}))}:{...value,suggestions};
   }
   function ensureAlwaysSuggestions(result,enabled){
     const value=result && typeof result==='object'?result:{text:String(result||''),suggestions:[]};
-    const suggestions=Array.isArray(value.suggestions)?value.suggestions.slice(0,8):[];
+    const raw=Array.isArray(value.suggestions)?value.suggestions:[];
+    const seen=new Set();
+    const suggestions=[];
+    for(const item of raw){
+      const normalized={label:label(item?.label),prompt:text(item?.prompt,600),kind:KINDS.has(item?.kind)?item.kind:'branch',why:text(item?.why,180)};
+      const key=(normalized.label+'|'+normalized.prompt).toLowerCase();
+      if(!normalized.label || !normalized.prompt || seen.has(key))continue;
+      seen.add(key);suggestions.push(normalized);if(suggestions.length>=10)break;
+    }
     if(!enabled)return {...value,suggestions};
     const labels=new Set(suggestions.map(item=>String(item?.label||'').toLowerCase()));
-    for(const item of ALWAYS_MOVES){ if(suggestions.length>=6)break; if(!labels.has(item.label.toLowerCase())){suggestions.push({...item});labels.add(item.label.toLowerCase());} }
-    return {...value,suggestions:suggestions.slice(0,8)};
+    for(const item of ALWAYS_MOVES){ if(suggestions.length>=8)break; if(!labels.has(item.label.toLowerCase())){suggestions.push({...item});labels.add(item.label.toLowerCase());} }
+    if(suggestions.length%2 && suggestions.length<10){
+      const extra=ALWAYS_MOVES.find(item=>!labels.has(item.label.toLowerCase()));
+      if(extra)suggestions.push({...extra});else suggestions.pop();
+    }
+    return {...value,suggestions:suggestions.slice(0,10)};
   }
 
   function normalizeProfile(value){
