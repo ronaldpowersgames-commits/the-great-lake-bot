@@ -642,9 +642,9 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
   min-height: 28px; padding: 5px 10px;
   border: 1px solid color-mix(in srgb, var(--lake-glow) 46%, var(--dock-border)); border-radius: 999px;
   background: linear-gradient(135deg, rgba(45,140,240,.48), rgba(100,181,246,.38));
-  color: #073b2f; box-shadow: 0 2px 10px color-mix(in srgb, var(--lake-glow) 17%, transparent);
+  color: #fff; box-shadow: 0 2px 10px color-mix(in srgb, var(--lake-glow) 17%, transparent);
   cursor: pointer; font: inherit; font-size: 10.5px; font-weight: 600; line-height: 1.2; text-align: left;
-  text-shadow: 0 1px 0 rgba(255,255,255,.65), 0 0 5px rgba(255,255,255,.35);
+  text-shadow: 0 0 4px var(--lake-light), 0 0 9px var(--lake-glow);
   font-weight: 760; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .adaptive-suggestion-main:hover, .adaptive-suggestion-main:focus-visible { filter: brightness(1.13); border-color: var(--lake-light); box-shadow: 0 3px 14px color-mix(in srgb, var(--lake-glow) 28%, transparent); }
@@ -1315,7 +1315,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
           <h2>The Lake</h2>
           <div class="lake-header-status">
             <span class="status-dot"></span>
-          <span id="lakeStatus">Shallow water — short splashes</span>
+          <span id="lakeStatus">Still waters — ready to reflect</span>
           </div>
         </div>
       </div>
@@ -1333,8 +1333,9 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
       </div>
       <!-- Mood selector -->
       <div class="mood-selector" id="moodSelector">
+        <div class="mood-option" data-mood="shallow" onclick="setMood('shallow',event)"><span class="mood-dot" style="background:#35c98a"></span>💧 Shallow — short splashes</div>
         <div class="mood-option active" data-mood="calm" onclick="setMood('calm',event)">
-          <span class="mood-dot" style="background:#35c98a"></span>💧 Shallow — short splashes
+          <span class="mood-dot" style="background:var(--calm)"></span>🌊 Calm — gentle, reflective
         </div>
         <div class="mood-option" data-mood="analytical" onclick="setMood('analytical',event)">
           <span class="mood-dot" style="background:var(--analytical)"></span>🔍 Analytical — read precisely
@@ -1574,7 +1575,8 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
     </div>
     <div class="depths-section">
       <h4>🌊 Lake Mood</h4>
-      <div class="depths-option active" data-mood="calm" onclick="setMood('calm',event)">💧 Shallow — short splashes</div>
+      <div class="depths-option active" data-mood="calm" onclick="setMood('calm',event)">🌊 Calm — gentle, reflective</div>
+      <div class="depths-option" data-mood="shallow" onclick="setMood('shallow',event)">💧 Shallow — short splashes</div>
       <div class="depths-option" data-mood="analytical" onclick="setMood('analytical',event)">🔍 Analytical — read precisely</div>
       <div class="depths-option" data-mood="stormy" onclick="setMood('stormy',event)">⛈️ Stormy — write with bite</div>
       <div class="mode-continuity"><strong>Same chat. Different lens.</strong></div>
@@ -2929,12 +2931,12 @@ function editFromCard() { closeCrewCard(); setTimeout(() => openCrewModal('edit'
 function toggleMoodSelector() { document.getElementById('moodSelector').classList.toggle('show'); }
 
 function applyMood(mood) {
-  if (!['calm', 'analytical', 'stormy'].includes(mood)) mood = 'calm';
+  if (!['calm', 'analytical', 'stormy', 'shallow'].includes(mood)) mood = 'calm';
   currentMood = mood;
-  const glowColors = { calm: '#35c98a', analytical: '#7c4dff', stormy: '#ff6e40' };
+  const glowColors = { calm: '#4fc3f7', shallow: '#35c98a', analytical: '#7c4dff', stormy: '#ff6e40' };
   document.documentElement.style.setProperty('--lake-glow', glowColors[mood]);
   document.querySelectorAll('[data-mood]').forEach(el => el.classList.toggle('active', el.dataset.mood === mood));
-  const statusMap = { calm: 'Shallow water — short splashes', analytical: 'Precision mode — read the evidence', stormy: 'Rough waters — playful bite, straight talk' };
+  const statusMap = { calm: 'Still waters — ready to reflect', shallow: 'Shallow water — short splashes', analytical: 'Precision mode — read the evidence', stormy: 'Rough waters — playful bite, straight talk' };
   const statusEl = document.getElementById('lakeStatus');
   if (statusEl) statusEl.textContent = statusMap[mood];
   renderAdaptiveSuggestions();
@@ -3762,7 +3764,7 @@ function showRipple() {
 function hideRipple() {
   const ripple = document.getElementById('ripple');
   if (ripple) ripple.classList.remove('show');
-  const moods  = { calm: 'Shallow water — short splashes', analytical: 'Deep scan mode — precision active', stormy: 'Rough waters — direct, evidence-led' };
+  const moods  = { calm: 'Still waters — ready to reflect', shallow: 'Shallow water — short splashes', analytical: 'Deep scan mode — precision active', stormy: 'Rough waters — direct, evidence-led' };
   const statusEl = document.getElementById('lakeStatus');
   if (statusEl) statusEl.textContent = moods[currentMood];
 }

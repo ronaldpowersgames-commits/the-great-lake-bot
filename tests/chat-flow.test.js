@@ -181,8 +181,9 @@ test('modes have distinct conversational behaviors and Stormy keeps the edge off
   const calm = context.getMoodContext('calm');
   const analytical = context.getMoodContext('analytical');
   const stormy = context.getMoodContext('stormy');
-  assert.match(calm, /CURRENT LAKE MOOD: SHALLOW/);
-  assert.match(calm, /short splashes/);
+  assert.match(calm, /room for the user to find their own words/);
+  assert.match(context.getMoodContext('shallow'), /CURRENT LAKE MOOD: SHALLOW/);
+  assert.match(context.getMoodContext('shallow'), /short splashes/);
   assert.match(analytical, /what evidence would distinguish them/);
   assert.match(stormy, /dry wit/);
   assert.match(stormy, /confident, mischievous openers/);

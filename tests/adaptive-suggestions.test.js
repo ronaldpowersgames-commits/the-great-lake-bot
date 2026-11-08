@@ -66,7 +66,7 @@ test('adaptive UI uses compact mood-colored chips and remains dismissible',()=>{
   assert.match(html,/toggleAdaptiveSuggestions\(\)/);
   assert.match(html,/align-items: flex-end/);
   assert.match(html,/border-radius: 999px/);
-  assert.match(html,/color: #073b2f/);
+  assert.match(html,/text-shadow: 0 0 4px var\(--lake-light\), 0 0 9px var\(--lake-glow\)/);
   assert.match(html,/grid-template-rows: repeat\(2/);
   assert.match(html,/overflow-x: auto/);
   assert.match(html,/adaptive-suggestions\.is-collapsed \.adaptive-suggestions-list/);
