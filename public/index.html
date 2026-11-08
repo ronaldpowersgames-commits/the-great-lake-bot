@@ -1591,6 +1591,8 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
     </div>
     <div class="depths-section crew-modal-field">
       <label for="lakePersonalNotes">Personal memory</label>
+      <label><input id="lakeLearnProfile" type="checkbox" onchange="localStorage.setItem(storageKey('learnProfile'),String(this.checked))"> Learn from my messages across chats</label>
+      <button type="button" class="quick-action-btn" onclick="clearLearnedProfile()">Clear learned profile</button>
       <textarea id="lakePersonalNotes" maxlength="2000" rows="4" onchange="localStorage.setItem(storageKey('personalNotes'),this.value.trim())"></textarea>
       <div class="mode-continuity">Optional notes about your goals, preferences or ongoing projects. Saved on this device and sent with regular replies. Edit or clear them here anytime.</div>
     </div>
@@ -2973,7 +2975,15 @@ function setMood(mood) {
 function toggleDepths() {
   showDepthsTab('settings');
   const opened=document.getElementById('depthsPanel').classList.toggle('show');
-  if(opened)document.getElementById('lakePersonalNotes').value=localStorage.getItem(storageKey('personalNotes'))||'';
+  if(opened){
+    document.getElementById('lakePersonalNotes').value=localStorage.getItem(storageKey('personalNotes'))||'';
+    document.getElementById('lakeLearnProfile').checked=localStorage.getItem(storageKey('learnProfile'))!=='false';
+  }
+}
+function clearLearnedProfile(){
+  localStorage.removeItem(storageKey('learnedProfile'));
+  localStorage.setItem(storageKey('profileReset'),String(Date.now()));
+  showToast('Learned profile cleared');
 }
 
 // ============================================
@@ -3581,6 +3591,16 @@ async function sendWave(options = {}) {
     formData.append('showSuggestions',origin.showAdaptiveSuggestions?'true':'false');
     formData.append('suggestionProfile',JSON.stringify(suggestionPreferencePayload()));
     if(!options.snapshot)formData.append('personalNotes',(globalThis.localStorage?.getItem(origin.key.replace(/sessions$/,'personalNotes'))||'').slice(0,2000));
+    const profileStorage=globalThis.localStorage;
+    const profileKey=origin.key.replace(/sessions$/,'learnedProfile');
+    const learningKey=origin.key.replace(/sessions$/,'learnProfile');
+    const resetKey=origin.key.replace(/sessions$/,'profileReset');
+    const resetVersion=profileStorage?.getItem(resetKey);
+    const learning=Boolean(profileStorage && profileStorage.getItem(learningKey)!=='false' && !options.snapshot);
+    if(learning){
+      formData.append('learnedProfile',profileStorage.getItem(profileKey)||'[]');
+      if(options.requestText==null)formData.append('learnFromMessage','true');
+    }
     formData.append('recentWaveIntents',JSON.stringify(origin.history.filter(message=>message.promptSuggestions?.length).slice(-3).flatMap(message=>message.promptSuggestions.map(item=>item.prompt.slice(0,160)))));
     const historyToSend = origin.history.slice(-11, -1).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.content }));
     formData.append('history', JSON.stringify(historyToSend));
@@ -3595,6 +3615,17 @@ async function sendWave(options = {}) {
     hideRipple();
 
     if (data.reflection) {
+      if(learning && Array.isArray(data.profileUpdates) && data.profileUpdates.length && !origin.discarded &&
+          profileStorage.getItem(learningKey)!=='false' && profileStorage.getItem(resetKey)===resetVersion){
+        try {
+          const entries=new Map(JSON.parse(profileStorage.getItem(profileKey)||'[]').map(entry=>[entry.key,entry]));
+          for(const entry of data.profileUpdates){
+            entries.delete(entry.key);
+            if(entry.value)entries.set(entry.key,entry);
+          }
+          profileStorage.setItem(profileKey,JSON.stringify([...entries.values()].slice(-24)));
+        } catch(error){console.warn('Could not update the learned profile:',error);}
+      }
       const suggestionResult=options.snapshot?{text:JSON.stringify(data.handoff || JSON.parse(data.reflection), null, 2),suggestions:[]}:extractAdaptiveSuggestions(data.reflection,origin.firstResponseSuggestions,origin.showAdaptiveSuggestions);
       const cleanReflection = suggestionResult.text;
       const reflectionTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
