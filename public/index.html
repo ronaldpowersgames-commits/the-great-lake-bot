@@ -3702,17 +3702,17 @@ function toggleLakeHotkeys(){
       ['🎭 Personality Signals','What does the evidence suggest about the people involved? Separate observable behavior from tentative inferences. Avoid diagnoses and consider alternatives.'],
       ['⚖️ Decision Check','Which decisions were made, still need to be made, or may be getting avoided? Cite the relevant evidence and identify the next decision to unblock.'],
       ['🧠 Create a Quiz','Quiz me on the key lessons from this chat, one question at a time. Wait for my answer before revealing the explanation.'],
-      ['🛠️ Add a Skill to Work On','Help me choose one skill to develop from this chat. Define a tiny practice exercise and a success measure. Ask me to confirm the skill and remind me I can save it in Personal memory.'],
+      ['🛠️ Add a Skill to Work On','Choose one skill to develop from this chat. Define a tiny practice exercise and a success measure.','save-skill'],
       ['📈 Track My Progress','Use the examples I have shared to assess progress on the relevant skill. Name the baseline, evidence of change, and next checkpoint. Ask for a concrete example if evidence is missing.'],
       ['🌀 Lake Reflection Script','Turn the key lessons into a short, voluntary Lake-themed relaxation and reflection script for me to read or listen to. Use permissive language and preserve my ability to stop at any time.']
     ];
-    for(const [label,requestText] of actions){
+    for(const [label,requestText,actionType] of actions){
       const action=document.createElement('button');
       action.type='button';action.className='quick-action-btn';action.textContent=label;
       action.onclick=()=>{
         if(waveInFlight || pendingFileLoads)return;
         menu.classList.remove('open');button.setAttribute('aria-expanded','false');
-        sendWave({visibleText:label,requestText,preserveDraft:true});
+        sendWave({visibleText:label,requestText,preserveDraft:true,action:actionType});
       };
       menu.append(action);
     }
@@ -3925,7 +3925,7 @@ async function sendWave(options = {}) {
     const learning=Boolean(profileStorage && profileStorage.getItem(learningKey)!=='false' && !options.snapshot);
     if(learning){
       formData.append('learnedProfile',profileStorage.getItem(profileKey)||'[]');
-      if(options.requestText==null)formData.append('learnFromMessage','true');
+      if(options.requestText==null || options.action==='save-skill')formData.append('learnFromMessage','true');
     }
     formData.append('recentWaveIntents',JSON.stringify(origin.history.filter(message=>message.promptSuggestions?.length).slice(-3).flatMap(message=>message.promptSuggestions.map(item=>item.prompt.slice(0,160)))));
     const historyToSend = origin.history.slice(0,-1).filter(m=>!m.removedSourceRecord).slice(-10).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.content }));
@@ -3950,6 +3950,7 @@ async function sendWave(options = {}) {
             if(entry.value)entries.set(entry.key,entry);
           }
           profileStorage.setItem(profileKey,JSON.stringify([...entries.values()].slice(-24)));
+          if(options.action==='save-skill')showToast('Skill saved to Personal memory.');
         } catch(error){console.warn('Could not update the learned profile:',error);}
       }
       const suggestionResult=options.snapshot?{text:JSON.stringify(data.handoff || JSON.parse(data.reflection), null, 2),suggestions:[]}:extractAdaptiveSuggestions(data.reflection,origin.firstResponseSuggestions,origin.showAdaptiveSuggestions);
