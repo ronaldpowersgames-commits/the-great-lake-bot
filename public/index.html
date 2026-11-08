@@ -414,6 +414,22 @@ body {
   cursor: pointer; display: inline-block; transition: transform 0.2s ease;
 }
 .welcome-icon:hover { transform: scale(1.12); }
+.welcome-start {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 20px;
+  margin-bottom: 10px;
+  border: 1px solid var(--lake-glow);
+  border-radius: 999px;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--lake-glow) 26%, var(--dock-bg)), var(--dock-bg));
+  box-shadow: 0 0 14px color-mix(in srgb, var(--lake-glow) 25%, transparent);
+  color: var(--text-primary);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.welcome-start:hover, .welcome-start:focus-visible { box-shadow: 0 0 16px var(--lake-glow); }
 .welcome-title { font-size: 22px; font-weight: 700; color: var(--lake-light); margin-bottom: 7px; }
 .welcome-sub   { font-size: 13px; color: var(--text-dim); max-width: 320px; line-height: 1.6; margin-bottom: 20px; }
 .welcome-prompts {
@@ -1362,9 +1378,9 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
     <div class="waves-container" id="wavesContainer">
       <!-- WELCOME SCREEN -->
       <div class="welcome-screen" id="welcomeScreen">
-        <button type="button" class="welcome-icon" onclick="rideAWave()" title="Ride a Wave">🌊 Ride a Wave</button>
-        <div class="welcome-title">The Lake is Still</div>
-        <div class="welcome-sub">Drop a wave, cast a line, or let a log drift in.<br>I'll reflect back what the water reveals.</div>
+        <div class="welcome-title">Not sure where to start?</div>
+        <button type="button" class="welcome-start" onclick="rideAWave()" aria-describedby="rideWaveIntro">🌊 Ride a Wave</button>
+        <div class="welcome-sub" id="rideWaveIntro">Start with one easy question. Follow the current toward a fresh idea or a small next step.</div>
         <div class="welcome-prompts">
           <div class="welcome-prompt-featured" onclick="sendPrompt('I want to understand myself better. Ask me questions — one at a time — that help me see my patterns, values, blind spots and strengths. Build a picture of who I am as we go.')">🪞 My Persona</div>
           <div class="welcome-prompt-featured" onclick="sendPrompt('It\'s journal time. Ask me to describe my day — what happened, how I felt, what\'s sitting with me. Ask follow up questions as we go. Help me process it like a journal entry.')">📓 Today's Journal</div>
@@ -2705,9 +2721,9 @@ function newSession() {
   const container = document.getElementById('wavesContainer');
   container.innerHTML = `
     <div class="welcome-screen" id="welcomeScreen">
-      <button type="button" class="welcome-icon" onclick="rideAWave()" title="Ride a Wave">🌊 Ride a Wave</button>
-      <div class="welcome-title">The Lake is Still</div>
-      <div class="welcome-sub">Drop a wave, cast a line, or let a log drift in.<br>I'll reflect back what the water reveals.</div>
+      <div class="welcome-title">Not sure where to start?</div>
+      <button type="button" class="welcome-start" onclick="rideAWave()" aria-describedby="rideWaveIntro">🌊 Ride a Wave</button>
+      <div class="welcome-sub" id="rideWaveIntro">Start with one easy question. Follow the current toward a fresh idea or a small next step.</div>
       <div class="welcome-prompts">
         <div class="welcome-prompt-featured" onclick="sendPrompt('I want to understand myself better. Ask me questions — one at a time — that help me see my patterns, values, blind spots and strengths. Build a picture of who I am as we go.')">🪞 My Persona</div>
         <div class="welcome-prompt-featured" onclick="sendPrompt('It\\'s journal time. Ask me to describe my day — what happened, how I felt, what\\'s sitting with me. Ask follow up questions as we go. Help me process it like a journal entry.')">📓 Today's Journal</div>
