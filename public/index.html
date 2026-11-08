@@ -2271,8 +2271,19 @@ function saveSuggestionSignal(action,suggestion) {
   catch(error) { console.warn('Suggestion preference could not be saved:',error); }
 }
 function suggestionPreferencePayload() { return LakeAdaptiveSuggestions.summary(loadSuggestionProfile()); }
+function guideNextWaves(){
+  return [
+    {label:'Help me pick a starting point',kind:'action',prompt:'Based on the guide and what you know about me, help me pick one Lake feature to try first.'},
+    {label:'Show me a worked example',kind:'reinforce',prompt:'Show me a short, realistic example of using the Lake to get from a messy question to one useful next step.'}
+  ];
+}
 function latestSuggestionReply() {
-  const latest=[...chatHistory].reverse().find(message=>message.role==='assistant');
+  const index=chatHistory.findLastIndex(message=>message.role==='assistant');
+  const latest=chatHistory[index];
+  if(latest && index===chatHistory.length-1 && !latest.promptSuggestionsDismissed && !latest.promptSuggestions?.length &&
+      (latest.guide || /^\s*(?:📖\s*)?How to use The Lake\s*$/i.test(chatHistory[index-1]?.content||''))){
+    latest.promptSuggestions=guideNextWaves();
+  }
   return latest && Array.isArray(latest.promptSuggestions) && latest.promptSuggestions.length && !latest.promptSuggestionsDismissed ? latest : null;
 }
 function renderAdaptiveSuggestions() {
@@ -3789,7 +3800,8 @@ async function sendWave(options = {}) {
       const suggestionResult=options.snapshot?{text:JSON.stringify(data.handoff || JSON.parse(data.reflection), null, 2),suggestions:[]}:extractAdaptiveSuggestions(data.reflection,origin.firstResponseSuggestions,origin.showAdaptiveSuggestions);
       const cleanReflection = suggestionResult.text;
       if(origin.showAdaptiveSuggestions && cleanReflection && !suggestionResult.suggestions.length){
-        suggestionResult.suggestions.push({label:'Find one useful next step',kind:'action',prompt:'Based on what I asked and your last reply, suggest one concrete next step that builds on our conversation. If there is no action to take, give me one useful angle I have not considered.'});
+        if(options.guide)suggestionResult.suggestions.push(...guideNextWaves());
+        else suggestionResult.suggestions.push({label:'Find one useful next step',kind:'action',prompt:'Based on what I asked and your last reply, suggest one concrete next step that builds on our conversation. If there is no action to take, give me one useful angle I have not considered.'});
       }
       const reflectionTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       const reply = { role: 'assistant', content: cleanReflection, time: reflectionTime,
