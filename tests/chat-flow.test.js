@@ -84,11 +84,11 @@ test('adaptive prompt metadata is hidden from chat and stored as tappable next m
   assert.deepEqual(JSON.parse(context.sent.get('suggestionProfile')),{chosen:{},dismissed:{},recent_chosen_kinds:[]});
 });
 
-test('the interface leaves the rail empty when a first reply has no suggestions',async()=>{
+test('the interface offers a single fallback when a regular reply has no suggestions',async()=>{
   const context=browserContext();
   context.fetch=async (url,options)=>{context.sent=options.body;return {ok:true,json:async()=>({reflection:'A useful first answer.',model:'gpt-4o-test'})};};
   await vm.runInContext('sendWave({requestText:"Help me understand this situation"})',context);
-  assert.equal(vm.runInContext('chatHistory.at(-1).promptSuggestions',context),undefined);
+  assert.equal(vm.runInContext('chatHistory.at(-1).promptSuggestions.length',context),1);
 });
 
 test('late Crew suggestions retain the originating conversation and file evidence', () => {

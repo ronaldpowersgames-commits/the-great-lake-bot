@@ -3168,7 +3168,7 @@ function rideAWave(showHelp=false){
   const guidance = showHelp
     ? 'In the opening reply only, give a brief guide before the question. The floating 🌊 icon starts Ride a Wave. The yellow homepage starters include 💦 Splash (one surprising fact chosen for your interests) and 🌀 Riptide (one easy question to help you notice something about yourself). Tap the 🎭 Lake Mood button in the header to choose a mood before sending. Explicitly say you can change mood message by message to shape tone, depth and length. Start a message with a slash command such as /drip What should I try first? to switch to 💧 Drip and answer that question. The selected mood stays active until you change it again.'
     : 'Skip onboarding unless the user has explicitly asked how to start or shown confusion about the controls. If so, explain only the control they need.';
-  return sendWave({visibleText:'🌊 Ride a Wave',requestText:'Start a Ride a Wave conversation. Use relevant confirmed user context if supplied. Ask exactly one simple, engaging question. ' + guidance + ' In later turns ask one question at a time, ground insights in my answers, and when useful offer one small action and an optional later reflection. Respect a change of subject or a stop.',reuseAttachments:false});
+  return sendWave({visibleText:'🌊 Ride a Wave',requestText:'Start a Ride a Wave conversation. Use relevant confirmed user context if supplied. Ask exactly one simple, engaging question. ' + guidance + ' In later turns ask one question at a time, ground insights in my answers, and when useful offer one small action and an optional later reflection. Respect a change of subject or a stop.',reuseAttachments:false,quietOpening:!showHelp});
 }
 let rideHomeTipSeen=false;
 function dismissRideHomeTip(){
@@ -3660,7 +3660,7 @@ async function sendWave(options = {}) {
     crew: JSON.stringify(crewMembers.map(({ name, nickname, codename, role, context, observations }) => ({ name, nickname, codename, role, context, observations: (observations || []).slice(-10) })))
   };
   origin.firstResponseSuggestions=!options.snapshot && !origin.history.some(message=>message.role==='assistant') && !/\b(?:no follow[- ]?up|no suggestions?|just answer|one word)\b/i.test(text);
-  origin.showAdaptiveSuggestions=!options.snapshot && !/\b(?:no follow[- ]?up|no suggestions?|just answer|one word)\b/i.test(text);
+  origin.showAdaptiveSuggestions=!options.snapshot && !options.quietOpening && !/\b(?:no follow[- ]?up|no suggestions?|just answer|one word)\b/i.test(text);
   const reviewInventory=transcriptSources(origin.history,selectedFiles).map(file=>({id:file.sourceId,name:file.name,selected:!file.excluded}));
   origin.sourceInventory=reviewInventory;
   origin.previousReceipts=[...LakeTranscriptReview.status(transcriptSources(origin.history,selectedFiles),origin.history).receipts];
@@ -3788,6 +3788,9 @@ async function sendWave(options = {}) {
       }
       const suggestionResult=options.snapshot?{text:JSON.stringify(data.handoff || JSON.parse(data.reflection), null, 2),suggestions:[]}:extractAdaptiveSuggestions(data.reflection,origin.firstResponseSuggestions,origin.showAdaptiveSuggestions);
       const cleanReflection = suggestionResult.text;
+      if(origin.showAdaptiveSuggestions && cleanReflection && !suggestionResult.suggestions.length){
+        suggestionResult.suggestions.push({label:'Find one useful next step',kind:'action',prompt:'Based on what I asked and your last reply, suggest one concrete next step that builds on our conversation. If there is no action to take, give me one useful angle I have not considered.'});
+      }
       const reflectionTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       const reply = { role: 'assistant', content: cleanReflection, time: reflectionTime,
         ...(options.guide ? {guide:true} : {}),
@@ -3887,7 +3890,7 @@ function appendLakeWave(text, timeStr, scroll, snapshot, archiveCoverage, archiv
       <div class="wave-sender">The Lake</div>
       <div class="wave-bubble">${snapshot
         ? `<strong>AI handoff ready</strong><div>${snapshot.sessionCount} conversation${snapshot.sessionCount === 1 ? '' : 's'} · ${snapshot.messageCount} source messages</div><details class="snapshot-details"><summary>View JSON</summary><pre class="snapshot-json">${escapeHTML(text)}</pre></details>`
-        : formatReflection(text,scroll || messageRef?.sectionsExpanded,messageRef?.guide || /quick user guide/i.test(text.split(/\r?\n/,1)[0]))}</div>
+        : formatReflection(text,Boolean(messageRef?.sectionsExpanded))}</div>
       <div class="wave-time">${timeStr}</div>
     </div>`;
 
@@ -3930,7 +3933,7 @@ function appendLakeWave(text, timeStr, scroll, snapshot, archiveCoverage, archiv
   if (scroll) container.scrollTop = container.scrollHeight;
 }
 
-function formatReflection(text,expandAll=false,collapsedGuide=false) {
+function formatReflection(text,expandAll=false) {
   const lines=String(text||'').split(/\r?\n/);
   const sectionAt=line=>/^(#{2,4}\s+.+|\d+(?:\.\d+)*\.\s+[^\n]{3,100})$/.test(line.trim());
   const sections=[];let lead=[];let current=null;
@@ -3940,8 +3943,8 @@ function formatReflection(text,expandAll=false,collapsedGuide=false) {
   }
   if(sections.length<2)return formatReflectionInline(text);
   let html=formatReflectionInline(lead.join('\n'));
-  html+='<div class="reflection-sections"><div class="reflection-hint">'+(collapsedGuide?'Tap a headline to open its section. Double-tap the message to open or close all sections.':'Double-tap to expand or collapse sections · hold to hear aloud')+'</div>';
-  sections.forEach((section,index)=>{html+=`<details class="reflection-section" ${(!collapsedGuide && (expandAll || index===0))?'open':''}><summary>${formatReflectionInline(section.heading)}</summary><div class="reflection-section-body">${formatReflectionInline(section.body.join('\n'))}</div></details>`;});
+  html+='<div class="reflection-sections"><div class="reflection-hint">Tap a headline to open its section. Double-tap the message to open or close all sections.</div>';
+  sections.forEach(section=>{html+=`<details class="reflection-section" ${expandAll?'open':''}><summary>${formatReflectionInline(section.heading)}</summary><div class="reflection-section-body">${formatReflectionInline(section.body.join('\n'))}</div></details>`;});
   return html+'</div>';
 }
 function formatReflectionInline(text) {
