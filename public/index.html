@@ -1363,6 +1363,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
 
     <!-- CURRENTS BAR -->
     <div class="currents-bar" id="currentsBar">
+      <button type="button" class="current-chip" onclick="rideAWave()">❗ How to start: Ride a Wave</button>
       <span class="currents-label">🧭 Currents:</span>
       <span class="current-chip" onclick="sendPrompt('Summarize the key themes and patterns from our conversation so far.')">👥 Team Dynamics</span>
       <span class="current-chip" onclick="sendPrompt('What leadership patterns are you seeing in what I have shared?')">🎯 Leadership Patterns</span>
@@ -3147,7 +3148,7 @@ function updateCurrents(text) {
 // ============================================
 function rideAWave(){
   dismissRideHomeTip();
-  return sendWave({visibleText:'🌊 Ride a Wave',requestText:'Start a Ride a Wave conversation. Use relevant confirmed user context if supplied. Ask exactly one simple, engaging question. In the opening reply only, add a short note that I can tap the floating 🌊 icon on the homepage to start another Ride a Wave and that the mood picker sets the tone, depth and length of the Lake’s replies. In later turns ask one question at a time, ground insights in my answers, and when useful offer one small action and an optional later reflection. Respect a change of subject or a stop.',reuseAttachments:false});
+  return sendWave({visibleText:'🌊 Ride a Wave',requestText:'Start a Ride a Wave conversation. Use relevant confirmed user context if supplied. Ask exactly one simple, engaging question. In the opening reply only, add a short note that I can tap the floating 🌊 icon on the homepage to start another Ride a Wave and that the mood picker sets the tone, depth and length of the Lake’s replies. Explain that typing a slash followed by a mood at the start of a message switches the mood and sends the rest as the question. Use one example, such as /drip What should I try first? In later turns ask one question at a time, ground insights in my answers, and when useful offer one small action and an optional later reflection. Respect a change of subject or a stop.',reuseAttachments:false});
 }
 let rideHomeTipSeen=false;
 function dismissRideHomeTip(){
