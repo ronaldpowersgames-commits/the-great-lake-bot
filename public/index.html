@@ -1593,6 +1593,8 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
       <label for="lakePersonalNotes">Personal memory</label>
       <label><input id="lakeLearnProfile" type="checkbox" onchange="localStorage.setItem(storageKey('learnProfile'),String(this.checked))"> Learn from my messages across chats</label>
       <button type="button" class="quick-action-btn" onclick="clearLearnedProfile()">Clear learned profile</button>
+      <button type="button" class="quick-action-btn" onclick="restoreLearnedProfile()">Undo last profile clear</button>
+      <button type="button" class="quick-action-btn" onclick="restoreDeletedTides()">Restore last deleted chat or batch</button>
       <textarea id="lakePersonalNotes" maxlength="2000" rows="4" onchange="localStorage.setItem(storageKey('personalNotes'),this.value.trim())"></textarea>
       <div class="mode-continuity">Optional notes about your goals, preferences or ongoing projects. Saved on this device and sent with regular replies. Edit or clear them here anytime.</div>
     </div>
@@ -2581,6 +2583,8 @@ function loadTide(sessionId) {
 
 async function deleteSession(e, sessionId) {
   e.stopPropagation();
+  const session=allSessions.find(item=>item.id===sessionId);
+  if(!session || !await archiveDeletedTides([session]))return;
   if (activeWave?.id === sessionId) activeWave.discarded = true;
   allSessions = allSessions.filter(s => s.id !== sessionId);
   await persistSessions();
@@ -2601,7 +2605,8 @@ async function renameSession(e, sessionId) {
 }
 
 async function clearHistory() {
-  if (confirm('Clear all past tides? This cannot be undone.')) {
+  if (allSessions.length && confirm('Move all past tides to recovery?')) {
+    if(!await archiveDeletedTides(allSessions))return;
     if (activeWave?.key === storageKey('sessions')) activeWave.discarded = true;
     try { await LakeSessionStore.write(storageKey('sessions'), []); }
     catch { showToast('History could not be cleared. Please try again.'); return; }
@@ -2609,6 +2614,38 @@ async function clearHistory() {
     localStorage.removeItem(storageKey('sessions'));
     renderTides(); newSession(); toggleDepths();
   }
+}
+
+async function archiveDeletedTides(sessions){
+  const key=storageKey('deletedTides');
+  try {
+    const batches=await LakeSessionStore.read(key);
+    await LakeSessionStore.write(key,[...batches,sessions]);
+    return true;
+  } catch {
+    showToast('Could not save a recovery copy. Nothing was deleted.');
+    return false;
+  }
+}
+
+async function restoreDeletedTides(){
+  const key=storageKey('deletedTides');
+  const sessionKey=storageKey('sessions');
+  try {
+    const batches=await LakeSessionStore.read(key);
+    const batch=batches.pop();
+    if(!batch){showToast('No deleted chats to restore');return;}
+    if(sessionKey!==storageKey('sessions'))return;
+    const activeIds=new Set(allSessions.map(session=>session.id));
+    const restored=[...allSessions,...batch.filter(session=>!activeIds.has(session.id))];
+    if(!await persistSessions(restored,sessionKey))return;
+    if(sessionKey===storageKey('sessions')){
+      allSessions=restored;
+      renderTides();
+    }
+    await LakeSessionStore.write(key,batches);
+    showToast('Deleted chats restored');
+  } catch {showToast('Could not finish restoring deleted chats');}
 }
 
 function filterTides(query) {
@@ -2981,9 +3018,26 @@ function toggleDepths() {
   }
 }
 function clearLearnedProfile(){
+  const current=localStorage.getItem(storageKey('learnedProfile'));
+  if(!current || current==='[]'){showToast('No learned profile to clear');return;}
+  try {localStorage.setItem(storageKey('clearedProfile'),current);}
+  catch {showToast('Could not save a recovery copy. Profile kept.');return;}
   localStorage.removeItem(storageKey('learnedProfile'));
   localStorage.setItem(storageKey('profileReset'),String(Date.now()));
   showToast('Learned profile cleared');
+}
+function restoreLearnedProfile(){
+  const recoveryKey=storageKey('clearedProfile');
+  const saved=localStorage.getItem(recoveryKey);
+  if(!saved){showToast('No cleared profile to restore');return;}
+  const profileKey=storageKey('learnedProfile');
+  try {
+    const entries=new Map([...JSON.parse(saved),...JSON.parse(localStorage.getItem(profileKey)||'[]')].map(entry=>[entry.key,entry]));
+    localStorage.setItem(profileKey,JSON.stringify([...entries.values()].slice(-24)));
+    localStorage.setItem(storageKey('profileReset'),String(Date.now()));
+    localStorage.removeItem(recoveryKey);
+    showToast('Learned profile restored');
+  } catch {showToast('Could not restore the learned profile');}
 }
 
 // ============================================
