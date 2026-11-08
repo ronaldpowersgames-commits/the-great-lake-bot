@@ -87,13 +87,33 @@
     {name:'Writer',icon:'✍️',prompts:[
       ['✍️','Find my voice','Ask one playful question about what I notice or know firsthand. Help me discover writing subjects and strengths, then propose a short experiment in my own voice.'],
       ['📖','Try a form','Help me choose between a journal entry, short piece, poem or story. Give me one simple creative opening to try.'],
-      ['📚','Build a writing project','Help me shape an idea into a story collection, book or other project. Start with my interests, audience and one small milestone.']
-    ],more:[]},
+      ['📚','Build a writing project','Help me shape an idea into a story collection, book or other project. Start with my interests, audience and one small milestone.'],
+      ['💡','What should I write about?','Use what you know about my interests and firsthand experience to offer three distinct subjects I could write about. If you have little context, give me three concrete idea sparks. Ask which pulls me in and help me turn it into an opening.'],
+      ['📓','Start a journal entry','Offer two simple entry points: a moment I keep replaying and something I almost missed. Help me turn whichever I choose into a short, honest entry in my own words.'],
+      ['🪶','Start a poem','Offer two images I could build a poem around. Ask what feeling I want the reader to leave with, then show how an image or line break could carry it.']
+    ],more:[
+      ['📖','Start a story','Give me two story seeds with a character, a desire and a complication. Ask which feels alive to me, then help me sketch a first scene.'],
+      ['📝','Shape a short piece','Help me turn an observation or experience into a short personal essay, post or reflection. Offer a few possible angles and help me pick one with a clear point.'],
+      ['📐','Learn a writing principle','Teach me one writing principle suited to my goal, such as concrete detail, point of view or pacing. Show it in a short before-and-after example and give me a tiny exercise.'],
+      ['✂️','Revise a draft','Ask me to paste a draft and tell you what it should do for the reader. Show one high-impact edit, explain why it works, and preserve my voice.'],
+      ['🎙️','Practice dialogue','Give me a short scene to write where two people want different things. After my attempt, help me improve the rhythm, subtext and distinct voices.'],
+      ['🧭','Find my writing strengths','Use examples I share to identify what I do well and what subjects I have a distinctive angle on. Suggest a small experiment to test one of those strengths.']
+    ]},
     {name:'Music',icon:'🎵',prompts:[
       ['🎧','Find my sound','Ask one question about sounds or songs I return to. Help me discover my musical tastes and creative strengths through a tiny experiment.'],
       ['🎸','Make a song sketch','Help me turn a feeling into a song sketch with a vibe, chords, lyric seed and instrument choices. Explain theory as needed for my level.'],
-      ['💿','Build a music project','Help me shape my ideas into a song, EP or album. Start with a creative throughline and a first demo I can make.']
-    ],more:[]}
+      ['💿','Build a music project','Help me shape my ideas into a song, EP or album. Start with a creative throughline and a first demo I can make.'],
+      ['🎹','Generate chord progressions','Start with three playable progressions with distinct feels and a range of harmonic difficulty. Write each progression on its own line with arrow-separated chord symbols, such as C → Am → F → G, so the Lake can offer audio playback for supported chords. Give keys and Roman numerals, and explain the musical effect of each. Ask one question at a time to learn my target emotion, tone, genre or vibe and what I can comfortably play or arrange. When my choices or playing experience suggest readiness, offer one bolder variation with playable voicings or a simple substitute. Progress from triads toward extensions, borrowed chords, altered dominants or unusual movement when they serve the song. Let my feedback guide the next step.'],
+      ['🎤','Write lyrics','Offer two lyric seeds around a concrete image or feeling, using my ideas when available. Ask which direction feels like me, then help me turn it into a verse or hook.'],
+      ['🎛️','Find the vibe','Offer two contrasting ways to shape a song through tempo, groove and texture. Ask what I want the listener to feel, then narrow the production choices with me.']
+    ],more:[
+      ['🎼','Learn music theory','Teach one theory principle at my level with a playable or singable example. Explain what to listen for and give me a short exercise to try it.'],
+      ['🎸','Choose instruments','Offer two instrument palettes for the sound I am after. Explain the role of each instrument and adapt the arrangement to what I can play or record.'],
+      ['🎵','Build a melody','Give me two short melodic ideas over my chords, or over a simple example progression. Use note names and a clear rhythm, then help me shape a hook.'],
+      ['🥁','Make a groove','Give me two contrasting rhythmic patterns I can clap, play or program. Explain how the accents change the feel and help me choose one for my song.'],
+      ['🎚️','Arrange my track','Help me map a sketch into sections. Show where instruments, energy and space could change, then suggest one transition I can try in my demo.'],
+      ['🎯','Practice a music skill','Help me choose one skill tied to music I want to make, such as ear training, rhythm or voicing. Give me a five-minute exercise and a simple way to hear my progress.']
+    ]}
   );
   const swim={name:'SWIM',icon:'🏊',prompts:[],more:[]};
   const swimTopics=[
@@ -114,7 +134,22 @@
     const group=index<6?swim.prompts:swim.more;
     group.push([icon,name,`Help me discover ${topic}. Start with one easy question. Follow my examples, reflect one grounded connection I might have missed, and invite me to confirm or refine it. Keep it conversational and offer a small experiment if useful.`]);
   });
-  const ordered=['Writer','Music','Hypnotist','Social','SWIM','Still Waters','Internal','Podcast Style','Parent','Learn']
+  types.push({name:'Drawing',icon:'✏️',prompts:[
+    ['💡','What should I draw?','Offer three specific things I could sketch, based on my interests or what might be near me. Make one easy, one playful and one a stretch. Ask which catches my eye, then give me a first mark to make.'],
+    ['👁️','Draw what I see','Give me a five-minute observation exercise using an everyday object. Show how to compare shapes, angles and negative space before adding details.'],
+    ['◼️','Learn light and shadow','Use a simple subject to teach me how light direction, shadow shapes and values work. Give me a three-value sketch exercise and one thing to check afterward.'],
+    ['📐','Practice perspective','Explain perspective with a quick sketch I can make on paper. Start with a box or room at my level, then offer a harder variation if I am ready.'],
+    ['🤸','Capture movement','Give me a short gesture drawing drill. Show how to find the line of action and capture weight before worrying about anatomy or detail.'],
+    ['🖍️','Find my drawing style','Help me notice what subjects and visual choices I keep coming back to. Give me a small experiment drawing the same subject two ways to see what feels like mine.']
+  ],more:[
+    ['🎞️','Frame a composition','Offer three thumbnail arrangements for my subject. Explain how each guides the eye and help me choose one that fits the feeling I want.'],
+    ['✒️','Practice line and texture','Teach me how line weight, hatching or texture can show form. Give me one short drill with the tools I already have.'],
+    ['🧩','Build forms from shapes','Show me how to break a subject I choose into simple 3D forms, then help me rebuild it from a new angle when I am ready.'],
+    ['🎨','Try a different medium','Help me pick a medium for the effect I want, such as pencil, ink, charcoal or digital. Give me a tiny test that reveals what the medium does well.'],
+    ['🔍','Get feedback on a sketch','Ask me to share a sketch and tell you what I wanted it to do. Point out one thing working and one specific adjustment I can try.'],
+    ['📒','Build a drawing project','Help me shape a recurring interest into a sketchbook series, comic or illustration project. Set a small first milestone and one skill to practice along the way.']
+  ]});
+  const ordered=['Writer','Music','Drawing','Hypnotist','Social','SWIM','Still Waters','Internal','Podcast Style','Parent','Learn']
     .map(name=>name==='SWIM'?swim:types.find(type=>type.name===name));
   if(typeof module!=='undefined' && module.exports)module.exports=ordered;
   else root.LakePromptTypes=ordered;
