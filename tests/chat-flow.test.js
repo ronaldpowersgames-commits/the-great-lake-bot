@@ -268,6 +268,21 @@ function routeContext(reply = () => 'Test reflection') {
   return { requests, handler, uploads, context };
 }
 
+test('missing Next Waves get a contextual retry without replacing the answer', async () => {
+  const {handler,requests}=routeContext(args=>args.response_format?.type==='json_object'
+    ? JSON.stringify({suggestions:['Saturn','Jupiter','Uranus','Neptune','Mars','Earth'].map(planet=>({
+      label:`Compare ${planet}`,prompt:`Compare ${planet}'s atmosphere with the gas giant in your answer.`,kind:'branch'
+    }))})
+    : 'Gas giants have deep atmospheres.');
+  let result;
+  await handler({body:{message:'How do gas giants work?',showSuggestions:'true'},files:[]},{json(value){result=value;},status(){return this;}});
+  assert.equal(requests.length,2);
+  assert.match(requests[1].messages[1].content,/Gas giants have deep atmospheres/);
+  const parsed=require('../public/adaptive-suggestions').extract(result.reflection);
+  assert.equal(parsed.text,'Gas giants have deep atmospheres.');
+  assert.equal(parsed.suggestions.length,6);
+});
+
 test('homepage pro-tip opens a short Socratic conversation without reattaching sources', async () => {
   const context = browserContext();
   vm.runInContext('chatHistory = [{role:"user",content:"Old source",attachments:[{name:"old.txt",type:"text/plain",data:"data:text/plain;base64,dGVzdA=="}]}];', context);
