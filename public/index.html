@@ -4297,7 +4297,7 @@ function formatReflection(text,expandAll=false) {
   if(sections.length<2)return formatReflectionInline(text);
   let html=formatReflectionInline(lead.join('\n'));
   html+='<div class="reflection-sections"><div class="reflection-hint">Tap a headline to open its section. Double-tap the message to open or close all sections.</div>';
-  sections.forEach(section=>{html+=`<details class="reflection-section" ${expandAll?'open':''}><summary>${formatReflectionInline(section.heading)}</summary><div class="reflection-section-body">${formatReflectionInline(section.body.join('\n'))}</div></details>`;});
+  sections.forEach((section,index)=>{html+=`<details class="reflection-section" ${expandAll || index===sections.length-1 ? 'open' : ''}><summary>${formatReflectionInline(section.heading)}</summary><div class="reflection-section-body">${formatReflectionInline(section.body.join('\n'))}</div></details>`;});
   return html+'</div>';
 }
 function formatReflectionInline(text) {
