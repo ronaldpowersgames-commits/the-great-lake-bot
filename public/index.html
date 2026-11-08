@@ -2062,7 +2062,7 @@ function stripPlayerTagsJson(text) {
 
 function extractAdaptiveSuggestions(text,firstResponse=false,always=true) {
   const result=LakeAdaptiveSuggestions.ensureScoreBreakdown(LakeAdaptiveSuggestions.extract(stripPlayerTagsJson(text)));
-  return LakeAdaptiveSuggestions.ensureAlwaysSuggestions(LakeAdaptiveSuggestions.ensureFirstResponse(result,firstResponse),always);
+  return LakeAdaptiveSuggestions.ensureAlwaysSuggestions(result,always);
 }
 
 function normalizePersonKey(value) {
@@ -2223,6 +2223,12 @@ function renderAdaptiveSuggestions() {
   const panel=document.getElementById('adaptiveSuggestions');const list=document.getElementById('adaptiveSuggestionsList');
   if(!panel || !list || typeof list.replaceChildren!=='function')return;
   const reply=latestSuggestionReply();const suggestions=reply?.promptSuggestions || [];
+  if(reply && !reply.suggestionFallbackMigrated && suggestions.some(item=>LakeAdaptiveSuggestions.ALWAYS_MOVES.some(old=>old.label===item.label && old.prompt===item.prompt))){
+    reply.suggestionFallbackMigrated=true;
+    const custom=suggestions.filter(item=>!LakeAdaptiveSuggestions.ALWAYS_MOVES.some(old=>old.label===item.label && old.prompt===item.prompt));
+    reply.promptSuggestions=LakeAdaptiveSuggestions.ensureAlwaysSuggestions({text:reply.content,suggestions:custom},true).suggestions;
+    return renderAdaptiveSuggestions();
+  }
   if(reply && ![6,8,10].includes(suggestions.length)){reply.promptSuggestions=LakeAdaptiveSuggestions.ensureAlwaysSuggestions({text:reply.content,suggestions},true).suggestions;return renderAdaptiveSuggestions();}
   if(!panel.dataset.gestures){
     panel.dataset.gestures='true';let start=null;
@@ -2233,8 +2239,8 @@ function renderAdaptiveSuggestions() {
   }
   if(!list.dataset.dragReady){
     list.dataset.dragReady='true';let drag=null;
-    list.addEventListener('pointerdown',event=>{if(event.pointerType==='touch')return;drag={x:event.clientX,left:list.scrollLeft,moved:false};list.setPointerCapture?.(event.pointerId);list.classList.add('is-dragging');});
-    list.addEventListener('pointermove',event=>{if(!drag)return;const delta=event.clientX-drag.x;if(Math.abs(delta)>4)drag.moved=true;list.scrollLeft=drag.left-delta;});
+    list.addEventListener('pointerdown',event=>{if(event.pointerType==='touch'||event.button!==0)return;drag={x:event.clientX,left:list.scrollLeft,moved:false};});
+    list.addEventListener('pointermove',event=>{if(!drag)return;const delta=event.clientX-drag.x;if(Math.abs(delta)>6&&!drag.moved){drag.moved=true;list.setPointerCapture?.(event.pointerId);list.classList.add('is-dragging');}if(drag.moved){event.preventDefault();list.scrollLeft=drag.left-delta;}});
     const finish=()=>{if(!drag)return;list.dataset.justDragged=drag.moved?'true':'false';drag=null;list.classList.remove('is-dragging');setTimeout(()=>delete list.dataset.justDragged,0);};
     list.addEventListener('pointerup',finish);list.addEventListener('pointercancel',finish);
     list.addEventListener('click',event=>{if(list.dataset.justDragged==='true'){event.preventDefault();event.stopPropagation();}},true);
