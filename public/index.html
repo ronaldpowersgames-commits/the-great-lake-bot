@@ -641,7 +641,9 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
   background: rgba(9, 20, 32, 0.05);
 }
 .adaptive-suggestions[hidden] { display: none; }
-.adaptive-suggestions.is-collapsed .adaptive-suggestions-list { display: none; }
+.adaptive-suggestions .adaptive-suggestions-list { max-height:160px; transition:max-height .4s ease, opacity .4s ease, transform .4s ease; }
+.adaptive-suggestions.is-collapsed .adaptive-suggestions-list { max-height:0; opacity:0; transform:translateY(8px); padding-block:0; pointer-events:none; }
+@media (prefers-reduced-motion:reduce) { .adaptive-suggestions .adaptive-suggestions-list { transition:none; } }
 .adaptive-suggestions.is-collapsed { padding-bottom: 1px; }
 .adaptive-suggestions-head { display: flex; width:100%; align-items: center; justify-content: space-between; gap: 4px; min-height: 28px; }
 .adaptive-suggestions-title { color: var(--text-dim); font-size: 8px; font-weight: 650; letter-spacing: .35px; }
@@ -2286,17 +2288,24 @@ function latestSuggestionReply() {
   }
   return latest && Array.isArray(latest.promptSuggestions) && latest.promptSuggestions.length && !latest.promptSuggestionsDismissed ? latest : null;
 }
-const timedSuggestionReplies = new WeakSet();
+let suggestionCycleReply=null;
+let suggestionCyclePhase='waiting';
+let suggestionCycleTimer;
 function renderAdaptiveSuggestions() {
   const panel=document.getElementById('adaptiveSuggestions');const list=document.getElementById('adaptiveSuggestionsList');
   if(!panel || !list || typeof list.replaceChildren!=='function')return;
   const reply=latestSuggestionReply();const suggestions=reply?.promptSuggestions || [];
   const isLegacyFallback=item=>item.prompt.includes('Focus specifically on this passage from your last answer:') ||
     LakeAdaptiveSuggestions.ALWAYS_MOVES.some(old=>old.label===item.label && old.prompt===item.prompt);
-  if(reply && suggestions.some(isLegacyFallback)){
+  if(reply && !reply.evenWaveSet && suggestions.some(isLegacyFallback)){
     reply.suggestionFallbackMigrated=true;
     const custom=suggestions.filter(item=>!isLegacyFallback(item));
     reply.promptSuggestions=LakeAdaptiveSuggestions.ensureAlwaysSuggestions({text:reply.content,suggestions:custom.filter(item=>!item.prompt.includes('Focus specifically on this passage from your last answer:'))},false).suggestions;
+    return renderAdaptiveSuggestions();
+  }
+  if(reply && ![6,8,10].includes(suggestions.length)){
+    reply.promptSuggestions=LakeAdaptiveSuggestions.ensureAlwaysSuggestions({text:reply.content,suggestions},true).suggestions;
+    reply.evenWaveSet=true;
     return renderAdaptiveSuggestions();
   }
   if(!panel.dataset.gestures){
@@ -2316,21 +2325,28 @@ function renderAdaptiveSuggestions() {
     list.addEventListener('click',event=>{if(list.dataset.justDragged==='true'){event.preventDefault();event.stopPropagation();}},true);
   }
   panel.hidden=!suggestions.length;panel.dataset.mood=currentMood;panel.classList.toggle('rail-dockward',localStorage.getItem(storageKey('railSwipeMode'))==='down');list.replaceChildren();
-  const collapsed=Boolean(reply?.suggestionsCollapsed);panel.classList.toggle('is-collapsed',collapsed);
-  if(reply && !collapsed && !timedSuggestionReplies.has(reply)){
-    timedSuggestionReplies.add(reply);
-    const collapseWhenIdle=()=>{
-      if(latestSuggestionReply()!==reply || reply.suggestionsCollapsed)return;
-      if(panel.matches(':hover, :focus-within')){
-        setTimeout(collapseWhenIdle,3000);
+  if(suggestionCycleReply!==reply){
+    clearTimeout(suggestionCycleTimer);
+    suggestionCycleReply=reply;
+    suggestionCyclePhase='waiting';
+    const advance=()=>{
+      if(latestSuggestionReply()!==reply || typeof reply?.suggestionsCollapsed==='boolean')return;
+      if(document.hidden || waveInFlight || panel.matches(':hover, :focus-within') ||
+          document.activeElement===document.getElementById('lakeInput')){
+        suggestionCycleTimer=setTimeout(advance,750);
         return;
       }
-      reply.suggestionsCollapsed=true;
+      suggestionCyclePhase=suggestionCyclePhase==='expanded'?'collapsed':'expanded';
       renderAdaptiveSuggestions();
-      saveSession().catch(()=>{});
+      suggestionCycleTimer=setTimeout(advance,suggestionCyclePhase==='expanded'?3000:8000);
     };
-    setTimeout(collapseWhenIdle,15000);
+    if(reply && typeof reply.suggestionsCollapsed!=='boolean')suggestionCycleTimer=setTimeout(advance,2000);
   }
+  const manual=typeof reply?.suggestionsCollapsed==='boolean';
+  const collapsed=manual ? reply.suggestionsCollapsed : suggestionCyclePhase!=='expanded';
+  panel.hidden=!suggestions.length || (!manual && suggestionCyclePhase==='waiting');
+  panel.classList.toggle('is-collapsed',collapsed);
+  list.inert=collapsed;
   panel.querySelectorAll('.adaptive-suggestions-close').forEach(toggle=>{toggle.textContent=collapsed?'⌃':'⌄';toggle.setAttribute('aria-expanded',collapsed?'false':'true');toggle.setAttribute('aria-label',collapsed?'Expand suggestions':'Collapse suggestions');});
   if(!suggestions.length)return;
   suggestions.forEach((suggestion,index)=>{
@@ -2343,7 +2359,7 @@ function renderAdaptiveSuggestions() {
     item.append(main);list.append(item);
   });
 }
-function toggleAdaptiveSuggestions(){const reply=latestSuggestionReply();if(!reply)return;reply.suggestionsCollapsed=!reply.suggestionsCollapsed;renderAdaptiveSuggestions();saveSession().catch(()=>{});}
+function toggleAdaptiveSuggestions(){const reply=latestSuggestionReply();if(!reply)return;reply.suggestionsCollapsed=typeof reply.suggestionsCollapsed==='boolean'?!reply.suggestionsCollapsed:suggestionCyclePhase==='expanded';renderAdaptiveSuggestions();saveSession().catch(()=>{});}
 function dismissAdaptiveSuggestion(index,event) {
   event?.stopPropagation();const reply=latestSuggestionReply();const suggestion=reply?.promptSuggestions?.[index];if(!suggestion)return;
   saveSuggestionSignal('dismissed',suggestion);reply.promptSuggestions.splice(index,1);if(!reply.promptSuggestions.length)reply.promptSuggestionsDismissed=true;
@@ -3820,7 +3836,11 @@ async function sendWave(options = {}) {
         else suggestionResult.suggestions.push({label:'Find one useful next step',kind:'action',prompt:'Based on what I asked and your last reply, suggest one concrete next step that builds on our conversation. If there is no action to take, give me one useful angle I have not considered.'});
       }
       const reflectionTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      if(origin.showAdaptiveSuggestions && suggestionResult.suggestions.length){
+        suggestionResult.suggestions=LakeAdaptiveSuggestions.ensureAlwaysSuggestions(suggestionResult,true).suggestions;
+      }
       const reply = { role: 'assistant', content: cleanReflection, time: reflectionTime,
+        ...(origin.showAdaptiveSuggestions ? {evenWaveSet:true} : {}),
         ...(options.guide ? {guide:true} : {}),
         ...(suggestionResult.suggestions.length ? {promptSuggestions:suggestionResult.suggestions} : {}),
         ...(data.transcriptMemory && options.action==='transcript-memory' && filesToSend.length===1 ? {transcriptMemory:{...data.transcriptMemory,sourceId:filesToSend[0].sourceId}} : {}),
