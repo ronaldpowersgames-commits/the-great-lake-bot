@@ -432,10 +432,10 @@ body {
   cursor: pointer;
 }
 .welcome-start:hover, .welcome-start:focus-visible { box-shadow: 0 0 16px var(--lake-glow); }
-.welcome-packs { display:flex; width:min(100%,360px); overflow-x:auto; scroll-snap-type:x mandatory; padding-block:8px; }
-.welcome-pack { flex:0 0 100%; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; padding-inline:4px; scroll-snap-align:start; }
-.welcome-pack .welcome-start { justify-content:center; margin:0; padding-inline:6px; }
-.welcome-ride-link { padding:0; border:0; background:none; color:var(--lake-light); font:inherit; text-decoration:underline; cursor:pointer; }
+.welcome-packs { display:flex; width:100%; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none; }
+.welcome-packs::-webkit-scrollbar { display:none; }
+.welcome-pack { flex:0 0 100%; display:grid; gap:6px; scroll-snap-align:start; }
+.welcome-pack .welcome-prompt-featured { width:100%; font-family:inherit; }
 .welcome-title { font-size: 22px; font-weight: 700; color: var(--lake-light); margin-bottom: 7px; }
 .welcome-sub   { font-size: 13px; color: var(--text-dim); max-width: 320px; line-height: 1.6; margin-bottom: 20px; }
 .welcome-prompts {
@@ -1385,26 +1385,27 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
       <!-- WELCOME SCREEN -->
       <div class="welcome-screen" id="welcomeScreen">
         <div class="welcome-title">Not sure where to start?</div>
-        <div class="welcome-packs" tabindex="0" aria-label="Homepage starters. Scroll sideways for more.">
-          <div class="welcome-pack">
-            <button type="button" class="welcome-start" onclick="startHomepageWave('splash')">💦 Splash</button>
-            <button type="button" class="welcome-start" onclick="startHomepageWave('riptide')">🌊 Riptide</button>
-          </div>
-          <div class="welcome-pack">
-            <button type="button" class="welcome-start" onclick="startHomepageWave('manual')">📖 Chat Manual</button>
-            <button type="button" class="welcome-start" onclick="startHomepageWave('personalize')">🎛️ Personalize</button>
-          </div>
-          <div class="welcome-pack">
-            <button type="button" class="welcome-start" onclick="startHomepageWave('solve')">⚡ Solve a Problem</button>
-            <button type="button" class="welcome-start" onclick="startHomepageWave('decide')">🧭 Make a Decision</button>
-          </div>
-          <div class="welcome-pack">
-            <button type="button" class="welcome-start" onclick="sendPrompt('I want to understand myself better. Ask me questions — one at a time — that help me see my patterns, values, blind spots and strengths. Build a picture of who I am as we go.')">🪞 My Persona</button>
-            <button type="button" class="welcome-start" onclick="sendPrompt('It\'s journal time. Ask me to describe my day — what happened, how I felt, what\'s sitting with me. Ask follow up questions as we go. Help me process it like a journal entry.')">📓 Today's Journal</button>
-          </div>
-        </div>
-        <div class="welcome-sub">A surprising fact or one easy question. Swipe for more, or <button type="button" class="welcome-ride-link" onclick="rideAWave()">Ride a Wave</button>.</div>
+        <button type="button" class="welcome-start" onclick="rideAWave()" aria-describedby="rideWaveIntro">🌊 Ride a Wave</button>
+        <div class="welcome-sub" id="rideWaveIntro">Start with one easy question. Follow the current toward a fresh idea or a small next step.</div>
         <div class="welcome-prompts">
+          <div class="welcome-packs" tabindex="0" aria-label="Homepage starters. Scroll sideways for more.">
+            <div class="welcome-pack">
+              <button type="button" class="welcome-prompt-featured" onclick="startHomepageWave('splash')">💦 Splash</button>
+              <button type="button" class="welcome-prompt-featured" onclick="startHomepageWave('riptide')">🌊 Riptide</button>
+            </div>
+            <div class="welcome-pack">
+              <button type="button" class="welcome-prompt-featured" onclick="startHomepageWave('manual')">📖 Chat Manual</button>
+              <button type="button" class="welcome-prompt-featured" onclick="startHomepageWave('personalize')">🎛️ Personalize</button>
+            </div>
+            <div class="welcome-pack">
+              <button type="button" class="welcome-prompt-featured" onclick="startHomepageWave('solve')">⚡ Solve a Problem</button>
+              <button type="button" class="welcome-prompt-featured" onclick="startHomepageWave('decide')">🧭 Make a Decision</button>
+            </div>
+            <div class="welcome-pack">
+              <button type="button" class="welcome-prompt-featured" onclick="sendPrompt('I want to understand myself better. Ask me questions — one at a time — that help me see my patterns, values, blind spots and strengths. Build a picture of who I am as we go.')">🪞 My Persona</button>
+              <button type="button" class="welcome-prompt-featured" onclick="sendPrompt('It\'s journal time. Ask me to describe my day — what happened, how I felt, what\'s sitting with me. Ask follow up questions as we go. Help me process it like a journal entry.')">📓 Today's Journal</button>
+            </div>
+          </div>
           <!-- CAROUSEL -->
           <div class="prompt-carousel-container">
             <div class="prompt-carousel-track" id="promptCarouselTrack">
@@ -2785,26 +2786,27 @@ function newSession() {
   container.innerHTML = `
     <div class="welcome-screen" id="welcomeScreen">
       <div class="welcome-title">Not sure where to start?</div>
-      <div class="welcome-packs" tabindex="0" aria-label="Homepage starters. Scroll sideways for more.">
-        <div class="welcome-pack">
-          <button type="button" class="welcome-start" onclick="startHomepageWave('splash')">💦 Splash</button>
-          <button type="button" class="welcome-start" onclick="startHomepageWave('riptide')">🌊 Riptide</button>
-        </div>
-        <div class="welcome-pack">
-          <button type="button" class="welcome-start" onclick="startHomepageWave('manual')">📖 Chat Manual</button>
-          <button type="button" class="welcome-start" onclick="startHomepageWave('personalize')">🎛️ Personalize</button>
-        </div>
-        <div class="welcome-pack">
-          <button type="button" class="welcome-start" onclick="startHomepageWave('solve')">⚡ Solve a Problem</button>
-          <button type="button" class="welcome-start" onclick="startHomepageWave('decide')">🧭 Make a Decision</button>
-        </div>
-        <div class="welcome-pack">
-          <button type="button" class="welcome-start" onclick="sendPrompt('I want to understand myself better. Ask me questions — one at a time — that help me see my patterns, values, blind spots and strengths. Build a picture of who I am as we go.')">🪞 My Persona</button>
-          <button type="button" class="welcome-start" onclick="sendPrompt('It\\'s journal time. Ask me to describe my day — what happened, how I felt, what\\'s sitting with me. Ask follow up questions as we go. Help me process it like a journal entry.')">📓 Today's Journal</button>
-        </div>
-      </div>
-      <div class="welcome-sub">A surprising fact or one easy question. Swipe for more, or <button type="button" class="welcome-ride-link" onclick="rideAWave()">Ride a Wave</button>.</div>
+      <button type="button" class="welcome-start" onclick="rideAWave()" aria-describedby="rideWaveIntro">🌊 Ride a Wave</button>
+      <div class="welcome-sub" id="rideWaveIntro">Start with one easy question. Follow the current toward a fresh idea or a small next step.</div>
       <div class="welcome-prompts">
+        <div class="welcome-packs" tabindex="0" aria-label="Homepage starters. Scroll sideways for more.">
+          <div class="welcome-pack">
+            <button type="button" class="welcome-prompt-featured" onclick="startHomepageWave('splash')">💦 Splash</button>
+            <button type="button" class="welcome-prompt-featured" onclick="startHomepageWave('riptide')">🌊 Riptide</button>
+          </div>
+          <div class="welcome-pack">
+            <button type="button" class="welcome-prompt-featured" onclick="startHomepageWave('manual')">📖 Chat Manual</button>
+            <button type="button" class="welcome-prompt-featured" onclick="startHomepageWave('personalize')">🎛️ Personalize</button>
+          </div>
+          <div class="welcome-pack">
+            <button type="button" class="welcome-prompt-featured" onclick="startHomepageWave('solve')">⚡ Solve a Problem</button>
+            <button type="button" class="welcome-prompt-featured" onclick="startHomepageWave('decide')">🧭 Make a Decision</button>
+          </div>
+          <div class="welcome-pack">
+            <button type="button" class="welcome-prompt-featured" onclick="sendPrompt('I want to understand myself better. Ask me questions — one at a time — that help me see my patterns, values, blind spots and strengths. Build a picture of who I am as we go.')">🪞 My Persona</button>
+            <button type="button" class="welcome-prompt-featured" onclick="sendPrompt('It\\'s journal time. Ask me to describe my day — what happened, how I felt, what\\'s sitting with me. Ask follow up questions as we go. Help me process it like a journal entry.')">📓 Today's Journal</button>
+          </div>
+        </div>
         <div class="prompt-carousel-container">
           <div class="prompt-carousel-track" id="promptCarouselTrack">
             <div class="prompt-batch">
