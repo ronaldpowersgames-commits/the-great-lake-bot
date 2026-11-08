@@ -505,6 +505,10 @@ button.welcome-icon { background:none; border:0; padding:0; }
 }
 .carousel-dot.active { background: var(--lake-light); transform: scale(1.3); }
 button.carousel-dot { border: 0; padding: 0; }
+.featured-pages { display:flex; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none; }
+.featured-pages::-webkit-scrollbar { display:none; }
+.featured-page { flex:0 0 100%; min-width:0; display:grid; gap:6px; scroll-snap-align:start; }
+.featured-page button { font-family:inherit; }
 button.welcome-prompt-half { font-family: inherit; width: 100%; }
 
 /* ── WAVE BUBBLES ── */
@@ -3146,6 +3150,18 @@ function updateCurrents(text) {
 // ============================================
 // SENDING
 // ============================================
+function startHomepageWave(kind){
+  const starters={
+    splash:['💦 Splash','Give me one short, surprising, accurate fact. Pick something likely to spark my curiosity based on interests or examples I have shared. If little is known, choose an accessible subject. A brief connection to something I might enjoy noticing about myself is welcome when it fits. No quiz or follow-up question.'],
+    riptide:['🌊 Riptide','Ask exactly one light, natural, easy-to-answer question that might reveal something about what I enjoy, notice or choose. Use relevant context if available. No intro, analysis, or extra question.'],
+    manual:['📖 Chat Manual','Give me a practical chat manual for The Great Lake. Explain starters and Ride a Wave, Next Waves, moods and slash commands, creative types, attachments and transcript workflows, Crew and memory controls, and Past Tides and Recovery. Start with three easy ways in, then group details by task. Give example prompts. Only describe supported features.'],
+    personalize:['🎛️ Personalize','Help me explain optional preferences for how The Lake works with me. Ask one easy question about a goal, preferred tone, or metaphor. Keep defaults available. If I want a persistent explicit override, show me where to edit Personal memory in Settings. Do not claim a change has been saved unless confirmed.'],
+    solve:['⚡ Solve a Problem','Ask what is stuck if the problem is unclear. Then isolate the real constraint, challenge the assumption keeping me stuck, and give me one concrete move I can take today. Be sharp and direct.'],
+    decide:['🧭 Make a Decision','Ask what I am choosing between and what matters if unclear. Identify the decisive tradeoff, recommend a direction when supported, and give me one next action. If a critical fact is missing, suggest the smallest reversible test.']
+  };
+  const [visibleText,requestText]=starters[kind];
+  return sendWave({visibleText,requestText,reuseAttachments:false});
+}
 function rideAWave(showHelp=false){
   dismissRideHomeTip();
   const guidance = showHelp
@@ -4332,6 +4348,51 @@ let currentBatch = 1;
 const TOTAL_BATCHES = LakePromptTypes.length;
 let defaultBatch = parseInt(localStorage.getItem('defaultBatch') || '1');
 
+function initFeaturedPages(){
+  const prompts=document.querySelector('#welcomeScreen .welcome-prompts');
+  const original=prompts?.querySelectorAll(':scope > .welcome-prompt-featured');
+  if(original?.length!==2)return;
+  const rail=document.createElement('div');
+  rail.className='featured-pages';
+  rail.tabIndex=0;
+  rail.setAttribute('aria-label','Featured prompts');
+  const indicators=document.createElement('div');
+  indicators.className='carousel-dots';
+  const pairs=[null,[['manual','📖 Chat Manual'],['personalize','🎛️ Personalize']],
+    [['splash','💦 Splash'],['riptide','🌊 Riptide']],[['solve','⚡ Solve a Problem'],['decide','🧭 Make a Decision']]];
+  original[0].before(rail,indicators);
+  pairs.forEach((pair,index)=>{
+    const page=document.createElement('div');
+    page.className='featured-page';
+    if(!pair)page.append(...original);
+    else for(const [kind,label] of pair){
+      const button=document.createElement('button');
+      button.type='button';
+      button.className='welcome-prompt-featured';
+      button.textContent=label;
+      button.onclick=()=>startHomepageWave(kind);
+      page.append(button);
+    }
+    rail.append(page);
+    const dot=document.createElement('button');
+    dot.type='button';
+    dot.className='carousel-dot';
+    dot.setAttribute('aria-label',`Featured pair ${index+1} of ${pairs.length}`);
+    dot.onclick=()=>rail.scrollTo({left:page.offsetLeft-rail.firstElementChild.offsetLeft,behavior:'smooth'});
+    indicators.append(dot);
+  });
+  const update=()=>{
+    const active=Math.round(rail.scrollLeft/(rail.clientWidth||1));
+    [...indicators.children].forEach((dot,index)=>{
+      dot.classList.toggle('active',index===active);
+      dot.setAttribute('aria-current',String(index===active));
+    });
+  };
+  rail.addEventListener('scroll',update,{passive:true});
+  rail.scrollLeft=2*rail.clientWidth;
+  update();
+}
+
 function initCarousel() {
   scheduleRideHomeTip();
   const track  = document.getElementById('promptCarouselTrack');
@@ -4362,7 +4423,7 @@ function initCarousel() {
       });
       groups.append(next);batch.append(groups);
     });
-    const dots=document.querySelector('.carousel-dots');dots.replaceChildren();
+    const dots=document.querySelector('.prompt-carousel-container .carousel-dots');dots.replaceChildren();
     LakePromptTypes.forEach((type,index)=>{
       const dot=document.createElement('button');dot.type='button';dot.className='carousel-dot';dot.dataset.batch=String(index);
       dot.title='Type: '+type.name;dot.setAttribute('aria-label','Type: '+type.name);dots.append(dot);
@@ -4373,12 +4434,13 @@ function initCarousel() {
   track.style.transition = 'none';
   track.style.transform  = `translateX(-${currentBatch * 100}%)`;
   requestAnimationFrame(() => { track.style.transition = ''; });
-  document.querySelectorAll('.carousel-dot').forEach((dot, i) => {
+  document.querySelectorAll('.prompt-carousel-container .carousel-dot').forEach((dot, i) => {
     dot.classList.toggle('active', i === currentBatch);
   });
   setupDotClicks();
   setupLongPress();
   setupSwipe();
+  initFeaturedPages();
 }
 
 function goToBatch(index) {
@@ -4386,7 +4448,7 @@ function goToBatch(index) {
   const track  = document.getElementById('promptCarouselTrack');
   if (!track) return;
   track.style.transform = `translateX(-${currentBatch * 100}%)`;
-  document.querySelectorAll('.carousel-dot').forEach((dot, i) => {
+  document.querySelectorAll('.prompt-carousel-container .carousel-dot').forEach((dot, i) => {
     dot.classList.toggle('active', i === currentBatch);
   });
 }
@@ -4398,7 +4460,7 @@ function setDefaultBatch(batchIndex) {
 }
 
 function setupDotClicks() {
-  document.querySelectorAll('.carousel-dot').forEach(dot => {
+  document.querySelectorAll('.prompt-carousel-container .carousel-dot').forEach(dot => {
     dot.addEventListener('click', () => goToBatch(parseInt(dot.dataset.batch)));
   });
 }
