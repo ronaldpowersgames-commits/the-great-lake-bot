@@ -2206,12 +2206,13 @@ function processNamesFromResponse(responseText, source = { id: currentSessionId,
     const personKey=normalizePersonKey(player.name);
     if(!personKey || /^(unknown|speaker|participant)( \d+)?$/.test(personKey))return;
     if(player.confidence.toLowerCase()!=='high' || !player.evidence)return;
-    const matches=findCrewAliasMatch(player);
+    const matches=crewMembers.filter(member=>getCrewAliases(member).includes(personKey));
     const evidence=player.evidence.trim();
     const exactMatch=matches.length===1 && getCrewAliases(matches[0]).includes(personKey);
     const verified=evidence.length>=12 && (' '+normalizePersonKey(evidence)+' ').includes(' '+personKey+' ') &&
       source.history.some(message=>message.role==='user' && message.content?.includes(evidence));
-    if(exactMatch && verified && !player.needsConfirmation){
+    const fullNameMatch=exactMatch && personKey.includes(' ') && normalizePersonKey(matches[0].name)===personKey;
+    if(exactMatch && verified && (fullNameMatch || !player.needsConfirmation)){
       const member=matches[0];
       member.observations ||= [];
       if(!member.observations.some(item=>item.sessionId===source.id && item.evidence===evidence)){
@@ -2333,6 +2334,7 @@ function saveSuggestedCrew() { localStorage.setItem(storageKey('suggestedCrew'),
 function loadSuggestedCrew() {
   try { suggestedCrew = JSON.parse(localStorage.getItem(storageKey('suggestedCrew')) || '[]'); }
   catch(e) { suggestedCrew = []; }
+  suggestedCrew=suggestedCrew.filter(item=>!['auto-detected','transcript-speaker'].includes(item.source));
   renderCrew();
 }
 function copyLakeEmail() {
@@ -2432,6 +2434,13 @@ async function enterLake() {
   if (savedPic) { currentProfilePic = savedPic; updateAllProfilePics(savedPic); }
   await loadSessionHistory();
   loadCrew();
+  if(!crewMembers.some(member=>member.isSelf) && currentUser.name){
+    const self=crewMembers.find(member=>normalizePersonKey(member.name)===normalizePersonKey(currentUser.name));
+    if(self)self.isSelf=true;
+    else crewMembers.unshift({name:currentUser.name,isSelf:true});
+    saveCrew();
+    renderCrew();
+  }
   loadSuggestedCrew();
   if (deferredInstallPrompt) showInstallBanner();
   setTimeout(() => { if (window.innerWidth > 768) document.getElementById('lakeInput').focus(); }, 300);
@@ -3173,7 +3182,6 @@ function readMeetingCurrents(queryOverride) {
 }
 
 function suggestTranscriptSpeakers(attachments,sessionId) {
-  const existing = new Set(suggestedCrew.map(member => normalizePersonKey(member.name)));
   let changed = false;
   for(const file of attachments) {
     if(!/\.(txt|log)$/i.test(file.name)) continue;
@@ -3181,13 +3189,18 @@ function suggestTranscriptSpeakers(attachments,sessionId) {
       const text = new TextDecoder('utf-8',{fatal:true,ignoreBOM:true}).decode(Uint8Array.from(atob(file.data.split(',')[1]),char => char.charCodeAt(0)));
       const meetingDate = LakeMeetingMemory.dateOf(file.name,file.meetingDate);
       for(const speaker of LakeMeetingMemory.speakers(text)) {
-        changed = addSuggestedCrewMember({name:speaker.name,confidence:'needs confirmation',source:'transcript-speaker',
-          context:`Speaker label in ${file.name}. Meeting date: ${meetingDate.date || meetingDate.status}. Confirm who this label belongs to.`,
-          observation:{date:new Date().toISOString(),sessionId,evidence:speaker.evidence,note:'Speaker label present; identity requires user review.',sources:[file.name],meetingDates:[{filename:file.name,...meetingDate}],sourceOffset:speaker.offset}},existing) || changed;
+        const name=normalizePersonKey(speaker.name);
+        const matches=crewMembers.filter(member=>normalizePersonKey(member.name)===name);
+        if(!name.includes(' ') || matches.length!==1)continue;
+        const member=matches[0];
+        member.observations ||= [];
+        if(member.observations.some(item=>item.sessionId===sessionId && item.evidence===speaker.evidence && item.sources?.includes(file.name)))continue;
+        member.observations.push({date:new Date().toISOString(),sessionId,evidence:speaker.evidence,note:'Exact Crew full name in transcript speaker label.',sources:[file.name],meetingDates:[{filename:file.name,...meetingDate}],sourceOffset:speaker.offset});
+        changed=true;
       }
     } catch(error) {console.warn('Could not inspect speaker labels:',file.name,error);}
   }
-  if(changed) {saveSuggestedCrew();renderCrew();}
+  if(changed) {saveCrew();renderCrew();}
 }
 
 function closeSourceMenu() {

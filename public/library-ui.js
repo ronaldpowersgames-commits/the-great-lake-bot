@@ -8,6 +8,21 @@ function renderCrewProfileSections(member) {
     const heading=document.createElement('h4');heading.textContent=title;node.append(heading);container.append(node);return node;
   }
   if(member.role) {const role=section('Role');const text=document.createElement('div');text.className='crew-card-context';text.textContent=member.role;role.append(text);}
+  if(member.isSelf && localStorage.getItem(storageKey('learnProfile'))!=='false'){
+    let learned=[];
+    try {learned=JSON.parse(localStorage.getItem(storageKey('learnedProfile'))||'[]');} catch {}
+    if(Array.isArray(learned) && learned.length){
+      const profile=section('Learned from your messages');
+      const list=document.createElement('ul');
+      for(const entry of learned){
+        const item=document.createElement('li');
+        item.textContent=entry.value;
+        if(entry.evidence)item.title=entry.evidence;
+        list.append(item);
+      }
+      profile.append(list);
+    }
+  }
   const notes=section('Saved Notes');
   const text=document.createElement('div');text.className='crew-card-context';text.id='crewCardContext';text.textContent=member.context || 'No saved notes.';
   if((member.context||'').length>900) {
