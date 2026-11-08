@@ -1,4 +1,8 @@
 (function(root) {
+  function validSize(value) {
+    const size=Number(value);
+    return Number.isInteger(size) && size>=1000 && size<=30000 ? size : 29000;
+  }
   function split(text, size = 29000) {
     if (!Number.isInteger(size) || size < 1000 || size > 30000) throw new Error('Choose 1,000 to 30,000 characters per part.');
     const parts = [];
@@ -19,6 +23,6 @@
     }
     return parts;
   }
-  if (typeof module !== 'undefined' && module.exports) module.exports = {split};
-  else root.LakeTranscriptSplitter = {split};
+  if (typeof module !== 'undefined' && module.exports) module.exports = {split,validSize};
+  else root.LakeTranscriptSplitter = {split,validSize};
 })(typeof window === 'undefined' ? globalThis : window);

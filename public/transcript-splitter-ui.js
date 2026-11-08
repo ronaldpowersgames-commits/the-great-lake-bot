@@ -2,6 +2,7 @@ const fileInput = document.getElementById('file');
 const textInput = document.getElementById('text');
 const status = document.getElementById('status');
 const list = document.getElementById('parts');
+document.getElementById('size').value=LakeTranscriptSplitter.validSize(localStorage.getItem('lakeTranscriptPartSize'));
 let filename = 'transcript.txt';
 let manifest;
 let exportEntries = [];
@@ -66,6 +67,7 @@ document.getElementById('split').addEventListener('click',() => {
     if (!text.length) {status.textContent = 'Choose a transcript first.';return;}
     const size = Number(document.getElementById('size').value);
     const parts = LakeTranscriptSplitter.split(text,size);
+    localStorage.setItem('lakeTranscriptPartSize',String(size));
     if (parts.map(part => part.text).join('') !== text) throw new Error('Verification failed. No parts exported.');
     const entries = parts.map((part,index) => ({...part,filename:LakeExportNames.transcriptPart(filename,index+1,parts.length)}));
     exportEntries = entries;

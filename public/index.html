@@ -1353,6 +1353,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
       <div class="share-menu" id="shareMenu">
         <div onclick="shareAsGroupSession()">🔗 Share Session Link</div>
         <div onclick="exportAsTxt()">📄 Export as .txt</div>
+        <div onclick="exportSplitTranscriptZip()">🗜️ Split chat transcript ZIP</div>
         <div onclick="exportAsPDF()">📊 Printable transcript / PDF</div>
       </div>
       <!-- Mood selector -->
@@ -1522,6 +1523,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
         <button class="quick-action-btn" onclick="sendPrompt('What are the undercurrents here?')">🌀 Undercurrents</button>
       </div>
       <div class="snapshot-menu" id="snapshotMenu" role="menu" aria-label="Snapshot scope" hidden>
+        <button role="menuitem" onclick="exportSplitTranscriptZip()">🗜️ Split chat transcript ZIP</button>
         <button role="menuitem" onclick="createSnapshot('chat')" title="Export this conversation for another AI instance">📋 Chat Snapshot</button>
         <button role="menuitem" onclick="createSnapshot('total')" title="Export this device's context for another AI instance">🗂️ Total Snapshot</button>
         <button role="menuitem" onclick="createSnapshot('both')" title="Export both and explain this conversation's contribution">🔗 Both</button>
@@ -1815,6 +1817,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
 <script src="/organization.js"></script>
 <script src="/prompt-types.js"></script>
 <script src="/vendor/jszip.min.js"></script>
+<script src="/transcript-splitter.js"></script>
 <script src="/transcript-archive.js"></script>
 <script src="/transcript-review.js"></script>
 <script src="/adaptive-suggestions.js"></script>
@@ -4294,7 +4297,7 @@ async function shareAsGroupSession() {
   document.getElementById('shareMenu').style.display = 'none';
 }
 
-function exportAsTxt() {
+function sessionTranscriptText() {
   const waves = document.querySelectorAll('.wave');
   let transcript = '🌊 THE GREAT LAKE — SESSION TRANSCRIPT\n==========================================\nExported: ' + new Date().toLocaleString() + '\n\n';
   waves.forEach(wave => {
@@ -4304,6 +4307,37 @@ function exportAsTxt() {
     const text   = canonicalMessageText(wave);
     if (text) transcript += `[${time}] ${sender}:\n${text}\n\n`;
   });
+  return transcript;
+}
+
+async function exportSplitTranscriptZip(){
+  closeSnapshotMenu();
+  document.getElementById('shareMenu').style.display='none';
+  if(!document.querySelector('#wavesContainer .wave')){showToast('Start a conversation before exporting.');return;}
+  try {
+    const size=LakeTranscriptSplitter.validSize(localStorage.getItem('lakeTranscriptPartSize'));
+    const transcript=sessionTranscriptText();
+    const filename=LakeExportNames.sessionTranscript('txt');
+    const parts=LakeTranscriptSplitter.split(transcript,size);
+    const zip=new JSZip();
+    const entries=parts.map((part,index)=>{
+      const name=LakeExportNames.transcriptPart(filename,index+1,parts.length);
+      zip.file(name,part.text);
+      return {filename:name,start:part.start,end:part.end};
+    });
+    zip.file('transcript-manifest.json',JSON.stringify({format:'lake-verbatim-transcript/1',filename,total_characters:transcript.length,part_count:parts.length,target_characters:size,character_unit:'UTF-16 code units',lossless:true,parts:entries},null,2));
+    const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE'});
+    const link=document.createElement('a');
+    link.href=URL.createObjectURL(blob);
+    link.download=LakeExportNames.transcriptZip(filename);
+    link.click();
+    setTimeout(()=>URL.revokeObjectURL(link.href),1000);
+    if(parts.length>20)showToast('ZIP exported. To re-import more than 20 parts, select the numbered TXT files in batches.');
+  } catch(error){showToast('Could not export the split transcript: '+error.message);}
+}
+
+function exportAsTxt() {
+  const transcript=sessionTranscriptText();
   const a  = document.createElement('a');
   a.href   = URL.createObjectURL(new Blob([transcript], { type: 'text/plain' }));
   a.download = LakeExportNames.sessionTranscript('txt');
