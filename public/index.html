@@ -432,6 +432,10 @@ body {
   cursor: pointer;
 }
 .welcome-start:hover, .welcome-start:focus-visible { box-shadow: 0 0 16px var(--lake-glow); }
+.welcome-packs { display:flex; width:min(100%,360px); overflow-x:auto; scroll-snap-type:x mandatory; padding-block:8px; }
+.welcome-pack { flex:0 0 100%; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; padding-inline:4px; scroll-snap-align:start; }
+.welcome-pack .welcome-start { justify-content:center; margin:0; padding-inline:6px; }
+.welcome-ride-link { padding:0; border:0; background:none; color:var(--lake-light); font:inherit; text-decoration:underline; cursor:pointer; }
 .welcome-title { font-size: 22px; font-weight: 700; color: var(--lake-light); margin-bottom: 7px; }
 .welcome-sub   { font-size: 13px; color: var(--text-dim); max-width: 320px; line-height: 1.6; margin-bottom: 20px; }
 .welcome-prompts {
@@ -1381,8 +1385,17 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
       <!-- WELCOME SCREEN -->
       <div class="welcome-screen" id="welcomeScreen">
         <div class="welcome-title">Not sure where to start?</div>
-        <button type="button" class="welcome-start" onclick="rideAWave()" aria-describedby="rideWaveIntro">🌊 Ride a Wave</button>
-        <div class="welcome-sub" id="rideWaveIntro">Start with one easy question. Follow the current toward a fresh idea or a small next step.</div>
+        <div class="welcome-packs" tabindex="0" aria-label="Homepage starters. Scroll sideways for more.">
+          <div class="welcome-pack">
+            <button type="button" class="welcome-start" onclick="startHomepageWave('splash')">💦 Splash</button>
+            <button type="button" class="welcome-start" onclick="startHomepageWave('riptide')">🌊 Riptide</button>
+          </div>
+          <div class="welcome-pack">
+            <button type="button" class="welcome-start" onclick="startHomepageWave('manual')">📖 Chat Manual</button>
+            <button type="button" class="welcome-start" onclick="startHomepageWave('personalize')">🎛️ Personalize</button>
+          </div>
+        </div>
+        <div class="welcome-sub">A surprising fact or one easy question. Swipe for more, or <button type="button" class="welcome-ride-link" onclick="rideAWave()">Ride a Wave</button>.</div>
         <div class="welcome-prompts">
           <div class="welcome-prompt-featured" onclick="sendPrompt('I want to understand myself better. Ask me questions — one at a time — that help me see my patterns, values, blind spots and strengths. Build a picture of who I am as we go.')">🪞 My Persona</div>
           <div class="welcome-prompt-featured" onclick="sendPrompt('It\'s journal time. Ask me to describe my day — what happened, how I felt, what\'s sitting with me. Ask follow up questions as we go. Help me process it like a journal entry.')">📓 Today's Journal</div>
@@ -2766,8 +2779,17 @@ function newSession() {
   container.innerHTML = `
     <div class="welcome-screen" id="welcomeScreen">
       <div class="welcome-title">Not sure where to start?</div>
-      <button type="button" class="welcome-start" onclick="rideAWave()" aria-describedby="rideWaveIntro">🌊 Ride a Wave</button>
-      <div class="welcome-sub" id="rideWaveIntro">Start with one easy question. Follow the current toward a fresh idea or a small next step.</div>
+      <div class="welcome-packs" tabindex="0" aria-label="Homepage starters. Scroll sideways for more.">
+        <div class="welcome-pack">
+          <button type="button" class="welcome-start" onclick="startHomepageWave('splash')">💦 Splash</button>
+          <button type="button" class="welcome-start" onclick="startHomepageWave('riptide')">🌊 Riptide</button>
+        </div>
+        <div class="welcome-pack">
+          <button type="button" class="welcome-start" onclick="startHomepageWave('manual')">📖 Chat Manual</button>
+          <button type="button" class="welcome-start" onclick="startHomepageWave('personalize')">🎛️ Personalize</button>
+        </div>
+      </div>
+      <div class="welcome-sub">A surprising fact or one easy question. Swipe for more, or <button type="button" class="welcome-ride-link" onclick="rideAWave()">Ride a Wave</button>.</div>
       <div class="welcome-prompts">
         <div class="welcome-prompt-featured" onclick="sendPrompt('I want to understand myself better. Ask me questions — one at a time — that help me see my patterns, values, blind spots and strengths. Build a picture of who I am as we go.')">🪞 My Persona</div>
         <div class="welcome-prompt-featured" onclick="sendPrompt('It\\'s journal time. Ask me to describe my day — what happened, how I felt, what\\'s sitting with me. Ask follow up questions as we go. Help me process it like a journal entry.')">📓 Today's Journal</div>
@@ -3152,6 +3174,16 @@ function updateCurrents(text) {
 // ============================================
 // SENDING
 // ============================================
+function startHomepageWave(kind){
+  const starters={
+    splash:['💦 Splash','Give me one short, surprising, accurate fact. Pick something likely to spark my curiosity based on interests or examples I have shared. If little is known, choose an accessible subject. A brief connection to something I might enjoy noticing about myself is welcome when it fits. No quiz or follow-up question.'],
+    riptide:['🌊 Riptide','Ask exactly one light, natural, easy-to-answer question that might reveal something about what I enjoy, notice or choose. Use relevant context if available. No intro, analysis, or extra question.'],
+    manual:['📖 Chat Manual','Give me a practical chat manual for The Great Lake. Explain starters and Ride a Wave, Next Waves, moods and slash commands, creative types, attachments and transcript workflows, Crew and memory controls, and Past Tides and Recovery. Start with three easy ways in, then group details by task. Give example prompts. Only describe supported features.'],
+    personalize:['🎛️ Personalize','Help me explain optional preferences for how The Lake works with me. Ask one easy question about a goal, preferred tone, or metaphor. Keep defaults available. If I want a persistent explicit override, show me where to edit Personal memory in Settings. Do not claim a change has been saved unless confirmed.']
+  };
+  const [visibleText,requestText]=starters[kind];
+  return sendWave({visibleText,requestText,reuseAttachments:false});
+}
 function rideAWave(){
   return sendWave({visibleText:'🌊 Ride a Wave',requestText:'Start a Ride a Wave conversation. Use relevant confirmed user context if supplied. Ask exactly one simple, engaging question with no introduction. In later turns ask one question at a time, ground insights in my answers, and when useful offer one small action and an optional later reflection. Respect a change of subject or a stop.',reuseAttachments:false});
 }
