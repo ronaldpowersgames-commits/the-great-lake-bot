@@ -24,7 +24,7 @@ const router = express.Router();
 // ======================================================
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 50 * 1024 * 1024, files: 20, fields: 16, fieldSize: 1024 * 1024 },
+  limits: { fileSize: 50 * 1024 * 1024, files: 20, fields: 32, fieldSize: 1024 * 1024 },
   fileFilter: (req, file, cb) => cb(null, true)
 });
 
@@ -505,10 +505,16 @@ function receiveUploads(req, res, next) {
   }
   upload.array('file', 20)(req, res, error => {
     if (error) {
-      return res.status(error.code === 'LIMIT_FILE_SIZE' ? 413 : 400).json({
-        error: 'Upload could not be read',
-        details: error.code === 'LIMIT_FILE_SIZE' ? 'Each file must be 50MB or smaller.' :
-          'Upload up to 20 files, using the file attachment field. Split larger batches into a new conversation.'
+      const details = {
+        LIMIT_FILE_SIZE: 'Each file must be 50MB or smaller.',
+        LIMIT_FILE_COUNT: 'Upload up to 20 files. Split larger batches into a new conversation.',
+        LIMIT_UNEXPECTED_FILE: 'Use the file attachment field and attach no more than 20 files.',
+        LIMIT_FIELD_COUNT: 'The chat request contains too many fields. Refresh the app and retry.',
+        LIMIT_FIELD_VALUE: 'A text field in the chat request exceeds 1MB.'
+      };
+      return res.status(['LIMIT_FILE_SIZE','LIMIT_FIELD_VALUE'].includes(error.code) ? 413 : 400).json({
+        error: 'Chat request could not be read',
+        details: details[error.code] || 'The chat request could not be read. Please retry.'
       });
     }
     if ((req.files || []).reduce((total, file) => total + file.size, 0) > 100 * 1024 * 1024) {
