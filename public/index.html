@@ -2331,8 +2331,10 @@ function renderAdaptiveSuggestions() {
     suggestionCyclePhase='waiting';
     const advance=()=>{
       if(latestSuggestionReply()!==reply || typeof reply?.suggestionsCollapsed==='boolean')return;
+      const composer=document.getElementById('lakeInput');
+      const editingDraft=document.activeElement===composer && Boolean(composer?.value.trim());
       if(document.hidden || waveInFlight || panel.matches(':hover, :focus-within') ||
-          document.activeElement===document.getElementById('lakeInput')){
+          (suggestionCyclePhase!=='waiting' && editingDraft)){
         suggestionCycleTimer=setTimeout(advance,750);
         return;
       }
