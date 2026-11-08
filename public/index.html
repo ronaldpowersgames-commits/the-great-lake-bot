@@ -665,7 +665,7 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
 @media (min-width: 769px) {
   .adaptive-suggestions { align-self: flex-end; width:min(1100px,calc(100% - 20px)); max-width:calc(100% - 20px); }
   .adaptive-suggestions-head { align-self: flex-end; }
-  .adaptive-suggestions-list { width: 100%; max-width: 100%; grid-auto-columns:minmax(145px,max-content); justify-content: start; cursor:grab; scroll-behavior:smooth; }
+  .adaptive-suggestions-list { width: 100%; max-width: 100%; grid-auto-columns:minmax(145px,max-content); justify-content: safe end; cursor:grab; scroll-behavior:smooth; }
   .adaptive-suggestions-list.is-dragging { cursor:grabbing; scroll-behavior:auto; user-select:none; }
 }
 .adaptive-suggestions.rail-dockward .adaptive-suggestions-list { position: absolute; top: 100%; right: 0; width: 100%; }
@@ -2223,7 +2223,7 @@ function renderAdaptiveSuggestions() {
   const panel=document.getElementById('adaptiveSuggestions');const list=document.getElementById('adaptiveSuggestionsList');
   if(!panel || !list || typeof list.replaceChildren!=='function')return;
   const reply=latestSuggestionReply();const suggestions=reply?.promptSuggestions || [];
-  if(reply && suggestions.length<8){reply.promptSuggestions=LakeAdaptiveSuggestions.ensureAlwaysSuggestions({text:reply.content,suggestions},true).suggestions;return renderAdaptiveSuggestions();}
+  if(reply && ![6,8,10].includes(suggestions.length)){reply.promptSuggestions=LakeAdaptiveSuggestions.ensureAlwaysSuggestions({text:reply.content,suggestions},true).suggestions;return renderAdaptiveSuggestions();}
   if(!panel.dataset.gestures){
     panel.dataset.gestures='true';let start=null;
     panel.addEventListener('dblclick',event=>{if(event.target.closest('button'))return;toggleAdaptiveSuggestions();});

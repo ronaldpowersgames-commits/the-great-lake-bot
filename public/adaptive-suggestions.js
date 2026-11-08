@@ -74,11 +74,12 @@
     const suggestions=[];
     for(const item of raw){
       const normalized={label:label(item?.label),prompt:text(item?.prompt,600),kind:KINDS.has(item?.kind)?item.kind:'branch',why:text(item?.why,180)};
-      const key=(normalized.label+'|'+normalized.prompt).toLowerCase();
-      if(!normalized.label || !normalized.prompt || seen.has(key))continue;
-      seen.add(key);suggestions.push(normalized);if(suggestions.length>=10)break;
+      const labelKey='label:'+normalized.label.toLowerCase(),promptKey='prompt:'+normalized.prompt.toLowerCase();
+      if(!normalized.label || !normalized.prompt || seen.has(labelKey)||seen.has(promptKey))continue;
+      seen.add(labelKey);seen.add(promptKey);suggestions.push(normalized);if(suggestions.length>=10)break;
     }
     if(!enabled)return {...value,suggestions};
+    if([6,8,10].includes(suggestions.length))return {...value,suggestions};
     const labels=new Set(suggestions.map(item=>String(item?.label||'').toLowerCase()));
     for(const item of ALWAYS_MOVES){ if(suggestions.length>=8)break; if(!labels.has(item.label.toLowerCase())){suggestions.push({...item});labels.add(item.label.toLowerCase());} }
     if(suggestions.length%2 && suggestions.length<10){
