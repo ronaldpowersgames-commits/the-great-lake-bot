@@ -1576,8 +1576,13 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
     <div class="depths-profile" onclick="document.getElementById('profilePicInput').click()">
       <div class="depths-profile-pic" id="depthsProfilePic">🪶</div>
       <div class="depths-profile-name" id="depthsProfileName">Guest</div>
-      <div class="depths-profile-hint">Tap to change photo</div>
+      <div class="depths-profile-hint">Tap to upload your own photo</div>
     </div>
+    <details class="depths-section">
+      <summary>Choose a Lake avatar</summary>
+      <p class="mode-continuity">Pick a Lake avatar or upload a photo that feels like you.</p>
+      <div id="lakeAvatarChoices" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+    </details>
     <div class="depths-section crew-modal-field">
       <label for="myChatAliases">My Chat Names / Handles</label>
       <input id="myChatAliases" type="text" placeholder="User, Ronnie, Ron" onchange="saveMyChatAliases()">
@@ -2426,6 +2431,28 @@ if (isIOS && !isInStandaloneMode) document.getElementById('installHint').style.d
 // ============================================
 // PROFILE PIC
 // ============================================
+const lakeAvatars=[['🌊','Wave Rider'],['🐙','Many-Armed Maker'],['🐚','Shell Listener'],
+  ['🪼','Jellyfish Dreamer'],['🪸','Reef Builder'],['🧭','Current Finder'],['🐬','Playful Explorer'],['⚓','Steady Anchor']];
+
+function renderLakeAvatarChoices(){
+  const gallery=document.getElementById('lakeAvatarChoices');
+  const selected=localStorage.getItem(storageKey('avatarChoice'));
+  gallery.replaceChildren();
+  const choices=currentProfilePic?[...lakeAvatars,['','My uploaded photo']]:lakeAvatars;
+  for(const [emoji,name] of choices){
+    const button=document.createElement('button');
+    button.type='button';button.className='quick-action-btn';
+    button.textContent=emoji?emoji+' '+name:'📷 '+name;
+    button.setAttribute('aria-pressed',String(emoji?selected===emoji:!selected));
+    button.onclick=()=>{
+      if(emoji)localStorage.setItem(storageKey('avatarChoice'),emoji);
+      else localStorage.removeItem(storageKey('avatarChoice'));
+      updateAllProfilePics(currentProfilePic);
+    };
+    gallery.append(button);
+  }
+}
+
 function handleProfilePic(event) {
   const file = event.target.files[0];
   if (!file) return;
@@ -2433,6 +2460,7 @@ function handleProfilePic(event) {
   reader.onload = (e) => {
     currentProfilePic = e.target.result;
     localStorage.setItem(storageKey('profilePic'), currentProfilePic);
+    localStorage.removeItem(storageKey('avatarChoice'));
     updateAllProfilePics(currentProfilePic);
   };
   reader.readAsDataURL(file);
@@ -2447,14 +2475,18 @@ function updateAllProfilePics(src) {
     if (existingImg) existingImg.src = src;
     else { const img = document.createElement('img'); img.src = src; loginPreview.appendChild(img); }
   }
-  document.getElementById('dockUserAvatar').innerHTML  = src ? `<img src="${src}" alt="Profile">` : '🪶';
-  document.getElementById('depthsProfilePic').innerHTML = src ? `<img src="${src}" alt="Profile">` : '🪶';
+  const avatar=getUserAvatarHTML();
+  document.getElementById('dockUserAvatar').innerHTML=avatar;
+  document.getElementById('depthsProfilePic').innerHTML=avatar;
   document.querySelectorAll('.wave.user-wave .wave-avatar').forEach(el => {
-    el.innerHTML = src ? `<img src="${src}" alt="Profile">` : '🪶';
+    el.innerHTML=avatar;
   });
+  renderLakeAvatarChoices();
 }
 
 function getUserAvatarHTML() {
+  const choice=globalThis.localStorage?.getItem(storageKey('avatarChoice'));
+  if(lakeAvatars.some(([emoji])=>emoji===choice))return choice;
   return currentProfilePic ? `<img src="${currentProfilePic}" alt="Profile">` : '🪶';
 }
 
@@ -2493,7 +2525,8 @@ async function enterLake() {
   document.getElementById('responseLanguage').value = currentUser.responseLanguage || 'auto';
   loadRailSwipeMode();
   const savedPic = localStorage.getItem(storageKey('profilePic'));
-  if (savedPic) { currentProfilePic = savedPic; updateAllProfilePics(savedPic); }
+  currentProfilePic=savedPic;
+  updateAllProfilePics(savedPic);
   await loadSessionHistory();
   loadCrew();
   if(!crewMembers.some(member=>member.isSelf) && currentUser.name){
