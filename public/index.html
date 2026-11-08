@@ -645,7 +645,7 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
   color: #fff; box-shadow: 0 2px 10px color-mix(in srgb, var(--lake-glow) 17%, transparent);
   cursor: pointer; font: inherit; font-size: 10.5px; font-weight: 600; line-height: 1.2; text-align: left;
   text-shadow: 0 0 4px var(--lake-light), 0 0 9px var(--lake-glow);
-  font-weight: 760; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-weight: 760; white-space: normal; overflow-wrap: anywhere;
 }
 .adaptive-suggestion-main:hover, .adaptive-suggestion-main:focus-visible { filter: brightness(1.13); border-color: var(--lake-light); box-shadow: 0 3px 14px color-mix(in srgb, var(--lake-glow) 28%, transparent); }
 .adaptive-suggestion-main:focus-visible, .adaptive-suggestion-dismiss:focus-visible, .adaptive-suggestions-close:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
@@ -665,7 +665,9 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
 @media (min-width: 769px) {
   .adaptive-suggestions { align-self: flex-end; width:min(1100px,calc(100% - 20px)); max-width:calc(100% - 20px); }
   .adaptive-suggestions-head { align-self: flex-end; }
-  .adaptive-suggestions-list { width: 100%; max-width: 100%; grid-auto-columns:minmax(145px,max-content); justify-content: safe end; cursor:grab; scroll-behavior:smooth; }
+  .adaptive-suggestions { width:min(550px,calc(100% - 20px)); }
+  .adaptive-suggestions-list { width:100%; grid-template-rows:repeat(2,auto); grid-auto-columns:minmax(115px,max-content); justify-content:safe end; cursor:grab; scroll-behavior:smooth; }
+  .adaptive-suggestion-main { min-height:20px; padding:3px 7px; max-width:240px; }
   .adaptive-suggestions-list.is-dragging { cursor:grabbing; scroll-behavior:auto; user-select:none; }
 }
 .adaptive-suggestions.rail-dockward .adaptive-suggestions-list { position: absolute; top: 100%; right: 0; width: 100%; }
@@ -1333,6 +1335,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
       </div>
       <!-- Mood selector -->
       <div class="mood-selector" id="moodSelector">
+        <div class="mood-option" data-mood="drip" onclick="setMood('drip')"><span class="mood-dot" style="background:#facc15"></span>Drip — one word to three sentences</div>
         <div class="mood-option" data-mood="shallow" onclick="setMood('shallow',event)"><span class="mood-dot" style="background:#35c98a"></span>💧 Shallow — short splashes</div>
         <div class="mood-option active" data-mood="calm" onclick="setMood('calm',event)">
           <span class="mood-dot" style="background:var(--calm)"></span>🌊 Calm — gentle, reflective
@@ -1359,7 +1362,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
     <div class="waves-container" id="wavesContainer">
       <!-- WELCOME SCREEN -->
       <div class="welcome-screen" id="welcomeScreen">
-        <div class="welcome-icon" onclick="triggerDailyPrinciple()" title="Get a pro-tip">🌊</div>
+        <button type="button" class="welcome-icon" onclick="rideAWave()" title="Ride a Wave">🌊 Ride a Wave</button>
         <div class="welcome-title">The Lake is Still</div>
         <div class="welcome-sub">Drop a wave, cast a line, or let a log drift in.<br>I'll reflect back what the water reveals.</div>
         <div class="welcome-prompts">
@@ -1450,7 +1453,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
       <section class="adaptive-suggestions" id="adaptiveSuggestions" aria-label="Suggested next moves" hidden>
         <div class="adaptive-suggestions-head">
           <button class="adaptive-suggestions-close" onclick="toggleAdaptiveSuggestions()" aria-label="Collapse suggestions" aria-expanded="true">⌄</button>
-          <span class="adaptive-suggestions-title">Swipe ↔ / drag for more</span>
+          <span class="adaptive-suggestions-title">Swipe / Double-click</span>
           <button class="adaptive-suggestions-close" onclick="toggleAdaptiveSuggestions()" aria-label="Collapse suggestions" aria-expanded="true">⌄</button>
           <span class="adaptive-suggestions-title">Suggested next waves</span>
           <button class="adaptive-suggestions-close" onclick="toggleAdaptiveSuggestions()" aria-label="Collapse suggestions" title="Collapse suggestions" aria-expanded="true">⌃</button>
@@ -1578,11 +1581,18 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
     </div>
     <div class="depths-section">
       <h4>🌊 Lake Mood</h4>
+      <div class="depths-option" data-mood="drip" onclick="setMood('drip')">Drip — one word to three sentences</div>
+      <div class="mode-continuity">Start a message with /calm, /shallow, /analytical, /stormy or /drip to switch tone, depth and length.</div>
       <div class="depths-option active" data-mood="calm" onclick="setMood('calm',event)">🌊 Calm — gentle, reflective</div>
       <div class="depths-option" data-mood="shallow" onclick="setMood('shallow',event)">💧 Shallow — short splashes</div>
       <div class="depths-option" data-mood="analytical" onclick="setMood('analytical',event)">🔍 Analytical — read precisely</div>
       <div class="depths-option" data-mood="stormy" onclick="setMood('stormy',event)">⛈️ Stormy — write with bite</div>
       <div class="mode-continuity"><strong>Same chat. Different lens.</strong></div>
+    </div>
+    <div class="depths-section crew-modal-field">
+      <label for="lakePersonalNotes">Personal memory</label>
+      <textarea id="lakePersonalNotes" maxlength="2000" rows="4" onchange="localStorage.setItem(storageKey('personalNotes'),this.value.trim())"></textarea>
+      <div class="mode-continuity">Optional notes about your goals, preferences or ongoing projects. Saved on this device and sent with regular replies. Edit or clear them here anytime.</div>
     </div>
     <div class="depths-section">
       <h4>💾 Backup &amp; Transfer</h4>
@@ -2062,7 +2072,8 @@ function stripPlayerTagsJson(text) {
 
 function extractAdaptiveSuggestions(text,firstResponse=false,always=true) {
   const result=LakeAdaptiveSuggestions.ensureScoreBreakdown(LakeAdaptiveSuggestions.extract(stripPlayerTagsJson(text)));
-  return LakeAdaptiveSuggestions.ensureAlwaysSuggestions(result,always);
+  if(!always)return {...result,suggestions:[]};
+  return LakeAdaptiveSuggestions.ensureAlwaysSuggestions(result,false);
 }
 
 function normalizePersonKey(value) {
@@ -2226,10 +2237,9 @@ function renderAdaptiveSuggestions() {
   if(reply && !reply.suggestionFallbackMigrated && suggestions.some(item=>LakeAdaptiveSuggestions.ALWAYS_MOVES.some(old=>old.label===item.label && old.prompt===item.prompt))){
     reply.suggestionFallbackMigrated=true;
     const custom=suggestions.filter(item=>!LakeAdaptiveSuggestions.ALWAYS_MOVES.some(old=>old.label===item.label && old.prompt===item.prompt));
-    reply.promptSuggestions=LakeAdaptiveSuggestions.ensureAlwaysSuggestions({text:reply.content,suggestions:custom},true).suggestions;
+    reply.promptSuggestions=LakeAdaptiveSuggestions.ensureAlwaysSuggestions({text:reply.content,suggestions:custom.filter(item=>!item.prompt.includes('Focus specifically on this passage from your last answer:'))},false).suggestions;
     return renderAdaptiveSuggestions();
   }
-  if(reply && ![6,8,10].includes(suggestions.length)){reply.promptSuggestions=LakeAdaptiveSuggestions.ensureAlwaysSuggestions({text:reply.content,suggestions},true).suggestions;return renderAdaptiveSuggestions();}
   if(!panel.dataset.gestures){
     panel.dataset.gestures='true';let start=null;
     panel.addEventListener('dblclick',event=>{if(event.target.closest('button'))return;toggleAdaptiveSuggestions();});
@@ -2656,7 +2666,7 @@ function newSession() {
   const container = document.getElementById('wavesContainer');
   container.innerHTML = `
     <div class="welcome-screen" id="welcomeScreen">
-      <div class="welcome-icon" onclick="triggerDailyPrinciple()" title="Get a pro-tip">🌊</div>
+      <button type="button" class="welcome-icon" onclick="rideAWave()" title="Ride a Wave">🌊 Ride a Wave</button>
       <div class="welcome-title">The Lake is Still</div>
       <div class="welcome-sub">Drop a wave, cast a line, or let a log drift in.<br>I'll reflect back what the water reveals.</div>
       <div class="welcome-prompts">
@@ -2940,14 +2950,14 @@ function editFromCard() { closeCrewCard(); setTimeout(() => openCrewModal('edit'
 function toggleMoodSelector() { document.getElementById('moodSelector').classList.toggle('show'); }
 
 function applyMood(mood) {
-  if (!['calm', 'analytical', 'stormy', 'shallow'].includes(mood)) mood = 'calm';
+  if (!['calm', 'analytical', 'stormy', 'shallow', 'drip'].includes(mood)) mood = 'calm';
   currentMood = mood;
-  const glowColors = { calm: '#4fc3f7', shallow: '#35c98a', analytical: '#7c4dff', stormy: '#ff6e40' };
+  const glowColors = { calm: '#4fc3f7', shallow: '#35c98a', analytical: '#7c4dff', stormy: '#ff6e40', drip: '#facc15' };
   document.documentElement.style.setProperty('--lake-glow', glowColors[mood]);
   document.querySelectorAll('[data-mood]').forEach(el => el.classList.toggle('active', el.dataset.mood === mood));
   const statusMap = { calm: 'Still waters — ready to reflect', shallow: 'Shallow water — short splashes', analytical: 'Precision mode — read the evidence', stormy: 'Rough waters — playful bite, straight talk' };
   const statusEl = document.getElementById('lakeStatus');
-  if (statusEl) statusEl.textContent = statusMap[mood];
+  if (statusEl) statusEl.textContent = mood==='drip'?'Drip — up to three sentences':statusMap[mood];
   renderAdaptiveSuggestions();
 }
 
@@ -2960,7 +2970,11 @@ function setMood(mood) {
 // ============================================
 // DEPTHS
 // ============================================
-function toggleDepths() { showDepthsTab('settings');document.getElementById('depthsPanel').classList.toggle('show'); }
+function toggleDepths() {
+  showDepthsTab('settings');
+  const opened=document.getElementById('depthsPanel').classList.toggle('show');
+  if(opened)document.getElementById('lakePersonalNotes').value=localStorage.getItem(storageKey('personalNotes'))||'';
+}
 
 // ============================================
 // HOW THE LAKE SEES YOU
@@ -3014,6 +3028,9 @@ function updateCurrents(text) {
 // ============================================
 // SENDING
 // ============================================
+function rideAWave(){
+  return sendWave({visibleText:'🌊 Ride a Wave',requestText:'Start a Ride a Wave conversation. Use relevant confirmed user context if supplied. Ask exactly one simple, engaging question with no introduction. In later turns ask one question at a time, ground insights in my answers, and when useful offer one small action and an optional later reflection. Respect a change of subject or a stop.',reuseAttachments:false});
+}
 function triggerDailyPrinciple() {
   return sendWave({
     requestText: "Lake, give me pro-tip — one sentence that cuts through confusion, raises my Lake Score, and tells me exactly where to start today.",
@@ -3448,7 +3465,13 @@ async function sendWave(options = {}) {
   if (pendingFileLoads) {showToast('Wait for ZIP import to finish before sending.');return;}
   if (waveInFlight) return;
   const input = document.getElementById('lakeInput');
-  const text  = options.requestText ?? input.value.trim();
+  let text = options.requestText ?? input.value.trim();
+  const moodCommand = !options.requestText && text.match(/^\/(calm|shallow|analytical|stormy|drip)(?=\s|$)/i);
+  if(moodCommand){
+    setMood(moodCommand[1].toLowerCase());
+    text=text.slice(moodCommand[0].length).trim();
+    if(!text){input.value='';return;}
+  }
   const visibleText = options.visibleText ?? text;
   if (!text && selectedFiles.length === 0) return;
   waveInFlight = true;
@@ -3557,6 +3580,8 @@ async function sendWave(options = {}) {
     formData.append('firstResponse',origin.firstResponseSuggestions?'true':'false');
     formData.append('showSuggestions',origin.showAdaptiveSuggestions?'true':'false');
     formData.append('suggestionProfile',JSON.stringify(suggestionPreferencePayload()));
+    if(!options.snapshot)formData.append('personalNotes',(globalThis.localStorage?.getItem(origin.key.replace(/sessions$/,'personalNotes'))||'').slice(0,2000));
+    formData.append('recentWaveIntents',JSON.stringify(origin.history.filter(message=>message.promptSuggestions?.length).slice(-3).flatMap(message=>message.promptSuggestions.map(item=>item.prompt.slice(0,160)))));
     const historyToSend = origin.history.slice(-11, -1).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.content }));
     formData.append('history', JSON.stringify(historyToSend));
     formData.append('sourceMetadata',JSON.stringify(filesToSend.map(file => ({filename:file.name,meetingDate:file.meetingDate || ''}))));
@@ -3775,7 +3800,7 @@ function hideRipple() {
   if (ripple) ripple.classList.remove('show');
   const moods  = { calm: 'Still waters — ready to reflect', shallow: 'Shallow water — short splashes', analytical: 'Deep scan mode — precision active', stormy: 'Rough waters — direct, evidence-led' };
   const statusEl = document.getElementById('lakeStatus');
-  if (statusEl) statusEl.textContent = moods[currentMood];
+  if (statusEl) statusEl.textContent = currentMood==='drip'?'Drip — up to three sentences':moods[currentMood];
 }
 
 // ============================================
@@ -3917,7 +3942,18 @@ function closeTopmostLayer(){
   const dock=document.getElementById('dock');if(dock?.classList.contains('open')){toggleDock();return true;}
   return false;
 }
-window.addEventListener('popstate', () => {if(closeTopmostLayer())history.pushState({lake:true},'');});
+window.addEventListener('popstate', () => {
+  if(closeTopmostLayer()){history.pushState({lake:true},'');return;}
+  const focused=document.activeElement;
+  if(focused?.matches('input,textarea,[contenteditable="true"]')){
+    focused.blur();history.pushState({lake:true},'');return;
+  }
+  if(!document.getElementById('welcomeScreen')){
+    const previous={id:currentSessionId,history:chatHistory,key:storageKey('sessions'),mood:currentMood};
+    saveSession(previous).catch(error=>console.warn('Could not save chat before returning home:',error));
+    newSession();history.pushState({lake:true},'');
+  }
+});
 document.addEventListener('keydown',event=>{if(event.key==='Escape'&&closeTopmostLayer()){event.preventDefault();event.stopPropagation();}});
 
 // ============================================
@@ -4108,7 +4144,7 @@ function initMic() {
 // CAROUSEL
 // ============================================
 let currentBatch = 1;
-const TOTAL_BATCHES = 7;
+const TOTAL_BATCHES = LakePromptTypes.length;
 let defaultBatch = parseInt(localStorage.getItem('defaultBatch') || '1');
 
 function initCarousel() {

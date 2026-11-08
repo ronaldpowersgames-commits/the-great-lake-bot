@@ -84,12 +84,11 @@ test('adaptive prompt metadata is hidden from chat and stored as tappable next m
   assert.deepEqual(JSON.parse(context.sent.get('suggestionProfile')),{chosen:{},dismissed:{},recent_chosen_kinds:[]});
 });
 
-test('the interface supplies onboarding moves on a first reply without model suggestions',async()=>{
+test('the interface leaves the rail empty when a first reply has no suggestions',async()=>{
   const context=browserContext();
   context.fetch=async (url,options)=>{context.sent=options.body;return {ok:true,json:async()=>({reflection:'A useful first answer.',model:'gpt-4o-test'})};};
   await vm.runInContext('sendWave({requestText:"Help me understand this situation"})',context);
-  assert.equal(vm.runInContext('chatHistory.at(-1).promptSuggestions.length',context),8);
-  assert.equal(vm.runInContext('chatHistory.at(-1).promptSuggestions[0].kind',context),'drill_down');
+  assert.equal(vm.runInContext('chatHistory.at(-1).promptSuggestions',context),undefined);
 });
 
 test('late Crew suggestions retain the originating conversation and file evidence', () => {
@@ -455,8 +454,10 @@ test('interaction analysis invites contextual clarification while respecting evi
 
 test('prompt Types include twelve choices and a usage guide, with grounded specialist and subtext guidance', async () => {
   const types=require('../public/prompt-types');
-  assert.equal(types.length,7);
-  for(const type of types) {
+  assert.equal(types.length,9);
+  assert.ok(types.find(type=>type.name==='Writer')?.prompts.length);
+  assert.ok(types.find(type=>type.name==='Music')?.prompts.length);
+  for(const type of types.slice(0,7)) {
     assert.equal((type.prompts?.length || 6)+type.more.length,12);
     assert.equal(type.more.at(-1)[1],'Use This Type');
     assert.match(type.more.at(-1)[2],/neither resets this chat/);
@@ -532,7 +533,7 @@ test('follow-up directions are specific, compact and subordinate to the user pac
     assert.match(prompt,/This score explanation is required/);
     assert.match(prompt,/Suggestion labels use at most one emoji/);
     assert.match(prompt,/one restrained Lake metaphor/);
-    assert.match(prompt,/FIRST RESPONSE ONBOARDING: This is the first assistant reply in a new tide/);
+    assert.match(prompt,/supersede earlier suggestion counts and onboarding requirements/);
     assert.match(prompt,/LOCAL SUGGESTION INTERACTION SIGNALS/);
     assert.match(prompt,/"test":3/);
     assert.match(prompt,/"quiz":2/);

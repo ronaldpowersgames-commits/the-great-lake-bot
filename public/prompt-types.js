@@ -83,6 +83,18 @@
   types.forEach((type,index)=>{
     type.more=[...more[index],['💡','Use This Type',`Show me how to use Type: ${type.name} and the Lake tool most effectively. Explain its quick prompts with a concrete example, what material and context I can supply, how to refine the conversation, and relevant limits. Explain that Types choose starting prompts, moods change response style, and neither resets this chat. Keep it practical and ask one optional question about my goal.`]];
   });
+  types.push(
+    {name:'Writer',icon:'✍️',prompts:[
+      ['✍️','Find my voice','Ask one playful question about what I notice or know firsthand. Help me discover writing subjects and strengths, then propose a short experiment in my own voice.'],
+      ['📖','Try a form','Help me choose between a journal entry, short piece, poem or story. Give me one simple creative opening to try.'],
+      ['📚','Build a writing project','Help me shape an idea into a story collection, book or other project. Start with my interests, audience and one small milestone.']
+    ],more:[]},
+    {name:'Music',icon:'🎵',prompts:[
+      ['🎧','Find my sound','Ask one question about sounds or songs I return to. Help me discover my musical tastes and creative strengths through a tiny experiment.'],
+      ['🎸','Make a song sketch','Help me turn a feeling into a song sketch with a vibe, chords, lyric seed and instrument choices. Explain theory as needed for my level.'],
+      ['💿','Build a music project','Help me shape my ideas into a song, EP or album. Start with a creative throughline and a first demo I can make.']
+    ],more:[]}
+  );
   if(typeof module!=='undefined' && module.exports)module.exports=types;
   else root.LakePromptTypes=types;
 })(typeof window==='undefined'?globalThis:window);
