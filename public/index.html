@@ -426,14 +426,9 @@ button.welcome-icon { background:none; border:0; padding:0; }
 .ride-home-tip p { margin:8px 0 0; color:var(--text-secondary); font-size:11px; }
 .ride-home-tip .ride-home-manual { margin-top:10px; }
 .ride-home-tip.is-tucked { width:auto; padding:0; border-radius:50%; }
-.ride-home-tip.is-tucked > :not(.ride-home-tip-open, .ride-home-patterns) { display:none; }
+.ride-home-tip.is-tucked > :not(.ride-home-tip-open) { display:none; }
 .ride-home-tip-open { display:none; }
-.ride-home-patterns { display:none; }
-.ride-home-tip.is-tucked .ride-home-patterns {
-  display:grid; place-items:center; position:absolute; top:calc(100% + 8px); right:0;
-  width:44px; height:44px; border-radius:50%; cursor:pointer;
-  border:1px solid var(--dock-border); background:var(--dock-bg); color:var(--lake-light);
-}
+.home-patterns { position:absolute; top:8px; left:0; z-index:4; }
 .ride-home-tip.is-tucked .ride-home-tip-open { display:block; width:44px; height:44px; border:0; border-radius:50%; background:transparent; cursor:pointer; }
 .ride-home-tip-close { position:absolute; top:4px; right:4px; width:28px; height:28px; background:none; border:0; color:var(--text-secondary); cursor:pointer; }
 .welcome-title { font-size: 22px; font-weight: 700; color: var(--lake-light); margin-bottom: 7px; }
@@ -3358,6 +3353,13 @@ function scheduleRideHomeTip(){
   const home=document.getElementById('welcomeScreen');
   if(!home || home.dataset.rideTipScheduled)return;
   home.dataset.rideTipScheduled='true';
+  home.style.position='relative';
+  const patterns=document.createElement('button');
+  patterns.type='button';
+  patterns.className='current-chip home-patterns';
+  patterns.textContent='♒️ Patterns Across Chats';
+  patterns.onclick=readCrossChatPatterns;
+  home.append(patterns);
   setTimeout(()=>{
     if(!home.isConnected || document.getElementById('rideHomeTip'))return;
     const tip=document.createElement('aside');
@@ -3377,14 +3379,6 @@ function scheduleRideHomeTip(){
       tip.querySelector('.ride-home-tip-close').focus();
     };
     tip.append(reopen);
-    const patterns=document.createElement('button');
-    patterns.type='button';
-    patterns.className='ride-home-patterns';
-    patterns.textContent='♒️';
-    patterns.title='Patterns Across Chats';
-    patterns.setAttribute('aria-label',patterns.title);
-    patterns.onclick=readCrossChatPatterns;
-    tip.append(patterns);
     let touchStart;
     tip.addEventListener('touchstart',event=>{
       const touch=event.touches[0];
@@ -3401,7 +3395,6 @@ function scheduleRideHomeTip(){
       dismissRideHomeTip();
       sendWave({visibleText:'📖 How to use The Lake',guide:true,requestText:'Give me a concise practical guide to using The Great Lake. Start with a brief introduction, then use Markdown level-two headings for each section. Explain what it can help me do, which controls to use, and give a few example prompts. Cover homepage starters, moods and slash commands, Next Waves, attachments, Crew and memory, and finding or recovering chats. Keep this focused on functionality. Do not launch a Ride a Wave question or start a personal analysis.',reuseAttachments:false});
     };
-    home.style.position='relative';
     home.append(tip);
     const cycle=()=>{
       if(!tip.isConnected || tip.dataset.paused)return;
