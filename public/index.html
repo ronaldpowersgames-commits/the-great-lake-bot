@@ -3919,11 +3919,12 @@ async function sendWave(options = {}) {
   if (waveInFlight) return;
   const input = document.getElementById('lakeInput');
   let text = options.requestText ?? input.value.trim();
-  const moodCommand = !options.requestText && text.match(/^\/(calm|shallow|analytical|stormy|drip)(?=\s|$)/i);
+  const moodCommand = (options.requestText == null || options.suggestionKind) &&
+    text.match(/^\/(calm|shallow|analytical|stormy|drip)(?=\s|$)/i);
   if(moodCommand){
     setMood(moodCommand[1].toLowerCase());
     text=text.slice(moodCommand[0].length).trim();
-    if(!text){input.value='';return;}
+    if(!text){if(options.requestText==null)input.value='';return;}
   }
   const visibleText = options.visibleText ?? text;
   if (!text && selectedFiles.length === 0) return;
