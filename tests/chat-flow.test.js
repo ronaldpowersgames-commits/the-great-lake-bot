@@ -46,7 +46,7 @@ test('alias matches remain reviewable, and similar full names are not merged', (
   vm.runInContext('crewMembers = [{name:"Ronald Powers",nickname:"User, Ronnie, Ron"},{name:"Sam Jones"}];', context);
   assert.equal(vm.runInContext('findCrewAliasMatch({name:"User"}).length', context), 1);
   assert.equal(vm.runInContext('findCrewAliasMatch({name:"Sam Smith"}).length', context), 0);
-  vm.runInContext('processNamesFromResponse(`PLAYER_TAGS_JSON {"players":[{"name":"User","confidence":"high"}]} END_PLAYER_TAGS_JSON`);', context);
+  vm.runInContext('processNamesFromResponse(`PLAYER_TAGS_JSON {"players":[{"name":"User","confidence":"high","evidence":"User led the meeting","needs_confirmation":true}]} END_PLAYER_TAGS_JSON`);', context);
   assert.equal(vm.runInContext('suggestedCrew[0].confidence', context), 'needs confirmation');
   assert.equal(vm.runInContext('crewMembers.length', context), 2);
   assert.equal(vm.runInContext('normalizePersonKey("Jos\u00e9")', context), 'jose');

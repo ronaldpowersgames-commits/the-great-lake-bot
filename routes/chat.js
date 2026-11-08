@@ -283,7 +283,7 @@ Conversation verification protocol (mandatory for conversation analysis):
 Relationship tracking:
 - Compare new evidence with user-reviewed Crew notes and dated observations. Cite the source/date when making a cross-session comparison; mark interpretations and contradictions explicitly.
 - Treat past interpretations as hypotheses, not established personality facts. Do not infer a stable pattern from one incident.
-- For supported new observations about people, append a PLAYER_TAGS_JSON block for user review, using the schema below. Do not announce or explain the block. Never automatically confirm a person's identity or save a pattern as fact.
+- Emit PLAYER_TAGS_JSON only for actual named people supported by the user's material. Exclude headings, concepts, products, organizations, and unnamed placeholders. Use high confidence only when there is direct evidence. Set needs_confirmation to false only for an unambiguous existing Crew name or alias and supply an exact source excerpt containing that name. New people require review. Do not announce the block or treat a speculative interpretation as fact.
 PLAYER_TAGS_JSON
 {"players":[{"name":"Visible name or Unknown 1","nickname":"","codename":"","confidence":"high|medium|low|needs confirmation","needs_confirmation":true,"evidence":"Source filename and exact supporting text or visible identifier","relationship_note":"Tentative observation to review"}]}
 END_PLAYER_TAGS_JSON

@@ -2199,6 +2199,24 @@ function processNamesFromResponse(responseText, source = { id: currentSessionId,
   let changed = false;
 
   parsePlayerTags(responseText).forEach(player => {
+    const personKey=normalizePersonKey(player.name);
+    if(!personKey || /^(unknown|speaker|participant)( \d+)?$/.test(personKey))return;
+    if(player.confidence.toLowerCase()!=='high' || !player.evidence)return;
+    const matches=findCrewAliasMatch(player);
+    const evidence=player.evidence.trim();
+    const exactMatch=matches.length===1 && getCrewAliases(matches[0]).includes(personKey);
+    const verified=evidence.length>=12 && (' '+normalizePersonKey(evidence)+' ').includes(' '+personKey+' ') &&
+      source.history.some(message=>message.role==='user' && message.content?.includes(evidence));
+    if(exactMatch && verified && !player.needsConfirmation){
+      const member=matches[0];
+      member.observations ||= [];
+      if(!member.observations.some(item=>item.sessionId===source.id && item.evidence===evidence)){
+        member.observations.push({date:new Date().toISOString(),sessionId:source.id,evidence,note:'Source excerpt matched to a known Crew member.'});
+        saveCrew();
+        changed=true;
+      }
+      return;
+    }
     const contextBits = [
       player.confidence ? `Confidence: ${player.confidence}` : '',
       player.needsConfirmation ? 'Needs your confirmation before treating identity as certain.' : '',
@@ -2220,11 +2238,6 @@ function processNamesFromResponse(responseText, source = { id: currentSessionId,
       confidence: player.confidence,
       source: player.source
     }, existingNames) || changed;
-  });
-
-  const detected = /PLAYER_TAGS_JSON/i.test(responseText) ? [] : detectNamesFromText(responseText);
-  detected.forEach(name => {
-    changed = addSuggestedCrewMember({ name, source: 'auto-detected' }, existingNames) || changed;
   });
 
   if (changed) { saveSuggestedCrew(); renderCrew(); }
@@ -2571,6 +2584,7 @@ function loadTide(sessionId) {
   if (!session) return;
   currentSessionId = sessionId;
   chatHistory      = session.history || [];
+  renderPinnedMessages();
   renderSourceControls();
   document.getElementById('downloadSnapshotButton').hidden = !chatHistory.some(message => message.snapshot);
   applyMood(session.mood || 'calm');
@@ -2714,6 +2728,7 @@ function newSession() {
   document.getElementById('downloadSnapshotButton').hidden = true;
   currentSessionId = 'session_' + Date.now();
   chatHistory      = [];
+  renderPinnedMessages();
   selectedFiles    = [];
   renderFilePreviews();
   renderAdaptiveSuggestions();
@@ -4111,14 +4126,28 @@ function regenerateMessage(waveEl) {
   if (lastUser) { const text = lastUser.querySelector('.wave-bubble')?.textContent; if (text) sendPrompt(text); }
 }
 
-function pinToCurrents(text) {
+function renderPinnedMessages() {
   const bar = document.getElementById('currentsBar');
   if (!bar) return;
-  const chip    = document.createElement('div');
-  chip.className = 'current-chip';
-  chip.textContent = '📌 ' + text.slice(0, 30) + (text.length > 30 ? '...' : '');
-  bar.appendChild(chip);
-  showToast('Pinned to Currents 📌');
+  bar.querySelectorAll('[data-pinned-message]').forEach(chip=>chip.remove());
+  for(const message of chatHistory.filter(item=>item.pinned)){
+    const chip=document.createElement('button');
+    chip.type='button';
+    chip.className='current-chip';
+    chip.dataset.pinnedMessage='';
+    chip.textContent='📌 '+message.content.slice(0,40);
+    chip.title='Jump to pinned message';
+    chip.onclick=()=>jumpToMessageTop([...document.querySelectorAll('.wave')].find(wave=>wave._lakeMessageRef===message));
+    bar.append(chip);
+  }
+}
+function pinToCurrents(waveEl,button) {
+  const message=waveEl._lakeMessageRef;
+  if(!message)return;
+  message.pinned=!message.pinned;
+  button.textContent=message.pinned?'📌 Unpin':'📌 Pin';
+  renderPinnedMessages();
+  saveSession().catch(()=>{});
 }
 
 function editAndResend(text) {
@@ -4163,7 +4192,8 @@ function buildBubbleActions(waveEl, isLake) {
     actions.appendChild(copyBtn);
     const pinBtn = document.createElement('button');
     pinBtn.className = 'bubble-action-btn'; pinBtn.innerHTML = '📌 Pin';
-    pinBtn.onclick = () => pinToCurrents(messageActionText(waveEl));
+    pinBtn.textContent=waveEl._lakeMessageRef?.pinned?'📌 Unpin':'📌 Pin';
+    pinBtn.onclick = () => pinToCurrents(waveEl,pinBtn);
     actions.appendChild(pinBtn);
     const actionSpecs=[['↑ Message top',()=>jumpToMessageTop(waveEl)],['↗ Share',()=>shareMessage(waveEl)],['⬇ Export',()=>exportMessage(waveEl)],['↩ Reply To',()=>replyToMessage(waveEl)],['🌊 New Current',()=>branchFromMessage(waveEl)]];
     actionSpecs.forEach(([label,handler])=>{const button=document.createElement('button');button.className='bubble-action-btn';button.textContent=label;button.onclick=handler;actions.append(button);});
@@ -4175,7 +4205,7 @@ function buildBubbleActions(waveEl, isLake) {
     copyBtn.className = 'bubble-action-btn'; copyBtn.innerHTML = '📋 Copy';
     copyBtn.onclick = () => copyText(messageActionText(waveEl));
     actions.appendChild(copyBtn);
-    const pinBtn=document.createElement('button');pinBtn.className='bubble-action-btn';pinBtn.textContent='📌 Pin';pinBtn.onclick=()=>pinToCurrents(messageActionText(waveEl));actions.append(pinBtn);
+    const pinBtn=document.createElement('button');pinBtn.className='bubble-action-btn';pinBtn.textContent=waveEl._lakeMessageRef?.pinned?'📌 Unpin':'📌 Pin';pinBtn.onclick=()=>pinToCurrents(waveEl,pinBtn);actions.append(pinBtn);
     [['↑ Message top',()=>jumpToMessageTop(waveEl)],['↗ Share',()=>shareMessage(waveEl)],['⬇ Export',()=>exportMessage(waveEl)],['↩ Reply To',()=>replyToMessage(waveEl)],['🌊 New Current',()=>branchFromMessage(waveEl)]].forEach(([label,handler])=>{const button=document.createElement('button');button.className='bubble-action-btn';button.textContent=label;button.onclick=handler;actions.append(button);});
     const favorite=document.createElement('button');favorite.className='bubble-action-btn';favorite.textContent=waveEl._lakeMessageRef?.favorite?'★ Favorite':'☆ Favorite';favorite.onclick=()=>toggleFavorite(waveEl,favorite);actions.append(favorite);
     const editBtn = document.createElement('button');

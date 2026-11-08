@@ -64,7 +64,14 @@ function renderTideTree() {
     info.append(name,preview);
     const time=document.createElement('span');time.className='tide-time';time.textContent=getTimeAgo(session.time);
     const remove=libraryButton('🗑','Delete chat',event=>deleteSession(event,session.id));remove.classList.add('tide-delete');
-    row.append(info,time,remove,libraryButton('↪','Move chat',()=>openFolderDialog('move',session.id)),libraryButton('✎','Rename chat',event=>renameSession(event,session.id)));
+    const toggleFlag=async key=>{
+      session[key]=!session[key];
+      if(!await persistSessions())session[key]=!session[key];
+      renderTideTree();
+    };
+    row.append(info,time,remove,libraryButton('↪','Move chat',()=>openFolderDialog('move',session.id)),libraryButton('✎','Rename chat',event=>renameSession(event,session.id)),
+      libraryButton(session.pinned?'📌':'♧',session.pinned?'Unpin chat':'Pin chat',()=>toggleFlag('pinned')),
+      libraryButton(session.favorite?'★':'☆',session.favorite?'Remove favorite':'Favorite chat',()=>toggleFlag('favorite')));
     parent.append(row);
   }
   function addLevel(parent,parentId,ancestorMatches=false) {
@@ -86,7 +93,8 @@ function renderTideTree() {
       });
       parent.append(details);found=true;
     }
-    const sessions=allSessions.filter(session=>parentId ? session.folderId===parentId : !session.folderId || !folderIds.has(session.folderId));
+    const sessions=allSessions.filter(session=>parentId ? session.folderId===parentId : !session.folderId || !folderIds.has(session.folderId))
+      .sort((a,b)=>Number(Boolean(b.pinned))-Number(Boolean(a.pinned)) || Number(Boolean(b.favorite))-Number(Boolean(a.favorite)));
     if(!parentId && tideFolders.length && sessions.some(session=>!query || matches(session))) {
       const heading=document.createElement('div');heading.className='unfiled-title';heading.textContent='Unfiled';parent.append(heading);
     }
