@@ -3191,7 +3191,7 @@ function scheduleRideHomeTip(){
     tip.querySelector('.welcome-prompt-featured').onclick=()=>rideAWave(true);
     tip.querySelector('.ride-home-manual').onclick=()=>{
       dismissRideHomeTip();
-      sendWave({visibleText:'📖 How to use The Lake',requestText:'Give me a concise practical guide to using The Great Lake. Explain what it can help me do, which controls to use, and give a few example prompts. Cover homepage starters, moods and slash commands, Next Waves, attachments, Crew and memory, and finding or recovering chats. Keep this focused on functionality. Do not launch a Ride a Wave question or start a personal analysis.',reuseAttachments:false});
+      sendWave({visibleText:'📖 How to use The Lake',guide:true,requestText:'Give me a concise practical guide to using The Great Lake. Start with a brief introduction, then use Markdown level-two headings for each section. Explain what it can help me do, which controls to use, and give a few example prompts. Cover homepage starters, moods and slash commands, Next Waves, attachments, Crew and memory, and finding or recovering chats. Keep this focused on functionality. Do not launch a Ride a Wave question or start a personal analysis.',reuseAttachments:false});
     };
     home.style.position='relative';
     home.append(tip);
@@ -3790,6 +3790,7 @@ async function sendWave(options = {}) {
       const cleanReflection = suggestionResult.text;
       const reflectionTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       const reply = { role: 'assistant', content: cleanReflection, time: reflectionTime,
+        ...(options.guide ? {guide:true} : {}),
         ...(suggestionResult.suggestions.length ? {promptSuggestions:suggestionResult.suggestions} : {}),
         ...(data.transcriptMemory && options.action==='transcript-memory' && filesToSend.length===1 ? {transcriptMemory:{...data.transcriptMemory,sourceId:filesToSend[0].sourceId}} : {}),
         ...(useWholeMemory ? {transcriptContext:{parts:transcriptWorkingMemory.total}} : {}),
@@ -3886,7 +3887,7 @@ function appendLakeWave(text, timeStr, scroll, snapshot, archiveCoverage, archiv
       <div class="wave-sender">The Lake</div>
       <div class="wave-bubble">${snapshot
         ? `<strong>AI handoff ready</strong><div>${snapshot.sessionCount} conversation${snapshot.sessionCount === 1 ? '' : 's'} · ${snapshot.messageCount} source messages</div><details class="snapshot-details"><summary>View JSON</summary><pre class="snapshot-json">${escapeHTML(text)}</pre></details>`
-        : formatReflection(text,scroll || messageRef?.sectionsExpanded)}</div>
+        : formatReflection(text,scroll || messageRef?.sectionsExpanded,messageRef?.guide || /quick user guide/i.test(text.split(/\r?\n/,1)[0]))}</div>
       <div class="wave-time">${timeStr}</div>
     </div>`;
 
@@ -3929,7 +3930,7 @@ function appendLakeWave(text, timeStr, scroll, snapshot, archiveCoverage, archiv
   if (scroll) container.scrollTop = container.scrollHeight;
 }
 
-function formatReflection(text,expandAll=false) {
+function formatReflection(text,expandAll=false,collapsedGuide=false) {
   const lines=String(text||'').split(/\r?\n/);
   const sectionAt=line=>/^(#{2,4}\s+.+|\d+(?:\.\d+)*\.\s+[^\n]{3,100})$/.test(line.trim());
   const sections=[];let lead=[];let current=null;
@@ -3939,8 +3940,8 @@ function formatReflection(text,expandAll=false) {
   }
   if(sections.length<2)return formatReflectionInline(text);
   let html=formatReflectionInline(lead.join('\n'));
-  html+='<div class="reflection-sections"><div class="reflection-hint">Double-tap to expand or collapse sections · hold to hear aloud</div>';
-  sections.forEach((section,index)=>{html+=`<details class="reflection-section" ${(expandAll || index===0)?'open':''}><summary>${formatReflectionInline(section.heading)}</summary><div class="reflection-section-body">${formatReflectionInline(section.body.join('\n'))}</div></details>`;});
+  html+='<div class="reflection-sections"><div class="reflection-hint">'+(collapsedGuide?'Tap a headline to open its section. Double-tap the message to open or close all sections.':'Double-tap to expand or collapse sections · hold to hear aloud')+'</div>';
+  sections.forEach((section,index)=>{html+=`<details class="reflection-section" ${(!collapsedGuide && (expandAll || index===0))?'open':''}><summary>${formatReflectionInline(section.heading)}</summary><div class="reflection-section-body">${formatReflectionInline(section.body.join('\n'))}</div></details>`;});
   return html+'</div>';
 }
 function formatReflectionInline(text) {
