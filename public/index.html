@@ -4360,6 +4360,34 @@ const TOTAL_BATCHES = LakePromptTypes.length;
 let defaultBatch = parseInt(localStorage.getItem('defaultBatch') || '1');
 
 function initCarousel() {
+  const starters=document.querySelector('.welcome-packs');
+  if(starters && !starters.dataset.pagesReady){
+    starters.dataset.pagesReady='true';
+    starters.prepend(starters.lastElementChild);
+    const pages=[...starters.children];
+    const dots=document.createElement('div');
+    dots.className='carousel-dots';
+    const selectPage=(index,behavior='smooth')=>starters.scrollTo({left:index*starters.clientWidth,behavior});
+    pages.forEach((page,index)=>{
+      const dot=document.createElement('button');
+      dot.type='button';
+      dot.className='carousel-dot';
+      dot.setAttribute('aria-label',page.textContent.trim().replace(/\s+/g,' '));
+      dot.onclick=()=>selectPage(index);
+      dots.append(dot);
+    });
+    starters.after(dots);
+    const update=()=>{
+      const index=Math.round(starters.scrollLeft/(starters.clientWidth||1));
+      [...dots.children].forEach((dot,i)=>{
+        dot.classList.toggle('active',i===index);
+        dot.setAttribute('aria-current',String(i===index));
+      });
+    };
+    starters.addEventListener('scroll',update,{passive:true});
+    selectPage(1,'instant');
+    update();
+  }
   const track  = document.getElementById('promptCarouselTrack');
   if (!track) return;
   if(!track.dataset.typesReady) {
