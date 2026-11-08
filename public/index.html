@@ -3348,6 +3348,41 @@ function transcriptSources(history=chatHistory,pending=selectedFiles) {
   return LakeTranscriptReview.inventory(history,pending,()=>crypto.randomUUID());
 }
 
+function recurringMeetingEvidence(currentSources,sessionId,question){
+  const seriesKey=name=>String(name||'').toLowerCase()
+    .replace(/\.(txt|log)$/,'').replace(/\b\d{4}[-_.]\d{1,2}[-_.]\d{1,2}\b/g,' ')
+    .replace(/[-_ ]part[-_ ]*\d+[-_ ]*of[-_ ]*\d+$/i,'').replace(/[^a-z0-9]+/g,' ').trim();
+  const anchors=new Map();
+  for(const file of currentSources){
+    const key=seriesKey(file.name);
+    const date=LakeMeetingMemory.dateOf(file.name,file.meetingDate).date;
+    if(date && key.length>=5 && !/^(meeting|transcript|call|notes|recording)$/.test(key)){
+      if(!anchors.has(key) || anchors.get(key)>date)anchors.set(key,date);
+    }
+  }
+  if(anchors.size!==1)return null;
+  const [series,latestDate]=anchors.entries().next().value;
+  const candidates=[];
+  for(const session of allSessions){
+    if(session.id===sessionId)continue;
+    for(const message of session.history||[])for(const file of message.attachments||[]){
+      if(!file.data || !/\.(txt|log)$/i.test(file.name) || seriesKey(file.name)!==series)continue;
+      const date=LakeMeetingMemory.dateOf(file.name,file.meetingDate).date;
+      if(date && date<latestDate)candidates.push({file,session,date});
+    }
+  }
+  const documents=candidates.sort((a,b)=>b.date.localeCompare(a.date)).slice(0,20).flatMap(({file,session},index)=>{
+    try {
+      const bytes=Uint8Array.from(atob(file.data.split(',')[1]),char=>char.charCodeAt(0));
+      return [{id:session.id+'/'+index,sessionId:session.id,filename:file.name,meetingDate:file.meetingDate,
+        text:new TextDecoder('utf-8',{fatal:true,ignoreBOM:true}).decode(bytes)}];
+    } catch {return [];}
+  });
+  if(!documents.length)return null;
+  const evidence=LakeMeetingMemory.retrieve(documents,question+' '+series+' decisions progress commitments',crewMembers,10000);
+  return evidence.passages.length?evidence:null;
+}
+
 function transcriptRowKey(){return storageKey('hideTranscriptRow_'+currentSessionId);}
 function setTranscriptRowHidden(hidden){
   if(hidden)localStorage.setItem(transcriptRowKey(),'true');
@@ -3933,6 +3968,11 @@ async function sendWave(options = {}) {
     formData.append('sourceMetadata',JSON.stringify(filesToSend.map(file => ({filename:file.name,meetingDate:file.meetingDate || ''}))));
     if(!options.snapshot && options.action!=='meeting-currents')formData.append('transcriptInventory',JSON.stringify({files:origin.sourceInventory,previouslySent:origin.previousReceipts,currentFiles:filesToSend.map(file=>file.sourceId).filter(Boolean)}));
     if(useWholeMemory)formData.append('transcriptWorkingMemory',JSON.stringify({parts:transcriptWorkingMemory.parts,complete:true,total:transcriptWorkingMemory.total}));
+    if(!options.snapshot && !['transcript-memory','meeting-currents'].includes(options.action)){
+      const currentTranscripts=useWholeMemory?transcriptSources(origin.history):filesToSend.filter(file=>/\.(txt|log)$/i.test(file.name));
+      const prior=recurringMeetingEvidence(currentTranscripts,origin.id,text);
+      if(prior)formData.append('priorMeetingEvidence',JSON.stringify(prior));
+    }
     filesToSend.forEach(file => formData.append('file', file));
 
     const response = await fetch('/chat', { method: 'POST', body: formData });
