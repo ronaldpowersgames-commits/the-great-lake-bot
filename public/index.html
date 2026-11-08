@@ -3191,12 +3191,12 @@ function suggestTranscriptSpeakers(attachments,sessionId) {
       const meetingDate = LakeMeetingMemory.dateOf(file.name,file.meetingDate);
       for(const speaker of LakeMeetingMemory.speakers(text)) {
         const name=normalizePersonKey(speaker.name);
-        const matches=crewMembers.filter(member=>normalizePersonKey(member.name)===name);
-        if(!name.includes(' ') || matches.length!==1)continue;
+        const matches=crewMembers.filter(member=>getCrewAliases(member).includes(name));
+        if(!name || matches.length!==1)continue;
         const member=matches[0];
         member.observations ||= [];
         if(member.observations.some(item=>item.sessionId===sessionId && item.evidence===speaker.evidence && item.sources?.includes(file.name)))continue;
-        member.observations.push({date:new Date().toISOString(),sessionId,evidence:speaker.evidence,note:'Exact Crew full name in transcript speaker label.',sources:[file.name],meetingDates:[{filename:file.name,...meetingDate}],sourceOffset:speaker.offset});
+        member.observations.push({date:new Date().toISOString(),sessionId,evidence:speaker.evidence,note:'Transcript speaker label matched a saved Crew name or alias.',sources:[file.name],meetingDates:[{filename:file.name,...meetingDate}],sourceOffset:speaker.offset});
         changed=true;
       }
     } catch(error) {console.warn('Could not inspect speaker labels:',file.name,error);}
