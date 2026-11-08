@@ -3008,8 +3008,9 @@ function openCrewModal(mode, idx = -1, prefill = '') {
   crewModalMode = mode; crewModalIndex = idx;
   const matchField = document.getElementById('crewMatchField');
   const matchSelect = document.getElementById('crewMatchSelect');
-  matchField.hidden = mode !== 'approve';
-  matchSelect.innerHTML = '<option value="">Add as a new person</option>' + crewMembers.map((member, index) =>
+  matchField.hidden = !['approve','edit'].includes(mode);
+  matchSelect.innerHTML = mode==='edit' ? '<option value="">Keep as a separate person</option>' : '<option value="">Add as a new person</option>';
+  matchSelect.innerHTML += crewMembers.map((member,index)=>mode==='edit' && index===idx?'':
     `<option value="${index}">${escapeHTML(member.name)}</option>`).join('');
   matchSelect.value = '';
   const deleteBtn = document.getElementById('crewModalDelete');
@@ -3063,8 +3064,20 @@ function saveCrewFromModal() {
   };
   let savedMember;
   if (crewModalMode === 'edit' && crewModalIndex >= 0) {
-    crewMembers[crewModalIndex] = { ...crewMembers[crewModalIndex], ...member };
-    savedMember=crewMembers[crewModalIndex];
+    const source={...crewMembers[crewModalIndex],...member};
+    const match=document.getElementById('crewMatchSelect').value;
+    if(match===''){
+      crewMembers[crewModalIndex]=source;
+      savedMember=source;
+    } else {
+      const targetIndex=Number(match);
+      const target=crewMembers[targetIndex];
+      if(!target || targetIndex===crewModalIndex)return;
+      if(!confirm(`Link ${source.name} into ${target.name}? The profile named ${target.name} will be kept, with both entries’ aliases, notes and evidence.`))return;
+      savedMember=LakeOrganization.mergeCrew(target,source);
+      crewMembers[targetIndex]=savedMember;
+      crewMembers.splice(crewModalIndex,1);
+    }
   } else if (crewModalMode === 'approve' && crewModalIndex >= 0) {
     const suggestion = suggestedCrew[crewModalIndex];
     const observations = [suggestion.observation,...(suggestion.observations || [])].filter(Boolean);
