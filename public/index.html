@@ -2205,14 +2205,15 @@ function processNamesFromResponse(responseText, source = { id: currentSessionId,
   parsePlayerTags(responseText).forEach(player => {
     const personKey=normalizePersonKey(player.name);
     if(!personKey || /^(unknown|speaker|participant)( \d+)?$/.test(personKey))return;
-    if(player.confidence.toLowerCase()!=='high' || !player.evidence)return;
+    if(!player.evidence)return;
+    const highConfidence=player.confidence.toLowerCase()==='high';
     const matches=crewMembers.filter(member=>getCrewAliases(member).includes(personKey));
     const evidence=player.evidence.trim();
     const exactMatch=matches.length===1 && getCrewAliases(matches[0]).includes(personKey);
     const verified=evidence.length>=12 && (' '+normalizePersonKey(evidence)+' ').includes(' '+personKey+' ') &&
       source.history.some(message=>message.role==='user' && message.content?.includes(evidence));
     const fullNameMatch=exactMatch && personKey.includes(' ') && normalizePersonKey(matches[0].name)===personKey;
-    if(exactMatch && verified && (fullNameMatch || !player.needsConfirmation)){
+    if(highConfidence && exactMatch && verified && (fullNameMatch || !player.needsConfirmation)){
       const member=matches[0];
       member.observations ||= [];
       if(!member.observations.some(item=>item.sessionId===source.id && item.evidence===evidence)){
