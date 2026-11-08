@@ -2431,18 +2431,30 @@ if (isIOS && !isInStandaloneMode) document.getElementById('installHint').style.d
 // ============================================
 // PROFILE PIC
 // ============================================
-const lakeAvatars=[['🌊','Wave Rider'],['🐙','Many-Armed Maker'],['🐚','Shell Listener'],
-  ['🪼','Jellyfish Dreamer'],['🪸','Reef Builder'],['🧭','Current Finder'],['🐬','Playful Explorer'],['⚓','Steady Anchor']];
+const lakeAvatars=[
+  ['🌊','The Tide Reader','Notices a shift before it becomes obvious.'],
+  ['🐙','The Octopus','Finds another way in when the obvious route is blocked.'],
+  ['🐚','The Conch','Hears the detail everyone else talked over.'],
+  ['🪼','The Moon Jelly','Leaves an idea room to take shape.'],
+  ['🪸','The Reef Builder','Creates places where other people’s ideas can grow.'],
+  ['🧭','The Navigator','Turns competing priorities into a clear course.'],
+  ['🐬','The Sounder','Tests the waters with a playful question.'],
+  ['⚓','The Anchor','Keeps the group steady when the plan changes.']
+];
 
 function renderLakeAvatarChoices(){
   const gallery=document.getElementById('lakeAvatarChoices');
   const selected=localStorage.getItem(storageKey('avatarChoice'));
   gallery.replaceChildren();
   const choices=currentProfilePic?[...lakeAvatars,['','My uploaded photo']]:lakeAvatars;
-  for(const [emoji,name] of choices){
+  for(const [emoji,name,description] of choices){
     const button=document.createElement('button');
     button.type='button';button.className='quick-action-btn';
     button.textContent=emoji?emoji+' '+name:'📷 '+name;
+    if(description){
+      button.title=description;
+      button.setAttribute('aria-label',name+'. '+description);
+    }
     button.setAttribute('aria-pressed',String(emoji?selected===emoji:!selected));
     button.onclick=()=>{
       if(emoji)localStorage.setItem(storageKey('avatarChoice'),emoji);
