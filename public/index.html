@@ -3154,7 +3154,7 @@ function updateCurrents(text) {
 function startHomepageWave(kind){
   const starters={
     splash:['💦 Splash','Give me one short, surprising, accurate fact. Pick something likely to spark my curiosity based on interests or examples I have shared. If little is known, choose an accessible subject. A brief connection to something I might enjoy noticing about myself is welcome when it fits. No quiz or follow-up question.'],
-    riptide:['🌊 Riptide','Ask exactly one light, natural, easy-to-answer question that might reveal something about what I enjoy, notice or choose. Use relevant context if available. No intro, analysis, or extra question.'],
+    riptide:['🌀 Riptide','Ask exactly one light, natural, easy-to-answer question that might reveal something about what I enjoy, notice or choose. Use relevant context if available. No intro, analysis, or extra question.'],
     manual:['📖 Chat Manual','Give me a practical chat manual for The Great Lake. Explain starters and Ride a Wave, Next Waves, moods and slash commands, creative types, attachments and transcript workflows, Crew and memory controls, and Past Tides and Recovery. Start with three easy ways in, then group details by task. Give example prompts. Only describe supported features.'],
     personalize:['🎛️ Personalize','Help me explain optional preferences for how The Lake works with me. Ask one easy question about a goal, preferred tone, or metaphor. Keep defaults available. If I want a persistent explicit override, show me where to edit Personal memory in Settings. Do not claim a change has been saved unless confirmed.'],
     solve:['⚡ Solve a Problem','Ask what is stuck if the problem is unclear. Then isolate the real constraint, challenge the assumption keeping me stuck, and give me one concrete move I can take today. Be sharp and direct.'],
@@ -3166,7 +3166,7 @@ function startHomepageWave(kind){
 function rideAWave(showHelp=false){
   dismissRideHomeTip();
   const guidance = showHelp
-    ? 'In the opening reply only, give a brief guide before the question. The floating 🌊 icon starts Ride a Wave. The yellow homepage starters include Splash (one surprising fact chosen for your interests) and Riptide (one easy question to help you notice something about yourself). The mood picker sets reply tone, depth and length. A slash mood at the start switches mood and sends the rest as the question, for example /drip What should I try first?'
+    ? 'In the opening reply only, give a brief guide before the question. The floating 🌊 icon starts Ride a Wave. The yellow homepage starters include 💦 Splash (one surprising fact chosen for your interests) and 🌀 Riptide (one easy question to help you notice something about yourself). Tap the 🎭 Lake Mood button in the header to choose a mood before sending. Explicitly say you can change mood message by message to shape tone, depth and length. Start a message with a slash command such as /drip What should I try first? to switch to 💧 Drip and answer that question. The selected mood stays active until you change it again.'
     : 'Skip onboarding unless the user has explicitly asked how to start or shown confusion about the controls. If so, explain only the control they need.';
   return sendWave({visibleText:'🌊 Ride a Wave',requestText:'Start a Ride a Wave conversation. Use relevant confirmed user context if supplied. Ask exactly one simple, engaging question. ' + guidance + ' In later turns ask one question at a time, ground insights in my answers, and when useful offer one small action and an optional later reflection. Respect a change of subject or a stop.',reuseAttachments:false});
 }
@@ -3186,7 +3186,7 @@ function scheduleRideHomeTip(){
     tip.id='rideHomeTip';
     tip.className='ride-home-tip';
     tip.setAttribute('aria-label','Ride a Wave tip');
-    tip.innerHTML='<button type="button" class="ride-home-tip-close" aria-label="Dismiss tip">×</button><h3>Not sure where to start?</h3><button type="button" class="welcome-prompt-featured">🌊 Ride a Wave</button><p>Start with one easy question. For a lighter opening, try <strong>Splash</strong> for a surprising fact or <strong>Riptide</strong> for one curious question.</p><button type="button" class="welcome-prompt-featured ride-home-manual">📖 How to use The Lake</button><p>See what the Lake can help with and how to use its tools.</p>';
+    tip.innerHTML='<button type="button" class="ride-home-tip-close" aria-label="Dismiss tip">×</button><h3>Not sure where to start?</h3><button type="button" class="welcome-prompt-featured">🌊 Ride a Wave</button><p>Start with one easy question. For a lighter opening, try <strong>💦 Splash</strong> for a surprising fact or <strong>🌀 Riptide</strong> for one curious question.</p><button type="button" class="welcome-prompt-featured ride-home-manual">📖 How to use The Lake</button><p>See what the Lake can help with and how to use its tools.</p>';
     tip.querySelector('.ride-home-tip-close').onclick=dismissRideHomeTip;
     tip.querySelector('.welcome-prompt-featured').onclick=()=>rideAWave(true);
     tip.querySelector('.ride-home-manual').onclick=()=>{
@@ -4364,7 +4364,7 @@ function initFeaturedPages(){
   const indicators=document.createElement('div');
   indicators.className='carousel-dots';
   const pairs=[[['manual','📖 Chat Manual'],['personalize','🎛️ Personalize']],null,
-    [['splash','💦 Splash'],['riptide','🌊 Riptide']],[['solve','⚡ Solve a Problem'],['decide','🧭 Make a Decision']]];
+    [['splash','💦 Splash'],['riptide','🌀 Riptide']],[['solve','⚡ Solve a Problem'],['decide','🧭 Make a Decision']]];
   original[0].before(rail,indicators);
   pairs.forEach((pair,index)=>{
     const page=document.createElement('div');
