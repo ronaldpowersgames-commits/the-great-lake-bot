@@ -417,6 +417,14 @@ body {
 }
 .welcome-icon:hover { transform: scale(1.12); }
 button.welcome-icon { background:none; border:0; padding:0; }
+.ride-home-tip {
+  position:absolute; z-index:4; top:12px; right:12px; width:min(300px,calc(100% - 24px));
+  padding:14px 28px 12px; text-align:center; border:1px solid var(--dock-border);
+  border-radius:14px; background:var(--dock-bg); box-shadow:0 0 18px color-mix(in srgb,var(--lake-glow) 20%,transparent);
+}
+.ride-home-tip h3 { margin:0 0 8px; color:var(--lake-light); font-size:15px; }
+.ride-home-tip p { margin:8px 0 0; color:var(--text-secondary); font-size:11px; }
+.ride-home-tip-close { position:absolute; top:4px; right:4px; width:28px; height:28px; background:none; border:0; color:var(--text-secondary); cursor:pointer; }
 .welcome-title { font-size: 22px; font-weight: 700; color: var(--lake-light); margin-bottom: 7px; }
 .welcome-sub   { font-size: 13px; color: var(--text-dim); max-width: 320px; line-height: 1.6; margin-bottom: 20px; }
 .welcome-prompts {
@@ -3138,7 +3146,31 @@ function updateCurrents(text) {
 // SENDING
 // ============================================
 function rideAWave(){
-  return sendWave({visibleText:'🌊 Ride a Wave',requestText:'Start a Ride a Wave conversation. Use relevant confirmed user context if supplied. Ask exactly one simple, engaging question with no introduction. In later turns ask one question at a time, ground insights in my answers, and when useful offer one small action and an optional later reflection. Respect a change of subject or a stop.',reuseAttachments:false});
+  dismissRideHomeTip();
+  return sendWave({visibleText:'🌊 Ride a Wave',requestText:'Start a Ride a Wave conversation. Use relevant confirmed user context if supplied. Ask exactly one simple, engaging question. In the opening reply only, add a short note that I can tap the floating 🌊 icon on the homepage to start another Ride a Wave. In later turns ask one question at a time, ground insights in my answers, and when useful offer one small action and an optional later reflection. Respect a change of subject or a stop.',reuseAttachments:false});
+}
+let rideHomeTipSeen=false;
+function dismissRideHomeTip(){
+  rideHomeTipSeen=true;
+  const tip=document.getElementById('rideHomeTip');
+  tip?.remove();
+  return Boolean(tip);
+}
+function scheduleRideHomeTip(){
+  const home=document.getElementById('welcomeScreen');
+  if(!home || rideHomeTipSeen)return;
+  setTimeout(()=>{
+    if(rideHomeTipSeen || !home.isConnected || document.getElementById('rideHomeTip'))return;
+    const tip=document.createElement('aside');
+    tip.id='rideHomeTip';
+    tip.className='ride-home-tip';
+    tip.setAttribute('aria-label','Ride a Wave tip');
+    tip.innerHTML='<button type="button" class="ride-home-tip-close" aria-label="Dismiss tip">×</button><h3>Not sure where to start?</h3><button type="button" class="welcome-prompt-featured">🌊 Ride a Wave</button><p>Start with one easy question. Follow the current toward a fresh idea or a small next step.</p>';
+    tip.querySelector('.ride-home-tip-close').onclick=dismissRideHomeTip;
+    tip.querySelector('.welcome-prompt-featured').onclick=rideAWave;
+    home.style.position='relative';
+    home.append(tip);
+  },2200);
 }
 function triggerDailyPrinciple() {
   return sendWave({
@@ -4297,6 +4329,7 @@ const TOTAL_BATCHES = LakePromptTypes.length;
 let defaultBatch = parseInt(localStorage.getItem('defaultBatch') || '1');
 
 function initCarousel() {
+  scheduleRideHomeTip();
   const track  = document.getElementById('promptCarouselTrack');
   if (!track) return;
   if(!track.dataset.typesReady) {
