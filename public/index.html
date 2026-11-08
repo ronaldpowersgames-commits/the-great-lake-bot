@@ -3671,7 +3671,8 @@ async function sendWave(options = {}) {
     crew: JSON.stringify(crewMembers.map(({ name, nickname, codename, role, context, observations }) => ({ name, nickname, codename, role, context, observations: (observations || []).slice(-10) })))
   };
   origin.firstResponseSuggestions=!options.snapshot && !origin.history.some(message=>message.role==='assistant') && !/\b(?:no follow[- ]?up|no suggestions?|just answer|one word)\b/i.test(text);
-  origin.showAdaptiveSuggestions=!options.snapshot && !options.quietOpening && !/\b(?:no follow[- ]?up|no suggestions?|just answer|one word)\b/i.test(text);
+  origin.showAdaptiveSuggestions=!options.snapshot && (options.requestText != null ||
+    !/\b(?:no follow[- ]?ups?|no suggestions?|skip (?:the )?next waves)\b/i.test(text));
   const reviewInventory=transcriptSources(origin.history,selectedFiles).map(file=>({id:file.sourceId,name:file.name,selected:!file.excluded}));
   origin.sourceInventory=reviewInventory;
   origin.previousReceipts=[...LakeTranscriptReview.status(transcriptSources(origin.history,selectedFiles),origin.history).receipts];
