@@ -84,8 +84,7 @@
     if(!enabled)return {...value,suggestions};
     if([6,8,10].includes(suggestions.length))return {...value,suggestions};
     const excerpt=text(String(value.text||'').replace(/[#*`]/g,''),220);
-    const topic=excerpt.split(/[.!?\n]/)[0].trim().slice(0,38);
-    const fallback=ALWAYS_MOVES.map(item=>excerpt?{...item,label:label(item.label+' — '+topic),prompt:text(item.prompt+' Focus specifically on this passage from your last answer: “'+excerpt+'”. Use our conversation and my stated goals; avoid repeating the previous answer.',600)}:{...item});
+    const fallback=ALWAYS_MOVES.map(item=>excerpt?{...item,prompt:text(item.prompt+' Focus specifically on this passage from your last answer: “'+excerpt+'”. Use our conversation and my stated goals; avoid repeating the previous answer.',600)}:{...item});
     const labels=new Set(suggestions.map(item=>String(item?.label||'').toLowerCase()));
     for(const item of fallback){ if(suggestions.length>=8)break; if(!labels.has(item.label.toLowerCase())){suggestions.push({...item});labels.add(item.label.toLowerCase());} }
     if(suggestions.length%2 && suggestions.length<10){
