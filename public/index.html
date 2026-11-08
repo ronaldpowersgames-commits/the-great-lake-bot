@@ -233,6 +233,7 @@ body {
 }
 .tide-item:hover, .tide-item:active { background: rgba(45,140,240,0.08); }
 .tide-item.active { background: rgba(45,140,240,0.12); border: 1px solid rgba(45,140,240,0.2); }
+.tide-actions-select { appearance:none; width:24px; flex-shrink:0; text-align:center; border:0; background:var(--dock-bg); color:var(--text-secondary); cursor:pointer; }
 .tide-icon    { font-size: 14px; margin-top: 2px; flex-shrink: 0; }
 .tide-info    { overflow: hidden; flex: 1; }
 .tide-name    { font-size: 12px; font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -1609,8 +1610,11 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
       <label for="lakePersonalNotes">Personal memory</label>
       <label><input id="lakeLearnProfile" type="checkbox" onchange="localStorage.setItem(storageKey('learnProfile'),String(this.checked))"> Learn from my messages across chats</label>
       <button type="button" class="quick-action-btn" onclick="clearLearnedProfile()">Clear learned profile</button>
-      <button type="button" class="quick-action-btn" onclick="restoreLearnedProfile()">Undo last profile clear</button>
-      <button type="button" class="quick-action-btn" onclick="restoreDeletedTides()">Restore last deleted chat or batch</button>
+      <details>
+        <summary>Recovery</summary>
+        <button type="button" class="quick-action-btn" onclick="restoreLearnedProfile()">Undo last profile clear</button>
+        <button type="button" class="quick-action-btn" onclick="restoreDeletedTides()">Restore last deleted chat or batch</button>
+      </details>
       <textarea id="lakePersonalNotes" maxlength="2000" rows="4" onchange="localStorage.setItem(storageKey('personalNotes'),this.value.trim())"></textarea>
       <div class="mode-continuity">Optional. Leave blank for the Lake’s default style. Add specific goals, preferred metaphors, tone, or ongoing projects if helpful. Saved on this device and sent with regular replies.</div>
     </div>
@@ -2267,9 +2271,11 @@ function renderAdaptiveSuggestions() {
   const panel=document.getElementById('adaptiveSuggestions');const list=document.getElementById('adaptiveSuggestionsList');
   if(!panel || !list || typeof list.replaceChildren!=='function')return;
   const reply=latestSuggestionReply();const suggestions=reply?.promptSuggestions || [];
-  if(reply && !reply.suggestionFallbackMigrated && suggestions.some(item=>LakeAdaptiveSuggestions.ALWAYS_MOVES.some(old=>old.label===item.label && old.prompt===item.prompt))){
+  const isLegacyFallback=item=>item.prompt.includes('Focus specifically on this passage from your last answer:') ||
+    LakeAdaptiveSuggestions.ALWAYS_MOVES.some(old=>old.label===item.label && old.prompt===item.prompt);
+  if(reply && suggestions.some(isLegacyFallback)){
     reply.suggestionFallbackMigrated=true;
-    const custom=suggestions.filter(item=>!LakeAdaptiveSuggestions.ALWAYS_MOVES.some(old=>old.label===item.label && old.prompt===item.prompt));
+    const custom=suggestions.filter(item=>!isLegacyFallback(item));
     reply.promptSuggestions=LakeAdaptiveSuggestions.ensureAlwaysSuggestions({text:reply.content,suggestions:custom.filter(item=>!item.prompt.includes('Focus specifically on this passage from your last answer:'))},false).suggestions;
     return renderAdaptiveSuggestions();
   }
@@ -2286,6 +2292,7 @@ function renderAdaptiveSuggestions() {
     list.addEventListener('pointermove',event=>{if(!drag)return;const delta=event.clientX-drag.x;if(Math.abs(delta)>6&&!drag.moved){drag.moved=true;list.setPointerCapture?.(event.pointerId);list.classList.add('is-dragging');}if(drag.moved){event.preventDefault();list.scrollLeft=drag.left-delta;}});
     const finish=()=>{if(!drag)return;list.dataset.justDragged=drag.moved?'true':'false';drag=null;list.classList.remove('is-dragging');setTimeout(()=>delete list.dataset.justDragged,0);};
     list.addEventListener('pointerup',finish);list.addEventListener('pointercancel',finish);
+    list.addEventListener('pointerleave',()=>{if(drag && !drag.moved)finish();});
     list.addEventListener('click',event=>{if(list.dataset.justDragged==='true'){event.preventDefault();event.stopPropagation();}},true);
   }
   panel.hidden=!suggestions.length;panel.dataset.mood=currentMood;panel.classList.toggle('rail-dockward',localStorage.getItem(storageKey('railSwipeMode'))==='down');list.replaceChildren();
@@ -2295,7 +2302,10 @@ function renderAdaptiveSuggestions() {
   suggestions.forEach((suggestion,index)=>{
     const item=document.createElement('div');item.className='adaptive-suggestion';
     const main=document.createElement('button');main.className='adaptive-suggestion-main';main.type='button';main.title=suggestion.why || suggestion.prompt;
-    main.textContent=suggestion.label;main.onclick=()=>chooseAdaptiveSuggestion(index);
+    const moodLabel=suggestion.mood && suggestion.mood!==currentMood
+      ? suggestion.mood[0].toUpperCase()+suggestion.mood.slice(1) : '';
+    main.textContent=moodLabel ? suggestion.label+' · '+moodLabel : suggestion.label;
+    main.onclick=()=>chooseAdaptiveSuggestion(index);
     item.append(main);list.append(item);
   });
 }
@@ -2312,7 +2322,9 @@ function retireAdaptiveSuggestions() {
   const reply=latestSuggestionReply();if(!reply)return;reply.promptSuggestionsDismissed=true;renderAdaptiveSuggestions();
 }
 function chooseAdaptiveSuggestion(index) {
+  if(waveInFlight || pendingFileLoads)return;
   const reply=latestSuggestionReply();const suggestion=reply?.promptSuggestions?.[index];if(!suggestion)return;
+  if(suggestion.mood && suggestion.mood!==currentMood)applyMood(suggestion.mood);
   saveSuggestionSignal('chosen',suggestion);reply.promptSuggestionsDismissed=true;renderAdaptiveSuggestions();
   saveSession().catch(error=>console.warn('Suggestion choice could not be saved:',error));
   return sendWave({visibleText:suggestion.prompt,requestText:suggestion.prompt,reuseAttachments:false,suggestionKind:suggestion.kind});

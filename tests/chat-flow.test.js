@@ -513,8 +513,8 @@ test('follow-up directions are specific, compact and subordinate to the user pac
     const {handler,requests}=routeContext();
     await handler({body:{message:'Read this exchange',mood,firstResponse:'true',suggestionProfile:JSON.stringify({chosen:{test:3},dismissed:{quiz:2},recent_chosen_kinds:['test']})},files:[]},{json(){},status(){return this;}});
     const prompt=requests.at(-1).messages[0].content;
-    assert.match(prompt,/even set of 6, 8 or 10/);
-    assert.match(prompt,/default to 8/i);
+    assert.match(prompt,/Offer up to eight varied/);
+    assert.match(prompt,/optionally include a mood field/);
     assert.match(prompt,/visible answer should stay clean/);
     assert.match(prompt,/explicitly asks for no follow-up/);
     assert.match(prompt,/Never withhold the requested answer/);

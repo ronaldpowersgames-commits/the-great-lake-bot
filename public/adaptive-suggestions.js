@@ -4,6 +4,7 @@
   else root.LakeAdaptiveSuggestions=api;
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   const KINDS=new Set(['drill_down','branch','reinforce','quiz','test','counterpoint','action']);
+  const MOODS=new Set(['calm','shallow','analytical','stormy','drip']);
 
   function text(value,limit){return String(value||'').replace(/\s+/g,' ').trim().slice(0,limit);}
   function label(value){
@@ -22,7 +23,8 @@
         label:label(item?.label),
         prompt:text(item?.prompt,600),
         kind:KINDS.has(item?.kind)?item.kind:'branch',
-        why:text(item?.why,180)
+        why:text(item?.why,180),
+        ...(MOODS.has(item?.mood)?{mood:item.mood}:{})
       })).filter(item=>item.label && item.prompt);
       return {text:visible,suggestions};
     } catch {
@@ -74,6 +76,7 @@
     const suggestions=[];
     for(const item of raw){
       const normalized={label:label(item?.label),prompt:text(item?.prompt,600),kind:KINDS.has(item?.kind)?item.kind:'branch',why:text(item?.why,180)};
+      if(MOODS.has(item?.mood))normalized.mood=item.mood;
       const labelKey='label:'+normalized.label.toLowerCase(),promptKey='prompt:'+normalized.prompt.toLowerCase();
       if(!normalized.label || !normalized.prompt || seen.has(labelKey)||seen.has(promptKey))continue;
       seen.add(labelKey);seen.add(promptKey);suggestions.push(normalized);if(suggestions.length>=10)break;

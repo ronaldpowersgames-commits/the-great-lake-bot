@@ -69,9 +69,16 @@ function renderTideTree() {
       if(!await persistSessions())session[key]=!session[key];
       renderTideTree();
     };
-    row.append(info,time,remove,libraryButton('↪','Move chat',()=>openFolderDialog('move',session.id)),libraryButton('✎','Rename chat',event=>renameSession(event,session.id)),
-      libraryButton(session.pinned?'📌':'♧',session.pinned?'Unpin chat':'Pin chat',()=>toggleFlag('pinned')),
-      libraryButton(session.favorite?'★':'☆',session.favorite?'Remove favorite':'Favorite chat',()=>toggleFlag('favorite')));
+    const actions=document.createElement('select');
+    actions.className='tide-actions-select';
+    actions.setAttribute('aria-label','Actions for '+session.name);
+    actions.onclick=event=>event.stopPropagation();
+    for(const [value,label] of [['','⋯'],['pinned',session.pinned?'Unpin chat':'Pin chat'],['favorite',session.favorite?'Remove favorite':'Favorite chat']]){
+      const option=document.createElement('option');option.value=value;option.textContent=label;actions.append(option);
+    }
+    actions.onchange=()=>{const key=actions.value;actions.value='';if(key)toggleFlag(key);};
+    name.textContent=(session.pinned?'📌 ':session.favorite?'★ ':'')+session.name;
+    row.append(info,time,remove,libraryButton('↪','Move chat',()=>openFolderDialog('move',session.id)),libraryButton('✎','Rename chat',event=>renameSession(event,session.id)),actions);
     parent.append(row);
   }
   function addLevel(parent,parentId,ancestorMatches=false) {
