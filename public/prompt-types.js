@@ -105,7 +105,7 @@
     ['🪞','Personality','how I tend to respond in different situations'],
     ['🤝','Relationships','which relationships matter to me and what makes them work'],
     ['👀','Biases & Blind Spots','what evidence I tend to overlook or overvalue, using a real example and an alternative explanation'],
-    ['⚖️','Tradeoff Compass','how I made a recent decision: what tipped the balance, what I was willing to give up, and what would have changed my mind'],
+    ['⚖️','Decisions Compass','how I made a recent decision: which tradeoffs I weighed, what tipped the balance, what I was willing to give up, and what would have changed my mind'],
     ['⚓','Dependencies','what I rely on and where I could build more options'],
     ['🌱','Opportunities','an opening I could act on with what I already have'],
     ['🏆','Achievements','what my past wins reveal about how I work']
