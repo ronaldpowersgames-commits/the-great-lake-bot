@@ -469,10 +469,11 @@ test('interaction analysis invites contextual clarification while respecting evi
 
 test('prompt Types include twelve choices and a usage guide, with grounded specialist and subtext guidance', async () => {
   const types=require('../public/prompt-types');
-  assert.equal(types.length,9);
+  assert.equal(types.length,10);
+  assert.deepEqual(types.slice(0,6).map(type=>type.name),['Writer','Music','Hypnotist','Social','SWIM','Still Waters']);
   assert.ok(types.find(type=>type.name==='Writer')?.prompts.length);
   assert.ok(types.find(type=>type.name==='Music')?.prompts.length);
-  for(const type of types.slice(0,7)) {
+  for(const type of types.filter(type=>!['Writer','Music','SWIM'].includes(type.name))) {
     assert.equal((type.prompts?.length || 6)+type.more.length,12);
     assert.equal(type.more.at(-1)[1],'Use This Type');
     assert.match(type.more.at(-1)[2],/neither resets this chat/);

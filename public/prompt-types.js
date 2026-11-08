@@ -95,6 +95,27 @@
       ['💿','Build a music project','Help me shape my ideas into a song, EP or album. Start with a creative throughline and a first demo I can make.']
     ],more:[]}
   );
-  if(typeof module!=='undefined' && module.exports)module.exports=types;
-  else root.LakePromptTypes=types;
+  const swim={name:'SWIM',icon:'🏊',prompts:[],more:[]};
+  const swimTopics=[
+    ['🎯','Goals','what I want to move toward and why it matters'],
+    ['✨','Talents','what comes naturally to me and where it has helped'],
+    ['⚡','Motivations','what gives me energy and what drains it'],
+    ['🧭','Values','what I prioritize when two things I care about conflict'],
+    ['🔎','Interests','what repeatedly catches my curiosity'],
+    ['🪞','Personality','how I tend to respond in different situations'],
+    ['🤝','Relationships','which relationships matter to me and what makes them work'],
+    ['⚖️','Biases','what evidence I may overlook or overvalue'],
+    ['👀','Blind Spots','a recurring pattern I might be missing'],
+    ['⚓','Dependencies','what I rely on and where I could build more options'],
+    ['🌱','Opportunities','an opening I could act on with what I already have'],
+    ['🏆','Achievements','what my past wins reveal about how I work']
+  ];
+  swimTopics.forEach(([icon,name,topic],index)=>{
+    const group=index<6?swim.prompts:swim.more;
+    group.push([icon,name,`Help me discover ${topic}. Start with one easy question. Follow my examples, reflect one grounded connection I might have missed, and invite me to confirm or refine it. Keep it conversational and offer a small experiment if useful.`]);
+  });
+  const ordered=['Writer','Music','Hypnotist','Social','SWIM','Still Waters','Internal','Podcast Style','Parent','Learn']
+    .map(name=>name==='SWIM'?swim:types.find(type=>type.name===name));
+  if(typeof module!=='undefined' && module.exports)module.exports=ordered;
+  else root.LakePromptTypes=ordered;
 })(typeof window==='undefined'?globalThis:window);

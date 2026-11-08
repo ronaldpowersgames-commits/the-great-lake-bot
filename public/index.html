@@ -3278,7 +3278,7 @@ function scheduleRideHomeTip(){
         return;
       }
       const tucked=tip.classList.toggle('is-tucked');
-      setTimeout(cycle,tucked?8000:5000);
+      setTimeout(cycle,tucked?20000:5000);
     };
     setTimeout(cycle,5000);
   },2200);
@@ -4527,7 +4527,8 @@ function initMic() {
 // ============================================
 let currentBatch = 1;
 const TOTAL_BATCHES = LakePromptTypes.length;
-let defaultBatch = parseInt(localStorage.getItem('defaultBatch') || '1');
+const swimBatch = LakePromptTypes.findIndex(type=>type.name==='SWIM');
+let defaultBatch = LakePromptTypes.findIndex(type=>type.name===localStorage.getItem('defaultPromptType'));
 
 function initFeaturedPages(){
   const prompts=document.querySelector('#welcomeScreen .welcome-prompts');
@@ -4579,9 +4580,9 @@ function initCarousel() {
   const track  = document.getElementById('promptCarouselTrack');
   if (!track) return;
   if(!track.dataset.typesReady) {
-    const existing=track.querySelectorAll('.prompt-batch');
+    const existing=new Map(['Social','Still Waters','Internal','Podcast Style'].map((name,index)=>[name,track.children[index]]));
     LakePromptTypes.forEach((type,index)=>{
-      let batch=existing[index];
+      let batch=existing.get(type.name);
       if(!batch) {
         batch=document.createElement('div');batch.className='prompt-batch';
         const label=document.createElement('div');label.className='batch-label';batch.append(label);
@@ -4603,6 +4604,8 @@ function initCarousel() {
         button.textContent=icon+' '+name;button.dataset.longPressBatch=String(index);button.onclick=()=>sendPrompt(prompt);next.append(button);
       });
       groups.append(next);batch.append(groups);
+      batch.querySelectorAll('[data-long-press-batch]').forEach(button=>{button.dataset.longPressBatch=String(index);});
+      track.append(batch);
     });
     const dots=document.querySelector('.prompt-carousel-container .carousel-dots');dots.replaceChildren();
     LakePromptTypes.forEach((type,index)=>{
@@ -4611,7 +4614,7 @@ function initCarousel() {
     });
     track.dataset.typesReady='true';
   }
-  currentBatch = Number.isInteger(defaultBatch) && defaultBatch>=0 && defaultBatch<TOTAL_BATCHES ? defaultBatch : 1;
+  currentBatch = defaultBatch>=0 && defaultBatch<TOTAL_BATCHES ? defaultBatch : swimBatch;
   track.style.transition = 'none';
   track.style.transform  = `translateX(-${currentBatch * 100}%)`;
   requestAnimationFrame(() => { track.style.transition = ''; });
@@ -4637,6 +4640,7 @@ function goToBatch(index) {
 function setDefaultBatch(batchIndex) {
   defaultBatch = batchIndex;
   localStorage.setItem('defaultBatch', batchIndex);
+  localStorage.setItem('defaultPromptType',LakePromptTypes[batchIndex].name);
   showToast(`Default Type: ${LakePromptTypes[batchIndex].name}`);
 }
 
