@@ -2286,6 +2286,7 @@ function latestSuggestionReply() {
   }
   return latest && Array.isArray(latest.promptSuggestions) && latest.promptSuggestions.length && !latest.promptSuggestionsDismissed ? latest : null;
 }
+const timedSuggestionReplies = new WeakSet();
 function renderAdaptiveSuggestions() {
   const panel=document.getElementById('adaptiveSuggestions');const list=document.getElementById('adaptiveSuggestionsList');
   if(!panel || !list || typeof list.replaceChildren!=='function')return;
@@ -2316,6 +2317,20 @@ function renderAdaptiveSuggestions() {
   }
   panel.hidden=!suggestions.length;panel.dataset.mood=currentMood;panel.classList.toggle('rail-dockward',localStorage.getItem(storageKey('railSwipeMode'))==='down');list.replaceChildren();
   const collapsed=Boolean(reply?.suggestionsCollapsed);panel.classList.toggle('is-collapsed',collapsed);
+  if(reply && !collapsed && !timedSuggestionReplies.has(reply)){
+    timedSuggestionReplies.add(reply);
+    const collapseWhenIdle=()=>{
+      if(latestSuggestionReply()!==reply || reply.suggestionsCollapsed)return;
+      if(panel.matches(':hover, :focus-within')){
+        setTimeout(collapseWhenIdle,3000);
+        return;
+      }
+      reply.suggestionsCollapsed=true;
+      renderAdaptiveSuggestions();
+      saveSession().catch(()=>{});
+    };
+    setTimeout(collapseWhenIdle,15000);
+  }
   panel.querySelectorAll('.adaptive-suggestions-close').forEach(toggle=>{toggle.textContent=collapsed?'⌃':'⌄';toggle.setAttribute('aria-expanded',collapsed?'false':'true');toggle.setAttribute('aria-label',collapsed?'Expand suggestions':'Collapse suggestions');});
   if(!suggestions.length)return;
   suggestions.forEach((suggestion,index)=>{
