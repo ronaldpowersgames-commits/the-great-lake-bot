@@ -627,12 +627,12 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
 .adaptive-suggestions[hidden] { display: none; }
 .adaptive-suggestions.is-collapsed .adaptive-suggestions-list { display: none; }
 .adaptive-suggestions.is-collapsed { padding-bottom: 1px; }
-.adaptive-suggestions-head { display: flex; align-items: center; justify-content: flex-end; gap: 4px; min-height: 18px; }
+.adaptive-suggestions-head { display: flex; width:100%; align-items: center; justify-content: space-between; gap: 4px; min-height: 28px; }
 .adaptive-suggestions-title { color: var(--text-dim); font-size: 8px; font-weight: 650; letter-spacing: .35px; }
 .adaptive-suggestions-close { width: 24px; height: 20px; border: 0; border-radius: 999px; background: transparent; color: var(--text-dim); cursor: pointer; font-size: 14px; line-height: 1; }
 .adaptive-suggestions-close { color: var(--lake-light) !important; filter: drop-shadow(0 0 6px var(--lake-glow)); text-shadow: 0 0 5px var(--lake-light), 0 0 10px var(--lake-glow); }
 .adaptive-suggestions-close { animation: nextWaveArrowPulse 1.9s ease-in-out infinite; }
-@keyframes nextWaveArrowPulse { 0%,100% { filter:drop-shadow(0 0 4px var(--lake-glow)); } 50% { filter:drop-shadow(0 0 10px var(--lake-glow)); text-shadow:0 0 7px var(--lake-light),0 0 14px var(--lake-glow); } }
+@keyframes nextWaveArrowPulse { 0%,100% { filter:drop-shadow(0 0 4px var(--lake-glow)); transform:scale(1); } 50% { filter:drop-shadow(0 0 14px var(--lake-glow)); transform:scale(1.18); text-shadow:0 0 8px #fff,0 0 20px var(--lake-glow); } }
 @media (prefers-reduced-motion:reduce){.adaptive-suggestions-close{animation:none;}}
 .adaptive-suggestions-close:hover { background: rgba(255,255,255,.07); color: var(--text-primary); }
 .adaptive-suggestions-list { width: 100%; display: grid; grid-template-rows: repeat(2, minmax(28px, auto)); grid-auto-flow: column; grid-auto-columns: minmax(170px, 1fr); gap: 4px; overflow-x: auto; overflow-y: hidden; justify-content: start; max-width: 100%; padding-bottom: 1px; }
@@ -641,7 +641,7 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
 .adaptive-suggestion-main {
   min-height: 28px; padding: 5px 10px;
   border: 1px solid color-mix(in srgb, var(--lake-glow) 46%, var(--dock-border)); border-radius: 999px;
-  background: linear-gradient(135deg, rgba(45,140,240,.48), rgba(100,181,246,.38));
+  background: linear-gradient(135deg, rgba(45,140,240,.82), rgba(100,181,246,.74));
   color: #fff; box-shadow: 0 2px 10px color-mix(in srgb, var(--lake-glow) 17%, transparent);
   cursor: pointer; font: inherit; font-size: 10.5px; font-weight: 600; line-height: 1.2; text-align: left;
   text-shadow: 0 0 4px var(--lake-light), 0 0 9px var(--lake-glow);
@@ -1449,6 +1449,9 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
       <div class="files-preview-container" id="filesPreviewContainer"></div>
       <section class="adaptive-suggestions" id="adaptiveSuggestions" aria-label="Suggested next moves" hidden>
         <div class="adaptive-suggestions-head">
+          <button class="adaptive-suggestions-close" onclick="toggleAdaptiveSuggestions()" aria-label="Collapse suggestions" aria-expanded="true">⌄</button>
+          <span class="adaptive-suggestions-title">Swipe ↔ / drag for more</span>
+          <button class="adaptive-suggestions-close" onclick="toggleAdaptiveSuggestions()" aria-label="Collapse suggestions" aria-expanded="true">⌄</button>
           <span class="adaptive-suggestions-title">Suggested next waves</span>
           <button class="adaptive-suggestions-close" onclick="toggleAdaptiveSuggestions()" aria-label="Collapse suggestions" title="Collapse suggestions" aria-expanded="true">⌃</button>
         </div>
@@ -2220,7 +2223,7 @@ function renderAdaptiveSuggestions() {
   const panel=document.getElementById('adaptiveSuggestions');const list=document.getElementById('adaptiveSuggestionsList');
   if(!panel || !list || typeof list.replaceChildren!=='function')return;
   const reply=latestSuggestionReply();const suggestions=reply?.promptSuggestions || [];
-  if(reply && suggestions.length<4){reply.promptSuggestions=LakeAdaptiveSuggestions.ensureAlwaysSuggestions({suggestions},true).suggestions;return renderAdaptiveSuggestions();}
+  if(reply && suggestions.length<8){reply.promptSuggestions=LakeAdaptiveSuggestions.ensureAlwaysSuggestions({text:reply.content,suggestions},true).suggestions;return renderAdaptiveSuggestions();}
   if(!panel.dataset.gestures){
     panel.dataset.gestures='true';let start=null;
     panel.addEventListener('dblclick',event=>{if(event.target.closest('button'))return;toggleAdaptiveSuggestions();});
@@ -2238,7 +2241,7 @@ function renderAdaptiveSuggestions() {
   }
   panel.hidden=!suggestions.length;panel.dataset.mood=currentMood;panel.classList.toggle('rail-dockward',localStorage.getItem(storageKey('railSwipeMode'))==='down');list.replaceChildren();
   const collapsed=Boolean(reply?.suggestionsCollapsed);panel.classList.toggle('is-collapsed',collapsed);
-  const toggle=panel.querySelector('.adaptive-suggestions-close');if(toggle){toggle.textContent=collapsed?'⌃':'⌄';toggle.setAttribute('aria-expanded',collapsed?'false':'true');}
+  panel.querySelectorAll('.adaptive-suggestions-close').forEach(toggle=>{toggle.textContent=collapsed?'⌃':'⌄';toggle.setAttribute('aria-expanded',collapsed?'false':'true');toggle.setAttribute('aria-label',collapsed?'Expand suggestions':'Collapse suggestions');});
   if(!suggestions.length)return;
   suggestions.forEach((suggestion,index)=>{
     const item=document.createElement('div');item.className='adaptive-suggestion';
