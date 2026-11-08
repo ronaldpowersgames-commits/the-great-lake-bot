@@ -1618,7 +1618,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
       <div class="depths-option active" data-mood="calm" onclick="setMood('calm',event)">🌊 Calm — gentle, reflective</div>
       <div class="depths-option" data-mood="analytical" onclick="setMood('analytical',event)">🔍 Analytical — read precisely</div>
       <div class="depths-option" data-mood="stormy" onclick="setMood('stormy',event)">⛈️ Stormy — write with bite</div>
-      <div class="mode-continuity">Switch anytime with /drip, /shallow, /calm, /analytical, or /stormy at the start of a message.</div>
+      <div class="mode-continuity">Switch anytime with /drip, /shallow, /calm, /analytical, or /stormy at the start or end of a message.</div>
       <div class="mode-continuity"><strong>Same chat. Different lens.</strong> Expect replies in the selected mood’s tone, depth, and length.</div>
     </div>
     <div class="depths-section crew-modal-field">
@@ -3920,10 +3920,11 @@ async function sendWave(options = {}) {
   const input = document.getElementById('lakeInput');
   let text = options.requestText ?? input.value.trim();
   const moodCommand = (options.requestText == null || options.suggestionKind) &&
-    text.match(/^\/(calm|shallow|analytical|stormy|drip)(?=\s|$)/i);
+    (text.match(/^\/(calm|shallow|analytical|stormy|drip)(?=\s|$)/i) ||
+      text.match(/\s+\/(calm|shallow|analytical|stormy|drip)\s*$/i));
   if(moodCommand){
     setMood(moodCommand[1].toLowerCase());
-    text=text.slice(moodCommand[0].length).trim();
+    text=(text.slice(0,moodCommand.index)+text.slice(moodCommand.index+moodCommand[0].length)).trim();
     if(!text){if(options.requestText==null)input.value='';return;}
   }
   const visibleText = options.visibleText ?? text;
