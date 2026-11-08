@@ -78,7 +78,6 @@ function renderTideTree() {
     const preview=document.createElement('div');preview.className='tide-preview';preview.textContent=session.preview||'';
     info.append(name,preview);
     const time=document.createElement('span');time.className='tide-time';time.textContent=getTimeAgo(session.time);
-    const remove=libraryButton('🗑','Delete chat',event=>deleteSession(event,session.id));remove.classList.add('tide-delete');
     const toggleFlag=async key=>{
       session[key]=!session[key];
       if(!await persistSessions())session[key]=!session[key];
@@ -88,12 +87,18 @@ function renderTideTree() {
     actions.className='tide-actions-select';
     actions.setAttribute('aria-label','Actions for '+session.name);
     actions.onclick=event=>event.stopPropagation();
-    for(const [value,label] of [['','⋯'],['pinned',session.pinned?'Unpin chat':'Pin chat'],['favorite',session.favorite?'Remove favorite':'Favorite chat']]){
+    for(const [value,label] of [['','⋯'],['pinned',session.pinned?'Unpin chat':'Pin chat'],['favorite',session.favorite?'Remove favorite':'Favorite chat'],['move','Move chat'],['rename','Rename chat'],['delete','Delete chat']]){
       const option=document.createElement('option');option.value=value;option.textContent=label;actions.append(option);
     }
-    actions.onchange=()=>{const key=actions.value;actions.value='';if(key)toggleFlag(key);};
+    actions.onchange=event=>{
+      const action=actions.value;actions.value='';
+      if(action==='move')openFolderDialog('move',session.id);
+      else if(action==='rename')renameSession(event,session.id);
+      else if(action==='delete')deleteSession(event,session.id);
+      else if(action)toggleFlag(action);
+    };
     name.textContent=(session.pinned?'📌 ':session.favorite?'★ ':'')+session.name;
-    row.append(info,time,remove,libraryButton('↪','Move chat',()=>openFolderDialog('move',session.id)),libraryButton('✎','Rename chat',event=>renameSession(event,session.id)),actions);
+    row.append(info,time,actions);
     parent.append(row);
   }
   function addLevel(parent,parentId,ancestorMatches=false) {

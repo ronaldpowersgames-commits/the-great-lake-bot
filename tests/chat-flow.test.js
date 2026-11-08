@@ -626,13 +626,15 @@ test('meeting dates come from titles, preserve uncertainty and accept reviewed c
 test('speaker labels update only unique existing full names and skip prose and fuzzy aliases', () => {
   const context=browserContext();
   context.saveCrew=()=>{};
-  const text='[00:01:02] Roby: I will send the revised plan.\r\nAutonomy: A useful value.\r\n[00:01:03] Robert Smith: I will review it.\r\n';
+  const text='[00:01:02] Roby: I will send the revised plan.\r\nAutonomy: A useful value.\r\n[00:01:03] Robbie: I will review it.\r\n';
   context.sourceData='data:text/plain;base64,'+Buffer.from(text).toString('base64');
   vm.runInContext('crewMembers=[{name:"Robert Smith",nickname:"Robby"}];suggestTranscriptSpeakers([{name:"2026-08-31-call.txt",data:sourceData}],"call-one");suggestTranscriptSpeakers([{name:"2026-09-07-call.txt",data:sourceData}],"call-two");',context);
   assert.equal(vm.runInContext('crewMembers.length',context),1);
   assert.equal(vm.runInContext('suggestedCrew.length',context),0);
   assert.equal(vm.runInContext('crewMembers[0].observations[0].meetingDates[0].date',context),'2026-08-31');
   assert.equal(vm.runInContext('crewMembers[0].observations[1].meetingDates[0].date',context),'2026-09-07');
+  vm.runInContext('crewMembers.push({name:"Robbie Jones",nickname:"Robbie"});suggestTranscriptSpeakers([{name:"2026-09-07-call.txt",data:sourceData}],"ambiguous");',context);
+  assert.equal(vm.runInContext('crewMembers[0].observations.length',context),2);
 });
 
 test('meeting retrieval expands reviewed aliases, cites exact ranges and does not inflate repeated uploads', () => {

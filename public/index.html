@@ -233,7 +233,8 @@ body {
 }
 .tide-item:hover, .tide-item:active { background: rgba(45,140,240,0.08); }
 .tide-item.active { background: rgba(45,140,240,0.12); border: 1px solid rgba(45,140,240,0.2); }
-.tide-actions-select { appearance:none; width:24px; flex-shrink:0; text-align:center; border:0; background:var(--dock-bg); color:var(--text-secondary); cursor:pointer; }
+.tide-actions-select { appearance:none; width:32px; min-height:28px; flex-shrink:0; text-align:center; border:0; border-radius:5px; background:var(--dock-bg); color:var(--text-secondary); cursor:pointer; }
+@media (pointer:coarse) { .tide-actions-select { width:44px; min-height:44px; } }
 .tide-icon    { font-size: 14px; margin-top: 2px; flex-shrink: 0; }
 .tide-info    { overflow: hidden; flex: 1; }
 .tide-name    { font-size: 12px; font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -2163,6 +2164,12 @@ function findCrewAliasMatch(suggestion) {
   );
 }
 
+function confidentCrewMatches(name) {
+  const spellingKey = value => value.replace(/\b([a-z]{3,})(?:ie|y)\b/g, '$1y');
+  const key = spellingKey(name);
+  return crewMembers.filter(member => getCrewAliases(member).some(alias => spellingKey(alias) === key));
+}
+
 function addSuggestedCrewMember(suggestion, existingNames) {
   const key = normalizePersonKey(suggestion.name);
   if (['the lake', 'lake', 'the great lake'].includes(key)) return false;
@@ -2179,7 +2186,7 @@ function addSuggestedCrewMember(suggestion, existingNames) {
     return false;
   }
 
-  const matches = findCrewAliasMatch(suggestion);
+  const matches = [...new Set([...confidentCrewMatches(key), ...findCrewAliasMatch(suggestion)])];
   suggestion.possibleMatches = matches.map(member => member.name);
   if (matches.length) {
     suggestion.confidence = 'needs confirmation';
@@ -2207,13 +2214,13 @@ function processNamesFromResponse(responseText, source = { id: currentSessionId,
     if(!personKey || /^(unknown|speaker|participant)( \d+)?$/.test(personKey))return;
     if(!player.evidence)return;
     const highConfidence=player.confidence.toLowerCase()==='high';
-    const matches=crewMembers.filter(member=>getCrewAliases(member).includes(personKey));
+    const matches=confidentCrewMatches(personKey);
     const evidence=player.evidence.trim();
     const exactMatch=matches.length===1 && getCrewAliases(matches[0]).includes(personKey);
     const verified=evidence.length>=12 && (' '+normalizePersonKey(evidence)+' ').includes(' '+personKey+' ') &&
       source.history.some(message=>message.role==='user' && message.content?.includes(evidence));
     const fullNameMatch=exactMatch && personKey.includes(' ') && normalizePersonKey(matches[0].name)===personKey;
-    if(highConfidence && exactMatch && verified && (fullNameMatch || !player.needsConfirmation)){
+    if(highConfidence && matches.length===1 && verified && (fullNameMatch || !player.needsConfirmation)){
       const member=matches[0];
       member.observations ||= [];
       if(!member.observations.some(item=>item.sessionId===source.id && item.evidence===evidence)){
@@ -3191,7 +3198,7 @@ function suggestTranscriptSpeakers(attachments,sessionId) {
       const meetingDate = LakeMeetingMemory.dateOf(file.name,file.meetingDate);
       for(const speaker of LakeMeetingMemory.speakers(text)) {
         const name=normalizePersonKey(speaker.name);
-        const matches=crewMembers.filter(member=>getCrewAliases(member).includes(name));
+        const matches=confidentCrewMatches(name);
         if(!name || matches.length!==1)continue;
         const member=matches[0];
         member.observations ||= [];
