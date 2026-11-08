@@ -1926,6 +1926,20 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   const lakeInput = document.getElementById('lakeInput');
   if (lakeInput) {
+    lakeInput.addEventListener('dragover',event=>{
+      if(!event.dataTransfer?.types.includes('application/x-lake-next-wave'))return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect='copy';
+    });
+    lakeInput.addEventListener('drop',event=>{
+      const prompt=event.dataTransfer?.getData('application/x-lake-next-wave');
+      if(!prompt)return;
+      event.preventDefault();
+      lakeInput.value=lakeInput.value.trimEnd() ? lakeInput.value.trimEnd()+'\n\n'+prompt : prompt;
+      lakeInput.focus();
+      lakeInput.setSelectionRange(lakeInput.value.length,lakeInput.value.length);
+      scheduleInputResize(lakeInput);
+    });
     lakeInput.addEventListener('compositionstart',()=>{lakeInput.dataset.composing='true';});
     lakeInput.addEventListener('compositionend',()=>{lakeInput.dataset.composing='false';scheduleInputResize(lakeInput);});
     lakeInput.addEventListener('paste', async (e) => {
@@ -2340,7 +2354,7 @@ function renderAdaptiveSuggestions() {
   }
   if(!list.dataset.dragReady){
     list.dataset.dragReady='true';let drag=null;
-    list.addEventListener('pointerdown',event=>{if(event.pointerType==='touch'||event.button!==0)return;drag={x:event.clientX,left:list.scrollLeft,moved:false};});
+    list.addEventListener('pointerdown',event=>{if(event.pointerType==='touch'||event.button!==0||event.target.closest('[draggable="true"]'))return;drag={x:event.clientX,left:list.scrollLeft,moved:false};});
     list.addEventListener('pointermove',event=>{if(!drag)return;const delta=event.clientX-drag.x;if(Math.abs(delta)>6&&!drag.moved){drag.moved=true;list.setPointerCapture?.(event.pointerId);list.classList.add('is-dragging');}if(drag.moved){event.preventDefault();list.scrollLeft=drag.left-delta;}});
     const finish=()=>{if(!drag)return;list.dataset.justDragged=drag.moved?'true':'false';drag=null;list.classList.remove('is-dragging');setTimeout(()=>delete list.dataset.justDragged,0);};
     list.addEventListener('pointerup',finish);list.addEventListener('pointercancel',finish);
@@ -2357,7 +2371,7 @@ function renderAdaptiveSuggestions() {
       const composer=document.getElementById('lakeInput');
       const editingDraft=document.activeElement===composer && Boolean(composer?.value.trim());
       if(document.hidden || waveInFlight ||
-          (suggestionCyclePhase!=='waiting' && (editingDraft || panel.matches(':hover, :focus-within')))){
+          (suggestionCyclePhase!=='waiting' && (editingDraft || panel.dataset.draggingWave || panel.matches(':hover, :focus-within')))){
         suggestionCycleTimer=setTimeout(advance,750);
         return;
       }
@@ -2383,6 +2397,14 @@ function renderAdaptiveSuggestions() {
       ? suggestion.label.split(' — ',1)[0] : suggestion.label;
     main.textContent=moodLabel ? label+' · '+moodLabel : label;
     main.onclick=()=>chooseAdaptiveSuggestion(index);
+    main.draggable=true;
+    main.addEventListener('dragstart',event=>{
+      if(!event.dataTransfer)return;
+      panel.dataset.draggingWave='true';
+      event.dataTransfer.effectAllowed='copy';
+      event.dataTransfer.setData('application/x-lake-next-wave',suggestion.prompt);
+    });
+    main.addEventListener('dragend',()=>{delete panel.dataset.draggingWave;});
     item.append(main);list.append(item);
   });
 }
