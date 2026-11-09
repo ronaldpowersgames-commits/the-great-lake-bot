@@ -1369,7 +1369,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
       </div>
       <!-- Mood selector -->
       <div class="mood-selector" id="moodSelector">
-        <div class="mood-option" data-mood="drip" onclick="setMood('drip')"><span class="mood-dot" style="background:#facc15"></span><span>💧 Drip — one word to three sentences</span><code class="mood-codes">/drip /drippy /drop drop/</code></div>
+        <div class="mood-option" data-mood="drip" onclick="setMood('drip')"><span class="mood-dot" style="background:#facc15"></span><span>💧 Drip — one word to three sentences</span><code class="mood-codes">/drip /drippy /drop</code></div>
         <div class="mood-option" data-mood="shallow" onclick="setMood('shallow',event)"><span class="mood-dot" style="background:#35c98a"></span><span>💦 Shallow — short splashes</span><code class="mood-codes">/shallow /splash /splashy</code></div>
         <div class="mood-option active" data-mood="calm" onclick="setMood('calm',event)">
           <span class="mood-dot" style="background:var(--calm)"></span><span>🌊 Calm — gentle, reflective</span><code class="mood-codes">/calm /reg /default</code></div>
@@ -4038,8 +4038,8 @@ async function sendWave(options = {}) {
   const input = document.getElementById('lakeInput');
   let text = options.requestText ?? input.value.trim();
   const moodCommand = (options.requestText == null || options.suggestionKind) &&
-    (text.match(/^(\/(?:calm|reg|default|shallow|splashy?|deep(?:dive)?|full|stormy?|choppy|drip(?:py)?|drop)|drop\/)(?=\s|$)/i) ||
-      text.match(/\s+(\/(?:calm|reg|default|shallow|splashy?|deep(?:dive)?|full|stormy?|choppy|drip(?:py)?|drop)|drop\/)\s*$/i));
+    (text.match(/^(\/(?:calm|reg|default|shallow|splashy?|deep(?:dive)?|full|stormy?|choppy|drip(?:py)?|drop))(?=\s|$)/i) ||
+      text.match(/\s+(\/(?:calm|reg|default|shallow|splashy?|deep(?:dive)?|full|stormy?|choppy|drip(?:py)?|drop))\s*$/i));
   if(moodCommand){
     const mood = moodCommand[1].toLowerCase().replace('/', '');
     const aliases={storm:'stormy',choppy:'stormy',reg:'calm',default:'calm',deep:'analytical',deepdive:'analytical',full:'analytical',splash:'shallow',splashy:'shallow',drippy:'drip',drop:'drip'};
