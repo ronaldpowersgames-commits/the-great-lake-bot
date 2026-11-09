@@ -446,6 +446,7 @@ button.welcome-icon { background:none; border:0; padding:0; }
 .composer-commands { position:absolute; bottom:100%; left:0; right:0; z-index:20; max-height:160px; overflow:auto; padding:6px; background:var(--dock-bg); border:1px solid var(--dock-border); border-radius:8px; }
 .composer-commands button { display:block; width:100%; text-align:left; }
 .lake-input.wave-drop-ready { outline:2px solid var(--lake-light); }
+@media (pointer:fine) { .featured-pages, .prompt-carousel-container { cursor:grab; user-select:none; } }
 .home-shortcuts { position:absolute; top:8px; left:0; z-index:4; display:grid; gap:6px; }
 .home-shortcuts .current-chip { min-width:38px; min-height:38px; }
 .ride-home-tip.is-tucked .ride-home-tip-open { display:block; width:44px; height:44px; border:0; border-radius:50%; background:transparent; cursor:pointer; }
@@ -5259,6 +5260,44 @@ const TOTAL_BATCHES = LakePromptTypes.length;
 const swimBatch = LakePromptTypes.findIndex(type=>type.name==='SWIM');
 let defaultBatch = LakePromptTypes.findIndex(type=>type.name===localStorage.getItem('defaultPromptType'));
 
+function enableHomepageDrag(rail,changePage){
+  if(!rail || rail.dataset.mouseDrag)return;
+  rail.dataset.mouseDrag='true';
+  let start=null;
+  let suppressClick=false;
+  rail.addEventListener('pointerdown',event=>{
+    if(event.pointerType!=='mouse' || event.button!==0)return;
+    suppressClick=false;
+    const bounds=rail.getBoundingClientRect();
+    if(event.clientX>=bounds.right-12)return;
+    start={id:event.pointerId,x:event.clientX,y:event.clientY,dragging:false};
+  });
+  rail.addEventListener('pointermove',event=>{
+    if(!start || event.pointerId!==start.id)return;
+    const x=event.clientX-start.x,y=event.clientY-start.y;
+    if(!start.dragging && Math.abs(x)>10 && Math.abs(x)>Math.abs(y)){
+      start.dragging=true;
+      rail.setPointerCapture(event.pointerId);
+    }
+    if(start.dragging)event.preventDefault();
+  });
+  rail.addEventListener('pointerup',event=>{
+    if(!start || event.pointerId!==start.id)return;
+    const delta=event.clientX-start.x;
+    suppressClick=start.dragging;
+    start=null;
+    if(suppressClick && Math.abs(delta)>=30)changePage(delta<0?1:-1);
+  });
+  rail.addEventListener('pointerleave',()=>{if(!start?.dragging)start=null;});
+  rail.addEventListener('pointercancel',()=>{start=null;});
+  rail.addEventListener('click',event=>{
+    if(!suppressClick || event.detail===0)return;
+    suppressClick=false;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  },true);
+}
+
 function initFeaturedPages(){
   const prompts=document.querySelector('#welcomeScreen .welcome-prompts');
   const original=prompts?.querySelectorAll(':scope > .welcome-prompt-featured');
@@ -5300,6 +5339,11 @@ function initFeaturedPages(){
     });
   };
   rail.addEventListener('scroll',update,{passive:true});
+  enableHomepageDrag(rail,direction=>{
+    const index=Math.round(rail.scrollLeft/(rail.clientWidth||1));
+    const target=Math.max(0,Math.min(pairs.length-1,index+direction));
+    indicators.children[target].click();
+  });
   rail.scrollLeft=2*rail.clientWidth;
   update();
 }
@@ -5353,6 +5397,7 @@ function initCarousel() {
   setupDotClicks();
   setupLongPress();
   setupSwipe();
+  enableHomepageDrag(track.closest('.prompt-carousel-container'),direction=>goToBatch(currentBatch+direction));
   initFeaturedPages();
 }
 
