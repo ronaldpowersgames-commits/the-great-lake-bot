@@ -10,6 +10,7 @@
     const { session } = await response.json();
     if (!session || !Array.isArray(session.history)) throw new Error('This shared conversation could not be read.');
     title.textContent = session.name || 'Shared conversation';
+    document.title = LakeExportNames.sessionTranscript('pdf',session.time,session.name).replace(/\.pdf$/,'');
     for (const message of session.history) {
       const article = document.createElement('article');
       article.className = message.role === 'user' ? 'user' : 'assistant';

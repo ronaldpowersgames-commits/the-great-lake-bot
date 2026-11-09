@@ -18,8 +18,8 @@
   }
 
   function artifact(kind,extension,value){return `${PREFIX}-${slug(kind)}-${dateStamp(value)}.${slug(extension,'dat')}`;}
-  function sessionTranscript(extension='txt',value){return artifact('session-transcript',extension,value);}
-  function aiHandoff(scope,value){return `${PREFIX}-ai-handoff-${slug(scope,'chat')}-${dateStamp(value)}.json`;}
+  function sessionTranscript(extension='txt',value,title){return artifact(title?'session-transcript-'+title:'session-transcript',extension,value);}
+  function aiHandoff(scope,value,title){return artifact('ai-handoff-'+slug(scope,'chat')+(title?'-'+title:''),'json',value);}
   function fullBackup(value){return artifact('full-backup','json',value);}
   function sourceStem(source){return slug(String(source||'').replace(/^the-great-lake-transcript-/i,''),'transcript');}
   function transcriptPart(source,index,total){

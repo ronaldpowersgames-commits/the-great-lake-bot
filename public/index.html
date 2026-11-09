@@ -427,8 +427,9 @@ button.welcome-icon { background:none; border:0; padding:0; }
 .ride-home-tip p { margin:8px 0 0; color:var(--text-secondary); font-size:11px; }
 .ride-home-tip .ride-home-manual { margin-top:10px; }
 .ride-home-tip.is-tucked { width:auto; padding:0; border-radius:50%; }
-.ride-home-tip.is-tucked > :not(.ride-home-tip-open) { display:none; }
+.ride-home-tip.is-tucked > :not(.ride-home-tip-open, .ride-home-voice) { display:none; }
 .ride-home-tip-open { display:none; }
+.ride-home-voice { position:absolute; top:calc(100% + 6px); right:0; min-width:38px; min-height:38px; }
 .wave-prompt-preview { position:fixed; inset:auto; margin:0; max-width:min(360px, calc(100vw - 24px)); max-height:40vh; overflow:auto; padding:10px 12px; border:1px solid var(--dock-border); border-radius:10px; background:var(--dock-bg); color:var(--text-primary); font-size:13px; line-height:1.45; white-space:pre-wrap; overflow-wrap:anywhere; pointer-events:none; }
 .adaptive-wave-number { font-size:.8em; opacity:.72; margin-inline-end:.5em; }
 .lake-voice-dialog { position:fixed; inset:0; margin:auto; box-sizing:border-box; max-height:calc(100dvh - 32px); overflow:auto; width:min(420px,calc(100% - 32px)); border:1px solid var(--dock-border); border-radius:22px; padding:24px; background:var(--dock-bg); color:var(--text-primary); text-align:center; }
@@ -2807,6 +2808,10 @@ async function saveSession(target) {
   await persistSessions(sessions, key);
 }
 
+function currentExportTitle(){
+  return allSessions.find(session=>session.id===currentSessionId)?.name || getSessionName();
+}
+
 function getSessionName(history = chatHistory) {
   return LakeOrganization.titleFor(null,history).name;
 }
@@ -3464,7 +3469,14 @@ function scheduleRideHomeTip(){
   voice.title='Start a new chat with voice input';
   voice.setAttribute('aria-label',voice.title);
   voice.onclick=openLakeVoice;
-  shortcuts.append(voice);
+  const today=document.createElement('button');
+  today.type='button';
+  today.className='current-chip';
+  today.textContent='📅';
+  today.title='Today at The Lake';
+  today.setAttribute('aria-label',today.title);
+  today.onclick=()=>sendWave({visibleText:'📅 Today at The Lake',requestText:'Start a low-friction check-in about my day. Ask one fresh, easy question about a small moment that lifted, drained, or surprised me. Use relevant known context only if it makes the opening feel natural. Follow my answer with grounded curiosity and help me notice what mattered.',reuseAttachments:false});
+  shortcuts.append(today);
   home.append(shortcuts);
   setTimeout(()=>{
     if(!home.isConnected || document.getElementById('rideHomeTip'))return;
@@ -3484,7 +3496,8 @@ function scheduleRideHomeTip(){
       tip.classList.remove('is-tucked');
       tip.querySelector('.ride-home-tip-close').focus();
     };
-    tip.append(reopen);
+    tip.append(reopen,voice);
+    voice.classList.add('ride-home-voice');
     let touchStart;
     tip.addEventListener('touchstart',event=>{
       const touch=event.touches[0];
@@ -3924,7 +3937,7 @@ function downloadSnapshot(message) {
   const url = URL.createObjectURL(new Blob([text], { type: 'application/json;charset=utf-8' }));
   const link = document.createElement('a');
   link.href = url;
-  link.download = LakeExportNames.aiHandoff(metadata.scope,metadata.createdAt);
+  link.download = LakeExportNames.aiHandoff(metadata.scope,metadata.createdAt,metadata.scope==='chat'?currentExportTitle():undefined);
   link.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
@@ -4634,7 +4647,7 @@ async function exportSplitTranscriptZip(){
   try {
     const size=LakeTranscriptSplitter.validSize(localStorage.getItem('lakeTranscriptPartSize'));
     const transcript=sessionTranscriptText();
-    const filename=LakeExportNames.sessionTranscript('txt');
+    const filename=LakeExportNames.sessionTranscript('txt',undefined,currentExportTitle());
     const parts=LakeTranscriptSplitter.split(transcript,size);
     const zip=new JSZip();
     const entries=parts.map((part,index)=>{
@@ -4646,7 +4659,7 @@ async function exportSplitTranscriptZip(){
     const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE'});
     const link=document.createElement('a');
     link.href=URL.createObjectURL(blob);
-    link.download=LakeExportNames.transcriptZip(filename);
+    link.download=LakeExportNames.artifact('transcript-parts-'+currentExportTitle(),'zip');
     link.click();
     setTimeout(()=>URL.revokeObjectURL(link.href),1000);
     if(parts.length>20)showToast('ZIP exported. To re-import more than 20 parts, select the numbered TXT files in batches.');
@@ -4657,7 +4670,7 @@ function exportAsTxt() {
   const transcript=sessionTranscriptText();
   const a  = document.createElement('a');
   a.href   = URL.createObjectURL(new Blob([transcript], { type: 'text/plain' }));
-  a.download = LakeExportNames.sessionTranscript('txt');
+  a.download = LakeExportNames.sessionTranscript('txt',undefined,currentExportTitle());
   a.click();
   document.getElementById('shareMenu').style.display = 'none';
 }
@@ -4679,7 +4692,7 @@ function exportAsPDF() {
       try {const saved=JSON.parse(localStorage.getItem(key)||'null');if(!saved?.created || now-saved.created>86400000)localStorage.removeItem(key);}
       catch {localStorage.removeItem(key);}
     }
-    localStorage.setItem(id,JSON.stringify({created:now,exported:new Date(now).toLocaleString(),messages}));
+    localStorage.setItem(id,JSON.stringify({created:now,title:currentExportTitle(),exported:new Date(now).toLocaleString(),messages}));
     window.open('/transcript-print.html?id='+encodeURIComponent(id),'_blank','noopener');
   } catch(error) {
     showToast('Could not prepare the printable transcript on this device.');
@@ -4849,7 +4862,7 @@ function messageSource(waveEl){return {sessionId:currentSessionId,role:waveEl.cl
 function jumpToMessageTop(waveEl){waveEl?.scrollIntoView({behavior:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});}
 function replyToMessage(waveEl){const source=messageSource(waveEl);globalThis.pendingReplySource=source;const input=document.getElementById('lakeInput');input.value=`Regarding this wave:\n“${source.content.slice(0,500)}${source.content.length>500?'…':''}”\n\n`;input.focus();scheduleInputResize(input);}
 function branchFromMessage(waveEl){const source=messageSource(waveEl);newSession();globalThis.pendingBranchSource=source;const input=document.getElementById('lakeInput');input.value=`Start a new current from this wave:\n“${source.content.slice(0,900)}${source.content.length>900?'…':''}”\n\n`;input.focus();scheduleInputResize(input);}
-function exportMessage(waveEl){const text=messageActionText(waveEl);const link=document.createElement('a');link.href=URL.createObjectURL(new Blob([text],{type:'text/plain'}));link.download=LakeExportNames.sessionTranscript('txt').replace(/\.txt$/,'-message.txt');link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000);}
+function exportMessage(waveEl){const text=messageActionText(waveEl);const link=document.createElement('a');link.href=URL.createObjectURL(new Blob([text],{type:'text/plain'}));link.download=LakeExportNames.artifact('message-'+currentExportTitle(),'txt');link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000);}
 function toggleFavorite(waveEl,button){const ref=waveEl._lakeMessageRef;const next=!(ref?.favorite||waveEl.dataset.favorite==='true');waveEl.dataset.favorite=String(next);if(ref)ref.favorite=next;button.textContent=next?'★ Favorite':'☆ Favorite';saveSession().catch(()=>{});showToast(next?'Saved to favorites':'Removed from favorites');}
 
 function regenerateMessage(waveEl) {

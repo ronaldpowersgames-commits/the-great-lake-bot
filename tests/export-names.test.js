@@ -12,6 +12,7 @@ const printPage=fs.readFileSync(path.join(root,'public','transcript-print.html')
 test('Lake exports share one clear sortable naming convention',()=>{
   const date=new Date(2026,10,6,12,0,0);
   assert.equal(names.sessionTranscript('txt',date),'the-great-lake-session-transcript-2026-11-06.txt');
+  assert.equal(names.sessionTranscript('pdf',date,'Patterns Across Chats'),'the-great-lake-session-transcript-patterns-across-chats-2026-11-06.pdf');
   assert.equal(names.sessionTranscript('pdf',date),'the-great-lake-session-transcript-2026-11-06.pdf');
   assert.equal(names.aiHandoff('both',date),'the-great-lake-ai-handoff-both-2026-11-06.json');
   assert.equal(names.fullBackup(date),'the-great-lake-full-backup-2026-11-06.json');
@@ -27,7 +28,7 @@ test('transcript split files preserve a safe source label under the Lake prefix'
 test('every main Lake download path uses the shared naming helper',()=>{
   assert.match(index,/LakeExportNames\.aiHandoff/);
   assert.match(index,/LakeExportNames\.fullBackup/);
-  assert.match(index,/LakeExportNames\.sessionTranscript\('txt'\)/);
+  assert.match(index,/LakeExportNames\.sessionTranscript\('txt',undefined,currentExportTitle\(\)\)/);
   assert.match(splitter,/LakeExportNames\.transcriptPart/);
   assert.match(splitter,/LakeExportNames\.transcriptIndex/);
   assert.match(splitter,/LakeExportNames\.transcriptZip/);
