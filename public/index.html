@@ -3372,11 +3372,18 @@ function updateCurrents(text) {
 // ============================================
 // SENDING
 // ============================================
+const LAKE_MANUAL_PROMPT = `Write a concise practical manual for The Great Lake. Start with three easy ways in, then group details by task under Markdown level-two headings. Give short examples and cover only supported features:
+- Homepage: the top-left wave logo returns home. The floating wave starts Ride a Wave, Splash offers a fact, Riptide asks a question, and ♒️ Patterns Across Chats looks for recurring patterns using a sample of saved chats. The 🎤 shortcut below it starts a fresh chat and opens voice input on supported browsers; the transcription is editable before sending.
+- Moods: Drip gives an immediate minimal answer, Shallow is short and simple, Calm is reflective and digestible, Deep Dive gives careful expanded analysis, and Stormy is candid and decisive. The 🎭 menu lists codes. Use them at either end of a message and the mood stays active until changed. List /drip /drippy /drop, /shallow /splash /splashy, /calm /reg /default, /deep /deepdive /full, and /stormy /storm /choppy. Personalize explains custom triggers, for example /trigger /focus /deep and /untrigger /focus.
+- Next Waves: tap to send, hover or hold to preview, drag into the desktop composer to edit, or type W1 or W1 and 2 with your own instructions. The desktop wheel scrolls the rail sideways. Explain collapsible reply sections and message actions.
+- Creative tools: Writer, Music and Drawing Types offer starters and practice. Relevant chord replies can offer Play chords. Hotkeys can make a song, written piece, drawing concept, voluntary hypnosis script or other remix directly in the chat. Make Something From This opens a separate creative branch that draws on bounded text excerpts from the source chat.
+- Cover attachments, whole-transcript workflows, Crew and memory controls, Past Tides and Recovery, and adding the app from a mobile browser to the Home Screen. Keep the guide focused on functionality. Do not start an onboarding question or personal analysis.`;
+
 function startHomepageWave(kind){
   const starters={
     splash:['💦 Splash','Give me one short, surprising, accurate fact. Pick something likely to spark my curiosity based on interests or examples I have shared. If little is known, choose an accessible subject. A brief connection to something I might enjoy noticing about myself is welcome when it fits. No quiz or follow-up question.'],
     riptide:['🌀 Riptide','Ask exactly one light, natural, easy-to-answer question that might reveal something about what I enjoy, notice or choose. Use relevant context if available. No intro, analysis, or extra question.'],
-    manual:['📖 Chat Manual','Give me a practical chat manual for The Great Lake. Explain starters and Ride a Wave, Next Waves, moods and slash commands, creative types, attachments and transcript workflows, Crew and memory controls, and Past Tides and Recovery. Start with three easy ways in, then group details by task. Give example prompts. Only describe supported features.'],
+    manual:['📖 Chat Manual',LAKE_MANUAL_PROMPT],
     personalize:['🎛️ Personalize','Help me explain optional preferences for how The Lake works with me. Mention that I can type /trigger /focus /deep in this chat to save /focus as a Deep Dive shortcut, or /untrigger /focus to remove it. The last argument must be a built-in mood code. Custom triggers are saved on this device and work at either end of a message. Ask one easy question about a goal, preferred tone, or metaphor. Keep defaults available. If I want a persistent explicit override, show me where to edit Personal memory in Settings. Do not claim a change has been saved unless confirmed.'],
     solve:['⚡ Solve a Problem','Ask what is stuck if the problem is unclear. Then isolate the real constraint, challenge the assumption keeping me stuck, and give me one concrete move I can take today. Be sharp and direct.'],
     decide:['🧭 Make a Decision','Ask what I am choosing between and what matters if unclear. Identify the decisive tradeoff, recommend a direction when supported, and give me one next action. If a critical fact is missing, suggest the smallest reversible test.']
@@ -3490,7 +3497,7 @@ function scheduleRideHomeTip(){
     tip.querySelector('.welcome-prompt-featured').onclick=()=>rideAWave(true);
     tip.querySelector('.ride-home-manual').onclick=()=>{
       dismissRideHomeTip();
-      sendWave({visibleText:'📖 How to use The Lake',guide:true,requestText:'Give me a concise practical guide to using The Great Lake. Start with a brief introduction, then use Markdown level-two headings for each section. Explain what it can help me do, which controls to use, and give a few example prompts. Cover homepage starters, moods and slash commands, Next Waves, attachments, Crew and memory, and finding or recovering chats. Keep this focused on functionality. Do not launch a Ride a Wave question or start a personal analysis.',reuseAttachments:false});
+      sendWave({visibleText:'📖 How to use The Lake',guide:true,requestText:LAKE_MANUAL_PROMPT,reuseAttachments:false});
     };
     home.append(tip);
     const cycle=()=>{
