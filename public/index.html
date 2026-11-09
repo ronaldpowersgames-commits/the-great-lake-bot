@@ -611,6 +611,8 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
 .bubble-action-btn:hover { background: rgba(45,140,240,0.18); color: var(--lake-light); }
 .speaking .wave-bubble { border-color: var(--lake-glow); box-shadow: 0 0 12px rgba(45,140,240,0.2); }
 .speech-player { display:none; align-items:center; gap:6px; padding:6px 8px; border:1px solid var(--dock-border); border-radius:10px; background:rgba(9,20,32,.92); }
+.speech-player[data-view="compact"] > :not(#speechPlayPause, #speechCollapse, #speechClose) { display:none; }
+#speechRestore { align-self:flex-end; margin:4px 0; }
 .speech-player.show { display:flex; flex-wrap:wrap; }
 .speech-player select { padding-inline:8px; max-width:min(15rem,100%); }
 .speech-player button,.speech-player select { border:1px solid var(--dock-border); border-radius:999px; background:rgba(45,140,240,.10); color:var(--text-primary); min-height:28px; }
@@ -1501,6 +1503,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
 
     <!-- SHORE DOCK -->
     <div class="shore-dock">
+      <button type="button" id="speechRestore" class="quick-action-btn" onclick="setSpeechView('full')" hidden>🔊 Show audio controls</button>
       <div class="speech-player" id="speechPlayer" role="region" aria-label="Read aloud controls">
         <button type="button" onclick="speechPrevious()" title="Previous passage">⏮</button>
         <button type="button" id="speechPlayPause" onclick="speechPlayPause()" title="Play or pause">▶</button>
@@ -1511,6 +1514,9 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
         <select id="speechVoice" aria-label="Reading voice" onchange="localStorage.setItem(storageKey('speechVoice'),this.value)"><option value="">Auto voice</option></select>
         <button type="button" onclick="previewLakeVoice()">Sample</button>
         <select id="speechRate" onchange="speechSetRate(this.value)" aria-label="Reading speed"><option value="0.75">0.75×</option><option value="1" selected>1×</option><option value="1.25">1.25×</option><option value="1.5">1.5×</option><option value="2">2×</option></select>
+        <button type="button" id="speechCollapse" onclick="toggleSpeechView()" aria-label="Collapse audio player" title="Collapse audio player">⌄</button>
+        <button type="button" onclick="setSpeechView('background')" title="Hide controls and keep playing">Background</button>
+        <button type="button" id="speechClose" onclick="stopSpeech()" aria-label="Stop and close audio player" title="Stop and close audio player">×</button>
       </div>
       <div class="files-preview-container" id="filesPreviewContainer"></div>
       <section class="adaptive-suggestions" id="adaptiveSuggestions" aria-label="Suggested next moves" hidden>
@@ -3104,7 +3110,10 @@ async function loadEmailSessions() {
 // ============================================
 // NEW SESSION — resets to welcome screen
 // ============================================
-function newSession() {
+function newSession(showMoodReminder=true) {
+  if(showMoodReminder)requestAnimationFrame(()=>{
+    if(document.getElementById('welcomeScreen'))document.getElementById('moodSelector').classList.add('show');
+  });
   document.getElementById('downloadSnapshotButton').hidden = true;
   currentSessionId = 'session_' + Date.now();
   chatHistory      = [];
@@ -4924,7 +4933,7 @@ document.addEventListener('keydown',event=>{if(event.key==='Escape'&&closeTopmos
 // BUBBLE ACTIONS
 // ============================================
 let currentUtterance = null;
-const speechState={wave:null,chunks:[],index:0,rate:1,paused:false,playing:false};
+const speechState={wave:null,chunks:[],index:0,rate:1,paused:false,playing:false,view:"full"};
 globalThis.pendingReplySource=null;globalThis.pendingBranchSource=null;
 
 function canonicalMessageText(waveEl){return String(waveEl?._lakeMessageContent||waveEl?.querySelector('.wave-bubble')?.innerText||'').trim();}
@@ -4984,9 +4993,26 @@ function speechChunks(text){
     return chunks;
   });
 }
+function setSpeechView(view){
+  speechState.view=view;
+  updateSpeechPlayer();
+}
+function toggleSpeechView(){
+  setSpeechView(speechState.view==='compact'?'full':'compact');
+}
 function updateSpeechPlayer(){
   const player=document.getElementById('speechPlayer'),button=document.getElementById('speechPlayPause'),progress=document.getElementById('speechProgress'),status=document.getElementById('speechStatus');
-  if(!player)return;player.classList.toggle('show',Boolean(speechState.chunks.length));button.textContent=speechState.playing&&!speechState.paused?'⏸':'▶';progress.max=Math.max(1,speechState.chunks.length);progress.value=Math.min(speechState.index,speechState.chunks.length);status.textContent=speechState.chunks.length?`${Math.min(speechState.index+1,speechState.chunks.length)} / ${speechState.chunks.length}`:'Ready';
+  if(!player)return;
+  const hasAudio=Boolean(speechState.chunks.length);
+  player.dataset.view=speechState.view;
+  player.classList.toggle('show',hasAudio && speechState.view!=='background');
+  document.getElementById('speechRestore').hidden=!hasAudio || speechState.view!=='background';
+  const collapse=document.getElementById('speechCollapse');
+  const compact=speechState.view==='compact';
+  collapse.textContent=compact?'⌃':'⌄';
+  collapse.title=compact?'Expand audio player':'Collapse audio player';
+  collapse.setAttribute('aria-label',collapse.title);
+  button.textContent=speechState.playing&&!speechState.paused?'⏸':'▶';progress.max=Math.max(1,speechState.chunks.length);progress.value=Math.min(speechState.index,speechState.chunks.length);status.textContent=speechState.chunks.length?`${Math.min(speechState.index+1,speechState.chunks.length)} / ${speechState.chunks.length}`:'Ready';
 }
 function speakCurrentChunk(){
   lakeSpeechOutput.cancel();if(!speechState.chunks.length)return;
@@ -5033,7 +5059,7 @@ async function playChordProgression(progression,button){
     button.disabled=false;
   }
 }
-function stopSpeech(clear=true){lakeSpeechOutput.cancel();speechState.wave?.classList.remove('speaking');speechState.playing=false;speechState.paused=false;if(clear){speechState.chunks=[];speechState.index=0;speechState.wave=null;}updateSpeechPlayer();}
+function stopSpeech(clear=true){lakeSpeechOutput.cancel();speechState.wave?.classList.remove('speaking');speechState.playing=false;speechState.paused=false;if(clear){speechState.view="full";speechState.chunks=[];speechState.index=0;speechState.wave=null;}updateSpeechPlayer();}
 function speechPrevious(){if(!speechState.chunks.length)return;speechState.index=Math.max(0,speechState.index-1);speakCurrentChunk();}
 function speechNext(){if(!speechState.chunks.length)return;speechState.index=Math.min(speechState.chunks.length-1,speechState.index+1);speakCurrentChunk();}
 function speechSeek(value){if(!speechState.chunks.length)return;speechState.index=Math.max(0,Math.min(speechState.chunks.length-1,Number(value)||0));speakCurrentChunk();}
@@ -5191,11 +5217,11 @@ function openLakeVoice(){
     return;
   }
   stopSpeech();
-  newSession();
+  newSession(false);
   const sessionId=currentSessionId;
   const dialog=document.createElement('dialog');
   dialog.className='lake-voice-dialog';
-  dialog.innerHTML='<h2>🌊 Lake Voice</h2><p role="status">Ready when you are.</p><label>Mood <select><option value="drip">Drip</option><option value="shallow">Shallow</option><option value="calm">Calm</option><option value="analytical">Deep Dive</option><option value="stormy">Stormy</option></select></label><label>Voice <select><option value="">Auto voice</option></select></label><button type="button" data-voice-primary>Start talking</button><button type="button">End voice chat</button><div class="lake-voice-waves" role="group" aria-label="Suggested next waves" hidden></div>';
+  dialog.innerHTML='<h2>🌊 Lake Voice</h2><p role="status">Ready when you are.</p><label>Mood <select><option value="drip">💧 Drip · /drip /drippy /drop</option><option value="shallow">💦 Shallow · /shallow /splash /splashy</option><option value="calm">🌊 Calm · /calm /reg /default</option><option value="analytical">🔍 Deep Dive · /deep /deepdive /full</option><option value="stormy">⛈️ Stormy · /stormy /storm /choppy</option></select></label><label>Voice <select><option value="">Auto voice</option></select></label><button type="button" data-voice-primary>Start talking</button><button type="button">End voice chat</button><div class="lake-voice-waves" role="group" aria-label="Suggested next waves" hidden></div>';
   const [mood,voice]=dialog.querySelectorAll('select');
   const [talk,end]=dialog.querySelectorAll('button');
   const status=dialog.querySelector('[role="status"]');
