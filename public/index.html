@@ -2468,7 +2468,7 @@ function renderAdaptiveSuggestions() {
   }
   const composer=document.getElementById('lakeInput');
   if(composer)composer.placeholder=suggestions.length
-    ? (window.matchMedia?.('(pointer: fine)')?.matches ? 'Send a wave into The Lake...\nDrag in a Next Wave or type /w#.' : 'Send a wave into The Lake...\nType /w# to insert a Next Wave.')
+    ? (window.matchMedia?.('(pointer: fine)')?.matches ? 'Send a wave into The Lake...\nDrag in a Next Wave or type /w#.' : 'Send a wave into The Lake...\nHold a Next Wave to drag or add it.')
     : 'Send a wave into The Lake...';
   panel.hidden=!suggestions.length;panel.dataset.mood=currentMood;panel.classList.toggle('rail-dockward',localStorage.getItem(storageKey('railSwipeMode'))==='down');list.replaceChildren();
   if(suggestionCycleReply!==reply){
@@ -2553,6 +2553,7 @@ function renderAdaptiveSuggestions() {
       }
     });
     main.addEventListener('pointermove',event=>{
+      if(held)return;
       if(touchStart && Math.hypot(event.clientX-touchStart.x,event.clientY-touchStart.y)>10){
         touchStart=null;
         hidePreview();
@@ -2560,6 +2561,34 @@ function renderAdaptiveSuggestions() {
     });
     main.addEventListener('pointerup',()=>{touchStart=null;clearTimeout(previewTimer);});
     main.addEventListener('pointercancel',()=>{touchStart=null;hidePreview();});
+    const composer=document.getElementById('lakeInput');
+    const overComposer=touch=>{
+      const bounds=composer.getBoundingClientRect();
+      return touch.clientX>=bounds.left && touch.clientX<=bounds.right &&
+        touch.clientY>=bounds.top && touch.clientY<=bounds.bottom;
+    };
+    main.addEventListener('touchmove',event=>{
+      if(!held)return;
+      event.preventDefault();
+      event.stopPropagation();
+      panel.dataset.draggingWave='true';
+      hidePreview();
+      composer.classList.toggle('wave-drop-ready',overComposer(event.touches[0]));
+    },{passive:false});
+    main.addEventListener('touchend',event=>{
+      if(!held)return;
+      event.preventDefault();
+      event.stopPropagation();
+      if(panel.dataset.draggingWave && overComposer(event.changedTouches[0])){
+        insertComposerPrompt(composer,draftPrompt);
+      }
+      composer.classList.remove('wave-drop-ready');
+      delete panel.dataset.draggingWave;
+    },{passive:false});
+    main.addEventListener('touchcancel',()=>{
+      composer.classList.remove('wave-drop-ready');
+      delete panel.dataset.draggingWave;
+    });
     main.addEventListener('contextmenu',event=>{if(event.pointerType==='touch' || held)event.preventDefault();});
     main.onclick=()=>{
       if(held){held=false;return;}
