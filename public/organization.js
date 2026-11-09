@@ -8,8 +8,11 @@
     return file ? file.name.replace(/-part-\d+-of-\d+(?=\.[^.]+$)/i,'').replace(/\.[^.]+$/,'') : null;
   }
   function titleFor(existing,history) {
-    const automatic=!existing?.name || existing.nameSource==='message' || existing.nameSource==='transcript' || (!existing.nameSource && existing.name===messageTitle(history));
+    const automatic=!existing?.name || existing.nameSource==='message' || existing.nameSource==='transcript' || existing.nameSource==='conversation' || (!existing.nameSource && existing.name===messageTitle(history));
     if(existing?.nameSource==='manual' || !automatic)return {name:existing.name,nameSource:existing.nameSource || 'manual'};
+    const generated=(history || []).findLast(message=>message.role==='assistant' && typeof message.tideTitle==='string' && message.tideTitle.trim())?.tideTitle;
+    if(generated)return {name:generated,nameSource:'conversation'};
+    if(existing?.nameSource==='conversation')return {name:existing.name,nameSource:'conversation'};
     const title=transcriptTitle(history);
     return {name:title || messageTitle(history),nameSource:title?'transcript':'message'};
   }

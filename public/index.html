@@ -4427,6 +4427,13 @@ async function sendWave(options = {}) {
     formData.append('recentWaveIntents',JSON.stringify(origin.history.filter(message=>message.promptSuggestions?.length).slice(-3).flatMap(message=>message.promptSuggestions.map(item=>item.prompt.slice(0,160)))));
     const historyToSend = origin.history.slice(0,-1).filter(m=>!m.removedSourceRecord).slice(-10).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.content }));
     formData.append('history', JSON.stringify(historyToSend));
+    const savedTide=origin.key===storageKey('sessions') && allSessions.find(session=>session.id===origin.id);
+    const replyCount=origin.history.filter(message=>message.role==='assistant' && !message.snapshot && !message.transcriptMemory).length;
+    if(!options.snapshot && !['transcript-memory','transcript-part'].includes(options.action) &&
+       LakeOrganization.titleFor(savedTide,origin.history).nameSource!=='manual' &&
+       replyCount>=1 && replyCount%2===1){
+      formData.append('suggestTideTitle','true');
+    }
     const creativeSourceId=origin.history.find(message=>message.creativeSourceId)?.creativeSourceId;
     const sourceHistory=creativeSourceId && allSessions.find(session=>session.id===creativeSourceId)?.history;
     if(!options.snapshot && sourceHistory?.length){
@@ -4490,6 +4497,7 @@ async function sendWave(options = {}) {
         ...(options.archiveCoverage ? {archiveCoverage:options.archiveCoverage} : {}),
         ...(options.archiveSources ? {archiveSources:options.archiveSources} : {}),
         ...(options.snapshot ? { snapshot: options.snapshot } : {}) };
+      if(typeof data.tideTitle==='string' && !reply.snapshot)reply.tideTitle=data.tideTitle;
       origin.history.push(reply);
       await saveSession(origin);
       if (isRequestVisible(origin)) {
