@@ -1481,6 +1481,8 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
         <button type="button" onclick="speechNext()" title="Next passage">⏭</button>
         <input class="speech-player-progress" id="speechProgress" type="range" min="0" max="1" value="0" oninput="speechSeek(this.value)" aria-label="Reading progress">
         <span class="speech-player-status" id="speechStatus">Ready</span>
+        <select id="speechVoice" aria-label="Reading voice" onchange="localStorage.setItem(storageKey('speechVoice'),this.value)"><option value="">Auto voice</option></select>
+        <button type="button" onclick="previewLakeVoice()">Sample</button>
         <select id="speechRate" onchange="speechSetRate(this.value)" aria-label="Reading speed"><option value="0.75">0.75×</option><option value="1" selected>1×</option><option value="1.25">1.25×</option><option value="1.5">1.5×</option><option value="2">2×</option></select>
       </div>
       <div class="files-preview-container" id="filesPreviewContainer"></div>
@@ -4742,20 +4744,64 @@ function messageActionText(waveEl){return selectedMessageText(waveEl)||canonical
 
 function copyText(text) { navigator.clipboard.writeText(text).then(() => showToast('Copied 📋')); }
 
-function speechChunks(text){const pieces=String(text||'').match(/[^.!?\n]+(?:[.!?]+|\n+|$)/g)||[];return pieces.map(item=>item.trim()).filter(Boolean);}
+const lakeSpeechOutput = {
+  voices(){return window.speechSynthesis?.getVoices() || [];},
+  utterance(text,rate){
+    const utterance=new SpeechSynthesisUtterance(text);
+    const preferred=localStorage.getItem(storageKey('speechVoice'));
+    const voices=this.voices();
+    const language=(navigator.language || 'en').split('-')[0];
+    const matches=voices.filter(voice=>voice.lang.split('-')[0]===language);
+    utterance.voice=voices.find(voice=>voice.voiceURI===preferred)
+      || matches.find(voice=>/natural|neural|premium|enhanced/i.test(voice.name))
+      || matches.find(voice=>voice.default) || matches[0] || null;
+    if(utterance.voice)utterance.lang=utterance.voice.lang;
+    utterance.rate=rate;
+    return utterance;
+  },
+  speak(utterance){window.speechSynthesis.speak(utterance);},
+  cancel(){window.speechSynthesis.cancel();}
+};
+function refreshLakeVoices(){
+  const picker=document.getElementById('speechVoice');
+  if(!picker)return;
+  picker.replaceChildren(new Option('Auto voice',''));
+  for(const voice of lakeSpeechOutput.voices())picker.add(new Option(voice.name+' · '+voice.lang,voice.voiceURI));
+  const saved=localStorage.getItem(storageKey('speechVoice')) || '';
+  if([...picker.options].some(option=>option.value===saved))picker.value=saved;
+}
+window.speechSynthesis?.addEventListener('voiceschanged',refreshLakeVoices);
+function previewLakeVoice(){
+  stopSpeech(false);
+  lakeSpeechOutput.speak(lakeSpeechOutput.utterance('Take a breath. What is on your mind today?',1));
+}
+function speechChunks(text){
+  const cleaned=String(text||'').replace(/^[#>]+[ \t]*/gm,'').replace(/[*_`]/g,'').replace(/\p{Extended_Pictographic}\uFE0F?/gu,'');
+  return cleaned.split(/\n\s*\n/).flatMap(paragraph=>{
+    const words=paragraph.trim().split(/\s+/).filter(Boolean);
+    const chunks=[];
+    let chunk='';
+    for(const word of words){
+      if(chunk.length+word.length>350 && chunk){chunks.push(chunk);chunk='';}
+      chunk+=(chunk?' ':'')+word;
+    }
+    if(chunk)chunks.push(chunk);
+    return chunks;
+  });
+}
 function updateSpeechPlayer(){
   const player=document.getElementById('speechPlayer'),button=document.getElementById('speechPlayPause'),progress=document.getElementById('speechProgress'),status=document.getElementById('speechStatus');
   if(!player)return;player.classList.toggle('show',Boolean(speechState.chunks.length));button.textContent=speechState.playing&&!speechState.paused?'⏸':'▶';progress.max=Math.max(1,speechState.chunks.length);progress.value=Math.min(speechState.index,speechState.chunks.length);status.textContent=speechState.chunks.length?`${Math.min(speechState.index+1,speechState.chunks.length)} / ${speechState.chunks.length}`:'Ready';
 }
 function speakCurrentChunk(){
-  window.speechSynthesis.cancel();if(!speechState.chunks.length)return;
+  lakeSpeechOutput.cancel();if(!speechState.chunks.length)return;
   speechState.index=Math.max(0,Math.min(speechState.index,speechState.chunks.length-1));
-  const utterance=new SpeechSynthesisUtterance(speechState.chunks[speechState.index]);utterance.rate=speechState.rate;currentUtterance=utterance;
+  const utterance=lakeSpeechOutput.utterance(speechState.chunks[speechState.index],speechState.rate);currentUtterance=utterance;
   utterance.onstart=()=>{speechState.playing=true;speechState.paused=false;speechState.wave?.classList.add('speaking');updateSpeechPlayer();};
   utterance.onend=()=>{if(!speechState.playing)return;if(speechState.index<speechState.chunks.length-1){speechState.index++;speakCurrentChunk();}else stopSpeech(false);};
-  utterance.onerror=()=>stopSpeech(false);window.speechSynthesis.speak(utterance);
+  utterance.onerror=()=>stopSpeech(false);lakeSpeechOutput.speak(utterance);
 }
-function speakMessage(waveEl){stopSpeech(false);speechState.wave=waveEl;speechState.chunks=speechChunks(messageActionText(waveEl));speechState.index=0;speechState.rate=Number(document.getElementById('speechRate')?.value)||1;updateSpeechPlayer();speakCurrentChunk();}
+function speakMessage(waveEl){refreshLakeVoices();stopSpeech(false);speechState.wave=waveEl;speechState.chunks=speechChunks(messageActionText(waveEl));speechState.index=0;speechState.rate=Number(document.getElementById('speechRate')?.value)||1;updateSpeechPlayer();speakCurrentChunk();}
 function speakText(text,btn){const wave=btn?.closest?.('.wave');if(wave){speakMessage(wave);return;}stopSpeech(false);speechState.wave=null;speechState.chunks=speechChunks(text);speechState.index=0;updateSpeechPlayer();speakCurrentChunk();}
 function speechPlayPause(){if(!speechState.chunks.length)return;if(speechState.playing&&!speechState.paused){window.speechSynthesis.pause();speechState.paused=true;}else if(speechState.paused){window.speechSynthesis.resume();speechState.paused=false;}else speakCurrentChunk();updateSpeechPlayer();}
 async function playChordProgression(progression,button){
@@ -4792,7 +4838,7 @@ async function playChordProgression(progression,button){
     button.disabled=false;
   }
 }
-function stopSpeech(clear=true){window.speechSynthesis.cancel();speechState.wave?.classList.remove('speaking');speechState.playing=false;speechState.paused=false;if(clear){speechState.chunks=[];speechState.index=0;speechState.wave=null;}updateSpeechPlayer();}
+function stopSpeech(clear=true){lakeSpeechOutput.cancel();speechState.wave?.classList.remove('speaking');speechState.playing=false;speechState.paused=false;if(clear){speechState.chunks=[];speechState.index=0;speechState.wave=null;}updateSpeechPlayer();}
 function speechPrevious(){if(!speechState.chunks.length)return;speechState.index=Math.max(0,speechState.index-1);speakCurrentChunk();}
 function speechNext(){if(!speechState.chunks.length)return;speechState.index=Math.min(speechState.chunks.length-1,speechState.index+1);speakCurrentChunk();}
 function speechSeek(value){if(!speechState.chunks.length)return;speechState.index=Math.max(0,Math.min(speechState.chunks.length-1,Number(value)||0));speakCurrentChunk();}
