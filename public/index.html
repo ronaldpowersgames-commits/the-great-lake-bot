@@ -2363,6 +2363,15 @@ function renderAdaptiveSuggestions() {
   }
   if(!list.dataset.dragReady){
     list.dataset.dragReady='true';let drag=null;
+    list.addEventListener('wheel',event=>{
+      if(event.ctrlKey || event.shiftKey || Math.abs(event.deltaX)>=Math.abs(event.deltaY))return;
+      const unit=event.deltaMode===1?16:event.deltaMode===2?list.clientWidth:1;
+      const max=list.scrollWidth-list.clientWidth;
+      const left=Math.max(0,Math.min(max,list.scrollLeft+event.deltaY*unit));
+      if(max<=0 || left===list.scrollLeft)return;
+      event.preventDefault();
+      list.scrollLeft=left;
+    },{passive:false});
     list.addEventListener('pointerdown',event=>{if(event.pointerType==='touch'||event.button!==0||event.target.closest('[draggable="true"]'))return;drag={x:event.clientX,left:list.scrollLeft,moved:false};});
     list.addEventListener('pointermove',event=>{if(!drag)return;const delta=event.clientX-drag.x;if(Math.abs(delta)>6&&!drag.moved){drag.moved=true;list.setPointerCapture?.(event.pointerId);list.classList.add('is-dragging');}if(drag.moved){event.preventDefault();list.scrollLeft=drag.left-delta;}});
     const finish=()=>{if(!drag)return;list.dataset.justDragged=drag.moved?'true':'false';drag=null;list.classList.remove('is-dragging');setTimeout(()=>delete list.dataset.justDragged,0);};
