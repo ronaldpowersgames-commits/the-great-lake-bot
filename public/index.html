@@ -431,6 +431,11 @@ button.welcome-icon { background:none; border:0; padding:0; }
 .ride-home-tip-open { display:none; }
 .wave-prompt-preview { position:fixed; inset:auto; margin:0; max-width:min(360px, calc(100vw - 24px)); max-height:40vh; overflow:auto; padding:10px 12px; border:1px solid var(--dock-border); border-radius:10px; background:var(--dock-bg); color:var(--text-primary); font-size:13px; line-height:1.45; white-space:pre-wrap; overflow-wrap:anywhere; pointer-events:none; }
 .adaptive-wave-number { font-size:.8em; opacity:.72; margin-inline-end:.5em; }
+.lake-voice-dialog { width:min(420px,calc(100% - 32px)); border:1px solid var(--dock-border); border-radius:22px; padding:24px; background:var(--dock-bg); color:var(--text-primary); text-align:center; }
+.lake-voice-dialog::backdrop { background:#020811cc; }
+.lake-voice-dialog h2 { color:var(--lake-light); margin:0 0 14px; }
+.lake-voice-dialog label { display:block; margin:12px 0; }
+.lake-voice-dialog select,.lake-voice-dialog button { max-width:100%; padding:8px; margin:4px; border:1px solid var(--dock-border); border-radius:8px; background:var(--dock-bg); color:var(--text-primary); }
 .home-shortcuts { position:absolute; top:8px; left:0; z-index:4; display:grid; gap:6px; }
 .home-shortcuts .current-chip { min-width:38px; min-height:38px; }
 .ride-home-tip.is-tucked .ride-home-tip-open { display:block; width:44px; height:44px; border:0; border-radius:50%; background:transparent; cursor:pointer; }
@@ -3375,7 +3380,7 @@ function updateCurrents(text) {
 // SENDING
 // ============================================
 const LAKE_MANUAL_PROMPT = `Write a concise practical manual for The Great Lake. Start with three easy ways in, then group details by task under Markdown level-two headings. Give short examples and cover only supported features:
-- Homepage: the top-left wave logo returns home. The floating wave starts Ride a Wave, Splash offers a fact, Riptide asks a question, and ♒️ Patterns Across Chats looks for recurring patterns using a sample of saved chats. The 🎤 shortcut below it starts a fresh chat and opens voice input on supported browsers; the transcription is editable before sending.
+- Homepage: the top-left wave logo returns home. The floating wave starts Ride a Wave, Splash offers a fact, Riptide asks a question, and ♒️ Patterns Across Chats looks for recurring patterns using a sample of saved chats. The 🎤 shortcut below it opens a fresh Lake Voice session on supported browsers. Pick a mood and voice, tap Start talking, and take turns speaking with automatic replies. Tap to interrupt or end the session. The composer microphone supports editable dictation.
 - Moods: Drip gives an immediate minimal answer, Shallow is short and simple, Calm is reflective and digestible, Deep Dive gives careful expanded analysis, and Stormy is candid and decisive. The 🎭 menu lists codes. Use them at either end of a message and the mood stays active until changed. List /drip /drippy /drop, /shallow /splash /splashy, /calm /reg /default, /deep /deepdive /full, and /stormy /storm /choppy. Personalize explains custom triggers, for example /trigger /focus /deep and /untrigger /focus.
 - Next Waves: tap to send, hover or hold to preview, drag into the desktop composer to edit, or type W1 or W1 and 2 with your own instructions. The desktop wheel scrolls the rail sideways. Explain collapsible reply sections and message actions.
 - Creative tools: Writer, Music and Drawing Types offer starters and practice. Relevant chord replies can offer Play chords. Hotkeys can make a song, written piece, drawing concept, voluntary hypnosis script or other remix directly in the chat. Make Something From This opens a separate creative branch that draws on bounded text excerpts from the source chat.
@@ -3455,15 +3460,7 @@ function scheduleRideHomeTip(){
   voice.textContent='🎤';
   voice.title='Start a new chat with voice input';
   voice.setAttribute('aria-label',voice.title);
-  voice.onclick=()=>{
-    newSession();
-    const mic=document.getElementById('micBtn');
-    if(mic && mic.style.display!=='none')mic.click();
-    else {
-      document.getElementById('lakeInput').focus();
-      showToast('Voice input is unavailable in this browser.');
-    }
-  };
+  voice.onclick=openLakeVoice;
   shortcuts.append(voice);
   home.append(shortcuts);
   setTimeout(()=>{
@@ -4989,6 +4986,101 @@ function attachBubbleActions(waveEl) {
 // ============================================
 // MIC
 // ============================================
+function openLakeVoice(){
+  const Recognition=window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!Recognition || !window.speechSynthesis){
+    showToast('Voice conversation is unavailable in this browser.');
+    return;
+  }
+  stopSpeech();
+  newSession();
+  const sessionId=currentSessionId;
+  const dialog=document.createElement('dialog');
+  dialog.className='lake-voice-dialog';
+  dialog.innerHTML='<h2>🌊 Lake Voice</h2><p role="status">Ready when you are.</p><label>Mood <select><option value="drip">Drip</option><option value="shallow">Shallow</option><option value="calm">Calm</option><option value="analytical">Deep Dive</option><option value="stormy">Stormy</option></select></label><label>Voice <select><option value="">Auto voice</option></select></label><button type="button">Start talking</button><button type="button">End voice chat</button>';
+  const [mood,voice]=dialog.querySelectorAll('select');
+  const [talk,end]=dialog.querySelectorAll('button');
+  const status=dialog.querySelector('[role="status"]');
+  mood.value=currentMood;
+  mood.onchange=()=>setMood(mood.value);
+  const voiceKey=storageKey('speechVoice');
+  const loadVoices=()=>{
+    voice.replaceChildren(new Option('Auto voice',''));
+    for(const item of lakeSpeechOutput.voices())voice.add(new Option(item.name+' · '+item.lang,item.voiceURI));
+    voice.value=localStorage.getItem(voiceKey)||'';
+    if(voice.selectedIndex<0)voice.selectedIndex=0;
+  };
+  loadVoices();
+  window.speechSynthesis.addEventListener('voiceschanged',loadVoices);
+  voice.onchange=()=>localStorage.setItem(voiceKey,voice.value);
+  const recognition=new Recognition();
+  recognition.lang=navigator.language || 'en-US';
+  let phase='ready', transcript='', playback=0;
+  const active=()=>dialog.open && currentSessionId===sessionId;
+  function setPhase(next,message,label){
+    phase=next;
+    status.textContent=message;
+    talk.textContent=label;
+    talk.disabled=next==='thinking';
+  }
+  function listen(){
+    if(!active())return;
+    transcript='';
+    try{
+      recognition.start();
+      setPhase('listening','Listening…','Finish turn');
+    }catch{
+      setPhase('ready','Microphone could not start.','Try again');
+    }
+  }
+  recognition.onresult=event=>{transcript=event.results[0][0].transcript.trim();};
+  recognition.onerror=()=>{
+    if(active())setPhase('ready','Microphone stopped. Check permissions or try again.','Try again');
+  };
+  recognition.onend=async()=>{
+    if(!active() || phase!=='listening')return;
+    if(!transcript){setPhase('ready','No speech heard.','Start talking');return;}
+    setPhase('thinking','The Lake is thinking…','Thinking…');
+    const start=chatHistory.length;
+    const input=document.getElementById('lakeInput');
+    input.value=transcript;
+    await sendWave({reuseAttachments:false});
+    if(!active())return;
+    mood.value=currentMood;
+    const reply=chatHistory.slice(start).find(message=>message.role==='assistant');
+    if(!reply){setPhase('ready','The reply did not come through.','Try again');return;}
+    const chunks=speechChunks(reply.content);
+    const turn=++playback;
+    setPhase('speaking','The Lake is speaking…','Tap to interrupt');
+    function speakNext(index){
+      if(!active() || turn!==playback)return;
+      if(index===chunks.length){listen();return;}
+      const utterance=lakeSpeechOutput.utterance(chunks[index],1);
+      utterance.onend=()=>speakNext(index+1);
+      utterance.onerror=()=>{
+        if(active() && turn===playback)setPhase('ready','Playback stopped. You can keep talking.','Start talking');
+      };
+      lakeSpeechOutput.speak(utterance);
+    }
+    speakNext(0);
+  };
+  talk.onclick=()=>{
+    if(phase==='listening'){recognition.stop();return;}
+    if(phase==='speaking'){playback++;lakeSpeechOutput.cancel();}
+    listen();
+  };
+  end.onclick=()=>dialog.close();
+  dialog.addEventListener('close',()=>{
+    playback++;
+    recognition.abort();
+    lakeSpeechOutput.cancel();
+    window.speechSynthesis.removeEventListener('voiceschanged',loadVoices);
+    dialog.remove();
+  },{once:true});
+  document.body.append(dialog);
+  dialog.showModal();
+}
+
 function initMic() {
   const micBtn = document.getElementById('micBtn');
   if (!micBtn) return;
