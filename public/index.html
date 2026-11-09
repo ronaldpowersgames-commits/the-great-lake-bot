@@ -2382,7 +2382,7 @@ function renderAdaptiveSuggestions() {
   }
   const composer=document.getElementById('lakeInput');
   if(composer)composer.placeholder=suggestions.length
-    ? (window.matchMedia?.('(pointer: fine)')?.matches ? 'Send a wave · drag a pill here or type W1' : 'Send a wave · type W1 to use a suggestion')
+    ? (window.matchMedia?.('(pointer: fine)')?.matches ? 'Send a wave into The Lake...\nYou can drag in a suggested Next Wave.' : 'Send a wave into The Lake...\nType W1 to use a suggested Next Wave.')
     : 'Send a wave into The Lake...';
   panel.hidden=!suggestions.length;panel.dataset.mood=currentMood;panel.classList.toggle('rail-dockward',localStorage.getItem(storageKey('railSwipeMode'))==='down');list.replaceChildren();
   if(suggestionCycleReply!==reply){
