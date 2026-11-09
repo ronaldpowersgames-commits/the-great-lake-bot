@@ -3944,7 +3944,13 @@ function toggleLakeHotkeys(){
   if(!menu.childElementCount){
     const actions=[
       ['🌊 Tsunami → Puddle','Summarize this tsunami into a single puddle. Give me the point, the key evidence, and what matters next in a few lines.'],
-      ['🎨 Make Something From This','Turn this conversation into a small creative piece. Find one specific image, tension, line, or turning point worth carrying into another medium. Choose a song, piece of writing, drawing concept, voluntary hypnosis script, or another fitting form based on what I have actually shared about my interests, strengths and current goals. If I already named a medium, use it. Give me a first draft or a concrete sketch I can work from, and briefly explain why this seed and form fit me. Keep sensitive details abstract where possible, especially if the piece might be shared. End by inviting me to use 🌊 New Current on this reply to branch it for feedback, and suggest one precise question to bring into that branch.'],
+      ...[
+        ['🎵 Turn this chat into a song','Write original, singable lyrics with verses and a chorus or another structure that suits the genre. Include a tempo, feel and playable chord progression when useful.'],
+        ['✍️ Turn this chat into writing','Write the actual piece in the form requested: a poem, essay, story, comedy sketch or another format. For a sketch, write dialogue, stage directions and a payoff grounded in the chat.'],
+        ['✏️ Turn this chat into a drawing','Create a concrete drawing concept with a subject, composition, focal point, light or palette, and a thumbnail plan I can sketch.'],
+        ['🌙 Turn this chat into hypnosis','Write a complete voluntary hypnosis script to reinforce takeaways I have chosen or endorsed. Include a gentle settling sequence, optional imagery and suggestions, and a clear return to alertness.'],
+        ['🎨 Remix this chat in another medium','Use the form I name. If I have not named one, pick a fitting form and create a first version I can react to.']
+      ].map(([label,brief])=>[label,`${brief} Transform a specific image, tension, line or turning point from this conversation into the work itself. Draw on what I have shared about my tastes, goals and skill. Respect my requested style, audience and medium. If style is open, choose a fitting direction and deliver a first version now; ask one focused refinement question afterward if useful. Protect sensitive details. End with one specific feedback question I can explore by selecting New Current on this reply.`]),
       ['🧩 Patterns at Play','Identify the most useful patterns at play in this chat. Point to examples and distinguish recurring patterns from one-offs.'],
       ['♨️ Boil Down the Lessons','Boil this conversation down into transferable lessons and say when each applies.'],
       ['🧭 My Next Move','Recommend one next action I can take and explain why it is the best move now.'],
