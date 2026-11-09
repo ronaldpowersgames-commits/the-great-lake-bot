@@ -2393,7 +2393,7 @@ function renderAdaptiveSuggestions() {
       const composer=document.getElementById('lakeInput');
       const editingDraft=document.activeElement===composer && Boolean(composer?.value.trim());
       if(document.hidden || waveInFlight ||
-          (suggestionCyclePhase!=='waiting' && (editingDraft || panel.dataset.draggingWave || panel.matches(':hover, :focus-within')))){
+          (suggestionCyclePhase!=='waiting' && (editingDraft || panel.dataset.draggingWave || panel.matches(':hover, :focus-within') || panel.querySelector('.wave-prompt-preview:popover-open')))){
         suggestionCycleTimer=setTimeout(advance,750);
         return;
       }
@@ -2424,12 +2424,12 @@ function renderAdaptiveSuggestions() {
     main.append(numberTag, moodLabel ? label+' · '+moodLabel : label);
     const draftPrompt=waveNumber+'- '+suggestion.prompt;
     main.title=draftPrompt;
-    let previewTimer, held=false, preview;
+    let previewTimer, held=false, preview, touchStart;
     const hidePreview=()=>{
       clearTimeout(previewTimer);
       if(preview?.matches(':popover-open'))preview.hidePopover();
     };
-    const showPreview=()=>{
+    const showPreview=(touch=false)=>{
       if(!preview){
         preview=document.createElement('div');
         if(typeof preview.showPopover!=='function')return;
@@ -2440,8 +2440,9 @@ function renderAdaptiveSuggestions() {
       }
       preview.showPopover();
       const rect=main.getBoundingClientRect();
-      preview.style.left=Math.max(12,Math.min(rect.left,window.innerWidth-preview.offsetWidth-12))+'px';
+      preview.style.left=Math.max(12,Math.min(touch?(window.innerWidth-preview.offsetWidth)/2:rect.left,window.innerWidth-preview.offsetWidth-12))+'px';
       preview.style.top=Math.max(12,rect.top-preview.offsetHeight-8)+'px';
+      return true;
     };
     main.addEventListener('pointerenter',event=>{
       if(event.pointerType==='mouse')previewTimer=setTimeout(showPreview,400);
@@ -2450,10 +2451,19 @@ function renderAdaptiveSuggestions() {
     main.addEventListener('pointerdown',event=>{
       held=false;
       hidePreview();
-      if(event.pointerType==='touch')previewTimer=setTimeout(()=>{held=true;showPreview();},500);
+      if(event.pointerType==='touch'){
+        touchStart={x:event.clientX,y:event.clientY};
+        previewTimer=setTimeout(()=>{held=Boolean(showPreview(true));},500);
+      }
     });
-    main.addEventListener('pointerup',()=>clearTimeout(previewTimer));
-    main.addEventListener('pointercancel',hidePreview);
+    main.addEventListener('pointermove',event=>{
+      if(touchStart && Math.hypot(event.clientX-touchStart.x,event.clientY-touchStart.y)>10){
+        touchStart=null;
+        hidePreview();
+      }
+    });
+    main.addEventListener('pointerup',()=>{touchStart=null;clearTimeout(previewTimer);});
+    main.addEventListener('pointercancel',()=>{touchStart=null;hidePreview();});
     main.addEventListener('contextmenu',event=>{if(event.pointerType==='touch' || held)event.preventDefault();});
     main.onclick=()=>{
       if(held){held=false;return;}
@@ -2462,6 +2472,7 @@ function renderAdaptiveSuggestions() {
     };
     main.draggable=true;
     main.addEventListener('dragstart',event=>{
+      if(touchStart || held){event.preventDefault();return;}
       if(!event.dataTransfer)return;
       hidePreview();
       panel.dataset.draggingWave='true';
