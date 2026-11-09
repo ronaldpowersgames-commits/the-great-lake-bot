@@ -36,6 +36,7 @@ function browserContext() {
   });
   vm.runInContext('let crewMembers = []; let suggestedCrew = []; let selectedFiles = []; let chatHistory = []; let allSessions = []; let tideFolders = []; let currentSessionId = null; let currentUser = {name:"Ron"}; let currentMood = "calm"; let sessionLoadPromise = Promise.resolve(); let pendingFileLoads = 0;', context);
   vm.runInContext(script.slice(script.indexOf('const IGNORE_WORDS'), script.indexOf('// STORAGE HELPERS')), context);
+  vm.runInContext(script.slice(script.indexOf('const LAKE_MOOD_CODES'), script.indexOf('function renderAdaptiveSuggestions(')), context);
   vm.runInContext(script.slice(script.indexOf('function triggerDailyPrinciple('), script.indexOf('// RENDER WAVES')), context);
   vm.runInContext('fileToBase64 = async file => "data:text/plain;base64,dGVzdA=="; renderTranscriptStatus=()=>{};', context);
   return context;

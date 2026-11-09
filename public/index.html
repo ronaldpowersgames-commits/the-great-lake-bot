@@ -431,6 +431,8 @@ button.welcome-icon { background:none; border:0; padding:0; }
 .ride-home-tip-open { display:none; }
 .ride-home-voice { position:absolute; top:calc(100% + 6px); right:0; min-width:38px; min-height:38px; }
 .wave-prompt-preview { position:fixed; inset:auto; margin:0; max-width:min(360px, calc(100vw - 24px)); max-height:40vh; overflow:auto; padding:10px 12px; border:1px solid var(--dock-border); border-radius:10px; background:var(--dock-bg); color:var(--text-primary); font-size:13px; line-height:1.45; white-space:pre-wrap; overflow-wrap:anywhere; pointer-events:none; }
+.wave-prompt-preview.touch-preview { pointer-events:auto; }
+.wave-prompt-preview button { display:block; margin-top:8px; }
 .adaptive-wave-number { font-size:.8em; opacity:.72; margin-inline-end:.5em; }
 .lake-voice-dialog { position:fixed; inset:0; margin:auto; box-sizing:border-box; max-height:calc(100dvh - 32px); overflow:auto; width:min(420px,calc(100% - 32px)); border:1px solid var(--dock-border); border-radius:22px; padding:24px; background:var(--dock-bg); color:var(--text-primary); text-align:center; }
 .lake-voice-waves { display:flex; gap:6px; overflow-x:auto; margin-top:12px; }
@@ -440,6 +442,10 @@ button.welcome-icon { background:none; border:0; padding:0; }
 .lake-voice-dialog h2 { color:var(--lake-light); margin:0 0 14px; }
 .lake-voice-dialog label { display:block; margin:12px 0; }
 .lake-voice-dialog select,.lake-voice-dialog button { max-width:100%; padding:8px; margin:4px; border:1px solid var(--dock-border); border-radius:8px; background:var(--dock-bg); color:var(--text-primary); }
+.input-wrap { position:relative; }
+.composer-commands { position:absolute; bottom:100%; left:0; right:0; z-index:20; max-height:160px; overflow:auto; padding:6px; background:var(--dock-bg); border:1px solid var(--dock-border); border-radius:8px; }
+.composer-commands button { display:block; width:100%; text-align:left; }
+.lake-input.wave-drop-ready { outline:2px solid var(--lake-light); }
 .home-shortcuts { position:absolute; top:8px; left:0; z-index:4; display:grid; gap:6px; }
 .home-shortcuts .current-chip { min-width:38px; min-height:38px; }
 .ride-home-tip.is-tucked .ride-home-tip-open { display:block; width:44px; height:44px; border:0; border-radius:50%; background:transparent; cursor:pointer; }
@@ -1558,7 +1564,8 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
             rows="3"
             autocomplete="on" autocorrect="on" autocapitalize="sentences" spellcheck="true" inputmode="text"
             onkeydown="handleKey(event)"
-            oninput="autoResize(this)"></textarea>
+            oninput="autoResize(this); updateComposerCommands(this)"></textarea>
+          <div id="composerCommands" class="composer-commands" hidden></div>
           <!-- Attach menu anchored to input-wrap -->
           <div style="position:relative">
             <div class="attach-menu" id="attachMenu">
@@ -1643,6 +1650,11 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
       <div class="mode-continuity"><strong>Same chat. Different lens.</strong> Expect replies in the selected mood’s tone, depth, and length.</div>
     </div>
     <div class="depths-section crew-modal-field">
+      <details class="depths-section">
+        <summary>Slash Commands</summary>
+        <p>Use /mood to open the mood picker and /w# to insert a Next Wave. Add one custom prompt per line, like /brief = Give me the bottom line. Edit or remove a line to change it, or prefix it with # to disable it.</p>
+        <textarea id="lakeCustomCommands" aria-label="My slash commands" rows="4" maxlength="4000" onchange="localStorage.setItem(storageKey('customPrompts'),this.value)"></textarea>
+      </details>
       <label for="lakePersonalNotes">Personal memory</label>
       <label><input id="lakeLearnProfile" type="checkbox" onchange="localStorage.setItem(storageKey('learnProfile'),String(this.checked))"> Learn from my messages across chats</label>
       <button type="button" class="quick-action-btn" onclick="clearLearnedProfile()">Clear learned profile</button>
@@ -1951,15 +1963,15 @@ document.addEventListener('DOMContentLoaded', () => {
       if(!event.dataTransfer?.types.includes('application/x-lake-next-wave'))return;
       event.preventDefault();
       event.dataTransfer.dropEffect='copy';
+      lakeInput.classList.add('wave-drop-ready');
     });
+    lakeInput.addEventListener('dragleave',()=>lakeInput.classList.remove('wave-drop-ready'));
     lakeInput.addEventListener('drop',event=>{
+      lakeInput.classList.remove('wave-drop-ready');
       const prompt=event.dataTransfer?.getData('application/x-lake-next-wave');
       if(!prompt)return;
       event.preventDefault();
-      lakeInput.value=lakeInput.value.trimEnd() ? lakeInput.value.trimEnd()+'\n\n'+prompt+'\n\n' : prompt+'\n\n';
-      lakeInput.focus();
-      lakeInput.setSelectionRange(lakeInput.value.length,lakeInput.value.length);
-      scheduleInputResize(lakeInput);
+      insertComposerPrompt(lakeInput,prompt);
     });
     lakeInput.addEventListener('compositionstart',()=>{lakeInput.dataset.composing='true';});
     lakeInput.addEventListener('compositionend',()=>{lakeInput.dataset.composing='false';scheduleInputResize(lakeInput);});
@@ -2337,6 +2349,58 @@ function guideNextWaves(){
     {label:'Show me a worked example',kind:'reinforce',prompt:'Show me a short, realistic example of using the Lake to get from a messy question to one useful next step.'}
   ];
 }
+const LAKE_MOOD_CODES={calm:'calm',reg:'calm',default:'calm',shallow:'shallow',splash:'shallow',splashy:'shallow',deep:'analytical',deepdive:'analytical',full:'analytical',stormy:'stormy',storm:'stormy',choppy:'stormy',drip:'drip',drippy:'drip',drop:'drip'};
+function reservedComposerCommand(code){
+  return Object.hasOwn(LAKE_MOOD_CODES,code) || /^(?:w\d*|mood|trigger|untrigger)$/.test(code);
+}
+function composerCommands(){
+  const commands=new Map();
+  const custom=(localStorage.getItem(storageKey('customPrompts'))||'').split(/\r?\n/);
+  let moodTriggers={};
+  try{moodTriggers=JSON.parse(localStorage.getItem(storageKey('moodTriggers'))||'{}')||{};}catch{}
+  for(const line of custom){
+    const entry=line.match(/^\s*\/([a-z][a-z0-9-]{0,23})\s*=\s*(.+)$/i);
+    if(!entry)continue;
+    const code=entry[1].toLowerCase();
+    if(!reservedComposerCommand(code) && !Object.hasOwn(moodTriggers,code))commands.set(code,{label:entry[2],prompt:entry[2]});
+  }
+  latestSuggestionReply()?.promptSuggestions?.forEach((item,index)=>{
+    const number=index+1;
+    commands.set('w'+number,{label:item.label,prompt:'W'+number+'- '+item.prompt});
+  });
+  return commands;
+}
+function insertComposerPrompt(input,prompt,start=input.value.length,end=start){
+  const before=input.value.slice(0,start).replace(/[ \t\r\n]+$/,'');
+  const after=input.value.slice(end).replace(/^[ \t\r\n]+/,'');
+  const inserted=(before?before+'\n\n':'')+prompt+'\n\n';
+  input.value=inserted+after;
+  input.focus();
+  input.setSelectionRange(inserted.length,inserted.length);
+  scheduleInputResize(input);
+  updateComposerCommands(input);
+}
+function updateComposerCommands(input){
+  const menu=document.getElementById('composerCommands');
+  const end=input.selectionStart;
+  const token=input.value.slice(0,end).match(/(?:^|\s)\/([a-z][a-z0-9-]*)$/i);
+  if(!menu?.replaceChildren)return;
+  menu.replaceChildren();
+  menu.hidden=true;
+  if(!token || input.dataset.composing==='true')return;
+  const prefix=token[1].toLowerCase();
+  const start=end-prefix.length-1;
+  for(const [code,item] of composerCommands()){
+    if(!code.startsWith(prefix))continue;
+    const option=document.createElement('button');
+    option.type='button';
+    option.className='quick-action-btn';
+    option.textContent='/'+code+' · '+item.label;
+    option.onclick=()=>insertComposerPrompt(input,item.prompt,start,end);
+    menu.append(option);
+  }
+  menu.hidden=!menu.childElementCount;
+}
 function latestSuggestionReply() {
   const index=chatHistory.findLastIndex(message=>message.role==='assistant');
   const latest=chatHistory[index];
@@ -2394,7 +2458,7 @@ function renderAdaptiveSuggestions() {
   }
   const composer=document.getElementById('lakeInput');
   if(composer)composer.placeholder=suggestions.length
-    ? (window.matchMedia?.('(pointer: fine)')?.matches ? 'Send a wave into The Lake...\nYou can drag in a suggested Next Wave.' : 'Send a wave into The Lake...\nType W1 to use a suggested Next Wave.')
+    ? (window.matchMedia?.('(pointer: fine)')?.matches ? 'Send a wave into The Lake...\nDrag in a Next Wave or type /w#.' : 'Send a wave into The Lake...\nType /w# to insert a Next Wave.')
     : 'Send a wave into The Lake...';
   panel.hidden=!suggestions.length;panel.dataset.mood=currentMood;panel.classList.toggle('rail-dockward',localStorage.getItem(storageKey('railSwipeMode'))==='down');list.replaceChildren();
   if(suggestionCycleReply!==reply){
@@ -2451,6 +2515,15 @@ function renderAdaptiveSuggestions() {
         preview.textContent=draftPrompt;
         item.append(preview);
       }
+      if(touch && !preview.querySelector('button')){
+        const insert=document.createElement('button');
+        insert.type='button';
+        insert.className='quick-action-btn';
+        insert.textContent='Add to draft';
+        insert.onclick=()=>{hidePreview();insertComposerPrompt(document.getElementById('lakeInput'),draftPrompt);};
+        preview.append(insert);
+      }
+      preview.classList.toggle('touch-preview',touch);
       preview.showPopover();
       const rect=main.getBoundingClientRect();
       preview.style.left=Math.max(12,Math.min(touch?(window.innerWidth-preview.offsetWidth)/2:rect.left,window.innerWidth-preview.offsetWidth-12))+'px';
@@ -3308,6 +3381,7 @@ function toggleDepths() {
   showDepthsTab('settings');
   const opened=document.getElementById('depthsPanel').classList.toggle('show');
   if(opened){
+    document.getElementById('lakeCustomCommands').value=localStorage.getItem(storageKey('customPrompts'))||'';
     document.getElementById('lakePersonalNotes').value=localStorage.getItem(storageKey('personalNotes'))||'';
     document.getElementById('lakeLearnProfile').checked=localStorage.getItem(storageKey('learnProfile'))!=='false';
   }
@@ -3390,7 +3464,7 @@ function updateCurrents(text) {
 const LAKE_MANUAL_PROMPT = `Write a concise practical manual for The Great Lake. Start with three easy ways in, then group details by task under Markdown level-two headings. Give short examples and cover only supported features:
 - Homepage: the top-left wave logo returns home. The floating wave starts Ride a Wave, Splash offers a fact, Riptide asks a question, and ♒️ Patterns Across Chats looks for recurring patterns using a sample of saved chats. The 🎤 shortcut below it opens a fresh Lake Voice session on supported browsers. Pick a mood and voice, tap Start talking, and take turns speaking with automatic replies. Tap to interrupt or end the session. The composer microphone supports editable dictation.
 - Moods: Drip gives an immediate minimal answer, Shallow is short and simple, Calm is reflective and digestible, Deep Dive gives careful expanded analysis, and Stormy is candid and decisive. The 🎭 menu lists codes. Use them at either end of a message and the mood stays active until changed. List /drip /drippy /drop, /shallow /splash /splashy, /calm /reg /default, /deep /deepdive /full, and /stormy /storm /choppy. Personalize explains custom triggers, for example /trigger /focus /deep and /untrigger /focus.
-- Next Waves: tap to send, hover or hold to preview, drag into the desktop composer to edit, or type W1 or W1 and 2 with your own instructions. The desktop wheel scrolls the rail sideways. Explain collapsible reply sections and message actions.
+- Next Waves: tap to send, hover or hold to preview, drag into the desktop composer to edit, or type /w followed by a number and choose the matching suggestion to insert the full prompt. Settings → Slash Commands lets you create, edit, disable or remove personal prompt shortcuts. /mood opens the mood picker. The desktop wheel scrolls the rail sideways. Explain collapsible reply sections and message actions.
 - Creative tools: Writer, Music and Drawing Types offer starters and practice. Relevant chord replies can offer Play chords. Hotkeys can make a song, written piece, drawing concept, voluntary hypnosis script or other remix directly in the chat. Make Something From This opens a separate creative branch that draws on bounded text excerpts from the source chat.
 - Cover attachments, whole-transcript workflows, Crew and memory controls, Past Tides and Recovery, and adding the app from a mobile browser to the Home Screen. Keep the guide focused on functionality. Do not start an onboarding question or personal analysis.`;
 
@@ -4117,19 +4191,24 @@ async function sendWave(options = {}) {
   if (waveInFlight) return;
   const input = document.getElementById('lakeInput');
   let text = options.requestText ?? input.value.trim();
-  const aliases={calm:'calm',reg:'calm',default:'calm',shallow:'shallow',splash:'shallow',splashy:'shallow',deep:'analytical',deepdive:'analytical',full:'analytical',stormy:'stormy',storm:'stormy',choppy:'stormy',drip:'drip',drippy:'drip',drop:'drip'};
+  const aliases=LAKE_MOOD_CODES;
   const builtInMood=code=>Object.hasOwn(aliases,code)?aliases[code]:undefined;
   const commandKey=typeof storageKey==='function' ? storageKey('moodTriggers') : '';
   let triggers={};
   try { triggers=JSON.parse(globalThis.localStorage?.getItem(commandKey)||'{}') || {}; } catch {}
+  if(options.requestText==null && /^\/mood$/i.test(text)){
+    document.getElementById('moodSelector').classList.toggle('show');
+    input.value='';
+    updateComposerCommands(input);
+    return;
+  }
   const config=options.requestText==null && text.match(/^\/(trigger|untrigger)(?=\s|$)/i);
   if(config){
     const [action,name,target,extra]=text.toLowerCase().split(/\s+/);
     const code=name?.slice(1);
     const mood=target?.startsWith('/') && builtInMood(target.slice(1));
     const adding=action==='/trigger';
-    if(!/^\/[a-z][a-z0-9-]{0,23}$/.test(name||'') || builtInMood(code) ||
-       ['trigger','untrigger'].includes(code) || extra || (adding?!mood:target)){
+    if(!/^\/[a-z][a-z0-9-]{0,23}$/.test(name||'') || reservedComposerCommand(code) || extra || (adding?!mood:target)){
       showToast('Use /trigger /focus /deep or /untrigger /focus. Choose a shortcut outside the built-in codes.');
       return;
     }
@@ -4162,6 +4241,20 @@ async function sendWave(options = {}) {
   }
   const visibleText = options.visibleText ?? text;
   if(options.requestText==null){
+    if(/(?:^|\s)\/[a-z][a-z0-9-]*(?=\s|$)/i.test(text)){
+      const commands=composerCommands();
+      const pieces=[];
+      let cursor=0;
+      for(const match of text.matchAll(/(^|\s)\/([a-z][a-z0-9-]*)(?=\s|$)/gi)){
+        const item=commands.get(match[2].toLowerCase());
+        if(!item)continue;
+        const before=text.slice(cursor,match.index).trim();
+        if(before)pieces.push(before);
+        pieces.push(item.prompt);
+        cursor=match.index+match[0].length;
+      }
+      if(cursor)text=[...pieces,text.slice(cursor).trim()].filter(Boolean).join('\n\n');
+    }
     const shortcut=text.match(/^W(10|[1-9])(?:\s+(?:and\s+)?W?(10|[1-9]))?(?=\s|$)/i);
     if(shortcut){
       const suggestions=latestSuggestionReply()?.promptSuggestions || [];
@@ -4257,7 +4350,7 @@ async function sendWave(options = {}) {
   if (isRequestVisible(origin)) appendUserWave(visibleText || '📎 Files attached', timeStr, true, base64Attachments,userMessage);
 
   if (!options.snapshot && isRequestVisible(origin)) {
-    if(!options.preserveDraft) {input.value='';input.style.height='auto';}
+    if(!options.preserveDraft) {input.value='';input.style.height='auto';updateComposerCommands(input);}
     if(options.action!=='meeting-currents') selectedFiles=[];
   }
   renderFilePreviews();
@@ -4499,10 +4592,14 @@ function formatReflection(text,expandAll=false) {
     if(sectionAt(line)) { current={heading:line.trim().replace(/^#{2,4}\s+/, '').replace(/^\d+(?:\.\d+)*\.\s+/,''),body:[]};sections.push(current); }
     else if(current) current.body.push(line); else lead.push(line);
   }
-  if(sections.length<2)return formatReflectionInline(text);
+  const emptyWaves=section=>/^\s*(?:🌊\s*)?(?:W\d+\s*[—–-]\s*)?(?:Six\s+)?Next Waves\s*[:.]?$/i.test(section.heading) &&
+    !section.body.some(line=>line.trim() && !/^[-*_]{3,}$/.test(line.trim()));
+  const visibleSections=sections.filter(section=>!emptyWaves(section));
+  if(visibleSections.length<2 && visibleSections.length===sections.length)return formatReflectionInline(text);
+  if(!visibleSections.length)return formatReflectionInline(lead.join('\n'));
   let html=formatReflectionInline(lead.join('\n'));
   html+='<div class="reflection-sections"><div class="reflection-hint">Tap a headline to open its section. Double-tap the message to open or close all sections.</div>';
-  sections.forEach((section,index)=>{html+=`<details class="reflection-section" ${expandAll || index===sections.length-1 ? 'open' : ''}><summary>${formatReflectionInline(section.heading)}</summary><div class="reflection-section-body">${formatReflectionInline(section.body.join('\n').trim())}</div></details>`;});
+  visibleSections.forEach((section,index)=>{html+=`<details class="reflection-section" ${expandAll || index===visibleSections.length-1 ? 'open' : ''}><summary>${formatReflectionInline(section.heading)}</summary><div class="reflection-section-body">${formatReflectionInline(section.body.join('\n').trim())}</div></details>`;});
   return html+'</div>';
 }
 function formatReflectionInline(text) {
@@ -4560,6 +4657,15 @@ function hideRipple() {
 // INPUT
 // ============================================
 function handleKey(e) {
+  if((e.key==='Tab' || e.key==='Enter') && !e.shiftKey && !e.isComposing && !e.repeat && e.keyCode!==229 && e.target?.dataset?.composing!=='true'){
+    const menu=document.getElementById('composerCommands');
+    const exact=e.key==='Tab' || /(?:^|\s)\/[a-z][a-z0-9-]*$/i.test(e.target?.value || '');
+    if(exact && menu && !menu.hidden && menu.childElementCount===1){
+      e.preventDefault();
+      menu.firstElementChild.click();
+      return;
+    }
+  }
   if(e.target?.dataset?.composing==='true')return;
   if (e.key === 'Enter' && window.matchMedia && window.matchMedia('(max-width: 768px)').matches) return;
   if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.keyCode !== 229) {
