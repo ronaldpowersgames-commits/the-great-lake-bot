@@ -1413,6 +1413,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
     <div class="currents-bar" id="currentsBar">
       <button type="button" class="current-chip" onclick="rideAWave(true)">❗ How to start: Ride a Wave</button>
       <span class="currents-label">🧭 Currents:</span>
+      <button type="button" class="current-chip" onclick="sendWave({visibleText:'🪞 Personality Test',requestText:'Ask me one surprising but easy personality question about a concrete choice or tradeoff. Tailor it to what I have shared when relevant. Wait for my answer, then reflect what it may suggest, offer another plausible reading, and let me correct you. Treat this as self-discovery rather than a scored assessment or diagnosis.',reuseAttachments:false})">🪞 Personality Test</button>
       <span class="current-chip" onclick="sendPrompt('Summarize the key themes and patterns from our conversation so far.')">👥 Team Dynamics</span>
       <span class="current-chip" onclick="sendPrompt('What leadership patterns are you seeing in what I have shared?')">🎯 Leadership Patterns</span>
       <span class="current-chip persona-chip" onclick="askLakeKnowsYou()">🌊 How The Lake Sees You</span>
