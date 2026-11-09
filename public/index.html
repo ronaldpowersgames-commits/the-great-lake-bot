@@ -3110,9 +3110,14 @@ async function loadEmailSessions() {
 // ============================================
 // NEW SESSION — resets to welcome screen
 // ============================================
+let moodReminderTimer;
 function newSession(showMoodReminder=true) {
+  clearTimeout(moodReminderTimer);
   if(showMoodReminder)requestAnimationFrame(()=>{
-    if(document.getElementById('welcomeScreen'))document.getElementById('moodSelector').classList.add('show');
+    if(!document.getElementById('welcomeScreen'))return;
+    const picker=document.getElementById('moodSelector');
+    picker.classList.add('show');
+    moodReminderTimer=setTimeout(()=>picker.classList.remove('show'),2000);
   });
   document.getElementById('downloadSnapshotButton').hidden = true;
   currentSessionId = 'session_' + Date.now();
@@ -3419,7 +3424,7 @@ function editFromCard() { closeCrewCard(); setTimeout(() => openCrewModal('edit'
 // ============================================
 // MOOD
 // ============================================
-function toggleMoodSelector() { document.getElementById('moodSelector').classList.toggle('show'); }
+function toggleMoodSelector() { clearTimeout(moodReminderTimer); document.getElementById('moodSelector').classList.toggle('show'); }
 
 function applyMood(mood) {
   if (!['calm', 'analytical', 'stormy', 'shallow', 'drip'].includes(mood)) mood = 'calm';
@@ -4268,7 +4273,7 @@ async function sendWave(options = {}) {
   let triggers={};
   try { triggers=JSON.parse(globalThis.localStorage?.getItem(commandKey)||'{}') || {}; } catch {}
   if(options.requestText==null && /^\/mood$/i.test(text)){
-    document.getElementById('moodSelector').classList.toggle('show');
+    toggleMoodSelector();
     input.value='';
     updateComposerCommands(input);
     return;
