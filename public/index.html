@@ -3364,7 +3364,7 @@ function startHomepageWave(kind){
     splash:['💦 Splash','Give me one short, surprising, accurate fact. Pick something likely to spark my curiosity based on interests or examples I have shared. If little is known, choose an accessible subject. A brief connection to something I might enjoy noticing about myself is welcome when it fits. No quiz or follow-up question.'],
     riptide:['🌀 Riptide','Ask exactly one light, natural, easy-to-answer question that might reveal something about what I enjoy, notice or choose. Use relevant context if available. No intro, analysis, or extra question.'],
     manual:['📖 Chat Manual','Give me a practical chat manual for The Great Lake. Explain starters and Ride a Wave, Next Waves, moods and slash commands, creative types, attachments and transcript workflows, Crew and memory controls, and Past Tides and Recovery. Start with three easy ways in, then group details by task. Give example prompts. Only describe supported features.'],
-    personalize:['🎛️ Personalize','Help me explain optional preferences for how The Lake works with me. Ask one easy question about a goal, preferred tone, or metaphor. Keep defaults available. If I want a persistent explicit override, show me where to edit Personal memory in Settings. Do not claim a change has been saved unless confirmed.'],
+    personalize:['🎛️ Personalize','Help me explain optional preferences for how The Lake works with me. Mention that I can type /trigger /focus /deep in this chat to save /focus as a Deep Dive shortcut, or /untrigger /focus to remove it. The last argument must be a built-in mood code. Custom triggers are saved on this device and work at either end of a message. Ask one easy question about a goal, preferred tone, or metaphor. Keep defaults available. If I want a persistent explicit override, show me where to edit Personal memory in Settings. Do not claim a change has been saved unless confirmed.'],
     solve:['⚡ Solve a Problem','Ask what is stuck if the problem is unclear. Then isolate the real constraint, challenge the assumption keeping me stuck, and give me one concrete move I can take today. Be sharp and direct.'],
     decide:['🧭 Make a Decision','Ask what I am choosing between and what matters if unclear. Identify the decisive tradeoff, recommend a direction when supported, and give me one next action. If a critical fact is missing, suggest the smallest reversible test.']
   };
@@ -4037,13 +4037,46 @@ async function sendWave(options = {}) {
   if (waveInFlight) return;
   const input = document.getElementById('lakeInput');
   let text = options.requestText ?? input.value.trim();
-  const moodCommand = (options.requestText == null || options.suggestionKind) &&
-    (text.match(/^(\/(?:calm|reg|default|shallow|splashy?|deep(?:dive)?|full|stormy?|choppy|drip(?:py)?|drop))(?=\s|$)/i) ||
-      text.match(/\s+(\/(?:calm|reg|default|shallow|splashy?|deep(?:dive)?|full|stormy?|choppy|drip(?:py)?|drop))\s*$/i));
+  const aliases={calm:'calm',reg:'calm',default:'calm',shallow:'shallow',splash:'shallow',splashy:'shallow',deep:'analytical',deepdive:'analytical',full:'analytical',stormy:'stormy',storm:'stormy',choppy:'stormy',drip:'drip',drippy:'drip',drop:'drip'};
+  const builtInMood=code=>Object.hasOwn(aliases,code)?aliases[code]:undefined;
+  const commandKey=typeof storageKey==='function' ? storageKey('moodTriggers') : '';
+  let triggers={};
+  try { triggers=JSON.parse(globalThis.localStorage?.getItem(commandKey)||'{}') || {}; } catch {}
+  const config=options.requestText==null && text.match(/^\/(trigger|untrigger)(?=\s|$)/i);
+  if(config){
+    const [action,name,target,extra]=text.toLowerCase().split(/\s+/);
+    const code=name?.slice(1);
+    const mood=target?.startsWith('/') && builtInMood(target.slice(1));
+    const adding=action==='/trigger';
+    if(!/^\/[a-z][a-z0-9-]{0,23}$/.test(name||'') || builtInMood(code) ||
+       ['trigger','untrigger'].includes(code) || extra || (adding?!mood:target)){
+      showToast('Use /trigger /focus /deep or /untrigger /focus. Choose a shortcut outside the built-in codes.');
+      return;
+    }
+    if(adding)triggers[code]=mood;
+    else delete triggers[code];
+    try {
+      localStorage.setItem(commandKey,JSON.stringify(triggers));
+    } catch {
+      showToast('Could not save mood shortcuts on this device.');
+      return;
+    }
+    input.value='';
+    scheduleInputResize(input);
+    showToast(adding?'Mood shortcut saved: '+name:'Mood shortcut removed: '+name);
+    return;
+  }
+  const resolveMood=match=>{
+    const code=match?.[1].toLowerCase();
+    const custom=Object.hasOwn(triggers,code)?triggers[code]:undefined;
+    return builtInMood(code) || (Object.values(aliases).includes(custom)?custom:undefined);
+  };
+  const first=text.match(/^\/([a-z][a-z0-9-]*)(?=\s|$)/i);
+  const last=text.match(/\s+\/([a-z][a-z0-9-]*)\s*$/i);
+  const moodCommand=(options.requestText==null || options.suggestionKind) &&
+    (resolveMood(first)?first:resolveMood(last)?last:null);
   if(moodCommand){
-    const mood = moodCommand[1].toLowerCase().replace('/', '');
-    const aliases={storm:'stormy',choppy:'stormy',reg:'calm',default:'calm',deep:'analytical',deepdive:'analytical',full:'analytical',splash:'shallow',splashy:'shallow',drippy:'drip',drop:'drip'};
-    setMood(aliases[mood] || mood);
+    setMood(resolveMood(moodCommand));
     text=(text.slice(0,moodCommand.index)+text.slice(moodCommand.index+moodCommand[0].length)).trim();
     if(!text){if(options.requestText==null)input.value='';return;}
   }
