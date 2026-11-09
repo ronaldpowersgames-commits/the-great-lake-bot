@@ -3944,6 +3944,7 @@ function toggleLakeHotkeys(){
   if(!menu.childElementCount){
     const actions=[
       ['🌊 Tsunami → Puddle','Summarize this tsunami into a single puddle. Give me the point, the key evidence, and what matters next in a few lines.'],
+      ['🎨 Make Something From This','Open a creative branch','creative-branch'],
       ...[
         ['🎵 Turn this chat into a song','Write original, singable lyrics with verses and a chorus or another structure that suits the genre. Include a tempo, feel and playable chord progression when useful.'],
         ['✍️ Turn this chat into writing','Write the actual piece in the form requested: a poem, essay, story, comedy sketch or another format. For a sketch, write dialogue, stage directions and a payoff grounded in the chat.'],
@@ -3967,6 +3968,22 @@ function toggleLakeHotkeys(){
       action.onclick=()=>{
         if(waveInFlight || pendingFileLoads)return;
         menu.classList.remove('open');button.setAttribute('aria-expanded','false');
+        if(actionType==='creative-branch'){
+          if(!chatHistory.some(message=>message.role==='assistant' && message.content)){
+            showToast('Start a conversation before branching it into a creative project.');
+            return;
+          }
+          const creativeSourceId=currentSessionId;
+          saveSession().then(()=>{
+            if(currentSessionId!==creativeSourceId || waveInFlight)return;
+            newSession();
+            return sendWave({
+              visibleText:label, creativeSourceId, reuseAttachments:false,
+              requestText:'Open a creative workshop based on the linked conversation. Offer two distinctive things we could make, each anchored in a specific moment from the source and my known tastes. Ask one easy question about which direction or medium I want, then help develop and draft the piece in later turns.'
+            });
+          }).catch(()=>showToast('Could not save the source chat for branching.'));
+          return;
+        }
         sendWave({visibleText:label,requestText,preserveDraft:true,action:actionType});
       };
       menu.append(action);
@@ -4189,6 +4206,7 @@ async function sendWave(options = {}) {
 
   const userMessage={ role: 'user', mood:origin.mood, content: visibleText + attachmentLabel, time: timeStr, attachments: base64Attachments,
     ...(globalThis.pendingReplySource?{replyTo:globalThis.pendingReplySource}:{}),...(globalThis.pendingBranchSource?{branchSource:globalThis.pendingBranchSource}:{}),
+    ...(options.creativeSourceId ? {creativeSourceId:options.creativeSourceId} : {}),
     ...(options.action ? { action: options.action } : {}) };
   globalThis.pendingReplySource=null;globalThis.pendingBranchSource=null;
   origin.history.push(userMessage);
@@ -4233,6 +4251,21 @@ async function sendWave(options = {}) {
     formData.append('recentWaveIntents',JSON.stringify(origin.history.filter(message=>message.promptSuggestions?.length).slice(-3).flatMap(message=>message.promptSuggestions.map(item=>item.prompt.slice(0,160)))));
     const historyToSend = origin.history.slice(0,-1).filter(m=>!m.removedSourceRecord).slice(-10).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.content }));
     formData.append('history', JSON.stringify(historyToSend));
+    const creativeSourceId=origin.history.find(message=>message.creativeSourceId)?.creativeSourceId;
+    const sourceHistory=creativeSourceId && allSessions.find(session=>session.id===creativeSourceId)?.history;
+    if(!options.snapshot && sourceHistory?.length){
+      const sourceMessages=sourceHistory.filter(message=>message.content && !message.removedSourceRecord);
+      const terms=new Set((text.toLowerCase().match(/[a-z0-9]{4,}/g)||[]));
+      const ranked=sourceMessages.map((message,index)=>({
+        index,
+        score:[...new Set(message.content.toLowerCase().match(/[a-z0-9]{4,}/g)||[])].filter(word=>terms.has(word)).length
+      })).filter(item=>item.score>0).sort((a,b)=>b.score-a.score || b.index-a.index);
+      const indexes=new Set([0,1,...ranked.slice(0,6).map(item=>item.index)]);
+      for(let index=Math.max(0,sourceMessages.length-6);index<sourceMessages.length;index++)indexes.add(index);
+      const excerpts=[...indexes].sort((a,b)=>a-b).map(index=>sourceMessages[index]).filter(Boolean)
+        .map(message=>({role:message.role,content:message.content.slice(0,650)}));
+      formData.append('creativeSource',JSON.stringify(excerpts));
+    }
     formData.append('sourceMetadata',JSON.stringify(filesToSend.map(file => ({filename:file.name,meetingDate:file.meetingDate || ''}))));
     if(!options.snapshot && options.action!=='meeting-currents')formData.append('transcriptInventory',JSON.stringify({files:origin.sourceInventory,previouslySent:origin.previousReceipts,currentFiles:filesToSend.map(file=>file.sourceId).filter(Boolean)}));
     if(useWholeMemory)formData.append('transcriptWorkingMemory',JSON.stringify({parts:transcriptWorkingMemory.parts,complete:true,total:transcriptWorkingMemory.total}));
