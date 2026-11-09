@@ -197,7 +197,7 @@ body {
   border-bottom: 1px solid var(--dock-border);
   display: flex; align-items: center; gap: 10px;
 }
-.dock-logo     { font-size: 26px; line-height: 1; }
+.dock-logo     { font-size: 26px; line-height: 1; padding:0; border:0; background:transparent; cursor:pointer; }
 .dock-title    { font-size: 17px; font-weight: 700; color: var(--lake-light); letter-spacing: 0.3px; }
 .dock-subtitle { font-size: 9px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1.5px; }
 .new-session-btn {
@@ -431,7 +431,8 @@ button.welcome-icon { background:none; border:0; padding:0; }
 .ride-home-tip-open { display:none; }
 .wave-prompt-preview { position:fixed; inset:auto; margin:0; max-width:min(360px, calc(100vw - 24px)); max-height:40vh; overflow:auto; padding:10px 12px; border:1px solid var(--dock-border); border-radius:10px; background:var(--dock-bg); color:var(--text-primary); font-size:13px; line-height:1.45; white-space:pre-wrap; overflow-wrap:anywhere; pointer-events:none; }
 .adaptive-wave-number { font-size:.8em; opacity:.72; margin-inline-end:.5em; }
-.home-patterns { position:absolute; top:8px; left:0; z-index:4; }
+.home-shortcuts { position:absolute; top:8px; left:0; z-index:4; display:grid; gap:6px; }
+.home-shortcuts .current-chip { min-width:38px; min-height:38px; }
 .ride-home-tip.is-tucked .ride-home-tip-open { display:block; width:44px; height:44px; border:0; border-radius:50%; background:transparent; cursor:pointer; }
 .ride-home-tip-close { position:absolute; top:4px; right:4px; width:28px; height:28px; background:none; border:0; color:var(--text-secondary); cursor:pointer; }
 .welcome-title { font-size: 22px; font-weight: 700; color: var(--lake-light); margin-bottom: 7px; }
@@ -1307,7 +1308,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
 <div class="app-layout">
   <aside class="dock" id="dock">
     <div class="dock-header">
-      <div class="dock-logo">🌊</div>
+      <button type="button" class="dock-logo" onclick="newSession()" aria-label="Back to The Lake homepage" title="Back to home">🌊</button>
       <div>
         <div class="dock-title">The Great Lake</div>
         <div class="dock-subtitle">Leadership Clarity Engine</div>
@@ -3431,10 +3432,31 @@ function scheduleRideHomeTip(){
   home.style.position='relative';
   const patterns=document.createElement('button');
   patterns.type='button';
-  patterns.className='current-chip home-patterns';
-  patterns.textContent='♒️ Patterns Across Chats';
+  patterns.className='current-chip';
+  patterns.textContent='♒️';
+  patterns.title='Patterns Across Chats';
+  patterns.setAttribute('aria-label',patterns.title);
   patterns.onclick=readCrossChatPatterns;
-  home.append(patterns);
+  const shortcuts=document.createElement('div');
+  shortcuts.className='home-shortcuts';
+  shortcuts.append(patterns);
+  const voice=document.createElement('button');
+  voice.type='button';
+  voice.className='current-chip';
+  voice.textContent='🎤';
+  voice.title='Start a new chat with voice input';
+  voice.setAttribute('aria-label',voice.title);
+  voice.onclick=()=>{
+    newSession();
+    const mic=document.getElementById('micBtn');
+    if(mic && mic.style.display!=='none')mic.click();
+    else {
+      document.getElementById('lakeInput').focus();
+      showToast('Voice input is unavailable in this browser.');
+    }
+  };
+  shortcuts.append(voice);
+  home.append(shortcuts);
   setTimeout(()=>{
     if(!home.isConnected || document.getElementById('rideHomeTip'))return;
     const tip=document.createElement('aside');
