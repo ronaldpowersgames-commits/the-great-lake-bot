@@ -428,6 +428,7 @@ button.welcome-icon { background:none; border:0; padding:0; }
 .ride-home-tip.is-tucked { width:auto; padding:0; border-radius:50%; }
 .ride-home-tip.is-tucked > :not(.ride-home-tip-open) { display:none; }
 .ride-home-tip-open { display:none; }
+.adaptive-wave-number { font-size:.8em; opacity:.72; margin-inline-end:.5em; }
 .home-patterns { position:absolute; top:8px; left:0; z-index:4; }
 .ride-home-tip.is-tucked .ride-home-tip-open { display:block; width:44px; height:44px; border:0; border-radius:50%; background:transparent; cursor:pointer; }
 .ride-home-tip-close { position:absolute; top:4px; right:4px; width:28px; height:28px; background:none; border:0; color:var(--text-secondary); cursor:pointer; }
@@ -2409,7 +2410,10 @@ function renderAdaptiveSuggestions() {
       ? (suggestion.mood==='analytical' ? 'Deep Dive' : suggestion.mood[0].toUpperCase()+suggestion.mood.slice(1)) : '';
     const label=suggestion.prompt.includes('Focus specifically on this passage from your last answer:')
       ? suggestion.label.split(' — ',1)[0] : suggestion.label;
-    main.textContent=waveNumber+' · '+(moodLabel ? label+' · '+moodLabel : label);
+    const numberTag=document.createElement('span');
+    numberTag.className='adaptive-wave-number';
+    numberTag.textContent=waveNumber;
+    main.append(numberTag, moodLabel ? label+' · '+moodLabel : label);
     main.onclick=()=>chooseAdaptiveSuggestion(index);
     main.draggable=true;
     main.addEventListener('dragstart',event=>{
