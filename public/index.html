@@ -1511,7 +1511,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
         <button type="button" onclick="speechNext()" title="Next passage">⏭</button>
         <input class="speech-player-progress" id="speechProgress" type="range" min="0" max="1" value="0" oninput="speechSeek(this.value)" aria-label="Reading progress">
         <span class="speech-player-status" id="speechStatus">Ready</span>
-        <select id="speechVoice" aria-label="Reading voice" onchange="localStorage.setItem(storageKey('speechVoice'),this.value)"><option value="">Auto voice</option></select>
+        <select id="speechVoice" aria-label="Reading voice" onchange="saveLakeVoice(this.value)"><option value="">Auto voice</option></select>
         <button type="button" onclick="previewLakeVoice()">Sample</button>
         <select id="speechRate" onchange="speechSetRate(this.value)" aria-label="Reading speed"><option value="0.75">0.75×</option><option value="1" selected>1×</option><option value="1.25">1.25×</option><option value="1.5">1.5×</option><option value="2">2×</option></select>
         <button type="button" id="speechCollapse" onclick="toggleSpeechView()" aria-label="Collapse audio player" title="Collapse audio player">⌄</button>
@@ -1673,6 +1673,8 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
         <p>Use /mood to open the mood picker and /w# to insert a Next Wave. Add one custom prompt per line, like /brief = Give me the bottom line. Edit or remove a line to change it, or prefix it with # to disable it.</p>
         <textarea id="lakeCustomCommands" aria-label="My slash commands" rows="4" maxlength="4000" onchange="localStorage.setItem(storageKey('customPrompts'),this.value)"></textarea>
       </details>
+      <label for="lakeVoicePreference">Default speaking voice</label>
+      <select id="lakeVoicePreference" onchange="saveLakeVoice(this.value)"><option value="">Auto voice</option></select>
       <label for="lakePersonalNotes">Personal memory</label>
       <label><input id="lakeLearnProfile" type="checkbox" onchange="localStorage.setItem(storageKey('learnProfile'),String(this.checked))"> Learn from my messages across chats</label>
       <button type="button" class="quick-action-btn" onclick="clearLearnedProfile()">Clear learned profile</button>
@@ -3451,6 +3453,7 @@ function toggleDepths() {
   showDepthsTab('settings');
   const opened=document.getElementById('depthsPanel').classList.toggle('show');
   if(opened){
+    refreshLakeVoices();
     document.getElementById('lakeCustomCommands').value=localStorage.getItem(storageKey('customPrompts'))||'';
     document.getElementById('lakePersonalNotes').value=localStorage.getItem(storageKey('personalNotes'))||'';
     document.getElementById('lakeLearnProfile').checked=localStorage.getItem(storageKey('learnProfile'))!=='false';
@@ -4953,31 +4956,48 @@ function copyText(text) { navigator.clipboard.writeText(text).then(() => showToa
 
 const lakeSpeechOutput = {
   voices(){return window.speechSynthesis?.getVoices() || [];},
-  utterance(text,rate){
-    const utterance=new SpeechSynthesisUtterance(text);
+  chooseVoice(){
     const preferred=localStorage.getItem(storageKey('speechVoice'));
     const voices=this.voices();
     const language=(navigator.language || 'en').split('-')[0];
     const matches=voices.filter(voice=>voice.lang.split('-')[0]===language);
-    utterance.voice=voices.find(voice=>voice.voiceURI===preferred)
+    if(preferred==='shuffle' && voices.length){
+      const pool=matches.length?matches:voices;
+      const alternatives=pool.filter(voice=>voice.voiceURI!==this.lastShuffledVoice);
+      const choices=alternatives.length?alternatives:pool;
+      const selected=choices[Math.floor(Math.random()*choices.length)];
+      this.lastShuffledVoice=selected.voiceURI;
+      return selected;
+    }
+    return voices.find(voice=>voice.voiceURI===preferred)
       || voices.find(voice=>/^ru(?:-|$)/i.test(voice.lang) && /natural|neural|premium|enhanced/i.test(voice.name))
       || voices.find(voice=>/^ru(?:-|$)/i.test(voice.lang))
       || matches.find(voice=>/natural|neural|premium|enhanced/i.test(voice.name))
       || matches.find(voice=>voice.default) || matches[0] || null;
-    if(utterance.voice)utterance.lang=utterance.voice.lang;
+  },
+  utterance(text,rate,voice=this.chooseVoice()){
+    const utterance=new SpeechSynthesisUtterance(text);
+    if(voice){utterance.voice=voice;utterance.lang=voice.lang;}
     utterance.rate=rate;
     return utterance;
   },
   speak(utterance){window.speechSynthesis.speak(utterance);},
   cancel(){window.speechSynthesis.cancel();}
 };
-function refreshLakeVoices(){
-  const picker=document.getElementById('speechVoice');
+function populateLakeVoicePicker(picker){
   if(!picker)return;
-  picker.replaceChildren(new Option('Auto voice',''));
+  picker.replaceChildren(new Option('Auto voice',''),new Option('🔀 Shuffle voices','shuffle'));
   for(const voice of lakeSpeechOutput.voices())picker.add(new Option(voice.name+' · '+voice.lang,voice.voiceURI));
   const saved=localStorage.getItem(storageKey('speechVoice')) || '';
   if([...picker.options].some(option=>option.value===saved))picker.value=saved;
+}
+function refreshLakeVoices(){
+  populateLakeVoicePicker(document.getElementById('speechVoice'));
+  populateLakeVoicePicker(document.getElementById('lakeVoicePreference'));
+}
+function saveLakeVoice(value){
+  localStorage.setItem(storageKey('speechVoice'),value);
+  refreshLakeVoices();
 }
 window.speechSynthesis?.addEventListener('voiceschanged',refreshLakeVoices);
 function previewLakeVoice(){
@@ -5022,13 +5042,13 @@ function updateSpeechPlayer(){
 function speakCurrentChunk(){
   lakeSpeechOutput.cancel();if(!speechState.chunks.length)return;
   speechState.index=Math.max(0,Math.min(speechState.index,speechState.chunks.length-1));
-  const utterance=lakeSpeechOutput.utterance(speechState.chunks[speechState.index],speechState.rate);currentUtterance=utterance;
+  const utterance=lakeSpeechOutput.utterance(speechState.chunks[speechState.index],speechState.rate,speechState.voice);currentUtterance=utterance;
   utterance.onstart=()=>{speechState.playing=true;speechState.paused=false;speechState.wave?.classList.add('speaking');updateSpeechPlayer();};
   utterance.onend=()=>{if(!speechState.playing)return;if(speechState.index<speechState.chunks.length-1){speechState.index++;speakCurrentChunk();}else stopSpeech(false);};
   utterance.onerror=()=>stopSpeech(false);lakeSpeechOutput.speak(utterance);
 }
-function speakMessage(waveEl){refreshLakeVoices();stopSpeech(false);speechState.wave=waveEl;speechState.chunks=speechChunks(messageActionText(waveEl));speechState.index=0;speechState.rate=Number(document.getElementById('speechRate')?.value)||1;updateSpeechPlayer();speakCurrentChunk();}
-function speakText(text,btn){const wave=btn?.closest?.('.wave');if(wave){speakMessage(wave);return;}stopSpeech(false);speechState.wave=null;speechState.chunks=speechChunks(text);speechState.index=0;updateSpeechPlayer();speakCurrentChunk();}
+function speakMessage(waveEl){refreshLakeVoices();stopSpeech(false);speechState.wave=waveEl;speechState.voice=lakeSpeechOutput.chooseVoice();speechState.chunks=speechChunks(messageActionText(waveEl));speechState.index=0;speechState.rate=Number(document.getElementById('speechRate')?.value)||1;updateSpeechPlayer();speakCurrentChunk();}
+function speakText(text,btn){const wave=btn?.closest?.('.wave');if(wave){speakMessage(wave);return;}stopSpeech(false);speechState.wave=null;speechState.voice=lakeSpeechOutput.chooseVoice();speechState.chunks=speechChunks(text);speechState.index=0;updateSpeechPlayer();speakCurrentChunk();}
 function speechPlayPause(){if(!speechState.chunks.length)return;if(speechState.playing&&!speechState.paused){window.speechSynthesis.pause();speechState.paused=true;}else if(speechState.paused){window.speechSynthesis.resume();speechState.paused=false;}else speakCurrentChunk();updateSpeechPlayer();}
 async function playChordProgression(progression,button){
   const Audio=window.AudioContext || window.webkitAudioContext;
@@ -5232,16 +5252,10 @@ function openLakeVoice(){
   const status=dialog.querySelector('[role="status"]');
   mood.value=currentMood;
   mood.onchange=()=>setMood(mood.value);
-  const voiceKey=storageKey('speechVoice');
-  const loadVoices=()=>{
-    voice.replaceChildren(new Option('Auto voice',''));
-    for(const item of lakeSpeechOutput.voices())voice.add(new Option(item.name+' · '+item.lang,item.voiceURI));
-    voice.value=localStorage.getItem(voiceKey)||'';
-    if(voice.selectedIndex<0)voice.selectedIndex=0;
-  };
+  const loadVoices=()=>populateLakeVoicePicker(voice);
   loadVoices();
   window.speechSynthesis.addEventListener('voiceschanged',loadVoices);
-  voice.onchange=()=>localStorage.setItem(voiceKey,voice.value);
+  voice.onchange=()=>saveLakeVoice(voice.value);
   const recognition=new Recognition();
   recognition.lang=navigator.language || 'en-US';
   let phase='ready', transcript='', playback=0;
@@ -5302,12 +5316,13 @@ function openLakeVoice(){
     const reply=chatHistory.slice(start).find(message=>message.role==='assistant');
     if(!reply){setPhase('ready','The reply did not come through.','Try again');return;}
     const chunks=speechChunks(reply.content);
+    const spokenVoice=lakeSpeechOutput.chooseVoice();
     const turn=++playback;
     setPhase('speaking','The Lake is speaking…','Tap to interrupt');
     function speakNext(index){
       if(!active() || turn!==playback)return;
       if(index===chunks.length){listen();return;}
-      const utterance=lakeSpeechOutput.utterance(chunks[index],1);
+      const utterance=lakeSpeechOutput.utterance(chunks[index],1,spokenVoice);
       utterance.onend=()=>speakNext(index+1);
       utterance.onerror=()=>{
         if(active() && turn===playback)setPhase('ready','Playback stopped. You can keep talking.','Start talking');
