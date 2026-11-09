@@ -428,6 +428,7 @@ button.welcome-icon { background:none; border:0; padding:0; }
 .ride-home-tip.is-tucked { width:auto; padding:0; border-radius:50%; }
 .ride-home-tip.is-tucked > :not(.ride-home-tip-open) { display:none; }
 .ride-home-tip-open { display:none; }
+.wave-prompt-preview { position:fixed; inset:auto; margin:0; max-width:min(360px, calc(100vw - 24px)); max-height:40vh; overflow:auto; padding:10px 12px; border:1px solid var(--dock-border); border-radius:10px; background:var(--dock-bg); color:var(--text-primary); font-size:13px; line-height:1.45; white-space:pre-wrap; overflow-wrap:anywhere; pointer-events:none; }
 .adaptive-wave-number { font-size:.8em; opacity:.72; margin-inline-end:.5em; }
 .home-patterns { position:absolute; top:8px; left:0; z-index:4; }
 .ride-home-tip.is-tucked .ride-home-tip-open { display:block; width:44px; height:44px; border:0; border-radius:50%; background:transparent; cursor:pointer; }
@@ -2414,13 +2415,51 @@ function renderAdaptiveSuggestions() {
     numberTag.className='adaptive-wave-number';
     numberTag.textContent=waveNumber;
     main.append(numberTag, moodLabel ? label+' · '+moodLabel : label);
-    main.onclick=()=>chooseAdaptiveSuggestion(index);
+    const draftPrompt=waveNumber+'- '+suggestion.prompt;
+    main.title=draftPrompt;
+    let previewTimer, held=false, preview;
+    const hidePreview=()=>{
+      clearTimeout(previewTimer);
+      if(preview?.matches(':popover-open'))preview.hidePopover();
+    };
+    const showPreview=()=>{
+      if(!preview){
+        preview=document.createElement('div');
+        if(typeof preview.showPopover!=='function')return;
+        preview.setAttribute('popover','auto');
+        preview.className='wave-prompt-preview';
+        preview.textContent=draftPrompt;
+        item.append(preview);
+      }
+      preview.showPopover();
+      const rect=main.getBoundingClientRect();
+      preview.style.left=Math.max(12,Math.min(rect.left,window.innerWidth-preview.offsetWidth-12))+'px';
+      preview.style.top=Math.max(12,rect.top-preview.offsetHeight-8)+'px';
+    };
+    main.addEventListener('pointerenter',event=>{
+      if(event.pointerType==='mouse')previewTimer=setTimeout(showPreview,400);
+    });
+    main.addEventListener('pointerleave',hidePreview);
+    main.addEventListener('pointerdown',event=>{
+      held=false;
+      hidePreview();
+      if(event.pointerType==='touch')previewTimer=setTimeout(()=>{held=true;showPreview();},500);
+    });
+    main.addEventListener('pointerup',()=>clearTimeout(previewTimer));
+    main.addEventListener('pointercancel',hidePreview);
+    main.addEventListener('contextmenu',event=>{if(event.pointerType==='touch' || held)event.preventDefault();});
+    main.onclick=()=>{
+      hidePreview();
+      if(held){held=false;return;}
+      chooseAdaptiveSuggestion(index);
+    };
     main.draggable=true;
     main.addEventListener('dragstart',event=>{
       if(!event.dataTransfer)return;
+      hidePreview();
       panel.dataset.draggingWave='true';
       event.dataTransfer.effectAllowed='copy';
-      event.dataTransfer.setData('application/x-lake-next-wave',waveNumber+'- '+suggestion.prompt);
+      event.dataTransfer.setData('application/x-lake-next-wave',draftPrompt);
     });
     main.addEventListener('dragend',()=>{delete panel.dataset.draggingWave;});
     item.append(main);list.append(item);
