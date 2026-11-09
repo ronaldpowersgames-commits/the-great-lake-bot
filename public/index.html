@@ -431,7 +431,10 @@ button.welcome-icon { background:none; border:0; padding:0; }
 .ride-home-tip-open { display:none; }
 .wave-prompt-preview { position:fixed; inset:auto; margin:0; max-width:min(360px, calc(100vw - 24px)); max-height:40vh; overflow:auto; padding:10px 12px; border:1px solid var(--dock-border); border-radius:10px; background:var(--dock-bg); color:var(--text-primary); font-size:13px; line-height:1.45; white-space:pre-wrap; overflow-wrap:anywhere; pointer-events:none; }
 .adaptive-wave-number { font-size:.8em; opacity:.72; margin-inline-end:.5em; }
-.lake-voice-dialog { width:min(420px,calc(100% - 32px)); border:1px solid var(--dock-border); border-radius:22px; padding:24px; background:var(--dock-bg); color:var(--text-primary); text-align:center; }
+.lake-voice-dialog { position:fixed; inset:0; margin:auto; box-sizing:border-box; max-height:calc(100dvh - 32px); overflow:auto; width:min(420px,calc(100% - 32px)); border:1px solid var(--dock-border); border-radius:22px; padding:24px; background:var(--dock-bg); color:var(--text-primary); text-align:center; }
+.lake-voice-waves { display:flex; gap:6px; overflow-x:auto; margin-top:12px; }
+.lake-voice-waves[hidden] { display:none; }
+.lake-voice-waves button { flex:0 0 auto; white-space:nowrap; }
 .lake-voice-dialog::backdrop { background:#020811cc; }
 .lake-voice-dialog h2 { color:var(--lake-light); margin:0 0 14px; }
 .lake-voice-dialog label { display:block; margin:12px 0; }
@@ -4997,7 +5000,7 @@ function openLakeVoice(){
   const sessionId=currentSessionId;
   const dialog=document.createElement('dialog');
   dialog.className='lake-voice-dialog';
-  dialog.innerHTML='<h2>🌊 Lake Voice</h2><p role="status">Ready when you are.</p><label>Mood <select><option value="drip">Drip</option><option value="shallow">Shallow</option><option value="calm">Calm</option><option value="analytical">Deep Dive</option><option value="stormy">Stormy</option></select></label><label>Voice <select><option value="">Auto voice</option></select></label><button type="button">Start talking</button><button type="button">End voice chat</button>';
+  dialog.innerHTML='<h2>🌊 Lake Voice</h2><p role="status">Ready when you are.</p><label>Mood <select><option value="drip">Drip</option><option value="shallow">Shallow</option><option value="calm">Calm</option><option value="analytical">Deep Dive</option><option value="stormy">Stormy</option></select></label><label>Voice <select><option value="">Auto voice</option></select></label><button type="button">Start talking</button><button type="button">End voice chat</button><div class="lake-voice-waves" role="group" aria-label="Suggested next waves" hidden></div>';
   const [mood,voice]=dialog.querySelectorAll('select');
   const [talk,end]=dialog.querySelectorAll('button');
   const status=dialog.querySelector('[role="status"]');
@@ -5035,18 +5038,41 @@ function openLakeVoice(){
   }
   recognition.onresult=event=>{transcript=event.results[0][0].transcript.trim();};
   recognition.onerror=()=>{
-    if(active())setPhase('ready','Microphone stopped. Check permissions or try again.','Try again');
+    if(active() && phase==='listening')setPhase('ready','Microphone stopped. Check permissions or try again.','Try again');
   };
-  recognition.onend=async()=>{
+  const waves=dialog.querySelector('.lake-voice-waves');
+  function showVoiceWaves(){
+    const suggestions=latestSuggestionReply()?.promptSuggestions || [];
+    waves.replaceChildren();
+    waves.hidden=!suggestions.length;
+    suggestions.forEach((suggestion,index)=>{
+      const pill=document.createElement('button');
+      pill.type='button';
+      pill.textContent='W'+(index+1)+' · '+suggestion.label;
+      pill.onclick=()=>runTurn(()=>chooseAdaptiveSuggestion(index));
+      waves.append(pill);
+    });
+  }
+  recognition.onend=()=>{
     if(!active() || phase!=='listening')return;
     if(!transcript){setPhase('ready','No speech heard.','Start talking');return;}
+    document.getElementById('lakeInput').value=transcript;
+    return runTurn(()=>sendWave({reuseAttachments:false}),true);
+  };
+  async function runTurn(send,micEnded=false){
+    if(!active() || phase==='thinking' || waveInFlight || pendingFileLoads)return;
+    const wasListening=phase==='listening';
+    const wasSpeaking=phase==='speaking';
     setPhase('thinking','The Lake is thinking…','Thinking…');
+    if(wasListening && !micEnded)recognition.abort();
+    if(wasSpeaking){playback++;lakeSpeechOutput.cancel();}
+    waves.replaceChildren();
+    waves.hidden=true;
     const start=chatHistory.length;
-    const input=document.getElementById('lakeInput');
-    input.value=transcript;
-    await sendWave({reuseAttachments:false});
+    await send();
     if(!active())return;
     mood.value=currentMood;
+    showVoiceWaves();
     const reply=chatHistory.slice(start).find(message=>message.role==='assistant');
     if(!reply){setPhase('ready','The reply did not come through.','Try again');return;}
     const chunks=speechChunks(reply.content);
@@ -5063,7 +5089,7 @@ function openLakeVoice(){
       lakeSpeechOutput.speak(utterance);
     }
     speakNext(0);
-  };
+  }
   talk.onclick=()=>{
     if(phase==='listening'){recognition.stop();return;}
     if(phase==='speaking'){playback++;lakeSpeechOutput.cancel();}
