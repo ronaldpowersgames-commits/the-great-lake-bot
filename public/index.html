@@ -2439,7 +2439,7 @@ function renderAdaptiveSuggestions() {
     main.addEventListener('pointerenter',event=>{
       if(event.pointerType==='mouse')previewTimer=setTimeout(showPreview,400);
     });
-    main.addEventListener('pointerleave',hidePreview);
+    main.addEventListener('pointerleave',event=>{if(event.pointerType==='mouse')hidePreview();});
     main.addEventListener('pointerdown',event=>{
       held=false;
       hidePreview();
@@ -2449,8 +2449,8 @@ function renderAdaptiveSuggestions() {
     main.addEventListener('pointercancel',hidePreview);
     main.addEventListener('contextmenu',event=>{if(event.pointerType==='touch' || held)event.preventDefault();});
     main.onclick=()=>{
-      hidePreview();
       if(held){held=false;return;}
+      hidePreview();
       chooseAdaptiveSuggestion(index);
     };
     main.draggable=true;
