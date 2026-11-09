@@ -427,9 +427,9 @@ button.welcome-icon { background:none; border:0; padding:0; }
 .ride-home-tip p { margin:8px 0 0; color:var(--text-secondary); font-size:11px; }
 .ride-home-tip .ride-home-manual { margin-top:10px; }
 .ride-home-tip.is-tucked { width:auto; padding:0; border-radius:50%; }
-.ride-home-tip.is-tucked > :not(.ride-home-tip-open, .ride-home-voice) { display:none; }
+.ride-home-tip.is-tucked > :not(.ride-home-tip-open) { display:none; }
 .ride-home-tip-open { display:none; }
-.ride-home-voice { position:absolute; top:calc(100% + 6px); right:0; min-width:38px; min-height:38px; }
+.ride-home-voice { position:absolute; bottom:12px; right:12px; z-index:4; min-width:44px; min-height:44px; }
 .wave-prompt-preview { position:fixed; inset:auto; margin:0; max-width:min(360px, calc(100vw - 24px)); max-height:40vh; overflow:auto; padding:10px 12px; border:1px solid var(--dock-border); border-radius:10px; background:var(--dock-bg); color:var(--text-primary); font-size:13px; line-height:1.45; white-space:pre-wrap; overflow-wrap:anywhere; pointer-events:none; }
 .wave-prompt-preview.touch-preview { pointer-events:auto; }
 .wave-prompt-preview button { display:block; margin-top:8px; }
@@ -449,7 +449,8 @@ select option, select optgroup { background-color:var(--dock-bg); color:var(--te
 .input-wrap { position:relative; }
 .composer-commands { position:absolute; bottom:100%; left:0; right:0; z-index:20; max-height:160px; overflow:auto; padding:6px; background:var(--dock-bg); border:1px solid var(--dock-border); border-radius:8px; }
 .composer-commands button { display:block; width:100%; text-align:left; }
-.lake-input.wave-drop-ready { outline:2px solid var(--lake-light); }
+.lake-input.wave-drop-ready { outline:2px solid var(--lake-glow); box-shadow:0 0 16px var(--lake-glow); }
+.wave-touch-ghost { position:fixed; z-index:9999; pointer-events:none; max-width:75vw; overflow:hidden; text-overflow:ellipsis; transform:translate(-50%,calc(-100% - 12px)); }
 @media (pointer:fine) { .featured-pages, .prompt-carousel-container { cursor:grab; user-select:none; } }
 .lake-voice-dialog button { cursor:pointer; }
 .lake-voice-dialog button[data-voice-primary] { background:var(--lake-surface); border-color:var(--lake-light); }
@@ -2468,7 +2469,7 @@ function renderAdaptiveSuggestions() {
   }
   const composer=document.getElementById('lakeInput');
   if(composer)composer.placeholder=suggestions.length
-    ? (window.matchMedia?.('(pointer: fine)')?.matches ? 'Send a wave into The Lake...\nDrag in a Next Wave or type /w#.' : 'Send a wave into The Lake...\nHold a Next Wave to drag or add it.')
+    ? 'Send a wave into The Lake...\nDrag or use /W# for Next Wave'
     : 'Send a wave into The Lake...';
   panel.hidden=!suggestions.length;panel.dataset.mood=currentMood;panel.classList.toggle('rail-dockward',localStorage.getItem(storageKey('railSwipeMode'))==='down');list.replaceChildren();
   if(suggestionCycleReply!==reply){
@@ -2567,13 +2568,24 @@ function renderAdaptiveSuggestions() {
       return touch.clientX>=bounds.left && touch.clientX<=bounds.right &&
         touch.clientY>=bounds.top && touch.clientY<=bounds.bottom;
     };
+    let dragGhost;
     main.addEventListener('touchmove',event=>{
       if(!held)return;
       event.preventDefault();
       event.stopPropagation();
       panel.dataset.draggingWave='true';
       hidePreview();
-      composer.classList.toggle('wave-drop-ready',overComposer(event.touches[0]));
+      const touch=event.touches[0];
+      if(!dragGhost){
+        dragGhost=document.createElement('span');
+        dragGhost.className='adaptive-suggestion-main wave-touch-ghost';
+        dragGhost.textContent=main.textContent;
+        dragGhost.setAttribute('aria-hidden','true');
+        document.body.append(dragGhost);
+      }
+      dragGhost.style.left=touch.clientX+'px';
+      dragGhost.style.top=touch.clientY+'px';
+      composer.classList.toggle('wave-drop-ready',overComposer(touch));
     },{passive:false});
     main.addEventListener('touchend',event=>{
       if(!held)return;
@@ -2582,10 +2594,14 @@ function renderAdaptiveSuggestions() {
       if(panel.dataset.draggingWave && overComposer(event.changedTouches[0])){
         insertComposerPrompt(composer,draftPrompt);
       }
+      dragGhost?.remove();
+      dragGhost=null;
       composer.classList.remove('wave-drop-ready');
       delete panel.dataset.draggingWave;
     },{passive:false});
     main.addEventListener('touchcancel',()=>{
+      dragGhost?.remove();
+      dragGhost=null;
       composer.classList.remove('wave-drop-ready');
       delete panel.dataset.draggingWave;
     });
@@ -3590,7 +3606,8 @@ function scheduleRideHomeTip(){
   today.setAttribute('aria-label',today.title);
   today.onclick=()=>sendWave({visibleText:'📅 Today on the Lake',requestText:'Help me plan today and get moving. Open with one practical question about the next few hours, such as what has a fixed deadline or what needs to be underway before lunch. Use relevant known context when it fits. Turn the answer into a short launch plan: fixed commitments, the first work block, one thing to defer, and the exact first step I can take in the next five minutes. Include times only when I provide them. As we talk, help me choose one priority, spot practical blockers and possible internal friction such as dread, overload or uncertainty, and decide on a first action small enough to start now. Notice how I say I feel and what has been happening lately; let that shape a realistic plan for my actual energy and constraints. Treat emotional interpretations as hypotheses I can correct. Keep it conversational, one useful question at a time. Where it helps me act or communicate, coach me toward more presence, wit, warmth and ethical persuasion with one concrete example.',reuseAttachments:false});
   shortcuts.append(today);
-  home.append(shortcuts);
+  voice.classList.add('ride-home-voice');
+  home.append(shortcuts,voice);
   setTimeout(()=>{
     if(!home.isConnected || document.getElementById('rideHomeTip'))return;
     const tip=document.createElement('aside');
@@ -3609,8 +3626,13 @@ function scheduleRideHomeTip(){
       tip.classList.remove('is-tucked');
       tip.querySelector('.ride-home-tip-close').focus();
     };
-    tip.append(reopen,voice);
-    voice.classList.add('ride-home-voice');
+    const todayLink=document.createElement('button');
+    todayLink.type='button';
+    todayLink.className='current-chip';
+    todayLink.textContent='or start here 📅';
+    todayLink.setAttribute('aria-label','or start here: Today on the Lake');
+    todayLink.onclick=today.onclick;
+    tip.append(todayLink,reopen);
     let touchStart;
     tip.addEventListener('touchstart',event=>{
       const touch=event.touches[0];
