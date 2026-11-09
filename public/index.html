@@ -1372,11 +1372,11 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
         <div class="mood-option" data-mood="drip" onclick="setMood('drip')"><span class="mood-dot" style="background:#facc15"></span><span>💧 Drip — one word to three sentences</span><code class="mood-codes">/drip /drippy /drop drop/</code></div>
         <div class="mood-option" data-mood="shallow" onclick="setMood('shallow',event)"><span class="mood-dot" style="background:#35c98a"></span><span>💦 Shallow — short splashes</span><code class="mood-codes">/shallow /splash /splashy</code></div>
         <div class="mood-option active" data-mood="calm" onclick="setMood('calm',event)">
-          <span class="mood-dot" style="background:var(--calm)"></span><span>🌊 Calm — gentle, reflective</span><code class="mood-codes">/calm</code></div>
+          <span class="mood-dot" style="background:var(--calm)"></span><span>🌊 Calm — gentle, reflective</span><code class="mood-codes">/calm /reg /default</code></div>
         <div class="mood-option" data-mood="analytical" onclick="setMood('analytical',event)">
           <span class="mood-dot" style="background:var(--analytical)"></span><span>🔍 Deep Dive — structured, precise, analytical</span><code class="mood-codes">/deep /deepdive /full</code></div>
         <div class="mood-option" data-mood="stormy" onclick="setMood('stormy',event)">
-          <span class="mood-dot" style="background:var(--stormy)"></span><span>⛈️ Stormy — write with bite</span><code class="mood-codes">/stormy</code></div>
+          <span class="mood-dot" style="background:var(--stormy)"></span><span>⛈️ Stormy — write with bite</span><code class="mood-codes">/stormy /storm /choppy</code></div>
         <div class="mode-continuity"><strong>Same chat. Different lens.</strong> Expect replies in the selected mood’s tone, depth, and length.</div>
         <div class="mode-continuity">Use any listed code at either end of your message.</div>
       </div>
@@ -4038,11 +4038,11 @@ async function sendWave(options = {}) {
   const input = document.getElementById('lakeInput');
   let text = options.requestText ?? input.value.trim();
   const moodCommand = (options.requestText == null || options.suggestionKind) &&
-    (text.match(/^(\/(?:calm|shallow|splashy?|deep(?:dive)?|full|stormy|drip(?:py)?|drop)|drop\/)(?=\s|$)/i) ||
-      text.match(/\s+(\/(?:calm|shallow|splashy?|deep(?:dive)?|full|stormy|drip(?:py)?|drop)|drop\/)\s*$/i));
+    (text.match(/^(\/(?:calm|reg|default|shallow|splashy?|deep(?:dive)?|full|stormy?|choppy|drip(?:py)?|drop)|drop\/)(?=\s|$)/i) ||
+      text.match(/\s+(\/(?:calm|reg|default|shallow|splashy?|deep(?:dive)?|full|stormy?|choppy|drip(?:py)?|drop)|drop\/)\s*$/i));
   if(moodCommand){
     const mood = moodCommand[1].toLowerCase().replace('/', '');
-    const aliases={deep:'analytical',deepdive:'analytical',full:'analytical',splash:'shallow',splashy:'shallow',drippy:'drip',drop:'drip'};
+    const aliases={storm:'stormy',choppy:'stormy',reg:'calm',default:'calm',deep:'analytical',deepdive:'analytical',full:'analytical',splash:'shallow',splashy:'shallow',drippy:'drip',drop:'drip'};
     setMood(aliases[mood] || mood);
     text=(text.slice(0,moodCommand.index)+text.slice(moodCommand.index+moodCommand[0].length)).trim();
     if(!text){if(options.requestText==null)input.value='';return;}
