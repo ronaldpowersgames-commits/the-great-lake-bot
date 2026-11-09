@@ -4300,7 +4300,6 @@ async function sendWave(options = {}) {
     text=(text.slice(0,moodCommand.index)+text.slice(moodCommand.index+moodCommand[0].length)).trim();
     if(!text){if(options.requestText==null)input.value='';return;}
   }
-  const visibleText = options.visibleText ?? text;
   if(options.requestText==null){
     if(/(?:^|\s)\/[a-z][a-z0-9-]*(?=\s|$)/i.test(text)){
       const commands=composerCommands();
@@ -4308,6 +4307,10 @@ async function sendWave(options = {}) {
       let cursor=0;
       for(const match of text.matchAll(/(^|\s)\/([a-z][a-z0-9-]*)(?=\s|$)/gi)){
         const item=commands.get(match[2].toLowerCase());
+        if(!item && /^w\d+$/i.test(match[2])){
+          showToast('/'+match[2]+' is unavailable for this reply. Choose a visible Next Wave.');
+          return;
+        }
         if(!item)continue;
         const before=text.slice(cursor,match.index).trim();
         if(before)pieces.push(before);
@@ -4326,6 +4329,7 @@ async function sendWave(options = {}) {
       }
     }
   }
+  const visibleText = options.visibleText ?? text;
   if (!text && selectedFiles.length === 0) return;
   waveInFlight = true;
   let origin;
