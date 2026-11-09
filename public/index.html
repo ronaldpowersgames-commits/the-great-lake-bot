@@ -438,15 +438,23 @@ button.welcome-icon { background:none; border:0; padding:0; }
 .lake-voice-waves { display:flex; gap:6px; overflow-x:auto; margin-top:12px; }
 .lake-voice-waves[hidden] { display:none; }
 .lake-voice-waves button { flex:0 0 auto; white-space:nowrap; }
+select { color-scheme:dark; }
+select option, select optgroup { background-color:var(--dock-bg); color:var(--text-primary); }
 .lake-voice-dialog::backdrop { background:#020811cc; }
-.lake-voice-dialog h2 { color:var(--lake-light); margin:0 0 14px; }
-.lake-voice-dialog label { display:block; margin:12px 0; }
+.lake-voice-dialog h2 { color:var(--lake-light); margin:0 0 8px; }
+.lake-voice-dialog [role="status"] { margin:0 0 16px; color:var(--text-secondary); }
+.lake-voice-dialog label { display:grid; grid-template-columns:3.5rem minmax(0,1fr); align-items:center; gap:8px; margin:8px 0; text-align:start; color:var(--text-secondary); }
+.lake-voice-dialog label select { width:100%; min-width:0; margin:0; }
 .lake-voice-dialog select,.lake-voice-dialog button { max-width:100%; padding:8px; margin:4px; border:1px solid var(--dock-border); border-radius:8px; background:var(--dock-bg); color:var(--text-primary); }
 .input-wrap { position:relative; }
 .composer-commands { position:absolute; bottom:100%; left:0; right:0; z-index:20; max-height:160px; overflow:auto; padding:6px; background:var(--dock-bg); border:1px solid var(--dock-border); border-radius:8px; }
 .composer-commands button { display:block; width:100%; text-align:left; }
 .lake-input.wave-drop-ready { outline:2px solid var(--lake-light); }
 @media (pointer:fine) { .featured-pages, .prompt-carousel-container { cursor:grab; user-select:none; } }
+.lake-voice-dialog button { cursor:pointer; }
+.lake-voice-dialog button[data-voice-primary] { background:var(--lake-surface); border-color:var(--lake-light); }
+.lake-voice-dialog button:disabled { opacity:.65; cursor:wait; }
+.lake-voice-dialog :focus-visible, .speech-player :focus-visible { outline:2px solid var(--lake-light); outline-offset:2px; }
 .home-shortcuts { position:absolute; top:8px; left:0; z-index:4; display:grid; gap:6px; }
 .home-shortcuts .current-chip { min-width:38px; min-height:38px; }
 .ride-home-tip.is-tucked .ride-home-tip-open { display:block; width:44px; height:44px; border:0; border-radius:50%; background:transparent; cursor:pointer; }
@@ -602,7 +610,8 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
 .bubble-action-btn:hover { background: rgba(45,140,240,0.18); color: var(--lake-light); }
 .speaking .wave-bubble { border-color: var(--lake-glow); box-shadow: 0 0 12px rgba(45,140,240,0.2); }
 .speech-player { display:none; align-items:center; gap:6px; padding:6px 8px; border:1px solid var(--dock-border); border-radius:10px; background:rgba(9,20,32,.92); }
-.speech-player.show { display:flex; }
+.speech-player.show { display:flex; flex-wrap:wrap; }
+.speech-player select { padding-inline:8px; max-width:min(15rem,100%); }
 .speech-player button,.speech-player select { border:1px solid var(--dock-border); border-radius:999px; background:rgba(45,140,240,.10); color:var(--text-primary); min-height:28px; }
 .speech-player button { min-width:30px; cursor:pointer; }
 .speech-player-progress { flex:1; min-width:50px; accent-color:var(--lake-glow); }
@@ -4873,6 +4882,8 @@ const lakeSpeechOutput = {
     const language=(navigator.language || 'en').split('-')[0];
     const matches=voices.filter(voice=>voice.lang.split('-')[0]===language);
     utterance.voice=voices.find(voice=>voice.voiceURI===preferred)
+      || voices.find(voice=>/^ru(?:-|$)/i.test(voice.lang) && /natural|neural|premium|enhanced/i.test(voice.name))
+      || voices.find(voice=>/^ru(?:-|$)/i.test(voice.lang))
       || matches.find(voice=>/natural|neural|premium|enhanced/i.test(voice.name))
       || matches.find(voice=>voice.default) || matches[0] || null;
     if(utterance.voice)utterance.lang=utterance.voice.lang;
@@ -5120,7 +5131,7 @@ function openLakeVoice(){
   const sessionId=currentSessionId;
   const dialog=document.createElement('dialog');
   dialog.className='lake-voice-dialog';
-  dialog.innerHTML='<h2>🌊 Lake Voice</h2><p role="status">Ready when you are.</p><label>Mood <select><option value="drip">Drip</option><option value="shallow">Shallow</option><option value="calm">Calm</option><option value="analytical">Deep Dive</option><option value="stormy">Stormy</option></select></label><label>Voice <select><option value="">Auto voice</option></select></label><button type="button">Start talking</button><button type="button">End voice chat</button><div class="lake-voice-waves" role="group" aria-label="Suggested next waves" hidden></div>';
+  dialog.innerHTML='<h2>🌊 Lake Voice</h2><p role="status">Ready when you are.</p><label>Mood <select><option value="drip">Drip</option><option value="shallow">Shallow</option><option value="calm">Calm</option><option value="analytical">Deep Dive</option><option value="stormy">Stormy</option></select></label><label>Voice <select><option value="">Auto voice</option></select></label><button type="button" data-voice-primary>Start talking</button><button type="button">End voice chat</button><div class="lake-voice-waves" role="group" aria-label="Suggested next waves" hidden></div>';
   const [mood,voice]=dialog.querySelectorAll('select');
   const [talk,end]=dialog.querySelectorAll('button');
   const status=dialog.querySelector('[role="status"]');
