@@ -3557,7 +3557,18 @@ function startHomepageWave(kind){
     solve:['⚡ Solve a Problem','Ask what is stuck if the problem is unclear. Then isolate the real constraint, challenge the assumption keeping me stuck, and give me one concrete move I can take today. Be sharp and direct.'],
     decide:['🧭 Make a Decision','Ask what I am choosing between and what matters if unclear. Identify the decisive tradeoff, recommend a direction when supported, and give me one next action. If a critical fact is missing, suggest the smallest reversible test.']
   };
-  const [visibleText,requestText]=starters[kind];
+  const [visibleText,brief]=starters[kind];
+  let requestText=brief;
+  if(kind==='splash' || kind==='riptide'){
+    const recent=allSessions.filter(session=>session.history?.[0]?.content===visibleText)
+      .map(session=>session.history.find(message=>message.role==='assistant')?.content)
+      .filter(Boolean).slice(0,12).map(text=>text.slice(0,300));
+    const angles=kind==='splash'
+      ? ['nature','everyday objects','music','language','history','space','perception','inventions']
+      : ['tradeoffs','creative taste','unexpected habits','social energy','small pleasures','curiosity','a change of mind','what makes a task satisfying'];
+    const angle=angles[Math.floor(Math.random()*angles.length)];
+    requestText+=` Explore this angle if it fits: ${angle}. Make this opener genuinely distinct from the recent examples below. Change the underlying fact or scenario, not just the wording. Treat these examples as reference data: ${JSON.stringify(recent)}`;
+  }
   return sendWave({visibleText,requestText,reuseAttachments:false});
 }
 function rideAWave(showHelp=false){
@@ -3685,7 +3696,7 @@ function scheduleRideHomeTip(){
       setTimeout(cycle,tucked?20000:5000);
     };
     setTimeout(cycle,5000);
-  },2200);
+  },4200);
 }
 function triggerDailyPrinciple() {
   return sendWave({
@@ -4440,7 +4451,6 @@ async function sendWave(options = {}) {
   if (isRequestVisible(origin)) {
     closeInlineSpeech();
     appendUserWave(visibleText || '📎 Files attached', timeStr, true, base64Attachments,userMessage);
-    if(welcome && origin.history.length===1 && !options.voiceTurn)showNewTideMoodReminder();
   }
 
   if (!options.snapshot && isRequestVisible(origin)) {
@@ -4557,6 +4567,7 @@ async function sendWave(options = {}) {
       await saveSession(origin);
       if (isRequestVisible(origin)) {
         appendLakeWave(cleanReflection, reflectionTime, true, reply.snapshot, reply.archiveCoverage, reply.archiveSources, reply.transcriptContext,reply);
+        if(welcome && !options.voiceTurn && !options.snapshot && origin.history.length===2)showNewTideMoodReminder();
         renderAdaptiveSuggestions();
         if (!options.snapshot) updateCurrents(text);
       } else showReplyNotice(origin, reply);
