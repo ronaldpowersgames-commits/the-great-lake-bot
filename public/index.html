@@ -1006,6 +1006,9 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
   transition: background 0.15s; font-size: 13px; color: var(--text-secondary);
 }
 button.depths-option { width:100%; text-align:start; font-family:inherit; background:transparent; border:1px solid var(--dock-border); }
+.backup-drop-target { flex-wrap:wrap; }
+.backup-drop-target small { flex-basis:100%; color:var(--text-dim); }
+.backup-drop-target.drop-ready { border-color:var(--lake-glow); box-shadow:0 0 10px var(--lake-glow); }
 .depths-option:hover  { background: rgba(45,140,240,0.08); }
 .depths-option.active { background: rgba(45,140,240,0.12); color: var(--lake-light); }
 .depths-info   { padding: 7px 11px; font-size: 12px; color: var(--text-dim); cursor: default; }
@@ -1720,15 +1723,15 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
         <button type="button" class="depths-option" onclick="exportPortableLake('profile')">🧠 Export My Profile</button>
         <button type="button" class="depths-option" onclick="exportPortableLake('complete')">📚 Export My Complete Lake</button>
         <label><input type="checkbox" id="protectPortableLake"> Password-protect the export</label>
-        <button type="button" class="depths-option" onclick="document.getElementById('portableLakeFile').click()">⬆ Import a Lake package</button>
-        <input type="file" id="portableLakeFile" accept=".lake" hidden onchange="importPortableLake(this)">
+        <button type="button" class="depths-option backup-drop-target" onclick="document.getElementById('portableLakeFile').click()" ondragover="allowBackupDrop(event)" ondragleave="this.classList.remove('drop-ready')" ondrop="dropBackupFile(event, importPortableLake)">⬆ Import a Lake package<small>Choose or drop a file</small></button>
+        <input type="file" id="portableLakeFile" accept=".lake" hidden onchange="importPortableLake(this.files[0]);this.value=''">
         <button type="button" class="depths-option" onclick="undoPortableLake()">Undo last Lake import</button>
       </details>
       <button type="button" class="depths-option" onclick="exportFullBackup(true)">🔒 Export password-protected backup</button>
-      <button type="button" class="depths-option" onclick="document.getElementById('lakeBackupInput').click()">⬆ Restore backup from file</button>
+      <button type="button" class="depths-option backup-drop-target" onclick="document.getElementById('lakeBackupInput').click()" ondragover="allowBackupDrop(event)" ondragleave="this.classList.remove('drop-ready')" ondrop="dropBackupFile(event, restoreLakeBackup)">⬆ Restore backup from file<small>Choose or drop a file</small></button>
       <div class="mode-continuity">For transcript analysis, try a searchable PDF when layout or speaker labels matter. For exact text in numbered parts, use Transcript Splitter.</div>
       <button type="button" class="depths-option" onclick="protectLakeStorage()">🛡 Protect browser storage</button>
-      <input type="file" id="lakeBackupInput" accept=".json,.zip,application/json,application/zip" hidden onchange="restoreLakeBackup(this)">
+      <input type="file" id="lakeBackupInput" accept=".json,.zip,application/json,application/zip" hidden onchange="restoreLakeBackup(this.files[0]);this.value=''">
       <button class="depths-option backup-export" onclick="exportFullBackup()" title="Private backup ZIP with original stored attachments, split transcripts and the latest Total Snapshot">⬇ Export Backup ZIP</button>
       <a class="depths-option" href="/transcript-splitter.html" target="_blank" rel="noopener" style="display:block;text-decoration:none">📄 Transcript Splitter</a>
       <a class="depths-option" href="/meeting-studio/" target="_blank" rel="noopener" style="display:block;text-decoration:none">🎙️ Meeting Studio</a>
@@ -4173,9 +4176,23 @@ async function exportPortableLake(kind){
     showToast('Lake package downloaded. Move the file to your other device and import it there.');
   }catch(error){showToast('Lake export failed: '+error.message);}
 }
-async function importPortableLake(input){
-  const file=input.files[0];
-  input.value='';
+function allowBackupDrop(event){
+  if(!event.dataTransfer?.types.includes('Files'))return;
+  event.preventDefault();
+  event.dataTransfer.dropEffect='copy';
+  event.currentTarget.classList.add('drop-ready');
+}
+function dropBackupFile(event,restore){
+  event.preventDefault();
+  event.stopPropagation();
+  event.currentTarget.classList.remove('drop-ready');
+  const files=event.dataTransfer?.files;
+  if(!files?.length)return;
+  if(files.length!==1){showToast('Drop one backup file at a time.');return;}
+  void restore(files[0]);
+}
+
+async function importPortableLake(file){
   if(!file || waveInFlight)return;
   const key=storageKey('sessions');
   try{
@@ -4286,9 +4303,7 @@ async function protectLakeStorage(){
   }catch{showToast('Browser storage protection could not be enabled.');}
 }
 
-async function restoreLakeBackup(input){
-  const file=input.files[0];
-  input.value='';
+async function restoreLakeBackup(file){
   if(!file || waveInFlight)return;
   const key=storageKey('sessions');
   try{
