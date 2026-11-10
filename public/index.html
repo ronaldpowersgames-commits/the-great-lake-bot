@@ -1005,6 +1005,7 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
   display: flex; align-items: center; gap: 9px; margin-bottom: 3px;
   transition: background 0.15s; font-size: 13px; color: var(--text-secondary);
 }
+button.depths-option { width:100%; text-align:start; font-family:inherit; background:transparent; border:1px solid var(--dock-border); }
 .depths-option:hover  { background: rgba(45,140,240,0.08); }
 .depths-option.active { background: rgba(45,140,240,0.12); color: var(--lake-light); }
 .depths-info   { padding: 7px 11px; font-size: 12px; color: var(--text-dim); cursor: default; }
@@ -1615,6 +1616,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
   </div>
   <div class="depths-tabs" role="tablist" aria-label="Settings views">
     <button id="settingsTab" role="tab" aria-selected="true" onclick="showDepthsTab('settings')">Settings</button>
+    <button id="backupTab" role="tab" aria-selected="false" aria-controls="depthsBackupView" onclick="showDepthsTab('backup')">Backup &amp; Data</button>
     <button id="crewTab" role="tab" aria-selected="false" onclick="showDepthsTab('crew')">Crew</button>
   </div>
   <div class="depths-content">
@@ -1687,26 +1689,6 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
       <div class="mode-continuity">Optional. Leave blank for the Lake’s default style. Add specific goals, preferred metaphors, tone, or ongoing projects if helpful. Saved on this device and sent with regular replies.</div>
     </div>
     <div class="depths-section">
-      <h4>💾 Backup &amp; Transfer</h4>
-      <details class="depths-section">
-        <summary>Your Lake · Portable context</summary>
-        <button type="button" class="depths-option" onclick="exportPortableLake('profile')">🧠 Export My Profile</button>
-        <button type="button" class="depths-option" onclick="exportPortableLake('complete')">📚 Export My Complete Lake</button>
-        <label><input type="checkbox" id="protectPortableLake"> Password-protect the export</label>
-        <button type="button" class="depths-option" onclick="document.getElementById('portableLakeFile').click()">⬆ Import a Lake package</button>
-        <input type="file" id="portableLakeFile" accept=".lake" hidden onchange="importPortableLake(this)">
-        <button type="button" class="depths-option" onclick="undoPortableLake()">Undo last Lake import</button>
-      </details>
-      <button type="button" class="depths-option" onclick="exportFullBackup(true)">🔒 Export password-protected backup</button>
-      <button type="button" class="depths-option" onclick="document.getElementById('lakeBackupInput').click()">⬆ Restore backup from file</button>
-      <div class="mode-continuity">For transcript analysis, try a searchable PDF when layout or speaker labels matter. For exact text in numbered parts, use Transcript Splitter.</div>
-      <button type="button" class="depths-option" onclick="protectLakeStorage()">🛡 Protect browser storage</button>
-      <input type="file" id="lakeBackupInput" accept=".json,.zip,application/json,application/zip" hidden onchange="restoreLakeBackup(this)">
-      <button class="depths-option backup-export" onclick="exportFullBackup()" title="Private backup ZIP with original stored attachments, split transcripts and the latest Total Snapshot">⬇ Export Backup ZIP</button>
-      <a class="depths-option" href="/transcript-splitter.html" target="_blank" rel="noopener" style="display:block;text-decoration:none">📄 Transcript Splitter</a>
-      <a class="depths-option" href="/meeting-studio/" target="_blank" rel="noopener" style="display:block;text-decoration:none">🎙️ Meeting Studio</a>
-    </div>
-    <div class="depths-section">
       <h4>📱 App</h4>
       <div class="depths-option" onclick="showInstallBanner()">📲 Install as App</div>
       <div class="mode-continuity">
@@ -1729,6 +1711,28 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
       <div class="depths-info">Leadership Clarity Platform</div>
     </div>
     <button class="logout-btn" onclick="doLogout()">🚪 Leave The Lake</button>
+    </div>
+    <div id="depthsBackupView" role="tabpanel" aria-labelledby="backupTab" hidden>
+    <div class="depths-section">
+      <h4>💾 Backup &amp; Transfer</h4>
+      <details class="depths-section">
+        <summary>Your Lake · Portable context</summary>
+        <button type="button" class="depths-option" onclick="exportPortableLake('profile')">🧠 Export My Profile</button>
+        <button type="button" class="depths-option" onclick="exportPortableLake('complete')">📚 Export My Complete Lake</button>
+        <label><input type="checkbox" id="protectPortableLake"> Password-protect the export</label>
+        <button type="button" class="depths-option" onclick="document.getElementById('portableLakeFile').click()">⬆ Import a Lake package</button>
+        <input type="file" id="portableLakeFile" accept=".lake" hidden onchange="importPortableLake(this)">
+        <button type="button" class="depths-option" onclick="undoPortableLake()">Undo last Lake import</button>
+      </details>
+      <button type="button" class="depths-option" onclick="exportFullBackup(true)">🔒 Export password-protected backup</button>
+      <button type="button" class="depths-option" onclick="document.getElementById('lakeBackupInput').click()">⬆ Restore backup from file</button>
+      <div class="mode-continuity">For transcript analysis, try a searchable PDF when layout or speaker labels matter. For exact text in numbered parts, use Transcript Splitter.</div>
+      <button type="button" class="depths-option" onclick="protectLakeStorage()">🛡 Protect browser storage</button>
+      <input type="file" id="lakeBackupInput" accept=".json,.zip,application/json,application/zip" hidden onchange="restoreLakeBackup(this)">
+      <button class="depths-option backup-export" onclick="exportFullBackup()" title="Private backup ZIP with original stored attachments, split transcripts and the latest Total Snapshot">⬇ Export Backup ZIP</button>
+      <a class="depths-option" href="/transcript-splitter.html" target="_blank" rel="noopener" style="display:block;text-decoration:none">📄 Transcript Splitter</a>
+      <a class="depths-option" href="/meeting-studio/" target="_blank" rel="noopener" style="display:block;text-decoration:none">🎙️ Meeting Studio</a>
+    </div>
     </div>
     <div id="crewManagerView" hidden>
       <div class="crew-modal-field"><label for="crewManagerSearch">Crew</label><input id="crewManagerSearch" type="search" placeholder="Search names, aliases, roles…" oninput="renderCrewManager()"></div>

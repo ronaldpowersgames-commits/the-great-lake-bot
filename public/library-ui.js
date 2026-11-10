@@ -194,10 +194,13 @@ async function removeTideFolder(id) {
 }
 
 function showDepthsTab(tab) {
-  const crew=tab==='crew';document.getElementById('depthsSettingsView').hidden=crew;document.getElementById('crewManagerView').hidden=!crew;
-  document.getElementById('settingsTab').setAttribute('aria-selected',String(!crew));document.getElementById('crewTab').setAttribute('aria-selected',String(crew));
-  document.querySelector('#depthsPanel .depths-header h3').textContent=crew?'Crew':'Depths';
-  if(crew)renderCrewManager();
+  const views={settings:['settingsTab','depthsSettingsView'],backup:['backupTab','depthsBackupView'],crew:['crewTab','crewManagerView']};
+  for(const [name,[button,view]] of Object.entries(views)){
+    document.getElementById(view).hidden=name!==tab;
+    document.getElementById(button).setAttribute('aria-selected',String(name===tab));
+  }
+  document.querySelector('#depthsPanel .depths-header h3').textContent=tab==='crew'?'Crew':tab==='backup'?'Backup & Data':'Depths';
+  if(tab==='crew')renderCrewManager();
 }
 function openCrewManager(){showDepthsTab('crew');document.getElementById('depthsPanel').classList.add('show');}
 function renderCrewManager() {
