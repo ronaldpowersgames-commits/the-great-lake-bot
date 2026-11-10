@@ -2970,6 +2970,7 @@ function getTimeAgo(isoStr) {
 function loadTide(sessionId) {
   const session = allSessions.find(s => s.id === sessionId);
   if (!session) return;
+  if(currentSessionId!==sessionId)clearTideOverlays();
   currentSessionId = sessionId;
   chatHistory      = session.history || [];
   renderPinnedMessages();
@@ -3113,14 +3114,20 @@ async function loadEmailSessions() {
 // NEW SESSION — resets to welcome screen
 // ============================================
 let moodReminderTimer;
-function newSession(showMoodReminder=true) {
+function showNewTideMoodReminder(){
+  const picker=document.getElementById('moodSelector');
+  if(picker.classList.contains('show'))return;
   clearTimeout(moodReminderTimer);
-  if(showMoodReminder)requestAnimationFrame(()=>{
-    if(!document.getElementById('welcomeScreen'))return;
-    const picker=document.getElementById('moodSelector');
-    picker.classList.add('show');
-    moodReminderTimer=setTimeout(()=>picker.classList.remove('show'),2000);
-  });
+  picker.classList.add('show');
+  moodReminderTimer=setTimeout(()=>picker.classList.remove('show'),2000);
+}
+function clearTideOverlays(){
+  clearTimeout(moodReminderTimer);
+  document.getElementById('moodSelector').classList.remove('show');
+  closeInlineSpeech();
+}
+function newSession() {
+  clearTideOverlays();
   document.getElementById('downloadSnapshotButton').hidden = true;
   currentSessionId = 'session_' + Date.now();
   chatHistory      = [];
@@ -4430,7 +4437,11 @@ async function sendWave(options = {}) {
     ...(options.action ? { action: options.action } : {}) };
   globalThis.pendingReplySource=null;globalThis.pendingBranchSource=null;
   origin.history.push(userMessage);
-  if (isRequestVisible(origin)) appendUserWave(visibleText || '📎 Files attached', timeStr, true, base64Attachments,userMessage);
+  if (isRequestVisible(origin)) {
+    closeInlineSpeech();
+    appendUserWave(visibleText || '📎 Files attached', timeStr, true, base64Attachments,userMessage);
+    if(welcome && origin.history.length===1 && !options.voiceTurn)showNewTideMoodReminder();
+  }
 
   if (!options.snapshot && isRequestVisible(origin)) {
     if(!options.preserveDraft) {input.value='';input.style.height='auto';updateComposerCommands(input);}
@@ -5084,6 +5095,9 @@ async function playChordProgression(progression,button){
     button.disabled=false;
   }
 }
+function closeInlineSpeech(){
+  if(speechState.view!=='background' && speechState.chunks.length)stopSpeech();
+}
 function stopSpeech(clear=true){lakeSpeechOutput.cancel();speechState.wave?.classList.remove('speaking');speechState.playing=false;speechState.paused=false;if(clear){speechState.view="full";speechState.chunks=[];speechState.index=0;speechState.wave=null;}updateSpeechPlayer();}
 function speechPrevious(){if(!speechState.chunks.length)return;speechState.index=Math.max(0,speechState.index-1);speakCurrentChunk();}
 function speechNext(){if(!speechState.chunks.length)return;speechState.index=Math.min(speechState.chunks.length-1,speechState.index+1);speakCurrentChunk();}
@@ -5242,7 +5256,7 @@ function openLakeVoice(){
     return;
   }
   stopSpeech();
-  newSession(false);
+  newSession();
   const sessionId=currentSessionId;
   const dialog=document.createElement('dialog');
   dialog.className='lake-voice-dialog';
@@ -5297,7 +5311,7 @@ function openLakeVoice(){
     if(!active() || phase!=='listening')return;
     if(!transcript){setPhase('ready','No speech heard.','Start talking');return;}
     document.getElementById('lakeInput').value=transcript;
-    return runTurn(()=>sendWave({reuseAttachments:false}),true);
+    return runTurn(()=>sendWave({reuseAttachments:false,voiceTurn:true}),true);
   };
   async function runTurn(send,micEnded=false){
     if(!active() || phase==='thinking' || waveInFlight || pendingFileLoads)return;

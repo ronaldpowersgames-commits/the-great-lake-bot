@@ -21,6 +21,7 @@ function browserContext() {
       if (!elements.has(id)) elements.set(id, { value: '', style: {}, textContent: '', remove() {}, setAttribute() {} });
       return elements.get(id);
     } },
+    closeInlineSpeech() {}, showNewTideMoodReminder() {},
     saveSuggestedCrew() {}, renderCrew() {}, hideRipple() {}, showRipple() {},
     renderFilePreviews() {}, renderTranscriptStatus() {}, renderAdaptiveSuggestions() {}, retireAdaptiveSuggestions() {}, suggestionPreferencePayload() { return {chosen:{},dismissed:{},recent_chosen_kinds:[]}; }, saveSession() {}, updateCurrents() {}, showToast() {},
     storageKey(key) { return 'lake_test_' + key; },
