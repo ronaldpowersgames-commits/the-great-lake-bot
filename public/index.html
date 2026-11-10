@@ -1728,10 +1728,10 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
         <button type="button" class="depths-option" onclick="undoPortableLake()">Undo last Lake import</button>
       </details>
       <button type="button" class="depths-option" onclick="exportFullBackup(true)">🔒 Export password-protected backup</button>
-      <button type="button" class="depths-option backup-drop-target" onclick="document.getElementById('lakeBackupInput').click()" ondragover="allowBackupDrop(event)" ondragleave="this.classList.remove('drop-ready')" ondrop="dropBackupFile(event, restoreLakeBackup)">⬆ Restore backup from file<small>Choose or drop a file</small></button>
+      <button type="button" class="depths-option backup-drop-target" onclick="document.getElementById('lakeBackupInput').click()" ondragover="allowBackupDrop(event)" ondragleave="this.classList.remove('drop-ready')" ondrop="dropBackupFile(event, restoreLakeBackup)">⬆ Restore backup or add transcript<small>Choose or drop a ZIP, JSON, PDF, TXT, or LOG file</small></button>
       <div class="mode-continuity">For transcript analysis, try a searchable PDF when layout or speaker labels matter. For exact text in numbered parts, use Transcript Splitter.</div>
       <button type="button" class="depths-option" onclick="protectLakeStorage()">🛡 Protect browser storage</button>
-      <input type="file" id="lakeBackupInput" accept=".json,.zip,application/json,application/zip" hidden onchange="restoreLakeBackup(this.files[0]);this.value=''">
+      <input type="file" id="lakeBackupInput" accept=".json,.zip,.pdf,.txt,.log,application/json,application/zip,application/pdf,text/plain" hidden onchange="restoreLakeBackup(this.files[0]);this.value=''">
       <button class="depths-option backup-export" onclick="exportFullBackup()" title="Private backup ZIP with original stored attachments, split transcripts and the latest Total Snapshot">⬇ Export Backup ZIP</button>
       <a class="depths-option" href="/transcript-splitter.html" target="_blank" rel="noopener" style="display:block;text-decoration:none">📄 Transcript Splitter</a>
       <a class="depths-option" href="/meeting-studio/" target="_blank" rel="noopener" style="display:block;text-decoration:none">🎙️ Meeting Studio</a>
@@ -4305,13 +4305,21 @@ async function protectLakeStorage(){
 
 async function restoreLakeBackup(file){
   if(!file || waveInFlight)return;
+  const addTranscript=async()=>{
+    await addSelectedFiles([file]);
+    document.getElementById('depthsPanel').classList.remove('show');
+  };
+  if(/\.(pdf|txt|log)$/i.test(file.name)){
+    await addTranscript();
+    return;
+  }
   const key=storageKey('sessions');
   try{
     let raw;
     if(/\.zip$/i.test(file.name)){
       const zip=await JSZip.loadAsync(await file.arrayBuffer());
       const entry=zip.file('lake-backup.json');
-      if(!entry)throw new Error('This ZIP does not contain a full Lake backup.');
+      if(!entry){await addTranscript();return;}
       raw=await entry.async('string');
     }else raw=await file.text();
     let backup=JSON.parse(raw);
