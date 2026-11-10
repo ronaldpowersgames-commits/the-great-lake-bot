@@ -540,9 +540,9 @@ select option, select optgroup { background-color:var(--dock-bg); color:var(--te
 }
 .carousel-dot.active { background: var(--lake-light); transform: scale(1.3); }
 button.carousel-dot { border: 0; padding: 0; }
-.featured-pages { display:flex; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none; }
+.featured-pages { position:relative; width:100%; min-width:0; display:flex; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none; }
 .featured-pages::-webkit-scrollbar { display:none; }
-.featured-page { flex:0 0 100%; min-width:0; display:grid; gap:6px; scroll-snap-align:start; }
+.featured-page { box-sizing:border-box; flex:0 0 100%; width:100%; min-width:0; display:grid; gap:6px; scroll-snap-align:start; }
 .featured-page button { font-family:inherit; }
 button.welcome-prompt-half { font-family: inherit; width: 100%; }
 
@@ -2997,6 +2997,7 @@ function loadTide(sessionId) {
   document.getElementById('downloadSnapshotButton').hidden = !chatHistory.some(message => message.snapshot);
   applyMood(session.mood || 'calm');
   const container  = document.getElementById('wavesContainer');
+  container.querySelector('#welcomeScreen')?.dispatchEvent(new Event('lake-home-removed'));
   container.innerHTML = '';
   // Re-add ripple
   const ripple = document.createElement('div');
@@ -3163,6 +3164,7 @@ function newSession() {
   renderAdaptiveSuggestions();
 
   const container = document.getElementById('wavesContainer');
+  container.querySelector('#welcomeScreen')?.dispatchEvent(new Event('lake-home-removed'));
   container.innerHTML = `
     <div class="welcome-screen" id="welcomeScreen">
       <button type="button" class="welcome-icon" onclick="rideAWave()" title="Ride a Wave" aria-label="Ride a Wave">🌊</button>
@@ -4570,7 +4572,7 @@ async function sendWave(options = {}) {
   await sessionLoadPromise;
   if(!options.snapshot && options.action!=='transcript-memory')retireAdaptiveSuggestions();
   const welcome = document.getElementById('welcomeScreen');
-  if (welcome) welcome.remove();
+  if (welcome){welcome.dispatchEvent?.(new Event('lake-home-removed'));welcome.remove();}
   if (!currentSessionId) currentSessionId = 'session_' + Date.now();
   origin = {
     id: currentSessionId, history: chatHistory, key: storageKey('sessions'), mood: currentMood, responseLanguage: currentUser?.responseLanguage || 'auto',
@@ -5692,6 +5694,9 @@ function initFeaturedPages(){
   const pairs=[[['manual','📖 Chat Manual'],['personalize','🎛️ Personalize']],null,
     [['splash','💦 Splash'],['riptide','🌀 Riptide']],[['solve','⚡ Solve a Problem'],['decide','🧭 Make a Decision']]];
   original[0].before(rail,indicators);
+  let active=2;
+  let railWidth=0;
+  const pageOffset=index=>rail.children[index].offsetLeft-rail.firstElementChild.offsetLeft;
   pairs.forEach((pair,index)=>{
     const page=document.createElement('div');
     page.className='featured-page';
@@ -5709,11 +5714,12 @@ function initFeaturedPages(){
     dot.type='button';
     dot.className='carousel-dot';
     dot.setAttribute('aria-label',`Featured pair ${index+1} of ${pairs.length}`);
-    dot.onclick=()=>rail.scrollTo({left:page.offsetLeft-rail.firstElementChild.offsetLeft,behavior:'smooth'});
+    dot.onclick=()=>rail.scrollTo({left:pageOffset(index),behavior:'smooth'});
     indicators.append(dot);
   });
   const update=()=>{
-    const active=Math.round(rail.scrollLeft/(rail.clientWidth||1));
+    if(!rail.clientWidth || rail.clientWidth!==railWidth)return;
+    active=[...rail.children].reduce((nearest,_,index)=>Math.abs(pageOffset(index)-rail.scrollLeft)<Math.abs(pageOffset(nearest)-rail.scrollLeft)?index:nearest,active);
     [...indicators.children].forEach((dot,index)=>{
       dot.classList.toggle('active',index===active);
       dot.setAttribute('aria-current',String(index===active));
@@ -5721,12 +5727,22 @@ function initFeaturedPages(){
   };
   rail.addEventListener('scroll',update,{passive:true});
   enableHomepageDrag(rail,direction=>{
-    const index=Math.round(rail.scrollLeft/(rail.clientWidth||1));
-    const target=Math.max(0,Math.min(pairs.length-1,index+direction));
+    const target=Math.max(0,Math.min(pairs.length-1,active+direction));
     indicators.children[target].click();
   });
-  rail.scrollLeft=2*rail.clientWidth;
-  update();
+  const align=()=>{
+    if(!rail.clientWidth || rail.clientWidth===railWidth)return;
+    railWidth=rail.clientWidth;
+    rail.scrollTo({left:pageOffset(active),behavior:'instant'});
+    update();
+  };
+  align();
+  if(typeof ResizeObserver==='function'){
+    const observer=new ResizeObserver(align);
+    observer.observe(rail);
+    const home=rail.closest('#welcomeScreen');
+    home.addEventListener('lake-home-removed',()=>observer.disconnect(),{once:true});
+  }
 }
 
 function initCarousel() {
