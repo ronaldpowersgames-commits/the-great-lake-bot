@@ -1688,6 +1688,15 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
     </div>
     <div class="depths-section">
       <h4>💾 Backup &amp; Transfer</h4>
+      <details class="depths-section">
+        <summary>Your Lake · Portable context</summary>
+        <button type="button" class="depths-option" onclick="exportPortableLake('profile')">🧠 Export My Profile</button>
+        <button type="button" class="depths-option" onclick="exportPortableLake('complete')">📚 Export My Complete Lake</button>
+        <label><input type="checkbox" id="protectPortableLake"> Password-protect the export</label>
+        <button type="button" class="depths-option" onclick="document.getElementById('portableLakeFile').click()">⬆ Import a Lake package</button>
+        <input type="file" id="portableLakeFile" accept=".lake" hidden onchange="importPortableLake(this)">
+        <button type="button" class="depths-option" onclick="undoPortableLake()">Undo last Lake import</button>
+      </details>
       <button type="button" class="depths-option" onclick="exportFullBackup(true)">🔒 Export password-protected backup</button>
       <button type="button" class="depths-option" onclick="document.getElementById('lakeBackupInput').click()">⬆ Restore backup from file</button>
       <div class="mode-continuity">For transcript analysis, try a searchable PDF when layout or speaker labels matter. For exact text in numbered parts, use Transcript Splitter.</div>
@@ -4126,6 +4135,86 @@ function downloadSnapshot(message) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+function portableLakeProfile(){
+  let observations=[];
+  try{observations=JSON.parse(localStorage.getItem(storageKey('learnedProfile'))||'[]');}catch{}
+  return {observations,preferences:localStorage.getItem(storageKey('personalNotes'))||'',
+    crew:crewMembers.map(({name,nickname,codename,role,context,observations})=>({name,nickname,codename,role,context,observations}))};
+}
+async function exportPortableLake(kind){
+  try{
+    await sessionLoadPromise;
+    await saveSession();
+    const key=storageKey('sessions');
+    let id=localStorage.getItem(key+':profile-origin');
+    if(!id){id=crypto.randomUUID();localStorage.setItem(key+':profile-origin',id);}
+    const imported=await LakeSessionStore.read(key+':portable');
+    const profile=[{id,data:portableLakeProfile()},...imported.flatMap(item=>item.profiles)];
+    let payload={format_version:'great-lake-context/1',id:crypto.randomUUID(),kind,created_at:new Date().toISOString(),
+      profiles:[...new Map(profile.map(item=>[item.id+JSON.stringify(item.data),item])).values()],
+      sessions:kind==='complete'?await LakeSessionStore.read(key):[]};
+    if(document.getElementById('protectPortableLake').checked){
+      const password=prompt('Choose a password of at least 12 characters for this Lake package.');
+      if(password===null)return;
+      if(password.length<12 || prompt('Repeat your password')!==password)throw new Error('Use matching passwords of at least 12 characters.');
+      payload=await LakeFullBackup.encrypt(payload,password);
+    }
+    const url=URL.createObjectURL(new Blob([JSON.stringify(payload)],{type:'application/octet-stream'}));
+    const link=document.createElement('a');
+    link.href=url;link.download=LakeExportNames.artifact(kind+'-lake','lake');
+    document.body.append(link);link.click();link.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+    showToast('Lake package downloaded. Move the file to your other device and import it there.');
+  }catch(error){showToast('Lake export failed: '+error.message);}
+}
+async function importPortableLake(input){
+  const file=input.files[0];
+  input.value='';
+  if(!file || waveInFlight)return;
+  const key=storageKey('sessions');
+  try{
+    if(file.size>100*1024*1024)throw new Error('This package exceeds 100 MB. Try a Profile export.');
+    let pkg=JSON.parse(await file.text());
+    if(pkg?.format_version==='lake-encrypted-backup/1'){
+      const password=prompt('Enter the Lake package password');
+      if(password===null)return;
+      pkg=await LakeFullBackup.decrypt(pkg,password);
+    }
+    if(pkg?.format_version!=='great-lake-context/1' || !['profile','complete'].includes(pkg.kind) ||
+       typeof pkg.id!=='string' || !/^[a-z0-9-]{1,64}$/i.test(pkg.id) || !Array.isArray(pkg.profiles) ||
+       pkg.profiles.length>50 || JSON.stringify(pkg.profiles).length>500000 ||
+       pkg.profiles.some(item=>!item || typeof item.id!=='string' || !item.data || typeof item.data!=='object') ||
+       (pkg.kind==='profile' && pkg.sessions?.length))throw new Error('Invalid or unsupported Lake package.');
+    LakeFullBackup.validate({format_version:'lake-full-backup/1',data:{conversations:pkg.sessions}});
+    await sessionLoadPromise;
+    if(key!==storageKey('sessions') || waveInFlight)return;
+    const existing=await LakeSessionStore.read(key);
+    const ids=new Set(existing.map(item=>item.id));
+    const duplicates=pkg.sessions.filter(item=>ids.has(item.id)).length;
+    if(!confirm('Add to My Lake?\n\nNew Tides: '+(pkg.sessions.length-duplicates)+'\nExisting Tide IDs kept: '+duplicates+
+      '\nProfile context records: '+pkg.profiles.length+'\nImported observations stay separate from your local profile.'))return;
+    const result=await LakeSessionStore.portableImport(key,{id:pkg.id,kind:pkg.kind,profiles:pkg.profiles,sessions:pkg.sessions});
+    if(!result){showToast('This Lake package was already imported.');return;}
+    if(key!==storageKey('sessions'))return;
+    allSessions=result.sessions;
+    renderTides();
+    showToast('Lake package added. Undo is available under Your Lake.');
+  }catch(error){showToast('Lake import failed: '+error.message);}
+}
+async function undoPortableLake(){
+  if(waveInFlight || !confirm('Undo the latest Lake import? Tides edited since import will be kept.'))return;
+  const key=storageKey('sessions');
+  try{
+    const result=await LakeSessionStore.portableImport(key,null,true);
+    if(!result){showToast('No recent Lake import to undo.');return;}
+    if(key!==storageKey('sessions'))return;
+    allSessions=result.sessions;
+    if(currentSessionId && chatHistory.length && !allSessions.some(item=>item.id===currentSessionId))newSession();
+    renderTides();
+    showToast('Latest Lake import undone.');
+  }catch(error){showToast('Could not undo the Lake import: '+error.message);}
+}
+
 async function exportFullBackup(encrypted=false) {
   try {
     await sessionLoadPromise;
@@ -4591,6 +4680,12 @@ async function sendWave(options = {}) {
     if(learning){
       formData.append('learnedProfile',profileStorage.getItem(profileKey)||'[]');
       if(options.requestText==null || options.action==='save-skill')formData.append('learnFromMessage','true');
+    }
+    if(!options.snapshot && profileStorage?.getItem(learningKey)!=='false' && globalThis.LakeSessionStore){
+      const packages=await LakeSessionStore.read(origin.key+':portable').catch(()=>[]);
+      const records=new Map();
+      for(const item of packages)for(const record of item.profiles)records.set(record.id+JSON.stringify(record.data),record);
+      if(records.size)formData.append('portableContext',JSON.stringify([...records.values()]).slice(0,12000));
     }
     formData.append('recentWaveIntents',JSON.stringify(origin.history.filter(message=>message.promptSuggestions?.length).slice(-3).flatMap(message=>message.promptSuggestions.map(item=>item.prompt.slice(0,160)))));
     const historyToSend = origin.history.slice(0,-1).filter(m=>!m.removedSourceRecord).slice(-10).map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.content }));
@@ -5293,6 +5388,7 @@ async function deleteBubble(waveEl) {
   if(!session)return;
   const key=storageKey('sessions');
   const updated={...session,history:chatHistory.filter(item=>item!==message)};
+  delete updated.portableImportId;
   if(!await persistSessions(allSessions.map(item=>item===session?updated:item),key))return;
   if(key!==storageKey('sessions'))return;
   allSessions=allSessions.map(item=>item===session?updated:item);

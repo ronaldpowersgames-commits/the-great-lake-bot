@@ -59,6 +59,7 @@
   async function upsert(key, session) {
     const database=await openDatabase();
     const snapshot=structuredClone(session);
+    delete snapshot.portableImportId;
     return new Promise((resolve,reject)=>{
       const transaction=database.transaction('accounts','readwrite');
       const store=transaction.objectStore('accounts');
@@ -75,5 +76,38 @@
     });
   }
 
-  window.LakeSessionStore = { read, write, upsert };
+  async function portableImport(key, incoming, undo=false){
+    const database=await openDatabase();
+    const journalKey=key+':portable';
+    return new Promise((resolve,reject)=>{
+      const tx=database.transaction('accounts','readwrite');
+      const store=tx.objectStore('accounts');
+      const history=store.get(key);
+      const journal=store.get(journalKey);
+      let result;
+      journal.onsuccess=()=>{
+        let sessions=Array.isArray(history.result)?history.result:[];
+        let packages=Array.isArray(journal.result)?journal.result:[];
+        if(undo){
+          const entry=packages.at(-1);
+          if(!entry || Date.now()-entry.importedAt>30*86400000)return;
+          sessions=sessions.filter(session=>session.portableImportId!==entry.id);
+          packages=packages.slice(0,-1);
+        }else{
+          if(packages.some(entry=>entry.id===incoming.id))return;
+          const ids=new Set(sessions.map(session=>session.id));
+          sessions=[...sessions,...incoming.sessions.filter(session=>!ids.has(session.id)).map(session=>({...session,portableImportId:incoming.id}))];
+          const {sessions:ignored,...metadata}=incoming;
+          packages=[...packages,{...metadata,importedAt:Date.now()}];
+        }
+        store.put(sessions,key);
+        store.put(packages,journalKey);
+        result={sessions,packages};
+      };
+      tx.oncomplete=()=>resolve(result);
+      tx.onabort=()=>reject(tx.error || new Error('Import transaction interrupted'));
+    });
+  }
+
+  window.LakeSessionStore = { read, write, upsert, portableImport };
 })();
