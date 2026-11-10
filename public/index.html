@@ -1342,7 +1342,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
         <div class="dock-subtitle">Leadership Clarity Engine</div>
       </div>
     </div>
-    <button class="new-session-btn" onclick="newSession()">🎣 Cast a New Line</button>
+    <button class="new-session-btn" onclick="castNewLine(event)">🎣 Cast a New Line</button>
     <div class="sonar-wrap">
       <span class="sonar-icon">🔍</span>
       <input type="text" class="sonar-input" placeholder="Sonar — search the depths..." oninput="filterTides(this.value)">
@@ -1505,10 +1505,10 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
     <div class="shore-dock">
       <button type="button" id="speechRestore" class="quick-action-btn" onclick="setSpeechView('full')" hidden>🔊 Show audio controls</button>
       <div class="speech-player" id="speechPlayer" role="region" aria-label="Read aloud controls">
-        <button type="button" onclick="speechPrevious()" title="Previous passage">⏮</button>
+        <button type="button" onclick="speechPrevious()" aria-label="Jump back one passage" title="Jump back one passage">⏮</button>
         <button type="button" id="speechPlayPause" onclick="speechPlayPause()" title="Play or pause">▶</button>
         <button type="button" onclick="stopSpeech()" title="Stop">⏹</button>
-        <button type="button" onclick="speechNext()" title="Next passage">⏭</button>
+        <button type="button" onclick="speechNext()" aria-label="Jump forward one passage" title="Jump forward one passage">⏭</button>
         <input class="speech-player-progress" id="speechProgress" type="range" min="0" max="1" value="0" oninput="speechSeek(this.value)" aria-label="Reading progress">
         <span class="speech-player-status" id="speechStatus">Ready</span>
         <select id="speechVoice" aria-label="Reading voice" onchange="saveLakeVoice(this.value)"><option value="">Auto voice</option></select>
@@ -1688,7 +1688,12 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
     </div>
     <div class="depths-section">
       <h4>💾 Backup &amp; Transfer</h4>
-      <button class="depths-option backup-export" onclick="exportFullBackup()" title="Private full-data backup with original stored attachments and an AI transfer prompt">⬇ Export Full Data + Transfer Prompt</button>
+      <button type="button" class="depths-option" onclick="exportFullBackup(true)">🔒 Export password-protected backup</button>
+      <button type="button" class="depths-option" onclick="document.getElementById('lakeBackupInput').click()">⬆ Restore backup from file</button>
+      <div class="mode-continuity">For transcript analysis, try a searchable PDF when layout or speaker labels matter. For exact text in numbered parts, use Transcript Splitter.</div>
+      <button type="button" class="depths-option" onclick="protectLakeStorage()">🛡 Protect browser storage</button>
+      <input type="file" id="lakeBackupInput" accept=".json,.zip,application/json,application/zip" hidden onchange="restoreLakeBackup(this)">
+      <button class="depths-option backup-export" onclick="exportFullBackup()" title="Private backup ZIP with original stored attachments, split transcripts and the latest Total Snapshot">⬇ Export Backup ZIP</button>
       <a class="depths-option" href="/transcript-splitter.html" target="_blank" rel="noopener" style="display:block;text-decoration:none">📄 Transcript Splitter</a>
       <a class="depths-option" href="/meeting-studio/" target="_blank" rel="noopener" style="display:block;text-decoration:none">🎙️ Meeting Studio</a>
     </div>
@@ -2942,7 +2947,8 @@ async function saveSession(target) {
   if (existingIdx >= 0) sessions[existingIdx] = sessionData;
   else sessions.unshift(sessionData);
   if (key === storageKey('sessions')) renderTides();
-  await persistSessions(sessions, key);
+  try { await LakeSessionStore.upsert(key,sessionData); }
+  catch(error){showToast('Could not save this Tide. Export a backup before closing.');throw error;}
 }
 
 function currentExportTitle(){
@@ -3126,6 +3132,13 @@ function clearTideOverlays(){
   document.getElementById('moodSelector').classList.remove('show');
   closeInlineSpeech();
 }
+function castNewLine(event){
+  if(event.ctrlKey){
+    window.open(location.pathname,'_blank','popup,noopener');
+    return;
+  }
+  newSession();
+}
 function newSession() {
   clearTideOverlays();
   document.getElementById('downloadSnapshotButton').hidden = true;
@@ -3262,11 +3275,11 @@ function renderCrew() {
   const crewHTML = crewMembers.map((member, idx) => {
     if(member.hidden)return '';
     const color       = colors[idx % colors.length];
-    const initial     = member.emoji || member.name.trim()[0].toUpperCase();
+    const initial     = member.emoji || (member.name.trim()[0] || '?').toUpperCase();
     const displayName = member.codename || member.name;
     const nickname    = member.nickname ? `<span style="color:var(--text-dim);font-size:11px">${escapeHTML(member.nickname)}</span>` : '';
     return `<div class="crew-item" onclick="openCrewProfile(${idx})">
-      <div class="crew-avatar" style="background:${member.emoji ? 'none' : `linear-gradient(135deg,${color})`}">${initial}</div>
+      <div class="crew-avatar" style="background:${member.emoji ? 'none' : `linear-gradient(135deg,${color})`}">${escapeHTML(initial)}</div>
       <div style="flex:1;min-width:0"><div class="crew-name">${member.isSelf ? '<span title="This is you" aria-label="This is you">⭐</span> ' : ''}${escapeHTML(displayName)}</div>${nickname}</div>
       <button class="tide-delete" onclick="removeCrew(event,${idx})">🗑</button>
     </div>`;
@@ -3410,7 +3423,7 @@ function openCrewProfile(idx) {
   const colors = ['#4fc3f7,#0288d1','#ce93d8,#7b1fa2','#ffb74d,#f57c00','#81c784,#388e3c','#ff8a80,#d32f2f','#80cbc4,#00796b'];
   const color  = colors[idx % colors.length];
   document.getElementById('crewCardAvatar').style.background = member.emoji ? 'none' : `linear-gradient(135deg,${color})`;
-  document.getElementById('crewCardAvatar').textContent   = member.emoji || member.name.trim()[0].toUpperCase();
+  document.getElementById('crewCardAvatar').textContent   = member.emoji || (member.name.trim()[0] || '?').toUpperCase();
   document.getElementById('crewCardName').textContent     = (member.isSelf ? '⭐ ' : '')+member.name;
   document.getElementById('crewCardNickname').textContent = member.nickname || '';
   const codenameEl = document.getElementById('crewCardCodename');
@@ -3546,7 +3559,7 @@ const LAKE_MANUAL_PROMPT = `Write a concise practical manual for The Great Lake.
 - Moods: Drip gives an immediate minimal answer, Shallow is short and simple, Calm is reflective and digestible, Deep Dive gives careful expanded analysis, and Stormy is candid and decisive. The 🎭 menu lists codes. Use them at either end of a message and the mood stays active until changed. List /drip /drippy /drop, /shallow /splash /splashy, /calm /reg /default, /deep /deepdive /full, and /stormy /storm /choppy. Personalize explains custom triggers, for example /trigger /focus /deep and /untrigger /focus.
 - Next Waves: tap to send, hover or hold to preview, drag into the desktop composer to edit, or type /w followed by a number and choose the matching suggestion to insert the full prompt. Settings → Slash Commands lets you create, edit, disable or remove personal prompt shortcuts. /mood opens the mood picker. The desktop wheel scrolls the rail sideways. Explain collapsible reply sections and message actions.
 - Creative tools: Writer, Music and Drawing Types offer starters and practice. Relevant chord replies can offer Play chords. Hotkeys can make a song, written piece, drawing concept, voluntary hypnosis script or other remix directly in the chat. Make Something From This opens a separate creative branch that draws on bounded text excerpts from the source chat.
-- Cover attachments, whole-transcript workflows, Crew and memory controls, Past Tides and Recovery, and adding the app from a mobile browser to the Home Screen. Keep the guide focused on functionality. Do not start an onboarding question or personal analysis.`;
+- Cover attachments, whole-transcript workflows, Crew and memory controls, Past Tides and Recovery, and adding the app from a mobile browser to the Home Screen. For transcripts, mention text-based PDFs as an option when preserving the readable layout helps, and numbered TXT or a split ZIP when exact text coverage matters. Explain Backup ZIP, password-protected backup and Restore backup from file. Keep the guide focused on functionality. Do not start an onboarding question or personal analysis.`;
 
 function startHomepageWave(kind){
   const starters={
@@ -4113,24 +4126,114 @@ function downloadSnapshot(message) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-async function exportFullBackup() {
+async function exportFullBackup(encrypted=false) {
   try {
     await sessionLoadPromise;
     await saveSession();
     const current = { id: currentSessionId, name: allSessions.find(session => session.id === currentSessionId)?.name || getSessionName(), history: chatHistory, mood: currentMood };
     const backup = LakeFullBackup.build({
-      user: currentUser, sessions: allSessions, current, crew: crewMembers, suggestedCrew,folders:tideFolders,
+      user: currentUser, sessions: await LakeSessionStore.read(storageKey('sessions')), current, crew: crewMembers, suggestedCrew,folders:tideFolders,
       profilePic: currentProfilePic,
       settings: { mood: currentMood, responseLanguage: currentUser?.responseLanguage || 'auto', defaultPromptBatch: localStorage.getItem('defaultBatch'), requestInProgress: waveInFlight,dockSplit }
     });
-    const url = URL.createObjectURL(new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json;charset=utf-8' }));
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = LakeExportNames.fullBackup(backup.created_at);
+    backup.data.preferences=Object.fromEntries(['learnedProfile','learnProfile','personalNotes','speechVoice','moodTriggers','customPrompts'].map(name=>[name,localStorage.getItem(storageKey(name))]).filter(([,value])=>value!==null));
+    let payload=backup;
+    if(encrypted){
+      const password=prompt('Choose a backup password (at least 12 characters). You will need it to restore the file.');
+      if(password===null)return;
+      if(password.length<12)throw new Error('Use at least 12 characters.');
+      if(prompt('Repeat your backup password')!==password)throw new Error('Passwords did not match.');
+      payload=await LakeFullBackup.encrypt(backup,password);
+    }
+    let filename=LakeExportNames.fullBackup(backup.created_at);
+    let blob;
+    if(encrypted){
+      filename=filename.replace('full-backup','encrypted-backup');
+      blob=new Blob([JSON.stringify(payload)],{type:'application/json'});
+    }else{
+      const zip=new JSZip();
+      zip.file('lake-backup.json',JSON.stringify(backup));
+      const size=LakeTranscriptSplitter.validSize(localStorage.getItem('lakeTranscriptPartSize'));
+      backup.data.conversations.forEach((session,index)=>{
+        const folder='transcripts/'+String(index+1).padStart(3,'0')+'-'+LakeExportNames.slug(session.name,'tide');
+        const transcript=session.history.map(message=>(message.role==='user'?'You':'The Lake')+' · '+(message.time||'')+'\n'+message.content).join('\n\n');
+        const parts=LakeTranscriptSplitter.split(transcript,size);
+        parts.forEach((part,number)=>zip.file(folder+'/'+LakeExportNames.transcriptPart(session.name,number+1,parts.length),part.text));
+      });
+      const latest=backup.data.conversations.flatMap(session=>session.history)
+        .filter(message=>['total','both'].includes(message.snapshot?.scope) && message.content)
+        .sort((a,b)=>String(b.snapshot.createdAt||'').localeCompare(String(a.snapshot.createdAt||'')))[0];
+      if(latest){
+        zip.file('total-snapshot.pdf',LakeFullBackup.snapshotPdf('The Great Lake - Total Snapshot\n'+(latest.snapshot.createdAt||'')+'\n\n'+latest.content));
+        zip.file('total-snapshot.txt',latest.content);
+      }else{
+        zip.file('snapshot-not-included.txt','No saved Total Snapshot was available. Generate one from Snapshot > Total Snapshot, then export again.');
+      }
+      blob=await zip.generateAsync({type:'blob',compression:'DEFLATE'});
+      filename=filename.replace(/\.json$/,'.zip');
+    }
+    const url=URL.createObjectURL(blob);
+    const link=document.createElement('a');
+    link.href=url;
+    link.download=filename;
+    document.body.append(link);
     link.click();
+    link.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
     showToast('Full backup downloaded. Keep it private; it includes your chats and stored files.');
   } catch (error) { showToast('Backup could not be exported: ' + error.message); }
+}
+
+async function protectLakeStorage(){
+  try{
+    const persisted=await navigator.storage?.persist?.();
+    showToast(persisted?'Browser storage protection enabled. Keep an off-device backup too.':'Browser storage protection is unavailable or was declined. Export a backup.');
+  }catch{showToast('Browser storage protection could not be enabled.');}
+}
+
+async function restoreLakeBackup(input){
+  const file=input.files[0];
+  input.value='';
+  if(!file || waveInFlight)return;
+  const key=storageKey('sessions');
+  try{
+    let raw;
+    if(/\.zip$/i.test(file.name)){
+      const zip=await JSZip.loadAsync(await file.arrayBuffer());
+      const entry=zip.file('lake-backup.json');
+      if(!entry)throw new Error('This ZIP does not contain a full Lake backup.');
+      raw=await entry.async('string');
+    }else raw=await file.text();
+    let backup=JSON.parse(raw);
+    if(backup?.format_version==='lake-encrypted-backup/1'){
+      const password=prompt('Enter your backup password');
+      if(password===null)return;
+      backup=await LakeFullBackup.decrypt(backup,password);
+    }
+    const data=LakeFullBackup.validate(backup);
+    await sessionLoadPromise;
+    if(key!==storageKey('sessions') || waveInFlight)return;
+    if(!confirm('Restore '+data.conversations.length+' Tides? Existing chats and preferences will be kept.'))return;
+    const existing=await LakeSessionStore.read(key);
+    const ids=new Set(existing.map(item=>item.id));
+    const merged=[...existing,...data.conversations.filter(item=>!ids.has(item.id))];
+    const folders=LakeOrganization.cleanFolders([...tideFolders,...(Array.isArray(data.folders)?data.folders:[])]);
+    await LakeSessionStore.write(storageKey('folders'),folders);
+    await LakeSessionStore.write(key,merged);
+    if(key!==storageKey('sessions'))return;
+    allSessions=merged;
+    tideFolders=folders;
+    const knownCrew=new Set(crewMembers.map(item=>String(item.name||'').toLowerCase()));
+    if(Array.isArray(data.crew))crewMembers.push(...data.crew.filter(item=>typeof item?.name==='string' && !knownCrew.has(item.name.toLowerCase())));
+    saveCrew();
+    for(const name of ['learnedProfile','learnProfile','personalNotes','speechVoice','moodTriggers','customPrompts']){
+      const value=data.preferences?.[name];
+      if(typeof value==='string' && localStorage.getItem(storageKey(name))===null)localStorage.setItem(storageKey(name),value);
+    }
+    renderCrew();
+    renderTides();
+    showToast('Backup restored. Existing Tides were kept.');
+  }catch(error){showToast('Backup restore failed: '+error.message);}
 }
 
 function downloadLatestSnapshot() {
@@ -4629,7 +4732,7 @@ function appendUserWave(text, timeStr, scroll, attachments = [],messageRef=null)
     <div class="wave-content">
       <div class="wave-sender">${escapeHTML(currentUser?.name || 'You')}</div>
       <div class="wave-bubble">${text ? escapeHTML(text) : ''}${attachHTML}</div>
-      <div class="wave-time">${timeStr}</div>
+      <div class="wave-time">${escapeHTML(timeStr)}</div>
     </div>`;
 
   // Insert before ripple so ripple stays at bottom
@@ -4655,7 +4758,7 @@ function appendLakeWave(text, timeStr, scroll, snapshot, archiveCoverage, archiv
       <div class="wave-bubble">${snapshot
         ? `<strong>AI handoff ready</strong><div>${snapshot.sessionCount} conversation${snapshot.sessionCount === 1 ? '' : 's'} · ${snapshot.messageCount} source messages</div><details class="snapshot-details"><summary>View JSON</summary><pre class="snapshot-json">${escapeHTML(text)}</pre></details>`
         : formatReflection(text,Boolean(messageRef?.sectionsExpanded))}</div>
-      <div class="wave-time">${timeStr}</div>
+      <div class="wave-time">${escapeHTML(timeStr)}</div>
     </div>`;
 
   if (ripple) container.insertBefore(div, ripple);
@@ -5124,10 +5227,10 @@ function exportMessage(waveEl){const text=messageActionText(waveEl);const link=d
 function toggleFavorite(waveEl,button){const ref=waveEl._lakeMessageRef;const next=!(ref?.favorite||waveEl.dataset.favorite==='true');waveEl.dataset.favorite=String(next);if(ref)ref.favorite=next;button.textContent=next?'★ Favorite':'☆ Favorite';saveSession().catch(()=>{});showToast(next?'Saved to favorites':'Removed from favorites');}
 
 function regenerateMessage(waveEl) {
-  waveEl.remove();
-  const userWaves = document.querySelectorAll('.user-wave');
-  const lastUser  = userWaves[userWaves.length - 1];
-  if (lastUser) { const text = lastUser.querySelector('.wave-bubble')?.textContent; if (text) sendPrompt(text); }
+  const index=chatHistory.indexOf(waveEl._lakeMessageRef);
+  if(index<1)return;
+  const user=chatHistory.slice(0,index).findLast(message=>message.role==='user');
+  if(user)editAndResend(user,true);
 }
 
 function renderPinnedMessages() {
@@ -5154,20 +5257,48 @@ function pinToCurrents(waveEl,button) {
   saveSession().catch(()=>{});
 }
 
-function editAndResend(text) {
-  const input    = document.getElementById('lakeInput');
-  input.value    = text; input.focus();
-  input.style.height = 'auto';
-  input.style.height = input.scrollHeight + 'px';
-  showToast('Edit your message above ✏️');
+async function editAndResend(message,regenerate=false) {
+  const index=chatHistory.indexOf(message);
+  if(index<0 || waveInFlight)return;
+  const sourceId=currentSessionId;
+  const prefix=structuredClone(chatHistory.slice(0,index));
+  const attachments=await Promise.all((message.attachments||[]).filter(file=>file.data && !file.excluded).map(async file=>{
+    const blob=await fetch(file.data).then(response=>response.blob());
+    return new File([blob],file.name,{type:file.type || blob.type});
+  })).catch(()=>null);
+  if(!attachments){showToast('Could not reopen the original attachments.');return;}
+  if(currentSessionId!==sourceId || waveInFlight)return;
+  await saveSession();
+  if(currentSessionId!==sourceId || waveInFlight)return;
+  newSession();
+  if(prefix.length){
+    allSessions.unshift({id:currentSessionId,history:prefix,mood:message.mood || currentMood});
+    loadTide(currentSessionId);
+  }else if(message.mood)applyMood(message.mood);
+  selectedFiles=attachments;
+  renderFilePreviews();
+  const input=document.getElementById('lakeInput');
+  input.value=message.content.replace(/ \[\d+ files? attached\]$/,'');
+  input.focus();
+  scheduleInputResize(input);
+  if(regenerate)await sendWave();
+  else showToast('Edit this draft and send it for a new reply. The original Tide stays saved.');
 }
 
-function deleteBubble(waveEl) {
-  waveEl.style.opacity    = '0';
-  waveEl.style.transform  = 'translateY(-8px)';
-  waveEl.style.transition = 'all 0.3s';
-  setTimeout(() => waveEl.remove(), 300);
-  showToast('Message removed 🗑️');
+async function deleteBubble(waveEl) {
+  const message=waveEl._lakeMessageRef;
+  const index=chatHistory.indexOf(message);
+  if(index<0 || waveInFlight || !confirm('Delete this message from the Tide?'))return;
+  const session=allSessions.find(item=>item.id===currentSessionId);
+  if(!session)return;
+  const key=storageKey('sessions');
+  const updated={...session,history:chatHistory.filter(item=>item!==message)};
+  if(!await persistSessions(allSessions.map(item=>item===session?updated:item),key))return;
+  if(key!==storageKey('sessions'))return;
+  allSessions=allSessions.map(item=>item===session?updated:item);
+  if(currentSessionId===updated.id)loadTide(updated.id);
+  else renderTides();
+  showToast('Message removed');
 }
 
 function toggleBubbleActions(actionsEl) {
@@ -5204,6 +5335,10 @@ function buildBubbleActions(waveEl, isLake) {
     const actionSpecs=[['↗ Share',()=>shareMessage(waveEl)],['⬇ Export',()=>exportMessage(waveEl)],['↩ Reply To',()=>replyToMessage(waveEl)],['🌊 New Current',()=>branchFromMessage(waveEl)]];
     actionSpecs.forEach(([label,handler])=>{const button=document.createElement('button');button.className='bubble-action-btn';button.textContent=label;button.onclick=handler;actions.append(button);});
     const favorite=document.createElement('button');favorite.className='bubble-action-btn';favorite.textContent=waveEl._lakeMessageRef?.favorite?'★ Favorite':'☆ Favorite';favorite.onclick=()=>toggleFavorite(waveEl,favorite);actions.append(favorite);
+    if(waveEl._lakeMessageRef){
+      const remove=document.createElement('button');remove.className='bubble-action-btn';remove.textContent='🗑️ Delete';
+      remove.onclick=()=>deleteBubble(waveEl);actions.append(remove);
+    }
     const regenBtn = document.createElement('button');regenBtn.className = 'bubble-action-btn'; regenBtn.innerHTML = '🔁 Regenerate';regenBtn.onclick = () => regenerateMessage(waveEl);actions.appendChild(regenBtn);
     const progression=messageActionText(waveEl).match(/^[^\n]*?([A-G][#♯b♭]?(?:maj7|m7|m|7|sus[24]|add9|dim)?(?:\s*[→–—]\s*[A-G][#♯b♭]?(?:maj7|m7|m|7|sus[24]|add9|dim)?){2,7})(?![\w#/♯♭])/m);
     if(progression){
@@ -5224,7 +5359,7 @@ function buildBubbleActions(waveEl, isLake) {
     const favorite=document.createElement('button');favorite.className='bubble-action-btn';favorite.textContent=waveEl._lakeMessageRef?.favorite?'★ Favorite':'☆ Favorite';favorite.onclick=()=>toggleFavorite(waveEl,favorite);actions.append(favorite);
     const editBtn = document.createElement('button');
     editBtn.className = 'bubble-action-btn'; editBtn.innerHTML = '✏️ Edit';
-    editBtn.onclick = () => editAndResend(canonicalMessageText(waveEl));
+    editBtn.onclick = () => editAndResend(waveEl._lakeMessageRef);
     actions.appendChild(editBtn);
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'bubble-action-btn'; deleteBtn.innerHTML = '🗑️ Delete';

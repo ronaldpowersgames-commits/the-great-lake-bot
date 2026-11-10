@@ -56,5 +56,24 @@
     return sessions;
   }
 
-  window.LakeSessionStore = { read, write };
+  async function upsert(key, session) {
+    const database=await openDatabase();
+    const snapshot=structuredClone(session);
+    return new Promise((resolve,reject)=>{
+      const transaction=database.transaction('accounts','readwrite');
+      const store=transaction.objectStore('accounts');
+      const read=store.get(key);
+      read.onsuccess=()=>{
+        const sessions=Array.isArray(read.result)?read.result:[];
+        const index=sessions.findIndex(item=>item.id===snapshot.id);
+        if(index<0)sessions.unshift(snapshot);
+        else sessions[index]=snapshot;
+        store.put(sessions,key);
+      };
+      transaction.oncomplete=resolve;
+      transaction.onabort=()=>reject(transaction.error || new Error('Chat save interrupted'));
+    });
+  }
+
+  window.LakeSessionStore = { read, write, upsert };
 })();
