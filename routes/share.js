@@ -1,6 +1,20 @@
 const express = require('express');
 const router = express.Router();
-const { randomBytes } = require('node:crypto');
+const { randomBytes, scryptSync, timingSafeEqual } = require('node:crypto');
+
+function protectPassphrase(value) {
+  const passphrase = String(value || '').trim();
+  if (!passphrase) return null;
+  if (passphrase.length > 200) throw new Error('Passphrase must be 200 characters or fewer');
+  const salt = randomBytes(16);
+  return { salt: salt.toString('hex'), hash: scryptSync(passphrase, salt, 32).toString('hex') };
+}
+
+function passphraseMatches(value, protection) {
+  if (!protection) return true;
+  const supplied = scryptSync(String(value || ''), Buffer.from(protection.salt, 'hex'), 32);
+  return timingSafeEqual(supplied, Buffer.from(protection.hash, 'hex'));
+}
 
 function publicSession(session) {
   if (!session || !Array.isArray(session.history) || !session.history.length) {
@@ -51,8 +65,13 @@ router.post('/', express.json(), (req, res) => {
 
     const expires = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7 days
 
+    let protection;
+    try { protection = protectPassphrase(req.body.passphrase); }
+    catch (error) { return res.status(400).json({ error: error.message }); }
+
     sharedSessions.set(id, {
       session,
+      protection,
       expires,
       createdAt: new Date().toISOString()
     });
@@ -63,7 +82,7 @@ router.post('/', express.json(), (req, res) => {
     }
 
     console.log(`🔗 Session shared: ${id}`);
-    res.json({ id, url: `/shared.html?id=${id}` });
+    res.json({ id, url: `/shared.html?id=${id}`, protected: Boolean(protection) });
 
   } catch (err) {
     console.error('Share save error:', err);
@@ -85,6 +104,10 @@ router.get('/:id', (req, res) => {
   if (entry.expires < Date.now()) {
     sharedSessions.delete(req.params.id);
     return res.status(404).json({ error: 'Session has expired' });
+  }
+
+  if (entry.protection && !passphraseMatches(req.get('x-lake-passphrase'), entry.protection)) {
+    return res.status(401).json({ error: 'Passphrase required', protected: true });
   }
 
   res.json({ session: entry.session });

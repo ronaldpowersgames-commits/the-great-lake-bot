@@ -584,11 +584,11 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
 .reflection-sections { margin-top: 7px; }
 .reflection-hint { padding: 2px 2px 5px; color: var(--text-dim); font-size: 9px; font-style: italic; }
 .reflection-section { border-top: 1px solid color-mix(in srgb, var(--dock-border) 72%, transparent); }
-.reflection-section summary { cursor: pointer; list-style: none; padding: 8px 2px 6px; color: var(--lake-light); font-weight: 700; }
+.reflection-section summary { cursor: pointer; list-style: none; padding: 7px 2px 5px; color: var(--lake-light); font-weight: 700; }
 .reflection-section summary::-webkit-details-marker { display: none; }
 .reflection-section summary::before { content: '›'; display: inline-block; width: 14px; color: var(--text-dim); transition: transform .15s ease; }
 .reflection-section[open] summary::before { transform: rotate(90deg); }
-.reflection-section-body { padding: 0 2px 7px; }
+.reflection-section-body { padding: 0 2px 6px; color: var(--text-primary); }
 .lake-wave .wave-bubble {
   background: var(--lake-surface); border: 1px solid var(--dock-border);
   border-top-left-radius: 4px; color: var(--text-primary);
@@ -610,9 +610,15 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
 .user-wave .wave-time { text-align: right; }
 
 /* ── BUBBLE ACTIONS ── */
-.bubble-actions { display: none; gap: 5px; margin-top: 5px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+.bubble-actions { display: none; gap: 5px; margin-top: 5px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; position:relative; }
 .bubble-actions::-webkit-scrollbar { display: none; }
 .bubble-actions.show { display: flex; }
+.bubble-actions.has-overflow:not(.at-end)::after {
+  content: '›'; position: sticky; right: 0; z-index: 2; flex: 0 0 20px;
+  display: grid; place-items: center; align-self: stretch; color: var(--lake-light);
+  background: linear-gradient(90deg, transparent, var(--lake-surface) 45%);
+  text-shadow: 0 0 8px var(--lake-glow); pointer-events: none;
+}
 .bubble-action-btn {
   padding: 4px 9px; background: rgba(45,140,240,0.08);
   border: 1px solid rgba(45,140,240,0.15); border-radius: 20px;
@@ -623,6 +629,8 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
 .speaking .wave-bubble { border-color: var(--lake-glow); box-shadow: 0 0 12px rgba(45,140,240,0.2); }
 .speech-player { display:none; align-items:center; gap:6px; padding:6px 8px; border:1px solid var(--dock-border); border-radius:10px; background:rgba(9,20,32,.92); }
 .speech-player[data-view="compact"] > :not(#speechPlayPause, #speechCollapse, #speechClose) { display:none; }
+.speech-player[data-view="compact"] { justify-content:flex-end; }
+.speech-player:not([data-view="compact"]) #speechCollapse { margin-left:auto; }
 #speechRestore { align-self:flex-end; margin:4px 0; }
 .speech-player.show { display:flex; flex-wrap:wrap; }
 .speech-player select { padding-inline:8px; max-width:min(15rem,100%); }
@@ -1025,6 +1033,16 @@ button.depths-option { width:100%; text-align:start; font-family:inherit; backgr
 .depths-option:hover  { background: rgba(45,140,240,0.08); }
 .depths-option.active { background: rgba(45,140,240,0.12); color: var(--lake-light); }
 .depths-info   { padding: 7px 11px; font-size: 12px; color: var(--text-dim); cursor: default; }
+.portable-disclosure { margin:0 0 12px; padding:0; border:1px solid color-mix(in srgb,var(--lake-light) 42%,var(--dock-border)); border-radius:11px; background:rgba(45,140,240,.05); overflow:hidden; }
+.portable-disclosure > summary { display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:9px; padding:11px 13px; cursor:pointer; list-style:none; color:var(--text-primary); font-weight:700; }
+.portable-disclosure > summary::-webkit-details-marker { display:none; }
+.portable-disclosure > summary::before { content:'›'; width:22px; height:22px; display:grid; place-items:center; border-radius:50%; background:rgba(79,195,247,.14); color:var(--lake-light); font-size:20px; transition:transform .16s ease; }
+.portable-disclosure > summary::after { content:'Open'; padding:3px 8px; border-radius:999px; background:rgba(79,195,247,.12); color:var(--lake-light); font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.7px; }
+.portable-disclosure[open] > summary::before { transform:rotate(90deg); }
+.portable-disclosure[open] > summary::after { content:'Close'; }
+.portable-disclosure > summary:hover,.portable-disclosure > summary:focus-visible { background:rgba(45,140,240,.12); outline:none; }
+.portable-disclosure-label small { display:block; margin-top:2px; color:var(--text-dim); font-size:10px; font-weight:500; }
+.portable-disclosure[open] > :not(summary) { margin-inline:11px; }
 .logout-btn {
   width: 100%; padding: 11px;
   background: rgba(239,83,80,0.1); border: 1px solid rgba(239,83,80,0.2);
@@ -1184,8 +1202,12 @@ button.depths-option { width:100%; text-align:start; font-family:inherit; backgr
   cursor: pointer; font-size: 15px; display: flex; align-items: center; justify-content: center;
 }
 .help-close:hover { background: var(--dock-border); }
-.help-section       { margin-bottom: 20px; }
-.help-section-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--sand); margin-bottom: 9px; display: flex; align-items: center; gap: 6px; }
+.help-section       { margin-bottom: 8px; border-bottom:1px solid var(--dock-border); }
+.help-section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: var(--sand); margin:0; padding:11px 0; display: flex; align-items: center; gap: 6px; cursor:pointer; list-style:none; }
+.help-section-title::-webkit-details-marker { display:none; }
+.help-section-title::after { content:'›'; margin-left:auto; color:var(--lake-light); transition:transform .15s ease; }
+.help-section[open] > .help-section-title::after { transform:rotate(90deg); }
+.help-section-body { padding:0 0 10px; }
 .help-item   { display: flex; gap: 9px; margin-bottom: 7px; align-items: flex-start; }
 .help-icon   { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
 .help-text   { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
@@ -1195,6 +1217,16 @@ button.depths-option { width:100%; text-align:start; font-family:inherit; backgr
 .help-list { list-style: none; padding: 0; margin: 12px 0 0 0; display: flex; flex-direction: column; gap: 10px; }
 .help-list li { padding: 8px 10px; background: rgba(255,255,255,0.04); border-radius: 8px; font-size: 13px; line-height: 1.5; color: var(--text-secondary); }
 .help-list li strong { color: var(--text-primary); }
+.lake-share-dialog { width:min(520px,calc(100vw - 24px)); max-height:min(760px,90vh); overflow:auto; border:1px solid var(--dock-border); border-radius:20px; background:var(--dock-bg); color:var(--text-primary); padding:20px; }
+.lake-share-dialog::backdrop { background:rgba(2,9,16,.78); backdrop-filter:blur(4px); }
+.lake-share-dialog h2 { margin:0 0 6px; color:var(--lake-light); }
+.lake-share-dialog p { color:var(--text-secondary); font-size:13px; }
+.lake-share-dialog label { display:grid; gap:5px; margin:12px 0; color:var(--text-secondary); font-size:12px; }
+.lake-share-dialog input,.lake-share-dialog select { width:100%; padding:9px 11px; border:1px solid var(--dock-border); border-radius:9px; background:var(--lake-surface); color:var(--text-primary); }
+.lake-share-dialog menu,.lake-share-platforms { display:flex; flex-wrap:wrap; gap:8px; padding:0; margin:14px 0 0; }
+.lake-share-dialog button { padding:8px 12px; border:1px solid var(--dock-border); border-radius:999px; background:rgba(45,140,240,.12); color:var(--text-primary); cursor:pointer; }
+.lake-share-dialog button[data-primary] { background:linear-gradient(135deg,var(--lake-glow),#136da4); color:white; }
+#shareCardCanvas { display:block; width:min(100%,360px); height:auto; margin:12px auto; border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,.35); }
 
 /* ── REFLECTION FORMATTING ── */
 .reflection-h3 { font-size: 15px; font-weight: 700; color: var(--sand); margin: 16px 0 8px 0; letter-spacing: 0.5px; }
@@ -1423,7 +1455,8 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
       </div>
       <!-- Share menu -->
       <div class="share-menu" id="shareMenu">
-        <div onclick="shareAsGroupSession()">🔗 Share Session Link</div>
+        <div onclick="shareLakeInvite()">🌊 Invite someone to jump in</div>
+        <div onclick="openSessionShare()">🔗 Share this Tide</div>
         <div onclick="exportAsTxt()">📄 Export as .txt</div>
         <div onclick="exportSplitTranscriptZip()">🗜️ Split chat transcript ZIP</div>
         <div onclick="exportAsPDF()">📊 Printable transcript / PDF</div>
@@ -1592,7 +1625,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
         </div>
       </div>
       <div class="quick-actions">
-        <button type="button" class="quick-action-btn" data-dock-prompt="Summarize the material available in this Tide, emphasizing the latest substantive Lake analysis and its sources. Give only an elegant bottom line in one or two short sentences: the core takeaway, the most consequential decision or next step if present, and any caveat that changes what I should do. Keep the fewest words that preserve meaning. No heading, list, recap of minor details, suggestions, or follow-up question. Do not invent facts or imply coverage beyond the material you can see." onclick="summarizeTide(this.dataset.dockPrompt)">tSumarize</button>
+        <button type="button" class="quick-action-btn" data-dock-prompt="Summarize the material available in this Tide, emphasizing the latest substantive Lake analysis and its sources. Give only an elegant bottom line in one or two short sentences: the core takeaway, the most consequential decision or next step if present, and any caveat that changes what I should do. Keep the fewest words that preserve meaning. No heading, list, recap of minor details, suggestions, or follow-up question. Do not invent facts or imply coverage beyond the material you can see." onclick="summarizeTide(this.dataset.dockPrompt)">tSummarize</button>
         <button class="quick-action-btn" onclick="triggerFileInput()">📎 Drop a Chat-Log</button>
         <button class="quick-action-btn" onclick="triggerCamera()">📷 Take Photo</button>
         <button class="quick-action-btn" data-dock-prompt="Generate Lake Score Cards for this interaction: begin with an overall call or conversation assessment, then give separate cards for participants with enough evidence. Show source coverage and confirmed participants without assuming I took part. Rate Clarity, Depth, Authenticity, Volatility Management, and Symbolic Cohesion out of 10; show their arithmetic mean rounded to one decimal as the Overall Lake Score. Include a brief verdict, an evidence-backed dimension table, key strengths, where it lost points, the central dynamic and one practical improvement. Use exact quotes or timestamps only when supplied. If only excerpts are available, label the overall assessment provisional and limited to those excerpts; never claim full-call coverage. Keep individual Lake Influence separate from Lake Score. These are interpretive communication ratings, not validated psychological measures." onclick="sendPrompt(this.dataset.dockPrompt)">📝 Score Cards</button>
@@ -1760,8 +1793,8 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
     <div id="depthsBackupView" role="tabpanel" aria-labelledby="backupTab" hidden>
     <div class="depths-section">
       <h4>💾 Backup &amp; Transfer</h4>
-      <details class="depths-section">
-        <summary>Your Lake · Portable context</summary>
+      <details class="portable-disclosure">
+        <summary><span class="portable-disclosure-label">Your Lake · Portable context<small>Tap to expand import and export options</small></span></summary>
         <button type="button" class="depths-option" onclick="exportPortableLake('profile')">🧠 Export My Profile</button>
         <button type="button" class="depths-option" onclick="exportPortableLake('complete')">📚 Export My Complete Lake</button>
         <label><input type="checkbox" id="protectPortableLake"> Password-protect the export</label>
@@ -1877,6 +1910,30 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
   </form>
 </dialog>
 
+<dialog class="lake-share-dialog" id="lakeShareDialog" aria-labelledby="lakeShareTitle">
+  <form method="dialog">
+    <h2 id="lakeShareTitle">🌊 Share The Lake</h2>
+    <p id="lakeShareDescription">Invite someone to jump into The Lake.</p>
+    <canvas id="shareCardCanvas" width="1080" height="1080" hidden aria-label="Lake share card preview"></canvas>
+    <label id="shareFormatRow" hidden>Card format
+      <select id="shareCardFormat" onchange="renderLakeShareCard()"><option value="post">Square post</option><option value="story">Story</option></select>
+    </label>
+    <label id="sharePassphraseRow" hidden>Optional passphrase
+      <input id="sharePassphrase" type="password" maxlength="200" autocomplete="new-password" placeholder="Leave blank for anyone with the link">
+    </label>
+    <div class="lake-share-platforms" id="sharePlatforms" hidden>
+      <button type="button" onclick="shareLakeCard('instagram')">📸 Instagram</button>
+      <button type="button" onclick="shareLakeCard('whatsapp')">💬 WhatsApp</button>
+      <button type="button" onclick="shareLakeCard('linkedin')">in LinkedIn</button>
+      <button type="button" onclick="shareLakeCard('x')">𝕏 X</button>
+    </div>
+    <menu>
+      <button type="button" id="sharePrimary" data-primary onclick="runPrimaryShare()">Share invite</button>
+      <button value="cancel">Cancel</button>
+    </menu>
+  </form>
+</dialog>
+
 <div class="help-overlay" id="helpOverlay" onclick="closeHelp(event)">
   <div class="help-modal">
     <div class="help-header">
@@ -1908,7 +1965,20 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
       <div class="help-item"><span class="help-icon">📅</span><div class="help-text"><strong>Start the day</strong> with Today on the Lake: name one thing that matters or feels stuck. Pick one next move you can make in five minutes.</div></div>
       <div class="help-item"><span class="help-icon">💦</span><div class="help-text"><strong>Splash</strong> gives you a surprising fact. <strong>Riptide</strong> asks a curious question. <strong>Ride a Wave</strong> helps you explore whatever’s on your mind, one question at a time.</div></div>
       <div class="help-item"><span class="help-icon">🎤</span><div class="help-text">Type or speak a few words. Try “What am I assuming?” or “What did I notice about myself today?” Come back for a quick check-in, or use <strong>Patterns Across Chats</strong> to look for recurring themes.</div></div>
-      <div class="help-item"><span class="help-icon">📄</span><div class="help-text"><strong>Transcripts:</strong> A readable, text-based PDF works best when you want to keep the original layout and page references. Use TXT or the Transcript Splitter ZIP for exact, searchable excerpts and Meeting Currents. Tap <strong>tSumarize</strong> for the essential takeaway in a couple of sentences.</div></div>
+      <div class="help-item"><span class="help-icon">📄</span><div class="help-text"><strong>Transcripts:</strong> A readable, text-based PDF works best when you want to keep the original layout and page references. Use TXT or the Transcript Splitter ZIP for exact, searchable excerpts and Meeting Currents. Tap <strong>tSummarize</strong> for the essential takeaway in a couple of sentences.</div></div>
+    </div>
+    <div class="help-divider"></div>
+    <div class="help-section">
+      <div class="help-section-title">🏊 Types</div>
+      <div class="help-item"><span class="help-icon">↔️</span><div class="help-text">Swipe the homepage cards sideways to explore conversation <strong>Types</strong>, then scroll within a Type to reveal its second set of prompts.</div></div>
+      <div class="help-item"><span class="help-icon">🎯</span><div class="help-text"><strong>Social</strong> reads people and relationships. <strong>Still Waters</strong> supports reflection. <strong>Internal</strong> sharpens decisions and self-knowledge. <strong>Podcast Style</strong> draws out stories. Creative and specialist Types add writing, music, drawing, leadership, and other focused starters.</div></div>
+    </div>
+    <div class="help-divider"></div>
+    <div class="help-section">
+      <div class="help-section-title">🔗 Sharing &amp; privacy</div>
+      <div class="help-item"><span class="help-icon">🌊</span><div class="help-text"><strong>Invite someone</strong> shares the public Lake homepage so they can start their own Tide.</div></div>
+      <div class="help-item"><span class="help-icon">🔐</span><div class="help-text"><strong>Share this Tide</strong> creates a read-only link for this conversation. Add an optional passphrase when the contents need another layer of privacy.</div></div>
+      <div class="help-item"><span class="help-icon">📸</span><div class="help-text">A message’s <strong>Share</strong> action can create a Lake-styled square post or story for Instagram, WhatsApp, LinkedIn, X, or your device’s share sheet.</div></div>
     </div>
     <div class="help-divider"></div>
     <div class="help-section">
@@ -3711,7 +3781,7 @@ function updateCurrents(text) {
 // ============================================
 // SENDING
 // ============================================
-const LAKE_MANUAL_PROMPT = `Write a concise practical manual for The Great Lake. Open with low-friction daily chats: Today on the Lake to pick one next step, Splash for a surprising fact, Riptide for a curious question, and Ride a Wave to explore one thing. Mention voice, Patterns Across Chats, and a quick example of testing an assumption or noticing a pattern in yourself. Then group details by task under Markdown level-two headings. Mention that a readable text-based PDF preserves transcript layout, while TXT or the Splitter ZIP supports exact searchable excerpts and Meeting Currents. Explain that tSumarize gives the essential takeaway in one or two sentences. Give short examples and cover only supported features:
+const LAKE_MANUAL_PROMPT = `Write a concise practical manual for The Great Lake. Open with low-friction daily chats: Today on the Lake to pick one next step, Splash for a surprising fact, Riptide for a curious question, and Ride a Wave to explore one thing. Mention voice, Patterns Across Chats, and a quick example of testing an assumption or noticing a pattern in yourself. Then group details by task under Markdown level-two headings. Mention that a readable text-based PDF preserves transcript layout, while TXT or the Splitter ZIP supports exact searchable excerpts and Meeting Currents. Explain that tSummarize gives the essential takeaway in one or two sentences. Give short examples and cover only supported features:
 - Homepage: the top-left wave logo returns home. The floating wave starts Ride a Wave, Splash offers a fact, Riptide asks a question, 📅 Today on the Lake helps plan the day around priorities, blockers and energy, and ♒️ Patterns Across Chats looks for recurring patterns using a sample of saved chats. The 🎤 shortcut below it opens a fresh Lake Voice session on supported browsers. Pick a mood and voice, tap Start talking, and take turns speaking with automatic replies. Tap to interrupt or end the session. The composer microphone supports editable dictation.
 - Debate Me: open the fifth homepage pair, bring a position or let the Lake offer a topic, then test your reasoning in a spirited debate. End debate gives a short debrief.\n- Mirror: open Mirror in the dock or the fifth homepage pair, choose Pure Mirror or Mirror Lab, choose a relationship/context, and confirm examples you authored. The Lake simulates your evidenced communication while you play the other person. Inspect evidence pauses; Resume continues; Break the Mirror debriefs; Exit Mirror returns to normal. Mirror Calibration compares actual examples with generated dialogue. Inside an active Mirror exercise, Blind comparison holds your actual reply on this device while the Lake generates a response from your confirmed examples and a new situation. Choose A or B, then reveal the sources. It is a local comparison, not a validated personality test. Historical replay requires exact attributed lines and marks any move into generated conversation. Fidelity stays unestablished without enough comparison evidence.\n- Moods: Drip gives an immediate minimal answer, Shallow is short and simple, Calm is reflective and digestible, Deep Dive gives careful expanded analysis, and Stormy is candid and decisive. The 🎭 menu lists codes. Use them at either end of a message and the mood stays active until changed. List /drip /drippy /drop, /shallow /splash /splashy, /calm /reg /default, /deep /deepdive /full, and /stormy /storm /choppy. Personalize explains custom triggers, for example /trigger /focus /deep and /untrigger /focus.
 - Next Waves: tap to send, hover or hold to preview, drag into the desktop composer to edit, or type /w followed by a number and choose the matching suggestion to insert the full prompt. Settings → Slash Commands lets you create, edit, disable or remove personal prompt shortcuts. /mood opens the mood picker. The desktop wheel scrolls the rail sideways. Explain collapsible reply sections and message actions.
@@ -3876,7 +3946,7 @@ function scheduleRideHomeTip(){
     const manualCopy=manual.nextElementSibling;
     const standard=[tipTitle.textContent,starterCopy.innerHTML];
     const featureTips=[
-      ['Pro tip · tSumarize','After a long analysis, tap tSumarize for the takeaway in one or two sentences.'],
+      ['Pro tip · tSummarize','After a long analysis, tap tSummarize for the takeaway in one or two sentences.'],
       ['Pro tip · Prompt dock','Drag a dock prompt into the text box to edit it before sending. On touch screens, hold and drag.'],
       ['Pro tip · Start your day','Tap the calendar and tell the Lake one thing that needs to move today. It can help you choose a five-minute first step.'],
       ['Pro tip · Meeting Currents','Use Meeting Currents to find relevant, cited excerpts across your saved plain-text meeting transcripts.']
@@ -4692,10 +4762,10 @@ function sendMirrorControl(control){
 function summarizeTide(prompt) {
   const draft=document.getElementById('lakeInput').value.trim();
   if(!draft && !selectedFiles.some(file=>!file.excluded) && !chatHistory.some(message=>!message.guide && !message.snapshot && !message.removedSourceRecord && (message.content || message.attachments?.length))){
-    showToast('Share something in this Tide first, then try tSumarize.');
+    showToast('Share something in this Tide first, then try tSummarize.');
     return;
   }
-  return sendWave({visibleText:'tSumarize',requestText:prompt+(draft?'\n\nInclude this draft in the material: '+draft:''),preserveDraft:true,action:'tsummarize'});
+  return sendWave({visibleText:'tSummarize',requestText:prompt+(draft?'\n\nInclude this draft in the material: '+draft:''),preserveDraft:true,action:'tsummarize'});
 }
 
 function enableDockPromptDrag(button) {
@@ -5356,10 +5426,12 @@ function appendLakeWave(text, timeStr, scroll, snapshot, archiveCoverage, archiv
 
 function formatReflection(text,expandAll=false) {
   const lines=String(text||'').split(/\r?\n/);
-  const sectionAt=line=>/^(#{2,4}\s+.+|\d+(?:\.\d+)*\.\s+[^\n]{3,100})$/.test(line.trim());
+  // Only explicit Markdown headings become blue, collapsible headers. Numbered
+  // and bulleted lines remain ordinary white message content.
+  const sectionAt=line=>/^#{2,4}\s+.+/.test(line.trim());
   const sections=[];let lead=[];let current=null;
   for(const line of lines){
-    if(sectionAt(line)) { current={heading:line.trim().replace(/^#{2,4}\s+/, '').replace(/^\d+(?:\.\d+)*\.\s+/,''),body:[]};sections.push(current); }
+    if(sectionAt(line)) { current={heading:line.trim().replace(/^#{2,4}\s+/, ''),body:[]};sections.push(current); }
     else if(current) current.body.push(line); else lead.push(line);
   }
   const emptyWaves=section=>/^\s*(?:🌊\s*)?(?:W\d+\s*[—–-]\s*)?(?:Six\s+)?Next Waves\s*[:.]?$/i.test(section.heading) &&
@@ -5460,7 +5532,20 @@ function escapeHTML(str) {
 // ============================================
 // HELP
 // ============================================
-function openHelp()  { document.getElementById('helpOverlay').classList.add('show'); }
+function prepareHelpSections(){
+  const modal=document.querySelector('#helpOverlay .help-modal');
+  if(!modal || modal.dataset.collapsible==='true')return;
+  modal.querySelectorAll(':scope > .help-section').forEach((section,index)=>{
+    const details=document.createElement('details');details.className='help-section';details.open=index===0;
+    const title=section.querySelector(':scope > .help-section-title');
+    const summary=document.createElement('summary');summary.className='help-section-title';summary.innerHTML=title?.innerHTML||'Help';
+    const body=document.createElement('div');body.className='help-section-body';
+    [...section.children].filter(child=>child!==title).forEach(child=>body.append(child));
+    details.append(summary,body);section.replaceWith(details);
+  });
+  modal.dataset.collapsible='true';
+}
+function openHelp()  { prepareHelpSections();document.getElementById('helpOverlay').classList.add('show'); }
 function closeHelp(e) {
   if (e && e.target !== document.getElementById('helpOverlay')) return;
   document.getElementById('helpOverlay').classList.remove('show');
@@ -5474,11 +5559,40 @@ function toggleShareMenu() {
   menu.style.display = menu.style.display === 'none' || menu.style.display === '' ? 'block' : 'none';
 }
 
-async function shareAsGroupSession() {
+const LAKE_PUBLIC_URL='https://the-great-lake-bot.onrender.com/';
+const lakeShareState={mode:'invite',wave:null};
+function configureShareDialog(mode,wave=null){
+  lakeShareState.mode=mode;lakeShareState.wave=wave;
+  const dialog=document.getElementById('lakeShareDialog');
+  const isMessage=mode==='message',isSession=mode==='session';
+  document.getElementById('lakeShareTitle').textContent=isMessage?'🌊 Share this wave':isSession?'🔗 Share this Tide':'🌊 Invite someone into The Lake';
+  document.getElementById('lakeShareDescription').textContent=isMessage?'Turn this message into a Lake-styled post or story, with an invitation back to The Lake.':isSession?'Create a read-only link for this conversation. Add a passphrase if you want one more layer of privacy.':'Share a general invitation to jump into The Lake and start a new Tide.';
+  document.getElementById('sharePassphraseRow').hidden=!isSession;
+  document.getElementById('shareFormatRow').hidden=!isMessage;
+  document.getElementById('sharePlatforms').hidden=!isMessage;
+  document.getElementById('shareCardCanvas').hidden=!isMessage;
+  document.getElementById('sharePrimary').textContent=isMessage?'Share card':isSession?'Create Tide link':'Share invite';
+  if(isMessage)renderLakeShareCard();
+  document.getElementById('shareMenu').style.display='none';
+  if(!dialog.open)dialog.showModal();
+}
+function shareLakeInvite(){configureShareDialog('invite');}
+function openSessionShare(){
+  if(!currentSessionId || !allSessions.some(session=>session.id===currentSessionId)){showToast('Start a conversation first.');return;}
+  document.getElementById('sharePassphrase').value='';configureShareDialog('session');
+}
+async function runPrimaryShare(){
+  if(lakeShareState.mode==='message')return shareLakeCard('native');
+  if(lakeShareState.mode==='session')return shareAsGroupSession(document.getElementById('sharePassphrase').value);
+  const data={title:'🌊 Jump into The Great Lake',text:'A calmer place to think clearly, read the currents, and decide what to do next.',url:LAKE_PUBLIC_URL};
+  try{if(navigator.share)await navigator.share(data);else{await navigator.clipboard.writeText(`${data.text}\n${data.url}`);showToast('Lake invite copied');document.getElementById('lakeShareDialog').close();}}catch(error){if(error?.name!=='AbortError')showToast('Could not share the invite.');}
+}
+
+async function shareAsGroupSession(passphrase='') {
   if (!currentSessionId) { alert('Start a conversation first!'); return; }
   const session = allSessions.find(s => s.id === currentSessionId);
   if (!session) { alert('Session not found!'); return; }
-  if (!confirm('Share only this conversation? Anyone with the link can read its messages and attached images. Your profile, Crew, other chats and total-context snapshots are not included.')) return;
+  if (!confirm(`Share only this conversation? ${passphrase.trim()?'Recipients will need the passphrase.':'Anyone with the link can read it.'} Your profile, Crew, other chats and total-context snapshots are not included.`)) return;
   try {
     const shareSession = {
       name: session.name, time: session.time,
@@ -5489,19 +5603,55 @@ async function shareAsGroupSession() {
         attachments: (message.attachments || []).map(file => ({name:file.name,data:file.data}))
       }))
     };
-    const res  = await fetch('/share', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ session: shareSession }) });
+    const res  = await fetch('/share', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ session: shareSession, passphrase }) });
     const data = await res.json();
     if (!data.id) throw new Error('No ID');
     if (!res.ok) throw new Error(data.error || 'Could not share conversation');
     const shareUrl = window.location.origin + '/shared.html?id=' + encodeURIComponent(data.id);
     if (navigator.share) {
-      await navigator.share({ title: '🌊 ' + (session.name || 'Lake Session'), text: 'Read my Lake session:', url: shareUrl });
+      await navigator.share({ title: '🌊 ' + (session.name || 'Lake Session'), text: `Read my Lake session${data.protected?' (passphrase protected)':''}:`, url: shareUrl });
     } else {
       await navigator.clipboard.writeText(shareUrl);
-      alert('🔗 Share link copied!\n\nAnyone with this link can read only this conversation. Links last up to 7 days, or until the server restarts.');
+      alert(`🔗 Share link copied!\n\n${data.protected?'Send the passphrase separately.':'Anyone with this link can read only this conversation.'} Links last up to 7 days, or until the server restarts.`);
     }
+    document.getElementById('lakeShareDialog').close();
   } catch(err) { console.error('Share error:', err); alert('Could not create share link. Try again.'); }
   document.getElementById('shareMenu').style.display = 'none';
+}
+
+function wrapCanvasText(ctx,text,maxWidth,maxLines){
+  const words=String(text||'').replace(/\s+/g,' ').trim().split(' ');const lines=[];let line='';
+  for(const word of words){const next=line?line+' '+word:word;if(ctx.measureText(next).width>maxWidth&&line){lines.push(line);line=word;if(lines.length===maxLines-1)break;}else line=next;}
+  if(line&&lines.length<maxLines)lines.push(line);
+  if(words.join(' ').length>lines.join(' ').length)lines[lines.length-1]=lines[lines.length-1].replace(/[.,;:!?]?$/,'…');
+  return lines;
+}
+function renderLakeShareCard(){
+  const canvas=document.getElementById('shareCardCanvas');if(!canvas||lakeShareState.mode!=='message')return;
+  const story=document.getElementById('shareCardFormat').value==='story';canvas.width=1080;canvas.height=story?1920:1080;
+  const ctx=canvas.getContext('2d'),h=canvas.height,gradient=ctx.createLinearGradient(0,0,1080,h);
+  gradient.addColorStop(0,'#071524');gradient.addColorStop(.55,'#0d2c49');gradient.addColorStop(1,'#0796d2');ctx.fillStyle=gradient;ctx.fillRect(0,0,1080,h);
+  ctx.globalAlpha=.18;ctx.strokeStyle='#7dd3fc';ctx.lineWidth=4;for(let i=0;i<7;i++){ctx.beginPath();ctx.ellipse(540,h*.34,170+i*100,55+i*34,0,0,Math.PI*2);ctx.stroke();}ctx.globalAlpha=1;
+  ctx.fillStyle='#eef8ff';ctx.font='700 54px system-ui, sans-serif';ctx.fillText('THE GREAT LAKE',92,story?180:118);
+  ctx.fillStyle='#7dd3fc';ctx.font='34px system-ui, sans-serif';ctx.fillText('CALM SURFACE · DEEP INTELLIGENCE',92,story?235:168);
+  const text=messageActionText(lakeShareState.wave);ctx.fillStyle='#ffffff';ctx.font=`600 ${story?58:48}px system-ui, sans-serif`;
+  const lines=wrapCanvasText(ctx,text,896,story?15:11),lineHeight=story?82:68,total=lines.length*lineHeight;
+  let y=Math.max(story?430:280,(h-total)/2);for(const line of lines){ctx.fillText(line,92,y);y+=lineHeight;}
+  ctx.fillStyle='#b9e8ff';ctx.font='32px system-ui, sans-serif';ctx.fillText('Jump into the water:',92,h-150);ctx.font='700 34px system-ui, sans-serif';ctx.fillText(LAKE_PUBLIC_URL.replace(/^https?:\/\//,''),92,h-98);
+}
+function shareCardBlob(){return new Promise(resolve=>document.getElementById('shareCardCanvas').toBlob(resolve,'image/png'));}
+async function shareLakeCard(platform){
+  renderLakeShareCard();const blob=await shareCardBlob();if(!blob){showToast('Could not create the share card.');return;}
+  const story=document.getElementById('shareCardFormat').value==='story';const file=new File([blob],`great-lake-${story?'story':'post'}.png`,{type:'image/png'});
+  const text='A thought from The Great Lake 🌊';
+  try{
+    if(navigator.share&&navigator.canShare?.({files:[file]})){await navigator.share({title:'The Great Lake',text,url:LAKE_PUBLIC_URL,files:[file]});return;}
+    const links={whatsapp:`https://wa.me/?text=${encodeURIComponent(text+' '+LAKE_PUBLIC_URL)}`,linkedin:`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(LAKE_PUBLIC_URL)}`,x:`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(LAKE_PUBLIC_URL)}`};
+    const download=document.createElement('a');download.href=URL.createObjectURL(blob);download.download=file.name;download.click();setTimeout(()=>URL.revokeObjectURL(download.href),1000);
+    await navigator.clipboard?.writeText(`${text}\n${LAKE_PUBLIC_URL}`);
+    if(links[platform])window.open(links[platform],'_blank','noopener');
+    showToast(platform==='instagram'?'Card downloaded and Lake link copied for Instagram':'Card downloaded and Lake link copied');
+  }catch(error){if(error?.name!=='AbortError')showToast('Could not share this card.');}
 }
 
 function sessionTranscriptText() {
@@ -5724,7 +5874,7 @@ function speakCurrentChunk(){
   speechState.index=Math.max(0,Math.min(speechState.index,speechState.chunks.length-1));
   const utterance=lakeSpeechOutput.utterance(speechState.chunks[speechState.index],speechState.rate,speechState.voice);currentUtterance=utterance;
   utterance.onstart=()=>{speechState.playing=true;speechState.paused=false;speechState.wave?.classList.add('speaking');updateSpeechPlayer();};
-  utterance.onend=()=>{if(!speechState.playing)return;if(speechState.index<speechState.chunks.length-1){speechState.index++;speakCurrentChunk();}else stopSpeech(false);};
+  utterance.onend=()=>{if(!speechState.playing)return;if(speechState.index<speechState.chunks.length-1){speechState.index++;speakCurrentChunk();}else{speechState.index=0;stopSpeech(false);}};
   utterance.onerror=()=>stopSpeech(false);lakeSpeechOutput.speak(utterance);
 }
 function speakMessage(waveEl){refreshLakeVoices();stopSpeech(false);speechState.wave=waveEl;speechState.voice=lakeSpeechOutput.chooseVoice();speechState.chunks=speechChunks(messageActionText(waveEl));speechState.index=0;speechState.rate=Number(document.getElementById('speechRate')?.value)||1;updateSpeechPlayer();speakCurrentChunk();}
@@ -5773,7 +5923,7 @@ function speechNext(){if(!speechState.chunks.length)return;speechState.index=Mat
 function speechSeek(value){if(!speechState.chunks.length)return;speechState.index=Math.max(0,Math.min(speechState.chunks.length-1,Number(value)||0));speakCurrentChunk();}
 function speechSetRate(value){speechState.rate=Number(value)||1;if(speechState.playing)speakCurrentChunk();}
 
-async function shareMessage(waveEl){const text=messageActionText(waveEl);try{if(navigator.share)await navigator.share({title:'The Great Lake',text});else{await navigator.clipboard.writeText(text);showToast('Message copied for sharing');}}catch(error){if(error?.name!=='AbortError')showToast('Could not share this message.');}}
+async function shareMessage(waveEl){configureShareDialog('message',waveEl);}
 function messageSource(waveEl){return {sessionId:currentSessionId,role:waveEl.classList.contains('lake-wave')?'assistant':'user',time:waveEl.querySelector('.wave-time')?.textContent||'',content:canonicalMessageText(waveEl)};}
 function jumpToMessageTop(waveEl){waveEl?.scrollIntoView({behavior:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});}
 function replyToMessage(waveEl){const source=messageSource(waveEl);globalThis.pendingReplySource=source;const input=document.getElementById('lakeInput');input.value=`Regarding this wave:\n“${source.content.slice(0,500)}${source.content.length>500?'…':''}”\n\n`;input.focus();scheduleInputResize(input);}
@@ -5860,13 +6010,18 @@ async function deleteBubble(waveEl) {
 function toggleBubbleActions(actionsEl) {
   const isShowing = actionsEl.classList.contains('show');
   document.querySelectorAll('.bubble-actions.show').forEach(el => el.classList.remove('show'));
-  if (!isShowing) actionsEl.classList.add('show');
+  if (!isShowing) {actionsEl.classList.add('show');requestAnimationFrame(()=>updateBubbleActionsOverflow(actionsEl));}
+}
+function updateBubbleActionsOverflow(actions){
+  const overflow=actions.scrollWidth>actions.clientWidth+2;
+  actions.classList.toggle('has-overflow',overflow);
+  actions.classList.toggle('at-end',!overflow || actions.scrollLeft+actions.clientWidth>=actions.scrollWidth-3);
 }
 function showLatestBubbleActions() {
   const waves=[...document.querySelectorAll('#wavesContainer .wave')];
   document.querySelectorAll('.bubble-actions.show').forEach(el=>el.classList.remove('show'));
   const latest=waves[waves.length-1];
-  latest?.querySelector('.bubble-actions')?.classList.add('show');
+  const actions=latest?.querySelector('.bubble-actions');actions?.classList.add('show');if(actions)requestAnimationFrame(()=>updateBubbleActionsOverflow(actions));
 }
 
 function buildBubbleActions(waveEl, isLake) {
@@ -5922,6 +6077,8 @@ function buildBubbleActions(waveEl, isLake) {
     deleteBtn.onclick = () => deleteBubble(waveEl);
     actions.appendChild(deleteBtn);
   }
+  actions.addEventListener('scroll',()=>updateBubbleActionsOverflow(actions),{passive:true});
+  if('ResizeObserver' in window)new ResizeObserver(()=>updateBubbleActionsOverflow(actions)).observe(actions);
   return actions;
 }
 

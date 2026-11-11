@@ -82,3 +82,28 @@ test('transcript export opens a normal screenshot-friendly page',()=>{
   assert.match(printPage,/Screenshot-friendly page/);
   assert.match(printPage,/Print \/ Save PDF/);
 });
+
+test('mobile message controls stay compact, discoverable and replay from the start',()=>{
+  assert.match(html,/\.speech-player\[data-view="compact"\] \{ justify-content:flex-end; \}/);
+  assert.match(html,/\.speech-player:not\(\[data-view="compact"\]\) #speechCollapse \{ margin-left:auto; \}/);
+  assert.match(html,/speechState\.index=0;stopSpeech\(false\)/);
+  assert.match(html,/bubble-actions\.has-overflow:not\(\.at-end\)::after/);
+  assert.match(html,/function updateBubbleActionsOverflow/);
+  assert.match(html,/const sectionAt=line=>\/\^#\{2,4\}\\s\+\.\+\//);
+  assert.doesNotMatch(html,/sectionAt=line=>[^\n]+\\d\+/);
+});
+
+test('sharing and help expose one integrated Lake experience',()=>{
+  assert.match(html,/Invite someone to jump in/);
+  assert.match(html,/id="lakeShareDialog"/);
+  assert.match(html,/Instagram/);
+  assert.match(html,/WhatsApp/);
+  assert.match(html,/LinkedIn/);
+  assert.match(html,/optional passphrase/i);
+  assert.match(html,/🏊 Types/);
+  assert.match(html,/Sharing &amp; privacy/);
+  assert.doesNotMatch(html,/tSumarize/);
+  assert.match(html,/tSummarize/);
+  assert.match(html,/class="portable-disclosure"/);
+  assert.match(html,/Tap to expand import and export options/);
+});
