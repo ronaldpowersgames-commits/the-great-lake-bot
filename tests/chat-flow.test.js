@@ -119,6 +119,51 @@ test('Enter sends and Shift+Enter makes a newline without sending during IME or 
   assert.equal(vm.runInContext('sendCount', context), 1);
 });
 
+test('Post Card generation accepts three bold labeled points and uses a compact post tab',()=>{
+  const context=vm.createContext({console,Date,Math});
+  vm.runInContext(script.slice(script.indexOf('function cleanLakeShareText'),script.indexOf('function wrapCanvasText')),context);
+  vm.runInContext(script.slice(script.indexOf('let postCards=[]'),script.indexOf('function configureShareDialog')),context);
+  context.sample=`## Card 1 — Reality Check
+One question can return an afternoon to you.
+**Fact:** What actually happened?
+**Story:** What meaning did I add?
+**Choice:** What can I do next?
+
+## Card 2 — Small Things
+A tiny action can change the temperature of a day.
+**Moment:** Someone drops their keys.
+**Difference:** You stop and help.
+**Reminder:** Meaning need not be remembered.
+
+## Card 3 — Better Friction
+Not every resistance is a warning.
+**Signal:** Name the precise obstacle.
+**Test:** Try the smallest reversible move.
+**Learning:** Update from what happens.`;
+  assert.equal(vm.runInContext('parseGeneratedPostCards(sample).length',context),3);
+  assert.equal(vm.runInContext('parseGeneratedPostCards(sample)[0].items[1].label',context),'Story');
+  assert.match(html,/id="postCardsTab"[^>]+aria-label="Open Post Cards"[^>]*><span>📮<\/span><\/button>/);
+  assert.doesNotMatch(html,/id="postCardsTab"[^>]*>[^<]*POST CARDS/);
+});
+
+test('rename is a real reserved command with Hotkey and persistent title execution',()=>{
+  assert.match(html,/commands\.set\('rename'/);
+  assert.match(html,/actionType==='rename-command'/);
+  assert.match(html,/options\.action='rename-tide'/);
+  assert.match(html,/async function applyTideName/);
+  assert.match(html,/session\.nameSource='manual'/);
+  const chatRoute=fs.readFileSync(path.join(root,'routes/chat.js'),'utf8');
+  assert.match(chatRoute,/TIDE RENAME COMMAND/);
+  assert.match(chatRoute,/The application—not the model—performs and confirms the rename/);
+});
+
+test('homepage alternates Ride a Wave and pro tips with a bounded explore cadence',()=>{
+  assert.match(html,/const featured=appearances%2===0/);
+  assert.match(html,/const exploring=proNumber%4===0/);
+  assert.match(html,/tip\.classList\.add\('shore-wave-arrival'\)/);
+  assert.match(html,/tip\.classList\.add\('shore-wave-recede'\)/);
+});
+
 function handoffFixture(scope) {
   return {
     scope, coverage: { source_session_ids: ['current'], limitations: ['Original attachments not included'] },

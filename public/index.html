@@ -1246,10 +1246,10 @@ button.depths-option { width:100%; text-align:start; font-family:inherit; backgr
 .lake-share-dialog button[data-primary] { background:linear-gradient(135deg,#19b9ee,#1478bd); border-color:#44cdf7; color:white; font-weight:800; box-shadow:0 8px 24px rgba(14,155,211,.22); }
 .share-platform-note { margin:8px 1px 0!important; font-size:10px!important; color:var(--text-dim)!important; text-align:center; }
 #shareCardCanvas { display:block; width:auto; max-width:100%; max-height:min(52dvh,540px); height:auto; margin:8px auto 0; border-radius:16px; box-shadow:0 16px 42px rgba(0,0,0,.48); }
-.post-cards-tab { position:fixed; right:0; top:42%; z-index:84; display:flex; align-items:center; gap:5px; padding:11px 7px; border:1px solid rgba(79,195,247,.35); border-right:0; border-radius:13px 0 0 13px; background:linear-gradient(180deg,#123454,#09233b); color:#dff7ff; box-shadow:0 8px 30px rgba(0,0,0,.38); cursor:pointer; writing-mode:vertical-rl; font:700 10px/1 system-ui; letter-spacing:.7px; }
+.post-cards-tab { position:fixed; right:0; top:42%; z-index:84; width:46px; height:46px; display:grid; place-items:center; padding:0; border:1px solid rgba(79,195,247,.35); border-right:0; border-radius:13px 0 0 13px; background:linear-gradient(180deg,#123454,#09233b); color:#dff7ff; box-shadow:0 8px 30px rgba(0,0,0,.38); cursor:pointer; }
 .post-cards-tab[hidden] { display:none; }
 body.post-cards-open .dock-toggle { display:none!important; }
-.post-cards-tab span { writing-mode:horizontal-tb; font-size:16px; }
+.post-cards-tab span { font-size:21px; line-height:1; }
 .post-cards-overlay { position:fixed; inset:0; z-index:85; background:rgba(2,9,16,.58); backdrop-filter:blur(2px); opacity:0; pointer-events:none; transition:opacity .25s ease; }
 .post-cards-overlay.show { opacity:1; pointer-events:auto; }
 .post-cards-drawer { position:fixed; z-index:86; top:0; right:0; bottom:0; width:min(430px,calc(100vw - 22px)); display:flex; flex-direction:column; background:linear-gradient(180deg,#091a2c,#06121f); border-left:1px solid rgba(79,195,247,.28); box-shadow:-18px 0 60px rgba(0,0,0,.55); transform:translateX(105%); transition:transform .42s cubic-bezier(.18,.82,.24,1); }
@@ -1513,7 +1513,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
       <!-- Share menu -->
       <div class="share-menu" id="shareMenu">
         <div onclick="shareLakeInvite()">🌊 Invite someone to jump in</div>
-        <div onclick="openPostCards()">✨ Post Cards library</div>
+        <div onclick="openPostCards()">📮 Post Cards library</div>
         <div onclick="generatePostCards()">🪄 Generate 3 Post Cards</div>
         <div onclick="openSessionShare()">🔗 Share this Tide</div>
         <div onclick="exportAsTxt()">📄 Export as .txt</div>
@@ -1684,7 +1684,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
         </div>
       </div>
       <div class="quick-actions">
-        <button type="button" class="quick-action-btn" onclick="openPostCards()">✨ Post Cards</button>
+        <button type="button" class="quick-action-btn" onclick="openPostCards()">📮 Post Cards</button>
         <button type="button" class="quick-action-btn" data-dock-prompt="Summarize the material available in this Tide, emphasizing the latest substantive Lake analysis and its sources. Give only an elegant bottom line in one or two short sentences: the core takeaway, the most consequential decision or next step if present, and any caveat that changes what I should do. Keep the fewest words that preserve meaning. No heading, list, recap of minor details, suggestions, or follow-up question. Do not invent facts or imply coverage beyond the material you can see." onclick="summarizeTide(this.dataset.dockPrompt)">tSummarize</button>
         <button class="quick-action-btn" onclick="triggerFileInput()">📎 Drop a Chat-Log</button>
         <button class="quick-action-btn" onclick="triggerCamera()">📷 Take Photo</button>
@@ -1996,17 +1996,17 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
   </form>
 </dialog>
 
-<button type="button" class="post-cards-tab" id="postCardsTab" onclick="openPostCards()" aria-controls="postCardsDrawer" aria-expanded="false" hidden><span>✨</span>POST CARDS</button>
+<button type="button" class="post-cards-tab" id="postCardsTab" onclick="openPostCards()" aria-label="Open Post Cards" title="Post Cards" aria-controls="postCardsDrawer" aria-expanded="false" hidden><span>📮</span></button>
 <div class="post-cards-overlay" id="postCardsOverlay" onclick="closePostCards()"></div>
 <aside class="post-cards-drawer" id="postCardsDrawer" aria-label="Post Cards library" aria-hidden="true">
   <header class="post-cards-head">
-    <div class="post-cards-head-text"><h2>✨ Post Cards</h2><p>Your pocket library of questions, examples and tiny perspective shifts. Saved on this device.</p></div>
+    <div class="post-cards-head-text"><h2>📮 Post Cards</h2><p>Your pocket library of questions, examples and tiny perspective shifts. Saved on this device.</p></div>
     <button type="button" class="post-cards-close" onclick="closePostCards()" aria-label="Close Post Cards">×</button>
   </header>
   <div class="post-cards-toolbar">
     <button type="button" onclick="generatePostCards()">🪄 Generate 3</button>
     <button type="button" onclick="shufflePostCards()">⇄ Shuffle</button>
-    <button type="button" onclick="renderPostCards(true)">★ Favorites first</button>
+    <button type="button" id="postCardsFavoritesButton" onclick="togglePostCardsFavoritesFirst()">☆ Favorites first</button>
   </div>
   <div class="post-cards-list" id="postCardsList"></div>
 </aside>
@@ -2632,10 +2632,11 @@ function guideNextWaves(){
 }
 const LAKE_MOOD_CODES={calm:'calm',reg:'calm',default:'calm',shallow:'shallow',splash:'shallow',splashy:'shallow',deep:'analytical',deepdive:'analytical',full:'analytical',stormy:'stormy',storm:'stormy',choppy:'stormy',drip:'drip',drippy:'drip',drop:'drip'};
 function reservedComposerCommand(code){
-  return Object.hasOwn(LAKE_MOOD_CODES,code) || /^(?:w\d*|mood|trigger|untrigger)$/.test(code);
+  return Object.hasOwn(LAKE_MOOD_CODES,code) || /^(?:w\d*|mood|trigger|untrigger|rename)$/.test(code);
 }
 function composerCommands(){
   const commands=new Map();
+  commands.set('rename',{label:'Rename this Tide automatically or add a title',command:true});
   const custom=(localStorage.getItem(storageKey('customPrompts'))||'').split(/\r?\n/);
   let moodTriggers={};
   try{moodTriggers=JSON.parse(localStorage.getItem(storageKey('moodTriggers'))||'{}')||{};}catch{}
@@ -2677,7 +2678,10 @@ function updateComposerCommands(input){
     option.type='button';
     option.className='quick-action-btn';
     option.textContent='/'+code+' · '+item.label;
-    option.onclick=()=>insertComposerPrompt(input,item.prompt,start,end);
+    option.onclick=()=>{
+      if(!item.command){insertComposerPrompt(input,item.prompt,start,end);return;}
+      const replacement='/'+code+' ';input.value=input.value.slice(0,start)+replacement+input.value.slice(end);const caret=start+replacement.length;input.focus();input.setSelectionRange(caret,caret);scheduleInputResize(input);menu.hidden=true;
+    };
     menu.append(option);
   }
   menu.hidden=!menu.childElementCount;
@@ -3279,16 +3283,33 @@ async function deleteSession(e, sessionId) {
   else renderTides();
 }
 
+async function applyTideName(sessionId,newName){
+  await sessionLoadPromise;
+  const session = allSessions.find(s => s.id === sessionId);
+  const clean=String(newName||'').replace(/\s+/g,' ').trim().slice(0,120);
+  if(!session||!clean)return false;
+  const previous={name:session.name,nameSource:session.nameSource};session.name=clean;
+  session.nameSource='manual';
+  if(!await persistSessions()){session.name=previous.name;session.nameSource=previous.nameSource;renderTides();return false;}
+  renderTides();
+  return true;
+}
 async function renameSession(e, sessionId) {
   e.stopPropagation();
   const session = allSessions.find(s => s.id === sessionId);
   if (!session) return;
   const newName = prompt('Rename this tide:', session.name);
   if (!newName?.trim()) return;
-  session.name = newName.trim();
-  session.nameSource='manual';
-  await persistSessions();
-  renderTides();
+  await applyTideName(sessionId,newName);
+}
+async function executeManualRenameCommand(title,rawCommand){
+  if(!chatHistory.length){showToast('Start this Tide before renaming it.');return false;}
+  if(!currentSessionId)currentSessionId='session_'+Date.now();
+  const time=new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});const user={role:'user',content:rawCommand,time,action:'rename-tide-manual'};
+  chatHistory.push(user);appendUserWave(rawCommand,time,true,[],user);await saveSession();
+  if(!await applyTideName(currentSessionId,title)){showToast('The Tide could not be renamed. Its original title is unchanged.');return false;}
+  const confirmation=`🌊 Tide renamed: **${String(title).trim()}**`;const replyTime=new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});const reply={role:'assistant',content:confirmation,time:replyTime};
+  chatHistory.push(reply);appendLakeWave(confirmation,replyTime,true,null,null,null,null,reply);await saveSession();showToast('Tide renamed.');return true;
 }
 
 async function clearHistory() {
@@ -4046,7 +4067,7 @@ function scheduleRideHomeTip(){
       ['Pro tip · Attach context','Drop a screenshot, transcript or document into the composer; the Lake reads the files together with your question.'],
       ['Pro tip · Start your day','Tap 📅 and name one thing that must move today. The Lake can turn it into a realistic five-minute first step.'],
       ['Pro tip · Share a wave','Use Share on a Lake reply to make a polished post or story with a working invitation back to The Lake.'],
-      ['Pro tip · Post Cards','Open ✨ Post Cards to keep, favorite, reorder, share or explore your best tiny ideas.'],
+      ['Pro tip · Post Cards','Open 📮 Post Cards to keep, favorite, reorder, share or explore your best tiny ideas.'],
       ['Pro tip · New Current','Choose a suggested next wave after a reply to explore that thought without having to invent the next question.']
     ];
     const advancedTips=[
@@ -4062,9 +4083,11 @@ function scheduleRideHomeTip(){
     const refreshTip=()=>{
       appearances=appearances%1000+1;
       try{localStorage.setItem(tipKey,String(appearances));}catch{}
-      const featured=appearances%4===0;
-      const tipPool=appearances%16===0?advancedTips:coreTips;
-      const tipIndex=Math.floor(appearances/4-1)%tipPool.length;
+      const featured=appearances%2===0;
+      const proNumber=Math.max(1,Math.floor(appearances/2));
+      const exploring=proNumber%4===0;
+      const tipPool=exploring?advancedTips:coreTips;
+      const tipIndex=exploring?Math.floor(proNumber/4)-1:proNumber-1-Math.floor(proNumber/4);
       const featureTip=tipPool[(tipIndex+tipPool.length)%tipPool.length];
       tipTitle.textContent=featured?featureTip[0]:standard[0];
       if(featured)starterCopy.textContent=featureTip[1];
@@ -4073,6 +4096,7 @@ function scheduleRideHomeTip(){
     };
     refreshTip();
     home.append(tip);
+    setTimeout(()=>tip.classList.remove('shore-wave-arrival'),800);
     enablePromptDrag(starter,()=>rideWaveOptions(true).requestText);
     enablePromptDrag(manual,()=>LAKE_MANUAL_PROMPT);
     enablePromptDrag(todayLink,()=>todayOptions.requestText);
@@ -4082,9 +4106,14 @@ function scheduleRideHomeTip(){
         setTimeout(cycle,1000);
         return;
       }
-      const tucked=tip.classList.toggle('is-tucked');
-      if(!tucked)refreshTip();
-      setTimeout(cycle,tucked?22000:5000);
+      if(tip.classList.contains('is-tucked')){
+        refreshTip();tip.classList.remove('is-tucked','shore-wave-recede');tip.classList.add('shore-wave-arrival');
+        setTimeout(()=>tip.classList.remove('shore-wave-arrival'),800);setTimeout(cycle,6000);
+      }else{
+        tip.classList.remove('shore-wave-arrival');tip.classList.add('shore-wave-recede');
+        setTimeout(()=>{if(!tip.isConnected)return;tip.classList.remove('shore-wave-recede');tip.classList.add('is-tucked');},480);
+        setTimeout(cycle,22000);
+      }
     };
     setTimeout(cycle,6000);
   },6200);
@@ -4953,6 +4982,7 @@ function toggleLakeHotkeys(){
   const button=document.getElementById('lakeHotkeysButton');
   if(!menu.childElementCount){
     const actions=[
+      ['✏️ Rename Tide','Rename this conversation using its established subject, meeting metadata, document title or project context.','rename-command'],
       ['🌊 Tsunami → Puddle','Summarize this tsunami into a single puddle. Give me the point, the key evidence, and what matters next in a few lines.'],
       ['🎨 Make Something From This','Open a creative branch','creative-branch'],
       ...[
@@ -4982,6 +5012,14 @@ function toggleLakeHotkeys(){
       action.onclick=()=>{
         if(waveInFlight || pendingFileLoads)return;
         menu.classList.remove('open');button.setAttribute('aria-expanded','false');
+        if(actionType==='rename-command'){
+          if(!chatHistory.length){showToast('Start this Tide before renaming it.');return;}
+          const custom=prompt('Custom Tide title — leave blank for automatic naming:','');
+          if(custom===null)return;
+          if(custom.trim()){executeManualRenameCommand(custom.trim(),`/rename ${custom.trim()}`);return;}
+          sendWave({visibleText:'/rename',action:'rename-tide',reuseAttachments:false,preserveDraft:true,requestText:'Choose one concise, descriptive title for this current Tide. Name the underlying subject, not merely the latest activity. If it is centered on a meeting, prefer confirmed meeting metadata and format a known date as YYYY-MM-DD | Meeting Name. Remove file extensions, transcript part numbers, upload identifiers and technical suffixes. Do not invent dates, names or participants. If the evidence is ambiguous, use a concise topic title rather than guessing.'});
+          return;
+        }
         if(actionType==='creative-branch'){
           if(!chatHistory.some(message=>message.role==='assistant' && message.content)){
             showToast('Start a conversation before branching it into a creative project.');
@@ -5092,6 +5130,16 @@ async function sendWave(options = {}) {
   const commandKey=typeof storageKey==='function' ? storageKey('moodTriggers') : '';
   let triggers={};
   try { triggers=JSON.parse(globalThis.localStorage?.getItem(commandKey)||'{}') || {}; } catch {}
+  if(options.requestText==null){
+    const rename=text.match(/^\/rename(?:\s+([\s\S]*?))?\s*$/i);
+    if(rename){
+      const requested=rename[1]?.trim();input.value='';scheduleInputResize(input);updateComposerCommands(input);
+      if(requested)return executeManualRenameCommand(requested,`/rename ${requested}`);
+      if(!chatHistory.length){showToast('Start this Tide before renaming it.');return;}
+      options.action='rename-tide';options.visibleText='/rename';options.reuseAttachments=false;
+      text='Choose one concise, descriptive title for this current Tide. Name the underlying subject, not merely the latest activity. If it is centered on a meeting, prefer confirmed meeting metadata and format a known date as YYYY-MM-DD | Meeting Name. Remove file extensions, transcript part numbers, upload identifiers and technical suffixes. Do not invent dates, names or participants. If the evidence is ambiguous, use a concise topic title rather than guessing.';
+    }
+  }
   if(options.requestText==null && /^\/mood$/i.test(text)){
     toggleMoodSelector();
     input.value='';
@@ -5203,9 +5251,9 @@ async function sendWave(options = {}) {
     userCrew:JSON.stringify(crewMembers.filter(member=>member.isSelf===true).slice(0,1).map(({name,nickname,codename,role})=>({name,aliases:nickname,codename,role}))),
     crew: JSON.stringify(crewMembers.map(({ name, nickname, codename, role, context, observations }) => ({ name, nickname, codename, role, context, observations: (observations || []).slice(-10) })))
   };
-  if(options.action==='tsummarize')origin.showAdaptiveSuggestions=false;
-  origin.firstResponseSuggestions=!options.mirror && options.action!=='tsummarize' && !options.snapshot && !origin.history.some(message=>message.role==='assistant') && !/\b(?:no follow[- ]?up|no suggestions?|just answer|one word)\b/i.test(text);
-  origin.showAdaptiveSuggestions=!options.mirror && !options.action?.startsWith('debate-') && options.action!=='tsummarize' && !options.snapshot && (options.requestText != null ||
+  if(['tsummarize','rename-tide'].includes(options.action))origin.showAdaptiveSuggestions=false;
+  origin.firstResponseSuggestions=!options.mirror && !['tsummarize','rename-tide'].includes(options.action) && !options.snapshot && !origin.history.some(message=>message.role==='assistant') && !/\b(?:no follow[- ]?up|no suggestions?|just answer|one word)\b/i.test(text);
+  origin.showAdaptiveSuggestions=!options.mirror && !options.action?.startsWith('debate-') && !['tsummarize','rename-tide'].includes(options.action) && !options.snapshot && (options.requestText != null ||
     !/\b(?:no follow[- ]?ups?|no suggestions?|skip (?:the )?next waves)\b/i.test(text));
   const reviewInventory=transcriptSources(origin.history,selectedFiles).map(file=>({id:file.sourceId,name:file.name,selected:!file.excluded}));
   origin.sourceInventory=reviewInventory;
@@ -5314,7 +5362,7 @@ async function sendWave(options = {}) {
     const learningKey=origin.key.replace(/sessions$/,'learnProfile');
     const resetKey=origin.key.replace(/sessions$/,'profileReset');
     const resetVersion=profileStorage?.getItem(resetKey);
-    const learning=Boolean(profileStorage && profileStorage.getItem(learningKey)!=='false' && !options.snapshot && options.action!=='tsummarize' && !options.mirror);
+    const learning=Boolean(profileStorage && profileStorage.getItem(learningKey)!=='false' && !options.snapshot && !['tsummarize','rename-tide'].includes(options.action) && !options.mirror);
     if(learning){
       formData.append('learnedProfile',profileStorage.getItem(profileKey)||'[]');
       if(!options.action?.startsWith('debate-') && (options.requestText==null || options.action==='save-skill'))formData.append('learnFromMessage','true');
@@ -5330,9 +5378,9 @@ async function sendWave(options = {}) {
     formData.append('history', JSON.stringify(historyToSend));
     const savedTide=origin.key===storageKey('sessions') && allSessions.find(session=>session.id===origin.id);
     const replyCount=origin.history.filter(message=>message.role==='assistant' && !message.snapshot && !message.transcriptMemory).length;
-    if(!options.snapshot && !['transcript-memory','transcript-part'].includes(options.action) &&
+    if(options.action==='rename-tide' || (!options.snapshot && !['transcript-memory','transcript-part'].includes(options.action) &&
        LakeOrganization.titleFor(savedTide,origin.history).nameSource!=='manual' &&
-       replyCount>=1 && replyCount%2===1){
+       replyCount>=1 && replyCount%2===1)){
       formData.append('suggestTideTitle','true');
     }
     const creativeSourceId=origin.history.find(message=>message.creativeSourceId)?.creativeSourceId;
@@ -5379,7 +5427,11 @@ async function sendWave(options = {}) {
         } catch(error){console.warn('Could not update the learned profile:',error);}
       }
       const suggestionResult=options.snapshot?{text:JSON.stringify(data.handoff || JSON.parse(data.reflection), null, 2),suggestions:[]}:extractAdaptiveSuggestions(data.reflection,origin.firstResponseSuggestions,origin.showAdaptiveSuggestions);
-      const cleanReflection = suggestionResult.text;
+      const renameSaved=options.action==='rename-tide' && data.tideTitle && origin.key===storageKey('sessions')
+        ? await applyTideName(origin.id,data.tideTitle) : false;
+      const cleanReflection = options.action==='rename-tide'
+        ? renameSaved?`🌊 Tide renamed: **${data.tideTitle}**`:'The Tide title could not be saved, so its original title is unchanged.'
+        : suggestionResult.text;
       if(options.action==='post-card-generator'){loadPostCards();saveGeneratedPostCards(cleanReflection);}
       if(origin.showAdaptiveSuggestions && cleanReflection && !suggestionResult.suggestions.length){
         if(options.guide)suggestionResult.suggestions.push(...guideNextWaves());
@@ -5400,7 +5452,7 @@ async function sendWave(options = {}) {
         ...(options.archiveCoverage ? {archiveCoverage:options.archiveCoverage} : {}),
         ...(options.archiveSources ? {archiveSources:options.archiveSources} : {}),
         ...(options.snapshot ? { snapshot: options.snapshot } : {}) };
-      if(typeof data.tideTitle==='string' && !reply.snapshot)reply.tideTitle=data.tideTitle;
+      if(typeof data.tideTitle==='string' && !reply.snapshot && options.action!=='rename-tide')reply.tideTitle=data.tideTitle;
       origin.history.push(reply);
       await saveSession(origin);
       if (isRequestVisible(origin)) {
@@ -5674,6 +5726,7 @@ function toggleShareMenu() {
 const LAKE_PUBLIC_URL='https://the-great-lake-bot.onrender.com/';
 const lakeShareState={mode:'invite',wave:null,card:null};
 let postCards=[];
+let postCardsFavoritesFirst=false;
 const POST_CARD_GENERATOR_PROMPT=`Create exactly three original social Post Cards for The Great Lake. Each card must make a fast-scrolling reader pause and leave them with one genuinely useful, humane adjustment to how they see everyday life. Be novel, precise, clever, elegant, warm and thought-provoking without sounding grandiose, preachy, manipulative or like a generic motivational quote. Favor obvious-but-unexamined truths, practical questions and memorable examples. Vary the three cards: one question, one concrete example or observation, and one compact framework. Each card must contain exactly three numbered points—not two, not five.
 
 Use this exact format and no introduction or closing:
@@ -5705,32 +5758,60 @@ function newPostCard(content,sourceText=''){
 function addPostCard(content,sourceText='',quiet=false){
   const card=newPostCard(content,sourceText);postCards.unshift(card);savePostCards();renderPostCards();if(!quiet)showToast('Saved to Post Cards.');return card;
 }
+function postCardFingerprint(card){return [card.title,card.teaser,...(card.items||[]).map(item=>item.label+' '+item.detail)].join(' ').toLowerCase().replace(/\W+/g,' ').trim();}
+function postCardContentFromSection(title,body){
+  const lines=String(body||'').split(/\r?\n/).map(line=>line.trim()).filter(Boolean);
+  const teaser=trimLakeShareText(lines.shift()||'',230);const items=[];
+  for(const original of lines){
+    const line=original.replace(/^\s*(?:\d+[.)]|[-•])\s*/,'').trim();
+    const bold=line.match(/^\*\*([^*:\n]+):?\*\*\s*:?[ \t]*(.*)$/);
+    const plain=!bold&&line.match(/^([^:]{2,52}):\s+(.+)$/);
+    const label=bold?.[1]||plain?.[1];const detail=bold?.[2]||plain?.[2];
+    if(label)items.push({number:String(items.length+1),label:trimLakeShareText(label,42),detail:trimLakeShareText(detail,180)});
+    else if(items.length<3)items.push({number:String(items.length+1),label:'Notice',detail:trimLakeShareText(line,180)});
+    if(items.length===3)break;
+  }
+  return {title:cleanLakeShareText(title),teaser,items,body:trimLakeShareText([teaser,...lines].join(' '),720)};
+}
 function parseGeneratedPostCards(text){
-  const matches=[...String(text||'').matchAll(/^##\s*Card\s*\d+\s*[—–-]\s*(.+)$/gmi)];
+  const rawText=String(text||'');
+  const matches=[...rawText.matchAll(/^\s*#{0,6}\s*\**\s*Card\s*(\d+)\s*[—–:-]\s*(.+?)\**\s*$/gmi)];
   return matches.slice(0,3).map((match,index)=>{
-    const end=matches[index+1]?.index??text.length;const section=`## ${match[1]}\n${text.slice(match.index+match[0].length,end).trim()}`;
-    const content=lakeShareContent(section);content.items=content.items.slice(0,3).map((item,itemIndex)=>({...item,number:String(itemIndex+1)}));
+    const end=matches[index+1]?.index??rawText.length;const body=rawText.slice(match.index+match[0].length,end).trim();const section=`## ${match[2]}\n${body}`;
+    const content=postCardContentFromSection(match[2],body);
     return content.items.length===3?newPostCard(content,section):null;
   }).filter(Boolean);
 }
 function saveGeneratedPostCards(text){
   const generated=parseGeneratedPostCards(text);
   if(!generated.length){showToast('The cards arrived in an unexpected format. The reply is still in your Tide.');return;}
-  postCards=[...generated,...postCards];savePostCards();renderPostCards();showToast(`${generated.length} Post Card${generated.length===1?'':'s'} saved.`);
+  const known=new Set(postCards.map(postCardFingerprint));const fresh=generated.filter(card=>!known.has(postCardFingerprint(card)));
+  postCards=[...fresh,...postCards];savePostCards();renderPostCards();showToast(fresh.length?`${fresh.length} Post Card${fresh.length===1?'':'s'} saved.`:'Those Post Cards are already in your library.');
+}
+function recoverGeneratedPostCardsFromHistory(){
+  const recovered=[];const known=new Set(postCards.map(postCardFingerprint));
+  for(let index=0;index<chatHistory.length-1;index++){
+    if(chatHistory[index]?.role!=='user'||chatHistory[index]?.action!=='post-card-generator')continue;
+    const reply=chatHistory.slice(index+1).find(message=>message.role==='assistant');if(!reply)continue;
+    for(const card of parseGeneratedPostCards(reply.content)){const key=postCardFingerprint(card);if(!known.has(key)){known.add(key);recovered.push(card);}}
+  }
+  if(recovered.length){postCards=[...recovered,...postCards];savePostCards();showToast(`Recovered ${recovered.length} generated Post Card${recovered.length===1?'':'s'}.`);}
 }
 function openPostCards(){
-  loadPostCards();renderPostCards();document.getElementById('shareMenu').style.display='none';
+  loadPostCards();recoverGeneratedPostCardsFromHistory();renderPostCards();document.getElementById('shareMenu').style.display='none';
   document.body.classList.add('post-cards-open');
   document.getElementById('postCardsDrawer').classList.add('open');document.getElementById('postCardsDrawer').setAttribute('aria-hidden','false');
   document.getElementById('postCardsOverlay').classList.add('show');document.getElementById('postCardsTab').setAttribute('aria-expanded','true');
 }
 function closePostCards(){document.body.classList.remove('post-cards-open');document.getElementById('postCardsDrawer').classList.remove('open');document.getElementById('postCardsDrawer').setAttribute('aria-hidden','true');document.getElementById('postCardsOverlay').classList.remove('show');document.getElementById('postCardsTab').setAttribute('aria-expanded','false');}
-function renderPostCards(favoritesFirst=false){
+function renderPostCards(favoritesFirst=postCardsFavoritesFirst,openId=''){
+  postCardsFavoritesFirst=favoritesFirst;
   const list=document.getElementById('postCardsList');if(!list)return;list.replaceChildren();
   const cards=[...postCards];if(favoritesFirst)cards.sort((a,b)=>Number(b.favorite)-Number(a.favorite));
+  const favoritesButton=document.getElementById('postCardsFavoritesButton');if(favoritesButton){favoritesButton.textContent=favoritesFirst?'★ Favorites first':'☆ Favorites first';favoritesButton.setAttribute('aria-pressed',String(favoritesFirst));}
   if(!cards.length){const empty=document.createElement('div');empty.className='post-cards-empty';empty.innerHTML='<strong>No cards tucked away yet.</strong><br>Generate three fresh ideas, or save any Lake share card here.';list.append(empty);return;}
   cards.forEach((card,index)=>{
-    const details=document.createElement('details');details.className='post-card'+(card.favorite?' is-favorite':'');details.dataset.cardId=card.id;
+    const details=document.createElement('details');details.className='post-card'+(card.favorite?' is-favorite':'');details.dataset.cardId=card.id;details.open=card.id===openId;
     const summary=document.createElement('summary');summary.className='post-card-summary';
     const number=document.createElement('span');number.className='post-card-number';number.textContent=String(index+1);
     const copy=document.createElement('span');copy.className='post-card-copy';const title=document.createElement('div');title.className='post-card-title';title.textContent=card.title;const teaser=document.createElement('div');teaser.className='post-card-teaser';teaser.textContent=card.teaser;copy.append(title,teaser);
@@ -5744,8 +5825,9 @@ function renderPostCards(favoritesFirst=false){
   });
 }
 function findPostCard(id){return postCards.find(card=>card.id===id);}
-function togglePostCardFavorite(id){const card=findPostCard(id);if(!card)return;card.favorite=!card.favorite;savePostCards();renderPostCards();}
-function movePostCard(id,delta){const index=postCards.findIndex(card=>card.id===id),next=Math.max(0,Math.min(postCards.length-1,index+delta));if(index<0||next===index)return;postCards.splice(next,0,postCards.splice(index,1)[0]);savePostCards();renderPostCards();}
+function togglePostCardsFavoritesFirst(){renderPostCards(!postCardsFavoritesFirst);}
+function togglePostCardFavorite(id){const card=findPostCard(id);if(!card)return;card.favorite=!card.favorite;savePostCards();renderPostCards(postCardsFavoritesFirst,id);showToast(card.favorite?'Added to Post Card favorites.':'Removed from Post Card favorites.');}
+function movePostCard(id,delta){const index=postCards.findIndex(card=>card.id===id),next=Math.max(0,Math.min(postCards.length-1,index+delta));if(index<0||next===index)return;postCards.splice(next,0,postCards.splice(index,1)[0]);savePostCards();renderPostCards(postCardsFavoritesFirst,id);}
 function shufflePostCards(){for(let i=postCards.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[postCards[i],postCards[j]]=[postCards[j],postCards[i]];}savePostCards();renderPostCards();}
 function removePostCard(id){const card=findPostCard(id);if(!card||!confirm(`Remove “${card.title}” from Post Cards?`))return;postCards=postCards.filter(item=>item.id!==id);savePostCards();renderPostCards();}
 function launchPostCard(id){const card=findPostCard(id);if(!card)return;closePostCards();const input=document.getElementById('lakeInput');input.value=`Explore this Post Card with me:\n\n${postCardMarkdown(card)}`;autoResize(input);input.focus();}
