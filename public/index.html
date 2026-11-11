@@ -429,7 +429,18 @@ button.welcome-icon { background:none; border:0; padding:0; }
 .ride-home-tip.is-tucked { width:auto; padding:0; border-radius:50%; }
 .ride-home-tip.is-tucked > :not(.ride-home-tip-open) { display:none; }
 .ride-home-tip-open { display:none; }
-.ride-home-voice { position:absolute; bottom:12px; right:12px; z-index:4; min-width:44px; min-height:44px; }
+.ride-home-voice {
+  position:absolute; bottom:12px; right:12px; z-index:4;
+  width:44px; height:44px; display:grid; place-items:center;
+  padding:0; border:1px solid #5489df; border-radius:50%;
+  background:#2864c6; color:white; cursor:pointer;
+}
+.ride-home-voice:hover { background:#3475da; }
+.ride-home-voice:focus-visible { outline:2px solid white; outline-offset:3px; }
+.home-voice-waveform { display:flex; gap:2px; align-items:center; }
+.home-voice-waveform i { width:2px; height:5px; border-radius:2px; background:currentColor; }
+.home-voice-waveform i:nth-child(2),.home-voice-waveform i:nth-child(4) { height:10px; }
+.home-voice-waveform i:nth-child(3) { height:16px; }
 .wave-prompt-preview { position:fixed; inset:auto; margin:0; max-width:min(360px, calc(100vw - 24px)); max-height:40vh; overflow:auto; padding:10px 12px; border:1px solid var(--dock-border); border-radius:10px; background:var(--dock-bg); color:var(--text-primary); font-size:13px; line-height:1.45; white-space:pre-wrap; overflow-wrap:anywhere; pointer-events:none; }
 .wave-prompt-preview.touch-preview { pointer-events:auto; }
 .wave-prompt-preview button { display:block; margin-top:8px; }
@@ -877,6 +888,8 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
 }
 .attach-btn-stack:hover { color: var(--lake-light); background: rgba(45,140,240,0.1); }
 .mic-btn              { color: var(--text-secondary); font-size: 20px; }
+.mic-btn { touch-action:none; user-select:none; }
+.mic-btn.voice-holding { outline:2px solid var(--lake-light); outline-offset:2px; }
 .mic-btn:hover        { color: var(--lake-light); background: rgba(45,140,240,0.1); }
 .mic-btn.listening    { background: rgba(239,83,80,0.15); border-color: rgba(239,83,80,0.4); color: var(--danger); }
 
@@ -1432,24 +1445,24 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
 
     <!-- CURRENTS BAR -->
     <div class="currents-bar" id="currentsBar">
-      <button type="button" class="current-chip" onclick="rideAWave(true)">❗ How to start: Ride a Wave</button>
+      <button type="button" class="current-chip" data-home-ride onclick="rideAWave(true)">❗ How to start: Ride a Wave</button>
       <span class="currents-label">🧭 Currents:</span>
-      <button type="button" class="current-chip" onclick="sendWave({visibleText:'🪞 Personality Test',requestText:'Ask me one surprising but easy personality question about a concrete choice or tradeoff. Tailor it to what I have shared when relevant. Wait for my answer, then reflect what it may suggest, offer another plausible reading, and let me correct you. Treat this as self-discovery rather than a scored assessment or diagnosis.',reuseAttachments:false})">🪞 Personality Test</button>
-      <span class="current-chip" onclick="sendPrompt('Summarize the key themes and patterns from our conversation so far.')">👥 Team Dynamics</span>
-      <span class="current-chip" onclick="sendPrompt('What leadership patterns are you seeing in what I have shared?')">🎯 Leadership Patterns</span>
-      <span class="current-chip persona-chip" onclick="askLakeKnowsYou()">🌊 How The Lake Sees You</span>
+      <button type="button" class="current-chip" data-home-prompt="Ask me one surprising but easy personality question about a concrete choice or tradeoff. Tailor it to what I have shared when relevant. Wait for my answer, then reflect what it may suggest, offer another plausible reading, and let me correct you. Treat this as self-discovery rather than a scored assessment or diagnosis." onclick="sendWave({visibleText:'🪞 Personality Test',requestText:'Ask me one surprising but easy personality question about a concrete choice or tradeoff. Tailor it to what I have shared when relevant. Wait for my answer, then reflect what it may suggest, offer another plausible reading, and let me correct you. Treat this as self-discovery rather than a scored assessment or diagnosis.',reuseAttachments:false})">🪞 Personality Test</button>
+      <span class="current-chip" data-home-prompt="Summarize the key themes and patterns from our conversation so far." onclick="sendPrompt(this.dataset.homePrompt)">👥 Team Dynamics</span>
+      <span class="current-chip" data-home-prompt="What leadership patterns are you seeing in what I have shared?" onclick="sendPrompt(this.dataset.homePrompt)">🎯 Leadership Patterns</span>
+      <span class="current-chip persona-chip" data-home-prompt="Based on what I have shared, what patterns do you notice in how I think and communicate? Ground your answer in examples and leave room for my corrections." onclick="askLakeKnowsYou()">🌊 How The Lake Sees You</span>
     </div>
 
     <!-- WAVES CONTAINER -->
     <div class="waves-container" id="wavesContainer">
       <!-- WELCOME SCREEN -->
       <div class="welcome-screen" id="welcomeScreen">
-        <button type="button" class="welcome-icon" onclick="rideAWave()" title="Ride a Wave" aria-label="Ride a Wave">🌊</button>
+        <button type="button" class="welcome-icon" data-home-ride onclick="rideAWave()" title="Ride a Wave" aria-label="Ride a Wave">🌊</button>
         <div class="welcome-title">The Lake is Still</div>
         <div class="welcome-sub">Drop a wave, cast a line, or let a log drift in.<br>I'll reflect back what the water reveals.</div>
         <div class="welcome-prompts">
-          <div class="welcome-prompt-featured" onclick="sendPrompt('I want to understand myself better. Ask me questions — one at a time — that help me see my patterns, values, blind spots and strengths. Build a picture of who I am as we go.')">🪞 My Persona</div>
-          <div class="welcome-prompt-featured" onclick="sendPrompt('It\'s journal time. Ask me to describe my day — what happened, how I felt, what\'s sitting with me. Ask follow up questions as we go. Help me process it like a journal entry.')">📓 Today's Journal</div>
+          <div class="welcome-prompt-featured" data-home-prompt="I want to understand myself better. Ask me questions — one at a time — that help me see my patterns, values, blind spots and strengths. Build a picture of who I am as we go." onclick="sendPrompt(this.dataset.homePrompt)">🪞 My Persona</div>
+          <div class="welcome-prompt-featured" data-home-prompt="It&#x27;s journal time. Ask me to describe my day — what happened, how I felt, what&#x27;s sitting with me. Ask follow up questions as we go. Help me process it like a journal entry." onclick="sendPrompt(this.dataset.homePrompt)">📓 Today's Journal</div>
           <!-- CAROUSEL -->
           <div class="prompt-carousel-container">
             <div class="prompt-carousel-track" id="promptCarouselTrack">
@@ -1457,48 +1470,48 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
               <div class="prompt-batch">
                 <div class="batch-label">🤝 Social</div>
                 <div class="welcome-prompts-grid">
-                  <div class="welcome-prompt-half" onclick="startIceBreaker()" data-long-press-batch="0">🧊 Ice-Breaker</div>
-                  <div class="welcome-prompt-half" onclick="sendPrompt('Drop your chat screenshot into the Lake for a Super-Powerful read and the exact next thing to say.')" data-long-press-batch="0">📸 Chat Read</div>
-                  <div class="welcome-prompt-half" onclick="sendPrompt('Give me the Super-Powerful social move for this situation — the read, the move, the tone, the risk, the reward.')" data-long-press-batch="0">🧭 Social Nav</div>
-                  <div class="welcome-prompt-half" onclick="sendPrompt('Calibrate my social vibe — tell me the tone I should use with this person or group.')" data-long-press-batch="0">🎚️ Vibe Cal</div>
-                  <div class="welcome-prompt-half" onclick="sendPrompt('Polish this message into its most Super-Powerful, clear, confident version.')" data-long-press-batch="0">✨ Msg Polish</div>
-                  <div class="welcome-prompt-half" onclick="sendPrompt('Give me the one move that builds momentum in this social situation — subtle, confident, and high-clarity.')" data-long-press-batch="0">🚀 Momentum</div>
+                  <div class="welcome-prompt-half" data-home-prompt="Start Ice-Breaker Mode." onclick="startIceBreaker()" data-long-press-batch="0">🧊 Ice-Breaker</div>
+                  <div class="welcome-prompt-half" data-home-prompt="Drop your chat screenshot into the Lake for a Super-Powerful read and the exact next thing to say." onclick="sendPrompt(this.dataset.homePrompt)" data-long-press-batch="0">📸 Chat Read</div>
+                  <div class="welcome-prompt-half" data-home-prompt="Give me the Super-Powerful social move for this situation — the read, the move, the tone, the risk, the reward." onclick="sendPrompt(this.dataset.homePrompt)" data-long-press-batch="0">🧭 Social Nav</div>
+                  <div class="welcome-prompt-half" data-home-prompt="Calibrate my social vibe — tell me the tone I should use with this person or group." onclick="sendPrompt(this.dataset.homePrompt)" data-long-press-batch="0">🎚️ Vibe Cal</div>
+                  <div class="welcome-prompt-half" data-home-prompt="Polish this message into its most Super-Powerful, clear, confident version." onclick="sendPrompt(this.dataset.homePrompt)" data-long-press-batch="0">✨ Msg Polish</div>
+                  <div class="welcome-prompt-half" data-home-prompt="Give me the one move that builds momentum in this social situation — subtle, confident, and high-clarity." onclick="sendPrompt(this.dataset.homePrompt)" data-long-press-batch="0">🚀 Momentum</div>
                 </div>
               </div>
               <!-- BATCH 1: STILL WATERS (default) -->
               <div class="prompt-batch">
                 <div class="batch-label">🌊 Still Waters</div>
                 <div class="welcome-prompts-grid">
-                  <div class="welcome-prompt-half" onclick="sendPrompt('Read a situation for me')" data-long-press-batch="1">🧭 Read a situation</div>
-                  <div class="welcome-prompt-half" onclick="sendPrompt('Help me see the real dynamic')" data-long-press-batch="1">🎯 Real dynamic</div>
-                  <div class="welcome-prompt-half" onclick="sendPrompt('I have a transcript to drop in')" data-long-press-batch="1">📋 Drop a chat-log</div>
-                  <div class="welcome-prompt-half" onclick="sendPrompt('Something feels off - help me see why')" data-long-press-batch="1">😤 Feels off</div>
-                  <div class="welcome-prompt-half" onclick="sendPrompt('Break down the players involved')" data-long-press-batch="1">👥 Break down players</div>
-                  <div class="welcome-prompt-half" onclick="sendPrompt('What should I be watching for?')" data-long-press-batch="1">👀 What to watch</div>
+                  <div class="welcome-prompt-half" data-home-prompt="Read a situation for me" onclick="sendPrompt(this.dataset.homePrompt)" data-long-press-batch="1">🧭 Read a situation</div>
+                  <div class="welcome-prompt-half" data-home-prompt="Help me see the real dynamic" onclick="sendPrompt(this.dataset.homePrompt)" data-long-press-batch="1">🎯 Real dynamic</div>
+                  <div class="welcome-prompt-half" data-home-prompt="I have a transcript to drop in" onclick="sendPrompt(this.dataset.homePrompt)" data-long-press-batch="1">📋 Drop a chat-log</div>
+                  <div class="welcome-prompt-half" data-home-prompt="Something feels off - help me see why" onclick="sendPrompt(this.dataset.homePrompt)" data-long-press-batch="1">😤 Feels off</div>
+                  <div class="welcome-prompt-half" data-home-prompt="Break down the players involved" onclick="sendPrompt(this.dataset.homePrompt)" data-long-press-batch="1">👥 Break down players</div>
+                  <div class="welcome-prompt-half" data-home-prompt="What should I be watching for?" onclick="sendPrompt(this.dataset.homePrompt)" data-long-press-batch="1">👀 What to watch</div>
                 </div>
               </div>
               <!-- BATCH 2: INTERNAL -->
               <div class="prompt-batch">
                 <div class="batch-label">⚙️ Internal</div>
                 <div class="welcome-prompts-grid">
-                  <div class="welcome-prompt-half" onclick="sendPrompt('Run my Weekly Super-Powerful Cycle — give me the 7-day sequence of operating principles.')" data-long-press-batch="2">🔄 Weekly Cycle</div>
-                  <div class="welcome-prompt-half" onclick="sendPrompt('Generate a Super-Powerful Principle and let me choose the category.')" data-long-press-batch="2">⚡ Principle Gen</div>
-                  <div class="welcome-prompt-half" onclick="sendPrompt('Run my Morning Diagnostic — identify my weakest Lake dimension today and give me the one move to fix it.')" data-long-press-batch="2">🌅 Morning Diag</div>
-                  <div class="welcome-prompt-half" onclick="sendPrompt('Activate Super-Powerful Mode — tune my tone, clarity, and presence to elite settings.')" data-long-press-batch="2">🔥 Persona Mode</div>
-                  <div class="welcome-prompt-half" onclick="sendPrompt('Give me today\'s Super-Powerful Principle — one sentence that cuts through confusion and tells me where to start.')" data-long-press-batch="2">📍 Daily Principle</div>
-                  <div class="welcome-prompt-half" onclick="sendPrompt('Run an Internal Alignment Reset — clear noise, surface my priorities, and give me the cleanest starting point.')" data-long-press-batch="2">🎯 Align Reset</div>
+                  <div class="welcome-prompt-half" data-home-prompt="Run my Weekly Super-Powerful Cycle — give me the 7-day sequence of operating principles." onclick="sendPrompt(this.dataset.homePrompt)" data-long-press-batch="2">🔄 Weekly Cycle</div>
+                  <div class="welcome-prompt-half" data-home-prompt="Generate a Super-Powerful Principle and let me choose the category." onclick="sendPrompt(this.dataset.homePrompt)" data-long-press-batch="2">⚡ Principle Gen</div>
+                  <div class="welcome-prompt-half" data-home-prompt="Run my Morning Diagnostic — identify my weakest Lake dimension today and give me the one move to fix it." onclick="sendPrompt(this.dataset.homePrompt)" data-long-press-batch="2">🌅 Morning Diag</div>
+                  <div class="welcome-prompt-half" data-home-prompt="Activate Super-Powerful Mode — tune my tone, clarity, and presence to elite settings." onclick="sendPrompt(this.dataset.homePrompt)" data-long-press-batch="2">🔥 Persona Mode</div>
+                  <div class="welcome-prompt-half" data-home-prompt="Give me today&#x27;s Super-Powerful Principle — one sentence that cuts through confusion and tells me where to start." onclick="sendPrompt(this.dataset.homePrompt)" data-long-press-batch="2">📍 Daily Principle</div>
+                  <div class="welcome-prompt-half" data-home-prompt="Run an Internal Alignment Reset — clear noise, surface my priorities, and give me the cleanest starting point." onclick="sendPrompt(this.dataset.homePrompt)" data-long-press-batch="2">🎯 Align Reset</div>
                 </div>
               </div>
               <!-- BATCH 3: PODCAST -->
               <div class="prompt-batch">
                 <div class="batch-label">🎙️ Podcast</div>
                 <div class="welcome-prompts-grid">
-                  <div class="welcome-prompt-half" onclick="sendPrompt('Give me a compelling, curiosity-driven topic to open a conversation — something that instantly hooks the listener.')" data-long-press-batch="3">💡 Spark Topic</div>
-                  <div class="welcome-prompt-half" onclick="sendPrompt('Generate a deep, thoughtful question that makes the other person reflect and open up.')" data-long-press-batch="3">🎯 Deep Q</div>
-                  <div class="welcome-prompt-half" onclick="sendPrompt('Give me the perfect follow-up question that keeps the conversation flowing and makes me sound like a world-class interviewer.')" data-long-press-batch="3">🔁 Follow-Up</div>
-                  <div class="welcome-prompt-half" onclick="sendPrompt('Help me pull a story out of someone — ask the kind of question that makes them share something meaningful.')" data-long-press-batch="3">📖 Story Pull</div>
-                  <div class="welcome-prompt-half" onclick="sendPrompt('Take what someone just said and turn it into a sharper insight, then give me the next line to say.')" data-long-press-batch="3">🔍 Insight Amp</div>
-                  <div class="welcome-prompt-half" onclick="sendPrompt('Give me a smooth, natural transition from one topic to another without awkwardness.')" data-long-press-batch="3">🌉 Conv Bridge</div>
+                  <div class="welcome-prompt-half" data-home-prompt="Give me a compelling, curiosity-driven topic to open a conversation — something that instantly hooks the listener." onclick="sendPrompt(this.dataset.homePrompt)" data-long-press-batch="3">💡 Spark Topic</div>
+                  <div class="welcome-prompt-half" data-home-prompt="Generate a deep, thoughtful question that makes the other person reflect and open up." onclick="sendPrompt(this.dataset.homePrompt)" data-long-press-batch="3">🎯 Deep Q</div>
+                  <div class="welcome-prompt-half" data-home-prompt="Give me the perfect follow-up question that keeps the conversation flowing and makes me sound like a world-class interviewer." onclick="sendPrompt(this.dataset.homePrompt)" data-long-press-batch="3">🔁 Follow-Up</div>
+                  <div class="welcome-prompt-half" data-home-prompt="Help me pull a story out of someone — ask the kind of question that makes them share something meaningful." onclick="sendPrompt(this.dataset.homePrompt)" data-long-press-batch="3">📖 Story Pull</div>
+                  <div class="welcome-prompt-half" data-home-prompt="Take what someone just said and turn it into a sharper insight, then give me the next line to say." onclick="sendPrompt(this.dataset.homePrompt)" data-long-press-batch="3">🔍 Insight Amp</div>
+                  <div class="welcome-prompt-half" data-home-prompt="Give me a smooth, natural transition from one topic to another without awkwardness." onclick="sendPrompt(this.dataset.homePrompt)" data-long-press-batch="3">🌉 Conv Bridge</div>
                 </div>
               </div>
             </div><!-- end track -->
@@ -1624,7 +1637,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
         </div>
         <div class="side-buttons">
           <button class="attach-btn-stack" onclick="toggleAttachMenu(event)" title="Attach">📎</button>
-          <button class="mic-btn" id="micBtn" title="Voice input">🎤</button>
+          <button class="mic-btn" id="micBtn" title="Tap to dictate · Hold 3 seconds for Lake Voice" aria-label="Voice input. Hold three seconds for Lake Voice">🎤</button>
         </div>
         <button class="send-btn" onclick="sendWave()" title="Send (Enter)" aria-keyshortcuts="Enter">🌊</button>
       </div>
@@ -3254,56 +3267,56 @@ function newSession() {
   container.querySelector('#welcomeScreen')?.dispatchEvent(new Event('lake-home-removed'));
   container.innerHTML = `
     <div class="welcome-screen" id="welcomeScreen">
-      <button type="button" class="welcome-icon" onclick="rideAWave()" title="Ride a Wave" aria-label="Ride a Wave">🌊</button>
+      <button type="button" class="welcome-icon" data-home-ride onclick="rideAWave()" title="Ride a Wave" aria-label="Ride a Wave">🌊</button>
       <div class="welcome-title">The Lake is Still</div>
       <div class="welcome-sub">Drop a wave, cast a line, or let a log drift in.<br>I'll reflect back what the water reveals.</div>
       <div class="welcome-prompts">
-        <div class="welcome-prompt-featured" onclick="sendPrompt('I want to understand myself better. Ask me questions — one at a time — that help me see my patterns, values, blind spots and strengths. Build a picture of who I am as we go.')">🪞 My Persona</div>
-        <div class="welcome-prompt-featured" onclick="sendPrompt('It\\'s journal time. Ask me to describe my day — what happened, how I felt, what\\'s sitting with me. Ask follow up questions as we go. Help me process it like a journal entry.')">📓 Today's Journal</div>
+        <div class="welcome-prompt-featured" data-home-prompt="I want to understand myself better. Ask me questions — one at a time — that help me see my patterns, values, blind spots and strengths. Build a picture of who I am as we go." onclick="sendPrompt(this.dataset.homePrompt)">🪞 My Persona</div>
+        <div class="welcome-prompt-featured" data-home-prompt="It&#x27;s journal time. Ask me to describe my day — what happened, how I felt, what&#x27;s sitting with me. Ask follow up questions as we go. Help me process it like a journal entry." onclick="sendPrompt(this.dataset.homePrompt)">📓 Today's Journal</div>
         <div class="prompt-carousel-container">
           <div class="prompt-carousel-track" id="promptCarouselTrack">
             <div class="prompt-batch">
               <div class="batch-label">🤝 Social</div>
               <div class="welcome-prompts-grid">
-                <div class="welcome-prompt-half" onclick="startIceBreaker()" data-long-press-batch="0">🧊 Ice-Breaker</div>
-                <div class="welcome-prompt-half" onclick="sendPrompt('Drop your chat screenshot into the Lake for a Super-Powerful read and the exact next thing to say.')" data-long-press-batch="0">📸 Chat Read</div>
-                <div class="welcome-prompt-half" onclick="sendPrompt('Give me the Super-Powerful social move for this situation.')" data-long-press-batch="0">🧭 Social Nav</div>
-                <div class="welcome-prompt-half" onclick="sendPrompt('Calibrate my social vibe — tell me the tone I should use with this person or group.')" data-long-press-batch="0">🎚️ Vibe Cal</div>
-                <div class="welcome-prompt-half" onclick="sendPrompt('Polish this message into its most Super-Powerful, clear, confident version.')" data-long-press-batch="0">✨ Msg Polish</div>
-                <div class="welcome-prompt-half" onclick="sendPrompt('Give me the one move that builds momentum in this social situation.')" data-long-press-batch="0">🚀 Momentum</div>
+                <div class="welcome-prompt-half" data-home-prompt="Start Ice-Breaker Mode." onclick="startIceBreaker()" data-long-press-batch="0">🧊 Ice-Breaker</div>
+                <div class="welcome-prompt-half" data-home-prompt="Drop your chat screenshot into the Lake for a Super-Powerful read and the exact next thing to say." onclick="sendPrompt(this.dataset.homePrompt)" data-long-press-batch="0">📸 Chat Read</div>
+                <div class="welcome-prompt-half" data-home-prompt="Give me the Super-Powerful social move for this situation." onclick="sendPrompt(this.dataset.homePrompt)" data-long-press-batch="0">🧭 Social Nav</div>
+                <div class="welcome-prompt-half" data-home-prompt="Calibrate my social vibe — tell me the tone I should use with this person or group." onclick="sendPrompt(this.dataset.homePrompt)" data-long-press-batch="0">🎚️ Vibe Cal</div>
+                <div class="welcome-prompt-half" data-home-prompt="Polish this message into its most Super-Powerful, clear, confident version." onclick="sendPrompt(this.dataset.homePrompt)" data-long-press-batch="0">✨ Msg Polish</div>
+                <div class="welcome-prompt-half" data-home-prompt="Give me the one move that builds momentum in this social situation." onclick="sendPrompt(this.dataset.homePrompt)" data-long-press-batch="0">🚀 Momentum</div>
               </div>
             </div>
             <div class="prompt-batch">
               <div class="batch-label">🌊 Still Waters</div>
               <div class="welcome-prompts-grid">
-                <div class="welcome-prompt-half" onclick="sendPrompt('Read a situation for me')" data-long-press-batch="1">🧭 Read a situation</div>
-                <div class="welcome-prompt-half" onclick="sendPrompt('Help me see the real dynamic')" data-long-press-batch="1">🎯 Real dynamic</div>
-                <div class="welcome-prompt-half" onclick="sendPrompt('I have a transcript to drop in')" data-long-press-batch="1">📋 Drop a chat-log</div>
-                <div class="welcome-prompt-half" onclick="sendPrompt('Something feels off - help me see why')" data-long-press-batch="1">😤 Feels off</div>
-                <div class="welcome-prompt-half" onclick="sendPrompt('Break down the players involved')" data-long-press-batch="1">👥 Break down players</div>
-                <div class="welcome-prompt-half" onclick="sendPrompt('What should I be watching for?')" data-long-press-batch="1">👀 What to watch</div>
+                <div class="welcome-prompt-half" data-home-prompt="Read a situation for me" onclick="sendPrompt(this.dataset.homePrompt)" data-long-press-batch="1">🧭 Read a situation</div>
+                <div class="welcome-prompt-half" data-home-prompt="Help me see the real dynamic" onclick="sendPrompt(this.dataset.homePrompt)" data-long-press-batch="1">🎯 Real dynamic</div>
+                <div class="welcome-prompt-half" data-home-prompt="I have a transcript to drop in" onclick="sendPrompt(this.dataset.homePrompt)" data-long-press-batch="1">📋 Drop a chat-log</div>
+                <div class="welcome-prompt-half" data-home-prompt="Something feels off - help me see why" onclick="sendPrompt(this.dataset.homePrompt)" data-long-press-batch="1">😤 Feels off</div>
+                <div class="welcome-prompt-half" data-home-prompt="Break down the players involved" onclick="sendPrompt(this.dataset.homePrompt)" data-long-press-batch="1">👥 Break down players</div>
+                <div class="welcome-prompt-half" data-home-prompt="What should I be watching for?" onclick="sendPrompt(this.dataset.homePrompt)" data-long-press-batch="1">👀 What to watch</div>
               </div>
             </div>
             <div class="prompt-batch">
               <div class="batch-label">⚙️ Internal</div>
               <div class="welcome-prompts-grid">
-                <div class="welcome-prompt-half" onclick="sendPrompt('Run my Weekly Super-Powerful Cycle — give me the 7-day sequence of operating principles.')" data-long-press-batch="2">🔄 Weekly Cycle</div>
-                <div class="welcome-prompt-half" onclick="sendPrompt('Generate a Super-Powerful Principle and let me choose the category.')" data-long-press-batch="2">⚡ Principle Gen</div>
-                <div class="welcome-prompt-half" onclick="sendPrompt('Run my Morning Diagnostic — identify my weakest Lake dimension today.')" data-long-press-batch="2">🌅 Morning Diag</div>
-                <div class="welcome-prompt-half" onclick="sendPrompt('Activate Super-Powerful Mode — tune my tone, clarity, and presence to elite settings.')" data-long-press-batch="2">🔥 Persona Mode</div>
-                <div class="welcome-prompt-half" onclick="sendPrompt('Give me today\\'s Super-Powerful Principle — one sentence that cuts through confusion.')" data-long-press-batch="2">📍 Daily Principle</div>
-                <div class="welcome-prompt-half" onclick="sendPrompt('Run an Internal Alignment Reset — clear noise, surface my priorities.')" data-long-press-batch="2">🎯 Align Reset</div>
+                <div class="welcome-prompt-half" data-home-prompt="Run my Weekly Super-Powerful Cycle — give me the 7-day sequence of operating principles." onclick="sendPrompt(this.dataset.homePrompt)" data-long-press-batch="2">🔄 Weekly Cycle</div>
+                <div class="welcome-prompt-half" data-home-prompt="Generate a Super-Powerful Principle and let me choose the category." onclick="sendPrompt(this.dataset.homePrompt)" data-long-press-batch="2">⚡ Principle Gen</div>
+                <div class="welcome-prompt-half" data-home-prompt="Run my Morning Diagnostic — identify my weakest Lake dimension today." onclick="sendPrompt(this.dataset.homePrompt)" data-long-press-batch="2">🌅 Morning Diag</div>
+                <div class="welcome-prompt-half" data-home-prompt="Activate Super-Powerful Mode — tune my tone, clarity, and presence to elite settings." onclick="sendPrompt(this.dataset.homePrompt)" data-long-press-batch="2">🔥 Persona Mode</div>
+                <div class="welcome-prompt-half" data-home-prompt="Give me today&#x27;s Super-Powerful Principle — one sentence that cuts through confusion." onclick="sendPrompt(this.dataset.homePrompt)" data-long-press-batch="2">📍 Daily Principle</div>
+                <div class="welcome-prompt-half" data-home-prompt="Run an Internal Alignment Reset — clear noise, surface my priorities." onclick="sendPrompt(this.dataset.homePrompt)" data-long-press-batch="2">🎯 Align Reset</div>
               </div>
             </div>
             <div class="prompt-batch">
               <div class="batch-label">🎙️ Podcast</div>
               <div class="welcome-prompts-grid">
-                <div class="welcome-prompt-half" onclick="sendPrompt('Give me a compelling, curiosity-driven topic to open a conversation.')" data-long-press-batch="3">💡 Spark Topic</div>
-                <div class="welcome-prompt-half" onclick="sendPrompt('Generate a deep, thoughtful question that makes the other person reflect and open up.')" data-long-press-batch="3">🎯 Deep Q</div>
-                <div class="welcome-prompt-half" onclick="sendPrompt('Give me the perfect follow-up question that keeps the conversation flowing.')" data-long-press-batch="3">🔁 Follow-Up</div>
-                <div class="welcome-prompt-half" onclick="sendPrompt('Help me pull a story out of someone — ask the kind of question that makes them share something meaningful.')" data-long-press-batch="3">📖 Story Pull</div>
-                <div class="welcome-prompt-half" onclick="sendPrompt('Take what someone just said and turn it into a sharper insight.')" data-long-press-batch="3">🔍 Insight Amp</div>
-                <div class="welcome-prompt-half" onclick="sendPrompt('Give me a smooth, natural transition from one topic to another without awkwardness.')" data-long-press-batch="3">🌉 Conv Bridge</div>
+                <div class="welcome-prompt-half" data-home-prompt="Give me a compelling, curiosity-driven topic to open a conversation." onclick="sendPrompt(this.dataset.homePrompt)" data-long-press-batch="3">💡 Spark Topic</div>
+                <div class="welcome-prompt-half" data-home-prompt="Generate a deep, thoughtful question that makes the other person reflect and open up." onclick="sendPrompt(this.dataset.homePrompt)" data-long-press-batch="3">🎯 Deep Q</div>
+                <div class="welcome-prompt-half" data-home-prompt="Give me the perfect follow-up question that keeps the conversation flowing." onclick="sendPrompt(this.dataset.homePrompt)" data-long-press-batch="3">🔁 Follow-Up</div>
+                <div class="welcome-prompt-half" data-home-prompt="Help me pull a story out of someone — ask the kind of question that makes them share something meaningful." onclick="sendPrompt(this.dataset.homePrompt)" data-long-press-batch="3">📖 Story Pull</div>
+                <div class="welcome-prompt-half" data-home-prompt="Take what someone just said and turn it into a sharper insight." onclick="sendPrompt(this.dataset.homePrompt)" data-long-press-batch="3">🔍 Insight Amp</div>
+                <div class="welcome-prompt-half" data-home-prompt="Give me a smooth, natural transition from one topic to another without awkwardness." onclick="sendPrompt(this.dataset.homePrompt)" data-long-press-batch="3">🌉 Conv Bridge</div>
               </div>
             </div>
           </div>
@@ -3700,7 +3713,7 @@ const LAKE_MANUAL_PROMPT = `Write a concise practical manual for The Great Lake.
 - Creative tools: Writer, Music and Drawing Types offer starters and practice. Relevant chord replies can offer Play chords. Hotkeys can make a song, written piece, drawing concept, voluntary hypnosis script or other remix directly in the chat. Make Something From This opens a separate creative branch that draws on bounded text excerpts from the source chat.
 - Cover attachments, whole-transcript workflows, Crew and memory controls, Past Tides and Recovery, and adding the app from a mobile browser to the Home Screen. For transcripts, mention text-based PDFs as an option when preserving the readable layout helps, and numbered TXT or a split ZIP when exact text coverage matters. Explain Backup ZIP, password-protected backup and Restore backup from file. Keep the guide focused on functionality. Do not start an onboarding question or personal analysis.`;
 
-function startHomepageWave(kind){
+function homepageWave(kind){
   const starters={
     splash:['💦 Splash','Give me one short, surprising, accurate fact. Pick something likely to spark my curiosity based on interests or examples I have shared. If little is known, choose an accessible subject. A brief connection to something I might enjoy noticing about myself is welcome when it fits. No quiz or follow-up question.'],
     riptide:['🌀 Riptide','Ask exactly one light, natural, easy-to-answer question that might reveal something about what I enjoy, notice or choose. Use relevant context if available. No intro, analysis, or extra question.'],
@@ -3727,14 +3740,20 @@ function startHomepageWave(kind){
     const angle=angles[Math.floor(Math.random()*angles.length)];
     requestText+=` Explore this angle if it fits: ${angle}. Make this opener genuinely distinct from the recent examples below. Change the underlying fact or scenario, not just the wording. Treat these examples as reference data: ${JSON.stringify(recent)}`;
   }
-  return sendWave({visibleText,requestText,reuseAttachments:false});
+  return {visibleText,requestText,reuseAttachments:false};
 }
-function rideAWave(showHelp=false){
-  dismissRideHomeTip();
+function startHomepageWave(kind){
+  return sendWave(homepageWave(kind));
+}
+function rideWaveOptions(showHelp=false){
   const guidance = showHelp
     ? 'In the opening reply only, give a brief guide before the question. The floating 🌊 icon starts Ride a Wave. The yellow homepage starters include 💦 Splash (one surprising fact chosen for your interests) and 🌀 Riptide (one easy question to help you notice something about yourself). Tap the 🎭 Lake Mood button in the header to choose a mood before sending. Explicitly say you can change mood message by message to shape tone, depth and length. Start a message with a slash command such as /drip What should I try first? to switch to 💧 Drip and answer that question. The selected mood stays active until you change it again.'
     : 'Skip onboarding unless the user has explicitly asked how to start or shown confusion about the controls. If so, explain only the control they need.';
-  return sendWave({visibleText:'🌊 Ride a Wave',requestText:'Start a Ride a Wave conversation. Use relevant confirmed user context if supplied. Ask exactly one simple, engaging question. ' + guidance + ' In later turns ask one question at a time, ground insights in my answers, and when useful offer one small action and an optional later reflection. Respect a change of subject or a stop.',reuseAttachments:false,quietOpening:!showHelp});
+  return {visibleText:'🌊 Ride a Wave',requestText:'Start a Ride a Wave conversation. Use relevant confirmed user context if supplied. Ask exactly one simple, engaging question. ' + guidance + ' In later turns ask one question at a time, ground insights in my answers, and when useful offer one small action and an optional later reflection. Respect a change of subject or a stop.',reuseAttachments:false,quietOpening:!showHelp};
+}
+function rideAWave(showHelp=false){
+  dismissRideHomeTip();
+  return sendWave(rideWaveOptions(showHelp));
 }
 function readCrossChatPatterns(){
   const sessions=allSessions.filter(session=>session.id!==currentSessionId);
@@ -3787,9 +3806,9 @@ function scheduleRideHomeTip(){
   shortcuts.append(patterns);
   const voice=document.createElement('button');
   voice.type='button';
-  voice.className='current-chip';
-  voice.textContent='🎤';
-  voice.title='Start a new chat with voice input';
+  voice.className='ride-home-voice';
+  voice.innerHTML='<span class="home-voice-waveform" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>';
+  voice.title='Start Lake Voice';
   voice.setAttribute('aria-label',voice.title);
   voice.onclick=openLakeVoice;
   const today=document.createElement('button');
@@ -3798,9 +3817,11 @@ function scheduleRideHomeTip(){
   today.textContent='📅';
   today.title='Today on the Lake';
   today.setAttribute('aria-label',today.title);
-  today.onclick=()=>sendWave({visibleText:'📅 Today on the Lake',requestText:'Help me plan today and get moving. Open with one practical question about the next few hours, such as what has a fixed deadline or what needs to be underway before lunch. Use relevant known context when it fits. Turn the answer into a short launch plan: fixed commitments, the first work block, one thing to defer, and the exact first step I can take in the next five minutes. Include times only when I provide them. As we talk, help me choose one priority, spot practical blockers and possible internal friction such as dread, overload or uncertainty, and decide on a first action small enough to start now. Notice how I say I feel and what has been happening lately; let that shape a realistic plan for my actual energy and constraints. Treat emotional interpretations as hypotheses I can correct. Keep it conversational, one useful question at a time. Where it helps me act or communicate, coach me toward more presence, wit, warmth and ethical persuasion with one concrete example.',reuseAttachments:false});
+  const todayOptions={visibleText:'📅 Today on the Lake',requestText:'Help me plan today and get moving. Open with one practical question about the next few hours, such as what has a fixed deadline or what needs to be underway before lunch. Use relevant known context when it fits. Turn the answer into a short launch plan: fixed commitments, the first work block, one thing to defer, and the exact first step I can take in the next five minutes. Include times only when I provide them. As we talk, help me choose one priority, spot practical blockers and possible internal friction such as dread, overload or uncertainty, and decide on a first action small enough to start now. Notice how I say I feel and what has been happening lately; let that shape a realistic plan for my actual energy and constraints. Treat emotional interpretations as hypotheses I can correct. Keep it conversational, one useful question at a time. Where it helps me act or communicate, coach me toward more presence, wit, warmth and ethical persuasion with one concrete example.',reuseAttachments:false};
+  today.onclick=()=>sendWave(todayOptions);
   shortcuts.append(today);
-  voice.classList.add('ride-home-voice');
+  enablePromptDrag(patterns,()=> 'Look for recurring patterns across my saved chats and suggest one way to test the strongest one.');
+  enablePromptDrag(today,()=>todayOptions.requestText);
   home.append(shortcuts,voice);
   setTimeout(()=>{
     if(!home.isConnected || document.getElementById('rideHomeTip'))return;
@@ -3870,6 +3891,9 @@ function scheduleRideHomeTip(){
     };
     refreshTip();
     home.append(tip);
+    enablePromptDrag(starter,()=>rideWaveOptions(true).requestText);
+    enablePromptDrag(manual,()=>LAKE_MANUAL_PROMPT);
+    enablePromptDrag(todayLink,()=>todayOptions.requestText);
     const cycle=()=>{
       if(!tip.isConnected || tip.dataset.paused)return;
       if(document.hidden || tip.matches(':hover, :focus-within')){
@@ -4659,16 +4683,20 @@ function summarizeTide(prompt) {
 }
 
 function enableDockPromptDrag(button) {
+  enablePromptDrag(button,()=>button.dataset.dockPrompt);
+}
+
+function enablePromptDrag(button,getPrompt,onStationaryHold) {
+  if(button.draggable)return;
   const input=document.getElementById('lakeInput');
-  const prompt=button.dataset.dockPrompt;
   button.draggable=true;
   button.addEventListener('dragstart',event=>{
     if(!event.dataTransfer)return;
     event.dataTransfer.effectAllowed='copy';
-    event.dataTransfer.setData('application/x-lake-next-wave',prompt);
+    event.dataTransfer.setData('application/x-lake-next-wave',getPrompt());
   });
   button.addEventListener('dragend',()=>input.classList.remove('wave-drop-ready'));
-  let start, timer, held=false, ghost;
+  let start, timer, held=false, ghost, startedAt;
   const overInput=touch=>{
     const box=input.getBoundingClientRect();
     return touch && touch.clientX>=box.left && touch.clientX<=box.right && touch.clientY>=box.top && touch.clientY<=box.bottom;
@@ -4681,6 +4709,7 @@ function enableDockPromptDrag(button) {
     reset();
     if(event.touches.length!==1)return;
     start=event.touches[0];
+    startedAt=Date.now();
     timer=setTimeout(()=>{held=true;},350);
   },{passive:true});
   button.addEventListener('touchmove',event=>{
@@ -4705,7 +4734,12 @@ function enableDockPromptDrag(button) {
   button.addEventListener('touchend',event=>{
     if(held){
       event.preventDefault();
-      if(ghost && overInput(event.changedTouches[0]))insertComposerPrompt(input,prompt);
+      if(ghost){
+        event.stopPropagation();
+        if(overInput(event.changedTouches[0]))insertComposerPrompt(input,getPrompt());
+      }else if(Date.now()-startedAt>=500){
+        onStationaryHold?.();
+      }
     }
     reset();
   },{passive:false});
@@ -5892,14 +5926,16 @@ function attachBubbleActions(waveEl) {
 // ============================================
 // MIC
 // ============================================
-function openLakeVoice(){
+function openLakeVoice({keepTide=false}={}){
+  if(document.querySelector('.lake-voice-dialog[open]'))return;
   const Recognition=window.SpeechRecognition || window.webkitSpeechRecognition;
   if(!Recognition || !window.speechSynthesis){
     showToast('Voice conversation is unavailable in this browser.');
     return;
   }
   stopSpeech();
-  newSession();
+  if(!keepTide)newSession();
+  else if(!currentSessionId)currentSessionId='session_'+Date.now();
   const sessionId=currentSessionId;
   const dialog=document.createElement('dialog');
   dialog.className='lake-voice-dialog';
@@ -5953,6 +5989,9 @@ function openLakeVoice(){
   recognition.onend=()=>{
     if(!active() || phase!=='listening')return;
     if(!transcript){setPhase('ready','No speech heard.','Start talking');return;}
+    if(keepTide){
+      return runTurn(()=>sendWave({requestText:transcript,preserveDraft:true,reuseAttachments:false,voiceTurn:true}),true);
+    }
     document.getElementById('lakeInput').value=transcript;
     return runTurn(()=>sendWave({reuseAttachments:false,voiceTurn:true}),true);
   };
@@ -6015,8 +6054,39 @@ function initMic() {
   recognition.interimResults = false;
   recognition.lang           = 'en-US';
   let listening = false;
-  micBtn.addEventListener('click', () => {
-    if (listening) recognition.stop(); else recognition.start();
+  let holdTimer, heldPointer, holdStart, suppressDictation=false;
+  const cancelHold=()=>{
+    clearTimeout(holdTimer);
+    heldPointer=null;
+    micBtn.classList.remove('voice-holding');
+  };
+  micBtn.addEventListener('pointerdown',event=>{
+    if(!event.isPrimary || event.button!==0)return;
+    cancelHold();
+    suppressDictation=false;
+    heldPointer=event.pointerId;
+    holdStart={x:event.clientX,y:event.clientY};
+    micBtn.setPointerCapture(event.pointerId);
+    micBtn.classList.add('voice-holding');
+    holdTimer=setTimeout(()=>{
+      suppressDictation=true;
+      micBtn.classList.remove('voice-holding');
+      if(listening)recognition.abort();
+      openLakeVoice({keepTide:true});
+    },3000);
+  });
+  micBtn.addEventListener('pointermove',event=>{
+    if(event.pointerId===heldPointer && Math.hypot(event.clientX-holdStart.x,event.clientY-holdStart.y)>12)cancelHold();
+  });
+  for(const event of ['pointerup','pointercancel','lostpointercapture'])micBtn.addEventListener(event,cancelHold);
+  micBtn.addEventListener('contextmenu',event=>event.preventDefault());
+  micBtn.addEventListener('click',event=>{
+    if(suppressDictation && event.detail!==0){
+      suppressDictation=false;
+      return;
+    }
+    if(listening)recognition.stop();
+    else recognition.start();
   });
   recognition.onstart  = () => { listening = true;  micBtn.classList.add('listening');    showToast('Listening... 🎤'); };
   recognition.onresult = (e) => {
@@ -6046,6 +6116,7 @@ function enableHomepageDrag(rail,changePage){
   rail.addEventListener('pointerdown',event=>{
     if(event.pointerType!=='mouse' || event.button!==0)return;
     suppressClick=false;
+    if(event.target.closest('[draggable="true"]'))return;
     const bounds=rail.getBoundingClientRect();
     if(event.clientX>=bounds.right-12)return;
     start={id:event.pointerId,x:event.clientX,y:event.clientY,dragging:false};
@@ -6102,6 +6173,7 @@ function initFeaturedPages(){
       button.className='welcome-prompt-featured';
       button.textContent=label;
       button.onclick=()=>startHomepageWave(kind);
+      enablePromptDrag(button,()=>homepageWave(kind).requestText);
       page.append(button);
     }
     rail.append(page);
@@ -6154,7 +6226,7 @@ function initCarousel() {
         const grid=document.createElement('div');grid.className='welcome-prompts-grid';
         type.prompts.forEach(([icon,name,prompt])=>{
           const button=document.createElement('button');button.type='button';button.className='welcome-prompt-half';
-          button.textContent=icon+' '+name;button.dataset.longPressBatch=String(index);
+          button.textContent=icon+' '+name;button.dataset.longPressBatch=String(index);button.dataset.homePrompt=prompt;
           button.onclick=()=>sendPrompt(prompt);grid.append(button);
         });
         batch.append(grid);track.append(batch);
@@ -6166,7 +6238,7 @@ function initCarousel() {
       const next=document.createElement('div');next.className='welcome-prompts-grid';
       type.more.forEach(([icon,name,prompt])=>{
         const button=document.createElement('button');button.type='button';button.className='welcome-prompt-half';
-        button.textContent=icon+' '+name;button.dataset.longPressBatch=String(index);button.onclick=()=>sendPrompt(prompt);next.append(button);
+        button.textContent=icon+' '+name;button.dataset.longPressBatch=String(index);button.dataset.homePrompt=prompt;button.onclick=()=>sendPrompt(prompt);next.append(button);
       });
       groups.append(next);batch.append(groups);
       batch.querySelectorAll('[data-long-press-batch]').forEach(button=>{button.dataset.longPressBatch=String(index);});
@@ -6187,7 +6259,7 @@ function initCarousel() {
     dot.classList.toggle('active', i === currentBatch);
   });
   setupDotClicks();
-  setupLongPress();
+  bindHomepagePrompts();
   setupSwipe();
   enableHomepageDrag(track.closest('.prompt-carousel-container'),direction=>goToBatch(currentBatch+direction));
   initFeaturedPages();
@@ -6216,20 +6288,14 @@ function setupDotClicks() {
   });
 }
 
-function setupLongPress() {
-  let pressTimer = null;
-  document.querySelectorAll('.welcome-prompt-half').forEach(btn => {
-    const batchIndex = parseInt(btn.dataset.longPressBatch);
-    btn.addEventListener('touchstart', () => {
-      btn.classList.add('long-pressing');
-      pressTimer = setTimeout(() => {
-        setDefaultBatch(batchIndex);
-        btn.classList.remove('long-pressing');
-        navigator.vibrate && navigator.vibrate(40);
-      }, 500);
-    }, { passive: true });
-    btn.addEventListener('touchend',  () => { clearTimeout(pressTimer); btn.classList.remove('long-pressing'); });
-    btn.addEventListener('touchmove', () => { clearTimeout(pressTimer); btn.classList.remove('long-pressing'); });
+function bindHomepagePrompts() {
+  document.querySelectorAll('#welcomeScreen [data-home-prompt],#currentsBar [data-home-prompt]').forEach(button=>{
+    const batchIndex=Number.parseInt(button.dataset.longPressBatch,10);
+    const saveType=Number.isInteger(batchIndex)?()=>setDefaultBatch(batchIndex):undefined;
+    enablePromptDrag(button,()=>button.dataset.homePrompt,saveType);
+  });
+  document.querySelectorAll('[data-home-ride]').forEach(button=>{
+    enablePromptDrag(button,()=>rideWaveOptions(button.closest('#currentsBar')!==null).requestText);
   });
 }
 
