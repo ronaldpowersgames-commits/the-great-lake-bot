@@ -8,7 +8,7 @@ const draft = {
   message: 'A pause can change what you hear.',
   insight: 'Wait one breath after someone finishes. They may have more to say.',
   closing: 'Try it in one conversation today.',
-  theme: 'Listening'
+  theme: 'deep'
 };
 
 (async () => {
@@ -38,18 +38,18 @@ const draft = {
     const input = page.locator('#lakeInput');
     await input.fill('/share');
     await input.press('Enter');
-    assert.equal(await page.locator('#shareWaveText').textContent(), original);
+    assert.match(await page.locator('#shareWaveText').textContent(), new RegExp(original.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+    assert.match(await page.locator('#shareWaveText').textContent(), /Create your own Tide/);
     assert.equal(requests.length, 0);
     await page.locator('#shareWaveDialog').getByRole('button', { name: 'Close' }).click();
     await input.fill('/post');
-    page.once('dialog', dialog => dialog.accept());
     await input.press('Enter');
     const editor = page.locator('#postCardEditor');
-    const download = editor.getByRole('button', { name: 'Download PNG' });
+    const download = editor.getByRole('button', { name: 'Download slide' });
     await download.waitFor();
-    assert.deepEqual(requests, [{ source: original, count: 1 }]);
-    assert.equal(await editor.getByLabel('Title', { exact: true }).inputValue(), draft.title);
-    await editor.getByLabel('Title', { exact: true }).fill('Make space to hear');
+    assert.deepEqual(requests, [{ source: original, count: 1, optimizeFor: 'curiosity', instruction: '' }]);
+    assert.equal(await editor.getByLabel('Headline', { exact: true }).inputValue(), draft.title);
+    await editor.getByLabel('Headline', { exact: true }).fill('Make space to hear');
     for (const [format, height] of Object.entries({ square: 1080, portrait: 1350, story: 1920 })) {
       await editor.getByLabel('Layout').selectOption(format);
       const next = page.waitForEvent('download');
@@ -59,9 +59,9 @@ const draft = {
       assert.equal(png.readUInt32BE(16), 1080);
       assert.equal(png.readUInt32BE(20), height);
     }
-    await editor.locator('select[name=artwork]').selectOption('twilight');
+    await editor.getByLabel('Mood').selectOption('still');
     await editor.getByLabel('Layout').selectOption('portrait');
-    await editor.getByRole('button', { name: 'Save to Post Cards' }).click();
+    await editor.getByRole('button', { name: 'Save to Post Imagery' }).click();
     assert.doesNotMatch(await editor.locator('[role=status]').textContent(), /could not load/);
     if (process.env.LAKE_CARD_PREVIEW) await editor.locator('canvas').screenshot({ path: process.env.LAKE_CARD_PREVIEW });
     await editor.getByRole('button', { name: 'Close' }).click();
@@ -73,7 +73,7 @@ const draft = {
     const records = await page.evaluate(() => JSON.parse(localStorage.getItem('lake_cards@example.test_postCards')));
     assert.equal(records.find(record => record.id === 'legacy').favorite, true);
     assert.ok(records.some(record => record.id === 'broken'));
-    assert.equal(records[0].publication.artwork, 'twilight');
+    assert.equal(records[0].publication.theme, 'still');
     assert.deepEqual(errors, []);
     console.log('Post Cards passed in Chrome: separate Wave sharing, editable draft, all three PNG sizes and historical records.');
   } finally {

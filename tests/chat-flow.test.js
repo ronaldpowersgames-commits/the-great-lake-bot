@@ -49,8 +49,12 @@ test('alias matches remain reviewable, and similar full names are not merged', (
   vm.runInContext('crewMembers = [{name:"Ronald Powers",nickname:"User, Ronnie, Ron"},{name:"Sam Jones"}];', context);
   assert.equal(vm.runInContext('findCrewAliasMatch({name:"User"}).length', context), 1);
   assert.equal(vm.runInContext('findCrewAliasMatch({name:"Sam Smith"}).length', context), 0);
-  vm.runInContext('processNamesFromResponse(`PLAYER_TAGS_JSON {"players":[{"name":"User","confidence":"high","evidence":"User led the meeting","needs_confirmation":true}]} END_PLAYER_TAGS_JSON`);', context);
+  vm.runInContext('processNamesFromResponse(`PLAYER_TAGS_JSON {"players":[{"name":"User","organization":"Penguin King","role":"Supplier Account Manager","relationship":"Professional contact","communication_style":"Playful and direct","confidence":"high","evidence":"User led the meeting","needs_confirmation":true}]} END_PLAYER_TAGS_JSON`);', context);
   assert.equal(vm.runInContext('suggestedCrew[0].confidence', context), 'needs confirmation');
+  assert.equal(vm.runInContext('suggestedCrew[0].organization', context), 'Penguin King');
+  assert.equal(vm.runInContext('suggestedCrew[0].role', context), 'Supplier Account Manager');
+  assert.equal(vm.runInContext('suggestedCrew[0].relationship', context), 'Professional contact');
+  assert.equal(vm.runInContext('suggestedCrew[0].communicationStyle', context), 'Playful and direct');
   assert.equal(vm.runInContext('crewMembers.length', context), 2);
   assert.equal(vm.runInContext('normalizePersonKey("Jos\u00e9")', context), 'jose');
 });

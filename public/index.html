@@ -624,6 +624,8 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
 .bubble-actions { display: none; gap: 5px; margin-top: 5px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; position:relative; }
 .bubble-actions::-webkit-scrollbar { display: none; }
 .bubble-actions.show { display: flex; }
+.bubble-action-extra{display:none}
+.bubble-actions.more-open .bubble-action-extra{display:inline-flex}
 .bubble-actions.has-overflow:not(.at-end)::after {
   content: '›'; position: sticky; right: 0; z-index: 2; flex: 0 0 20px;
   display: grid; place-items: center; align-self: stretch; color: var(--lake-light);
@@ -786,6 +788,7 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
   display: flex; gap: 5px; overflow-x: auto;
   -webkit-overflow-scrolling: touch; padding-bottom: 1px;
 }
+@media (pointer:fine){.quick-actions,.bubble-actions,.suggestions-top-row{cursor:grab;user-select:none}.quick-actions:active,.bubble-actions:active,.suggestions-top-row:active{cursor:grabbing}}
 .quick-actions::-webkit-scrollbar { height: 0; }
 .quick-action-btn {
   padding: 4px 9px;
@@ -1391,11 +1394,18 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
   .header-btn  { width: 30px; height: 30px; font-size: 13px; }
   .wave-bubble { font-size: 13px; padding: 10px 13px; }
 }
-#postCardEditor{width:min(850px,calc(100% - 24px));max-height:92dvh;overflow:auto}
-.post-editor-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
-.post-editor-layout canvas{width:100%;height:auto;max-height:64dvh;object-fit:contain;background:#112723;border-radius:6px}
+#postCardEditor{width:min(920px,calc(100% - 24px));max-height:94dvh;overflow:auto}
+.post-editor-layout{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(280px,.92fr);gap:16px;align-items:start}
+.post-editor-preview{display:grid;gap:8px;min-width:0}
+.post-editor-layout canvas{width:100%;height:auto;max-height:68dvh;object-fit:contain;background:#081b2d;border-radius:14px;box-shadow:0 12px 34px #0008}
+.post-editor-nav,.post-editor-refinements,.post-editor-platforms{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:2px 0}
+.post-editor-nav::-webkit-scrollbar,.post-editor-refinements::-webkit-scrollbar,.post-editor-platforms::-webkit-scrollbar{display:none}
+.post-editor-nav button[aria-current="true"]{border-color:var(--lake-light);color:var(--lake-light)}
 .post-editor-fields{display:grid;gap:5px}
 .post-editor-fields textarea{width:100%;color:inherit;background:var(--input-bg,#14283b);border:1px solid var(--dock-border,#3a5972);border-radius:8px;padding:7px;resize:vertical;font:inherit}
+.post-editor-fields input,.post-editor-fields select{width:100%}
+.post-editor-fields .post-editor-setup{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.post-editor-refinements button,.post-editor-platforms button,.post-editor-nav button{white-space:nowrap}
 #postCardEditor menu,#shareWaveDialog menu{flex-wrap:wrap}
 #shareWaveText{white-space:pre-wrap;overflow-wrap:anywhere;max-height:55dvh;overflow:auto;font:inherit}
 @media(max-width:600px){.post-editor-layout{grid-template-columns:1fr}.post-editor-layout canvas{max-height:50dvh}}
@@ -1521,8 +1531,6 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
       <!-- Share menu -->
       <div class="share-menu" id="shareMenu">
         <div onclick="shareLakeInvite()">🌊 Invite someone to jump in</div>
-        <div onclick="openPostCards()">📮 Post Cards library</div>
-        <div onclick="generatePostCards()">🪄 Generate 3 Post Cards</div>
         <div onclick="openSessionShare()">🔗 Share this Tide</div>
         <div onclick="exportAsTxt()">📄 Export as .txt</div>
         <div onclick="exportSplitTranscriptZip()">🗜️ Split chat transcript ZIP</div>
@@ -1692,7 +1700,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
         </div>
       </div>
       <div class="quick-actions">
-        <button type="button" class="quick-action-btn" onclick="openPostCards()">📮 Post Cards</button>
+        <button type="button" class="quick-action-btn" onclick="openPostCards()">📮 Post Imagery</button>
         <button type="button" class="quick-action-btn" data-dock-prompt="Summarize the material available in this Tide, emphasizing the latest substantive Lake analysis and its sources. Give only an elegant bottom line in one or two short sentences: the core takeaway, the most consequential decision or next step if present, and any caveat that changes what I should do. Keep the fewest words that preserve meaning. No heading, list, recap of minor details, suggestions, or follow-up question. Do not invent facts or imply coverage beyond the material you can see." onclick="summarizeTide(this.dataset.dockPrompt)">tSummarize</button>
         <button class="quick-action-btn" onclick="triggerFileInput()">📎 Drop a Chat-Log</button>
         <button class="quick-action-btn" onclick="triggerCamera()">📷 Take Photo</button>
@@ -1898,6 +1906,9 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
     <div class="crew-modal-field"><label>Real Name</label><input type="text" id="crewModalName" placeholder="How you know them..."></div>
     <div class="crew-modal-field"><label>Nicknames / Aliases <span style="color:var(--text-dim);font-weight:normal;font-size:10px">*optional</span></label><input type="text" id="crewModalNickname" placeholder="e.g. User, Ronnie, Ron"></div>
     <div class="crew-modal-field"><label for="crewModalRole">Role</label><input id="crewModalRole" type="text" placeholder="e.g. CRM Lead, teammate, client"></div>
+    <div class="crew-modal-field"><label for="crewModalOrganization">Organisation</label><input id="crewModalOrganization" type="text" placeholder="e.g. Penguin King"></div>
+    <div class="crew-modal-field"><label for="crewModalRelationship">Relationship</label><input id="crewModalRelationship" type="text" placeholder="e.g. Professional contact, friendly rapport"></div>
+    <div class="crew-modal-field"><label for="crewModalCommunicationStyle">Communication style</label><input id="crewModalCommunicationStyle" type="text" placeholder="e.g. Direct, playful, detail-oriented"></div>
     <div class="crew-modal-field"><label><input id="crewModalVisible" type="checkbox" checked> Show in sidebar</label></div>
     <div class="crew-modal-field"><label><input id="crewModalSelf" type="checkbox"> ⭐ This is me</label></div>
     <div class="crew-modal-field" id="crewMatchField" hidden><label for="crewMatchSelect">Link To Crew Member</label><select id="crewMatchSelect"></select></div>
@@ -1980,25 +1991,45 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
 
 <dialog class="lake-share-dialog" id="postCardEditor" aria-labelledby="postCardEditorTitle">
   <form method="dialog">
-    <h2 id="postCardEditorTitle">Post Card preview</h2>
-    <label hidden>Draft <select name="draft"></select></label>
+    <h2 id="postCardEditorTitle">🌊 Post Imagery</h2>
+    <p>Shape one polished Lake image or a threaded carousel. Each slide should earn its place.</p>
     <div class="post-editor-layout">
-      <canvas width="1080" height="1350" aria-label="Post Card artwork"></canvas>
+      <div class="post-editor-preview">
+        <canvas width="1080" height="1350" aria-label="Lake post image preview"></canvas>
+        <div class="post-editor-nav" data-post-nav aria-label="Carousel slides"></div>
+      </div>
       <div class="post-editor-fields">
-        <label>Title <input name="title" maxlength="64" required></label>
-        <label>Main message <textarea name="message" maxlength="150" rows="2" required></textarea></label>
-        <label>Supporting insight <textarea name="insight" maxlength="190" rows="2" required></textarea></label>
-        <label>Closing statement <textarea name="closing" maxlength="110" rows="2" required></textarea></label>
-        <label>Collection <input name="theme" maxlength="30" required></label>
-        <label>Artwork <select name="artwork"><option value="dawn">Lake McDonald at dawn</option><option value="twilight">Lake McDonald at twilight</option></select></label>
+        <div class="post-editor-setup">
+          <label>Slides <input name="count" type="number" min="1" max="10" value="1"></label>
+          <label>Optimize for <select name="optimizeFor"><option value="curiosity">Curiosity</option><option value="clarity">Clarity</option><option value="action">Action</option><option value="professional">Professional</option></select></label>
+        </div>
+        <label>Headline <input name="title" maxlength="60" required></label>
+        <label>Lead <textarea name="message" maxlength="110" rows="2" required></textarea></label>
+        <label>Insight / step 2 <textarea name="insight" maxlength="135" rows="2" required></textarea></label>
+        <label>Payoff / step 3 <textarea name="closing" maxlength="95" rows="2" required></textarea></label>
+        <label>Mood <select name="theme"><option value="deep">Deep water</option><option value="still">Still water</option><option value="dawn">First light</option></select></label>
         <label>Layout <select name="format"><option value="square">Square · 1080 × 1080</option><option value="portrait">Portrait · 1080 × 1350</option><option value="story">Story · 1080 × 1920</option></select></label>
+        <div class="post-editor-refinements" aria-label="Quick refinements">
+          <button type="button" data-refine="Make the hook shorter and more arresting without hype.">Punchier hook</button>
+          <button type="button" data-refine="Make every line simpler, clearer, and less repetitive.">Simplify</button>
+          <button type="button" data-refine="Turn this into a three-step framework with distinct, useful steps.">3-step framework</button>
+          <button type="button" data-refine="Strengthen the insight while preserving the source meaning and uncertainty.">Deeper insight</button>
+        </div>
+        <button type="button" name="regenerate">Regenerate carousel</button>
       </div>
     </div>
     <p role="status"></p>
+    <div class="post-editor-platforms" aria-label="Share destinations">
+      <button type="button" data-platform="instagram">Instagram</button><button type="button" data-platform="facebook">Facebook</button>
+      <button type="button" data-platform="threads">Threads</button><button type="button" data-platform="whatsapp">WhatsApp</button>
+      <button type="button" data-platform="linkedin">LinkedIn</button><button type="button" data-platform="x">X</button>
+      <button type="button" data-platform="slack">Slack</button><button type="button" data-platform="teams">Teams</button>
+    </div>
     <menu>
-      <button type="button" name="share" data-post-export data-primary disabled>Share Post Card</button>
-      <button type="button" name="download" data-post-export disabled>Download PNG</button>
-      <button type="button" name="save" data-post-export disabled>Save to Post Cards</button>
+      <button type="button" name="share" data-post-export data-primary disabled>Share image</button>
+      <button type="button" name="download" data-post-export disabled>Download slide</button>
+      <button type="button" name="downloadAll" data-post-export disabled>Download carousel</button>
+      <button type="button" name="save" data-post-export disabled>Save to Post Imagery</button>
       <button formnovalidate>Close</button>
     </menu>
   </form>
@@ -2010,7 +2041,8 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
     <menu>
       <button type="button" onclick="shareOriginalWave()" data-primary>Share text</button>
       <button type="button" onclick="copyOriginalWave()">Copy text</button>
-      <button type="button" onclick="openWaveShareImage()">Create share image</button>
+      <button type="button" onclick="exportOriginalWaveText()">Export .txt</button>
+      <button type="button" onclick="openWaveShareImage()">Create post imagery</button>
       <button>Close</button>
     </menu>
   </form>
@@ -2043,15 +2075,15 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
   </form>
 </dialog>
 
-<button type="button" class="post-cards-tab" id="postCardsTab" onclick="openPostCards()" aria-label="Open Post Cards" title="Post Cards" aria-controls="postCardsDrawer" aria-expanded="false" hidden><span>📮</span></button>
+<button type="button" class="post-cards-tab" id="postCardsTab" onclick="openPostCards()" aria-label="Open Post Cards" title="Post Imagery" aria-controls="postCardsDrawer" aria-expanded="false" hidden><span>📮</span></button>
 <div class="post-cards-overlay" id="postCardsOverlay" onclick="closePostCards()"></div>
-<aside class="post-cards-drawer" id="postCardsDrawer" aria-label="Post Cards library" aria-hidden="true">
+<aside class="post-cards-drawer" id="postCardsDrawer" aria-label="Post Imagery library" aria-hidden="true">
   <header class="post-cards-head">
-    <div class="post-cards-head-text"><h2>📮 Post Cards</h2><p>Your pocket library of questions, examples and tiny perspective shifts. Saved on this device.</p></div>
-    <button type="button" class="post-cards-close" onclick="closePostCards()" aria-label="Close Post Cards">×</button>
+    <div class="post-cards-head-text"><h2>📮 Post Imagery</h2><p>Your saved Lake slides and carousel narratives. Saved on this device.</p></div>
+    <button type="button" class="post-cards-close" onclick="closePostCards()" aria-label="Close Post Imagery">×</button>
   </header>
   <div class="post-cards-toolbar">
-    <button type="button" onclick="generatePostCards()">🪄 Generate 3</button>
+    <button type="button" onclick="generatePostCards()">🖼 Create 3-slide carousel</button>
     <button type="button" onclick="shufflePostCards()">⇄ Shuffle</button>
     <button type="button" id="postCardsFavoritesButton" onclick="togglePostCardsFavoritesFirst()">☆ Favorites first</button>
   </div>
@@ -2290,7 +2322,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const lakeInput = document.getElementById('lakeInput');
   if (lakeInput) {
     lakeInput.addEventListener('dragover',event=>{
-      if(!event.dataTransfer?.types.includes('application/x-lake-next-wave'))return;
+      if(!Array.from(event.dataTransfer?.types||[]).includes('application/x-lake-next-wave'))return;
       event.preventDefault();
       event.dataTransfer.dropEffect='copy';
       lakeInput.classList.add('wave-drop-ready');
@@ -2298,7 +2330,7 @@ document.addEventListener('DOMContentLoaded', () => {
     lakeInput.addEventListener('dragleave',()=>lakeInput.classList.remove('wave-drop-ready'));
     lakeInput.addEventListener('drop',event=>{
       lakeInput.classList.remove('wave-drop-ready');
-      const prompt=event.dataTransfer?.getData('application/x-lake-next-wave');
+      const prompt=event.dataTransfer?.getData('application/x-lake-next-wave') || event.dataTransfer?.getData('text/plain');
       if(!prompt)return;
       event.preventDefault();
       insertComposerPrompt(lakeInput,prompt);
@@ -2478,7 +2510,11 @@ function parsePlayerTags(responseText) {
       .map(player => ({
         name: String(player.name || player.label || '').trim(),
         nickname: String(player.nickname || '').trim(),
-        codename: String(player.codename || player.role || '').trim(),
+        codename: String(player.codename || '').trim(),
+        organization: String(player.organization || player.organisation || '').trim(),
+        role: String(player.role || '').trim(),
+        relationship: String(player.relationship || '').trim(),
+        communicationStyle: String(player.communication_style || '').trim(),
         confidence: String(player.confidence || 'uncertain').trim(),
         evidence: String(player.evidence || '').trim(),
         relationshipNote: String(player.relationship_note || '').trim(),
@@ -2642,6 +2678,10 @@ function processNamesFromResponse(responseText, source = { id: currentSessionId,
       name: player.name,
       nickname: player.nickname,
       codename: player.codename,
+      organization: player.organization,
+      role: player.role,
+      relationship: player.relationship,
+      communicationStyle: player.communicationStyle,
       context: contextBits.join('\n'),
       observation: {
         date: new Date().toISOString(), sessionId: source.id,
@@ -2813,9 +2853,9 @@ function renderAdaptiveSuggestions() {
       }
       suggestionCyclePhase=suggestionCyclePhase==='expanded'?'collapsed':'expanded';
       renderAdaptiveSuggestions();
-      suggestionCycleTimer=setTimeout(advance,suggestionCyclePhase==='expanded'?3000:8000);
+      suggestionCycleTimer=setTimeout(advance,suggestionCyclePhase==='expanded'?6000:11000);
     };
-    if(reply && typeof reply.suggestionsCollapsed!=='boolean')suggestionCycleTimer=setTimeout(advance,2000);
+    if(reply && typeof reply.suggestionsCollapsed!=='boolean')suggestionCycleTimer=setTimeout(advance,5000);
   }
   const manual=typeof reply?.suggestionsCollapsed==='boolean';
   const collapsed=manual ? reply.suggestionsCollapsed : suggestionCyclePhase!=='expanded';
@@ -2945,6 +2985,7 @@ function renderAdaptiveSuggestions() {
       panel.dataset.draggingWave='true';
       event.dataTransfer.effectAllowed='copy';
       event.dataTransfer.setData('application/x-lake-next-wave',draftPrompt);
+      event.dataTransfer.setData('text/plain',draftPrompt);
     });
     main.addEventListener('dragend',()=>{delete panel.dataset.draggingWave;});
     item.append(main);list.append(item);
@@ -3699,6 +3740,9 @@ function openCrewModal(mode, idx = -1, prefill = '') {
     document.getElementById('crewModalName').value     = m.name     || '';
     document.getElementById('crewModalNickname').value = m.nickname || '';
     document.getElementById('crewModalRole').value=m.role||'';document.getElementById('crewModalVisible').checked=!m.hidden;
+    document.getElementById('crewModalOrganization').value=m.organization||'';
+    document.getElementById('crewModalRelationship').value=m.relationship||'';
+    document.getElementById('crewModalCommunicationStyle').value=m.communicationStyle||'';
     document.getElementById('crewModalSelf').checked=m.isSelf===true;
     document.getElementById('crewModalCodename').value = m.codename || '';
     document.getElementById('crewModalEmoji').value    = m.emoji    || '';
@@ -3709,6 +3753,9 @@ function openCrewModal(mode, idx = -1, prefill = '') {
     document.getElementById('crewModalName').value     = suggested.name || '';
     document.getElementById('crewModalNickname').value = suggested.nickname || '';
     document.getElementById('crewModalRole').value=suggested.role||'';document.getElementById('crewModalVisible').checked=!suggested.hidden;
+    document.getElementById('crewModalOrganization').value=suggested.organization||'';
+    document.getElementById('crewModalRelationship').value=suggested.relationship||'';
+    document.getElementById('crewModalCommunicationStyle').value=suggested.communicationStyle||'';
     document.getElementById('crewModalSelf').checked=false;
     document.getElementById('crewModalCodename').value = suggested.codename || '';
     document.getElementById('crewModalEmoji').value    = suggested.emoji || '';
@@ -3736,6 +3783,9 @@ function saveCrewFromModal() {
     updatedAt:new Date().toISOString(),
     nickname: document.getElementById('crewModalNickname').value.trim(),
     role:document.getElementById('crewModalRole').value.trim(),hidden:!document.getElementById('crewModalVisible').checked,
+    organization:document.getElementById('crewModalOrganization').value.trim(),
+    relationship:document.getElementById('crewModalRelationship').value.trim(),
+    communicationStyle:document.getElementById('crewModalCommunicationStyle').value.trim(),
     isSelf:document.getElementById('crewModalSelf').checked,
     codename: document.getElementById('crewModalCodename').value.trim(),
     emoji:    document.getElementById('crewModalEmoji').value.trim(),
@@ -3768,6 +3818,9 @@ function saveCrewFromModal() {
       const aliases = [existing.nickname, member.name !== existing.name ? member.name : '', member.nickname].filter(Boolean).join(', ');
       existing.nickname = [...new Set(aliases.split(/[,;/|]+/).map(alias => alias.trim()).filter(Boolean))].join(', ');
       if(member.role)existing.role=member.role;
+      if(member.organization)existing.organization=member.organization;
+      if(member.relationship)existing.relationship=member.relationship;
+      if(member.communicationStyle)existing.communicationStyle=member.communicationStyle;
       existing.context = [existing.context, member.context].filter(Boolean).join('\n\n');
       for (const observation of observations) {
         existing.observations = existing.observations || [];
@@ -4118,8 +4171,8 @@ function scheduleRideHomeTip(){
       ['Pro tip · Prompt dock','Tap a dock prompt to send it, or drag it into the text box when you want to edit the wording first.'],
       ['Pro tip · Attach context','Drop a screenshot, transcript or document into the composer; the Lake reads the files together with your question.'],
       ['Pro tip · Start your day','Tap 📅 and name one thing that must move today. The Lake can turn it into a realistic five-minute first step.'],
-      ['Pro tip · Share a wave','Use Share on a Lake reply to make a polished post or story with a working invitation back to The Lake.'],
-      ['Pro tip · Post Cards','Open 📮 Post Cards to keep, favorite, reorder, share or explore your best tiny ideas.'],
+      ['Pro tip · Share a wave','Use Share on a Lake reply to copy or export its text, or turn the insight into polished Post Imagery with a working Lake invitation.'],
+      ['Pro tip · Post Imagery','Open 📮 Post Imagery to create a single slide or a threaded carousel, then refine, save, reorder and share it.'],
       ['Pro tip · New Current','Choose a suggested next wave after a reply to explore that thought without having to invent the next question.']
     ];
     const advancedTips=[
@@ -5002,7 +5055,9 @@ function enablePromptDrag(button,getPrompt,onStationaryHold) {
   button.addEventListener('dragstart',event=>{
     if(!event.dataTransfer)return;
     event.dataTransfer.effectAllowed='copy';
-    event.dataTransfer.setData('application/x-lake-next-wave',getPrompt());
+    const prompt=getPrompt();
+    event.dataTransfer.setData('application/x-lake-next-wave',prompt);
+    event.dataTransfer.setData('text/plain',prompt);
   });
   button.addEventListener('dragend',()=>input.classList.remove('wave-drop-ready'));
   let start, timer, held=false, ghost, startedAt;
@@ -5153,7 +5208,7 @@ At the very end, include this exact machine-readable block so the app can sugges
 Do not announce or explain the block in your prose. Put only JSON between the markers, without a code fence.
 
 PLAYER_TAGS_JSON
-{"players":[{"name":"Name or Unknown 1","nickname":"","codename":"Role or pattern","confidence":"high|medium|low|needs confirmation","needs_confirmation":false,"evidence":"Visible evidence used","relationship_note":"What to track"}]}
+{"players":[{"name":"Name or Unknown 1","nickname":"","codename":"Optional memorable codename","organization":"Supported organisation","role":"Supported role","relationship":"Supported relationship to the user","communication_style":"Supported observed style","confidence":"high|medium|low|needs confirmation","needs_confirmation":false,"evidence":"Visible evidence used","relationship_note":"What to track"}]}
 END_PLAYER_TAGS_JSON
 ${context ? `\nAdditional interaction or correction supplied by the user:\n${context}` : ''}` });
 }
@@ -5946,17 +6001,18 @@ function sharePostCard(id){
   LakePostCards.open([card.publication], publication=>savePublication(publication,id));
 }
 let postCardRequest;
-async function generatePostCards(source='', count=3){
-  if(postCardRequest){showToast('Post Cards are already being prepared.');return;}
+async function generatePostCards(source='', count=3, optimizeFor='curiosity', instruction=''){
+  count=Math.max(1,Math.min(10,Number(count)||3));
+  if(postCardRequest){showToast('Post Imagery is already being prepared.');return;}
   const profile=postCardsStorageKey();
   const request=new AbortController();
   postCardRequest=request;
   closePostCards();
   document.getElementById('shareMenu').style.display='none';
-  showToast('Preparing Post Cards…');
+  showToast(`Preparing ${count}-slide Post Imagery…`);
   try{
     const response=await fetch('/chat/post-cards',{method:'POST',headers:{'Content-Type':'application/json'},
-      signal:request.signal,body:JSON.stringify({source,count})});
+      signal:request.signal,body:JSON.stringify({source,count,optimizeFor,instruction})});
     const data=await response.json();
     if(!response.ok)throw new Error(data.error || 'Could not generate Post Cards.');
     if(profile!==postCardsStorageKey())return;
@@ -5966,13 +6022,13 @@ async function generatePostCards(source='', count=3){
       const id=savePublication(publication,savedIds[index]);
       if(id)savedIds[index]=id;
       return Boolean(id);
-    });
-  }catch(error){if(error.name!=='AbortError')showToast(error.message || 'Could not generate Post Cards.');}
+    },{source,optimizeFor});
+  }catch(error){if(error.name!=='AbortError')showToast(error.message || 'Could not generate Post Imagery.');}
   finally{if(postCardRequest===request)postCardRequest=null;}
 }
 function postFromWave(wave){
   const source=messageActionText(wave);
-  if(!source || !confirm('Use the selected Wave to draft a public-facing Post Card? You can review and edit it before saving or sharing.'))return;
+  if(!source)return;
   return generatePostCards(source,1);
 }
 function generateSimilarPostCard(id){const card=findPostCard(id);if(card)generatePostCards(postCardMarkdown(card));}
@@ -6419,9 +6475,13 @@ function speechSeek(value){if(!speechState.chunks.length)return;speechState.inde
 function speechSetRate(value){speechState.rate=Number(value)||1;if(speechState.playing)speakCurrentChunk();}
 
 let originalShareWave;
+function originalWaveShareText(){
+  const message=messageActionText(originalShareWave);
+  return `${message}\n\n🌊 Create your own Tide in The Lake:\n${LAKE_PUBLIC_URL}`;
+}
 function shareMessage(waveEl){
   originalShareWave=waveEl;
-  document.getElementById('shareWaveText').textContent=messageActionText(waveEl);
+  document.getElementById('shareWaveText').textContent=originalWaveShareText();
   document.getElementById('shareWaveDialog').showModal();
 }
 function copyOriginalWave(){return copyText(document.getElementById('shareWaveText').textContent);}
@@ -6430,9 +6490,14 @@ async function shareOriginalWave(){
   if(!navigator.share)return copyOriginalWave();
   try{await navigator.share({text});}catch(error){if(error.name!=='AbortError')showToast('Could not share this Wave. Use Copy text.');}
 }
+function exportOriginalWaveText(){
+  const text=originalWaveShareText();const link=document.createElement('a');
+  link.href=URL.createObjectURL(new Blob([text],{type:'text/plain'}));link.download=LakeExportNames.artifact('shared-wave-'+currentExportTitle(),'txt');link.click();
+  setTimeout(()=>URL.revokeObjectURL(link.href),1000);
+}
 function openWaveShareImage(){
   document.getElementById('shareWaveDialog').close();
-  configureShareDialog('message',originalShareWave);
+  postFromWave(originalShareWave);
 }
 function messageSource(waveEl){return {sessionId:currentSessionId,role:waveEl.classList.contains('lake-wave')?'assistant':'user',time:waveEl.querySelector('.wave-time')?.textContent||'',content:canonicalMessageText(waveEl)};}
 function jumpToMessageTop(waveEl){waveEl?.scrollIntoView({behavior:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});}
@@ -6527,6 +6592,20 @@ function updateBubbleActionsOverflow(actions){
   actions.classList.toggle('has-overflow',overflow);
   actions.classList.toggle('at-end',!overflow || actions.scrollLeft+actions.clientWidth>=actions.scrollWidth-3);
 }
+function enableHorizontalRail(rail){
+  if(!rail || rail.dataset.horizontalRail==='true')return;
+  rail.dataset.horizontalRail='true';let drag=null,suppressClick=false;
+  rail.addEventListener('wheel',event=>{
+    if(rail.scrollWidth<=rail.clientWidth+2)return;
+    const delta=Math.abs(event.deltaX)>Math.abs(event.deltaY)?event.deltaX:event.deltaY;
+    if(!delta)return;event.preventDefault();rail.scrollLeft+=delta;
+  },{passive:false});
+  rail.addEventListener('pointerdown',event=>{if(event.pointerType!=='mouse'||event.button!==0)return;suppressClick=false;drag={id:event.pointerId,x:event.clientX,left:rail.scrollLeft,moved:false};});
+  rail.addEventListener('pointermove',event=>{if(!drag||drag.id!==event.pointerId)return;const delta=event.clientX-drag.x;if(Math.abs(delta)>5){drag.moved=true;rail.setPointerCapture(event.pointerId);rail.scrollLeft=drag.left-delta;event.preventDefault();}});
+  rail.addEventListener('pointerup',event=>{if(!drag||drag.id!==event.pointerId)return;suppressClick=drag.moved;drag=null;if(suppressClick){event.preventDefault();event.stopPropagation();}});
+  rail.addEventListener('pointercancel',()=>{drag=null;});
+  rail.addEventListener('click',event=>{if(!suppressClick||event.detail===0)return;suppressClick=false;event.preventDefault();event.stopImmediatePropagation();},true);
+}
 function showLatestBubbleActions() {
   const waves=[...document.querySelectorAll('#wavesContainer .wave')];
   document.querySelectorAll('.bubble-actions.show').forEach(el=>el.classList.remove('show'));
@@ -6537,58 +6616,31 @@ function showLatestBubbleActions() {
 function buildBubbleActions(waveEl, isLake) {
   const actions = document.createElement('div');
   actions.className = 'bubble-actions';
-  if (isLake) {
-    const speakBtn = document.createElement('button');
-    speakBtn.className = 'bubble-action-btn'; speakBtn.innerHTML = '🔊 Speak';
-    speakBtn.onclick = () => speakMessage(waveEl);
-    actions.appendChild(speakBtn);
-    const copyBtn = document.createElement('button');
-    copyBtn.className = 'bubble-action-btn'; copyBtn.innerHTML = '📋 Copy';
-    copyBtn.onclick = () => copyText(messageActionText(waveEl));
-    actions.appendChild(copyBtn);
-    const pinBtn = document.createElement('button');
-    pinBtn.className = 'bubble-action-btn'; pinBtn.innerHTML = '📌 Pin';
-    pinBtn.textContent=waveEl._lakeMessageRef?.pinned?'📌 Unpin':'📌 Pin';
-    pinBtn.onclick = () => pinToCurrents(waveEl,pinBtn);
-    const topBtn=document.createElement('button');
-    topBtn.className='bubble-action-btn';topBtn.textContent='↑ Message top';topBtn.onclick=()=>jumpToMessageTop(waveEl);
-    actions.append(topBtn,pinBtn);
-    const actionSpecs=[['↗ Share',()=>shareMessage(waveEl)],['Create Post Card',()=>postFromWave(waveEl)],['⬇ Export',()=>exportMessage(waveEl)],['↩ Reply To',()=>replyToMessage(waveEl)],['🌊 New Current',()=>branchFromMessage(waveEl)]];
-    actionSpecs.forEach(([label,handler])=>{const button=document.createElement('button');button.className='bubble-action-btn';button.textContent=label;button.onclick=handler;actions.append(button);});
-    const favorite=document.createElement('button');favorite.className='bubble-action-btn';favorite.textContent=waveEl._lakeMessageRef?.favorite?'★ Favorite':'☆ Favorite';favorite.onclick=()=>toggleFavorite(waveEl,favorite);actions.append(favorite);
-    if(waveEl._lakeMessageRef){
-      const remove=document.createElement('button');remove.className='bubble-action-btn';remove.textContent='🗑️ Delete';
-      remove.onclick=()=>deleteBubble(waveEl);actions.append(remove);
-    }
-    const regenBtn = document.createElement('button');regenBtn.className = 'bubble-action-btn'; regenBtn.innerHTML = '🔁 Regenerate';regenBtn.onclick = () => regenerateMessage(waveEl);actions.appendChild(regenBtn);
+  const add=(label,handler,extra=false)=>{const button=document.createElement('button');button.className='bubble-action-btn'+(extra?' bubble-action-extra':'');button.textContent=label;button.onclick=handler;actions.append(button);return button;};
+  add('🔊',()=>speakMessage(waveEl)).title='Speak';
+  add('📋',()=>copyText(messageActionText(waveEl))).title='Copy';
+  add('↑',()=>jumpToMessageTop(waveEl)).title='Message top';
+  const pinBtn=add(waveEl._lakeMessageRef?.pinned?'📌✓':'📌',()=>pinToCurrents(waveEl,pinBtn));pinBtn.title='Pin';
+  add('↗ Share',()=>shareMessage(waveEl));
+  add('🖼 Post',()=>postFromWave(waveEl));
+  const more=add('•••',()=>{actions.classList.toggle('more-open');more.setAttribute('aria-expanded',String(actions.classList.contains('more-open')));requestAnimationFrame(()=>updateBubbleActionsOverflow(actions));});
+  more.title='More actions';more.setAttribute('aria-expanded','false');
+  add('↩ Reply',()=>replyToMessage(waveEl),true);
+  add('⬇ Export',()=>exportMessage(waveEl),true);
+  add('🌊 New Current',()=>branchFromMessage(waveEl),true);
+  const favorite=add(waveEl._lakeMessageRef?.favorite?'★ Favorite':'☆ Favorite',()=>toggleFavorite(waveEl,favorite),true);
+  if(isLake){
+    if(waveEl._lakeMessageRef)add('🗑 Delete',()=>deleteBubble(waveEl),true);
+    add('🔁 Regenerate',()=>regenerateMessage(waveEl),true);
     const progression=messageActionText(waveEl).match(/^[^\n]*?([A-G][#♯b♭]?(?:maj7|m7|m|7|sus[24]|add9|dim)?(?:\s*[→–—]\s*[A-G][#♯b♭]?(?:maj7|m7|m|7|sus[24]|add9|dim)?){2,7})(?![\w#/♯♭])/m);
-    if(progression){
-      const play=document.createElement('button');
-      play.className='bubble-action-btn';play.textContent='🎹 Play chords';
-      play.onclick=()=>playChordProgression(progression[1],play);
-      topBtn.after(play);
-    }
+    if(progression){const play=add('🎹 Chords',()=>playChordProgression(progression[1],play),true);}
   } else {
-    const speakBtn=document.createElement('button');speakBtn.className='bubble-action-btn';speakBtn.textContent='🔊 Speak';speakBtn.onclick=()=>speakMessage(waveEl);actions.append(speakBtn);
-    const copyBtn = document.createElement('button');
-    copyBtn.className = 'bubble-action-btn'; copyBtn.innerHTML = '📋 Copy';
-    copyBtn.onclick = () => copyText(messageActionText(waveEl));
-    actions.appendChild(copyBtn);
-    const topBtn=document.createElement('button');topBtn.className='bubble-action-btn';topBtn.textContent='↑ Message top';topBtn.onclick=()=>jumpToMessageTop(waveEl);actions.append(topBtn);
-    const pinBtn=document.createElement('button');pinBtn.className='bubble-action-btn';pinBtn.textContent=waveEl._lakeMessageRef?.pinned?'📌 Unpin':'📌 Pin';pinBtn.onclick=()=>pinToCurrents(waveEl,pinBtn);actions.append(pinBtn);
-    [['↗ Share',()=>shareMessage(waveEl)],['Create Post Card',()=>postFromWave(waveEl)],['⬇ Export',()=>exportMessage(waveEl)],['↩ Reply To',()=>replyToMessage(waveEl)],['🌊 New Current',()=>branchFromMessage(waveEl)]].forEach(([label,handler])=>{const button=document.createElement('button');button.className='bubble-action-btn';button.textContent=label;button.onclick=handler;actions.append(button);});
-    const favorite=document.createElement('button');favorite.className='bubble-action-btn';favorite.textContent=waveEl._lakeMessageRef?.favorite?'★ Favorite':'☆ Favorite';favorite.onclick=()=>toggleFavorite(waveEl,favorite);actions.append(favorite);
-    const editBtn = document.createElement('button');
-    editBtn.className = 'bubble-action-btn'; editBtn.innerHTML = '✏️ Edit';
-    editBtn.onclick = () => editAndResend(waveEl._lakeMessageRef);
-    actions.appendChild(editBtn);
-    const deleteBtn = document.createElement('button');
-    deleteBtn.className = 'bubble-action-btn'; deleteBtn.innerHTML = '🗑️ Delete';
-    deleteBtn.onclick = () => deleteBubble(waveEl);
-    actions.appendChild(deleteBtn);
+    add('✏️ Edit',()=>editAndResend(waveEl._lakeMessageRef),true);
+    add('🗑 Delete',()=>deleteBubble(waveEl),true);
   }
   actions.addEventListener('scroll',()=>updateBubbleActionsOverflow(actions),{passive:true});
   if('ResizeObserver' in window)new ResizeObserver(()=>updateBubbleActionsOverflow(actions)).observe(actions);
+  enableHorizontalRail(actions);
   return actions;
 }
 
@@ -6964,6 +7016,7 @@ function initCarousel() {
   setupSwipe();
   enableHomepageDrag(track.closest('.prompt-carousel-container'),direction=>goToBatch(currentBatch+direction));
   initFeaturedPages();
+  document.querySelectorAll('.quick-actions,.suggestions-top-row,.prompt-group-scroll,.featured-pages').forEach(enableHorizontalRail);
 }
 
 function goToBatch(index) {
