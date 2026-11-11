@@ -2,20 +2,30 @@ const express = require('express');
 const router = express.Router();
 const { randomBytes } = require('node:crypto');
 
-const publicSession = require('../public/shared-session');
-
-function protectedShare(payload) {
-  const base64 = /^[A-Za-z0-9+/]+={0,2}$/;
-  if (!payload || payload.format_version !== 'lake-encrypted-backup/1' ||
-      typeof payload.salt !== 'string' || payload.salt.length !== 24 || !base64.test(payload.salt) ||
-      typeof payload.iv !== 'string' || payload.iv.length !== 16 || !base64.test(payload.iv) ||
-      typeof payload.ciphertext !== 'string' || payload.ciphertext.length < 24 ||
-      payload.ciphertext.length % 4 !== 0 || !base64.test(payload.ciphertext) ||
-      Buffer.from(payload.salt,'base64').length !== 16 || Buffer.from(payload.iv,'base64').length !== 12) {
-    throw new Error('Invalid protected share');
+function publicSession(session) {
+  if (!session || !Array.isArray(session.history) || !session.history.length) {
+    throw new Error('A conversation with messages is required');
   }
-  const {format_version,salt,iv,ciphertext}=payload;
-  return {format_version,salt,iv,ciphertext};
+  const result = {
+    name: String(session.name || 'Shared conversation').slice(0, 200),
+    time: String(session.time || ''),
+    history: session.history.filter(message => ['user', 'assistant'].includes(message.role) &&
+      !['total', 'both'].includes(message.snapshot?.scope) &&
+      !['snapshot-total', 'snapshot-both'].includes(message.action)).map(message => ({
+      role: message.role,
+      content: String(message.content || ''),
+      time: String(message.time || ''),
+      ...(['drip','shallow','calm','analytical','stormy'].includes(message.mood)?{mood:message.mood}:{}),
+      ...(message.mirror ? {mirror:{simulated:message.role==='assistant',mode:message.mirror.mode==='lab'?'lab':'pure'}} : {}),
+      attachments: Array.isArray(message.attachments) ? message.attachments.map(file => ({
+        name: String(file.name || 'Attachment').slice(0, 200),
+        ...(typeof file.data === 'string' && /^data:image\/(png|jpeg|gif|webp);base64,[A-Za-z0-9+/=]+$/.test(file.data)
+          ? { data: file.data } : {})
+      })) : []
+    }))
+  };
+  if (!result.history.length) throw new Error('No shareable conversation messages were found');
+  return result;
 }
 
 router.use((_req, res, next) => {
@@ -32,12 +42,8 @@ const sharedSessions = new Map();
 // ============================================
 router.post('/', express.json(), (req, res) => {
   try {
-    let data;
-    try {
-      data = req.body.encryptedSession === undefined
-        ? {session:publicSession(req.body.session)}
-        : {encryptedSession:protectedShare(req.body.encryptedSession)};
-    }
+    let session;
+    try { session = publicSession(req.body.session); }
     catch (error) { return res.status(400).json({ error: error.message }); }
 
     // Generate unique ID
@@ -46,7 +52,7 @@ router.post('/', express.json(), (req, res) => {
     const expires = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7 days
 
     sharedSessions.set(id, {
-      data,
+      session,
       expires,
       createdAt: new Date().toISOString()
     });
@@ -81,7 +87,7 @@ router.get('/:id', (req, res) => {
     return res.status(404).json({ error: 'Session has expired' });
   }
 
-  res.json(entry.data);
+  res.json({ session: entry.session });
 });
 
 module.exports = router;

@@ -1797,7 +1797,6 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
     <div class="crew-modal-field"><label>Real Name</label><input type="text" id="crewModalName" placeholder="How you know them..."></div>
     <div class="crew-modal-field"><label>Nicknames / Aliases <span style="color:var(--text-dim);font-weight:normal;font-size:10px">*optional</span></label><input type="text" id="crewModalNickname" placeholder="e.g. User, Ronnie, Ron"></div>
     <div class="crew-modal-field"><label for="crewModalRole">Role</label><input id="crewModalRole" type="text" placeholder="e.g. CRM Lead, teammate, client"></div>
-    <div class="crew-modal-field"><label><input id="crewModalProtectedShare" type="checkbox"> Require a passphrase by default when I share with this person</label></div>
     <div class="crew-modal-field"><label><input id="crewModalVisible" type="checkbox" checked> Show in sidebar</label></div>
     <div class="crew-modal-field"><label><input id="crewModalSelf" type="checkbox"> ⭐ This is me</label></div>
     <div class="crew-modal-field" id="crewMatchField" hidden><label for="crewMatchSelect">Link To Crew Member</label><select id="crewMatchSelect"></select></div>
@@ -1843,34 +1842,6 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
 </div>
 
 <!-- HELP MODAL -->
-<dialog id="shareTideDialog" class="mirror-setup">
-  <form id="shareTideForm" onsubmit="event.preventDefault();createTideShare()">
-    <h2>Share Tide</h2>
-    <p>The link opens a read-only copy of this Tide’s shareable messages and images. It lasts up to seven days or until the server restarts.</p>
-    <label>Use sharing preference for <select id="shareCrewRecipient" onchange="updateShareProtection()"></select></label>
-    <label>Default for this Tide
-      <select id="shareTideDefault" onchange="updateShareProtection()">
-        <option value="crew">Use Crew default</option>
-        <option value="protected">Require a passphrase</option>
-        <option value="standard">Standard link</option>
-      </select>
-    </label>
-    <label><input id="shareProtected" type="checkbox" onchange="updateSharePassphraseFields()"> Require a passphrase for this link</label>
-    <div id="sharePassphraseFields" hidden>
-      <label>Passphrase <input id="shareNewPassphrase" type="password" autocomplete="new-password" minlength="12" maxlength="512"></label>
-      <label>Confirm passphrase <input id="shareConfirmPassphrase" type="password" autocomplete="new-password" maxlength="512"></label>
-      <p>Use at least 12 characters. Anyone with the link and passphrase can open it. Send the passphrase separately.</p>
-    </div>
-    <button type="submit" id="shareCreateButton">Create link</button>
-    <button type="button" onclick="document.getElementById('shareTideDialog').close()">Close</button>
-    <p id="shareTideStatus" role="status"></p>
-    <div id="shareTideResult" hidden>
-      <label>Share link <input id="shareTideUrl" type="url" readonly></label>
-      <button type="button" onclick="copyTideShare()">Copy link</button>
-    </div>
-  </form>
-</dialog>
-
 <dialog id="blindMirror" class="mirror-setup">
   <form onsubmit="event.preventDefault();runBlindMirror()">
     <h2>🪞 Blind comparison</h2>
@@ -2021,7 +1992,6 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
 <script src="/session-store.js"></script>
 <script src="/snapshot-context.js"></script>
 <script src="/full-backup.js"></script>
-<script src="/shared-session.js"></script>
 <script src="/meeting-memory.js"></script>
 <script src="/organization.js"></script>
 <script src="/prompt-types.js"></script>
@@ -3495,7 +3465,6 @@ function openCrewModal(mode, idx = -1, prefill = '') {
     document.getElementById('crewModalNickname').value = m.nickname || '';
     document.getElementById('crewModalRole').value=m.role||'';document.getElementById('crewModalVisible').checked=!m.hidden;
     document.getElementById('crewModalSelf').checked=m.isSelf===true;
-    document.getElementById('crewModalProtectedShare').checked=m.requireSharePassphrase===true;
     document.getElementById('crewModalCodename').value = m.codename || '';
     document.getElementById('crewModalEmoji').value    = m.emoji    || '';
     document.getElementById('crewModalContext').value  = m.context  || '';
@@ -3506,7 +3475,6 @@ function openCrewModal(mode, idx = -1, prefill = '') {
     document.getElementById('crewModalNickname').value = suggested.nickname || '';
     document.getElementById('crewModalRole').value=suggested.role||'';document.getElementById('crewModalVisible').checked=!suggested.hidden;
     document.getElementById('crewModalSelf').checked=false;
-    document.getElementById('crewModalProtectedShare').checked=suggested.requireSharePassphrase===true;
     document.getElementById('crewModalCodename').value = suggested.codename || '';
     document.getElementById('crewModalEmoji').value    = suggested.emoji || '';
     document.getElementById('crewModalContext').value  = suggested.context || '';
@@ -3534,7 +3502,6 @@ function saveCrewFromModal() {
     nickname: document.getElementById('crewModalNickname').value.trim(),
     role:document.getElementById('crewModalRole').value.trim(),hidden:!document.getElementById('crewModalVisible').checked,
     isSelf:document.getElementById('crewModalSelf').checked,
-    requireSharePassphrase:document.getElementById('crewModalProtectedShare').checked,
     codename: document.getElementById('crewModalCodename').value.trim(),
     emoji:    document.getElementById('crewModalEmoji').value.trim(),
     context:  document.getElementById('crewModalContext').value.trim()
@@ -5507,110 +5474,35 @@ function toggleShareMenu() {
   menu.style.display = menu.style.display === 'none' || menu.style.display === '' ? 'block' : 'none';
 }
 
-let sharingTide=null;
-function shareAsGroupSession(){
-  const session=allSessions.find(item=>item.id===currentSessionId);
-  if(!session){showToast('Start a conversation first.');return;}
-  const dialog=document.getElementById('shareTideDialog');
-  if(dialog.open)return;
-  sharingTide={id:session.id,key:storageKey('sessions')};
-  document.getElementById('shareTideForm').reset();
-  const recipient=document.getElementById('shareCrewRecipient');
-  recipient.replaceChildren(new Option('Anyone with the link',''));
-  crewMembers.filter(member=>!member.isSelf).forEach(member=>{
-    const option=new Option(member.codename||member.name,String(recipient.options.length));
-    option.dataset.requiresPassphrase=String(member.requireSharePassphrase===true);
-    recipient.add(option);
-  });
-  document.getElementById('shareTideDefault').value=session.shareProtection||'crew';
-  document.getElementById('shareTideStatus').textContent='';
-  document.getElementById('shareTideResult').hidden=true;
-  document.getElementById('shareCreateButton').disabled=false;
-  updateShareProtection();
-  document.getElementById('shareMenu').style.display='none';
-  dialog.showModal();
-}
-function updateShareProtection(){
-  const policy=document.getElementById('shareTideDefault').value;
-  const recipient=document.getElementById('shareCrewRecipient').selectedOptions[0];
-  document.getElementById('shareProtected').checked=policy==='protected' ||
-    (policy==='crew' && recipient?.dataset.requiresPassphrase==='true');
-  updateSharePassphraseFields();
-}
-function updateSharePassphraseFields(){
-  const protectedLink=document.getElementById('shareProtected').checked;
-  document.getElementById('sharePassphraseFields').hidden=!protectedLink;
-  for(const id of ['shareNewPassphrase','shareConfirmPassphrase']){
-    const field=document.getElementById(id);
-    field.disabled=!protectedLink;
-    field.required=protectedLink;
-    if(!protectedLink)field.value='';
-  }
-}
-async function createTideShare(){
-  const button=document.getElementById('shareCreateButton');
-  if(button.disabled)return;
-  const request=sharingTide;
-  const session=allSessions.find(item=>item.id===request?.id);
-  const status=document.getElementById('shareTideStatus');
-  const policy=document.getElementById('shareTideDefault').value;
-  const protectedLink=document.getElementById('shareProtected').checked;
-  const password=document.getElementById('shareNewPassphrase').value;
-  if(!session || request.key!==storageKey('sessions'))return;
-  if(protectedLink && (password.trim().length<12 || password!==document.getElementById('shareConfirmPassphrase').value)){
-    status.textContent='Enter matching passphrases of at least 12 characters.';
-    return;
-  }
-  button.disabled=true;
-  document.getElementById('shareTideResult').hidden=true;
-  status.textContent=protectedLink?'Encrypting and creating link…':'Creating link…';
-  try{
-    const shareSession=LakeSharedSession(session);
-    const payload=protectedLink
-      ? {encryptedSession:await LakeFullBackup.encrypt(shareSession,password)}
-      : {session:shareSession};
-    const response=await fetch('/share',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-    if(!response.ok)throw new Error(response.status===413?'This Tide is too large to share as a link.':'Could not create the share link.');
-    const result=await response.json();
-    if(!/^[a-f0-9]{48}$/.test(result.id))throw new Error('The share link could not be verified.');
-    if(sharingTide!==request || request.key!==storageKey('sessions'))return;
-    const saved=allSessions.find(item=>item.id===request.id);
-    let defaultSaved=true;
-    if(saved && saved.shareProtection!==policy){
-      try{
-        await LakeSessionStore.upsert(request.key,{...saved,shareProtection:policy});
-        saved.shareProtection=policy;
-      }catch{defaultSaved=false;}
+async function shareAsGroupSession() {
+  if (!currentSessionId) { alert('Start a conversation first!'); return; }
+  const session = allSessions.find(s => s.id === currentSessionId);
+  if (!session) { alert('Session not found!'); return; }
+  if (!confirm('Share only this conversation? Anyone with the link can read its messages and attached images. Your profile, Crew, other chats and total-context snapshots are not included.')) return;
+  try {
+    const shareSession = {
+      name: session.name, time: session.time,
+      history: session.history.filter(message => !['total', 'both'].includes(message.snapshot?.scope) &&
+        !['snapshot-total', 'snapshot-both'].includes(message.action)).map(message => ({
+        role: message.role, content: message.content, time: message.time, mood:message.mood,
+        ...(message.mirror?{mirror:message.mirror}:{}),
+        attachments: (message.attachments || []).map(file => ({name:file.name,data:file.data}))
+      }))
+    };
+    const res  = await fetch('/share', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ session: shareSession }) });
+    const data = await res.json();
+    if (!data.id) throw new Error('No ID');
+    if (!res.ok) throw new Error(data.error || 'Could not share conversation');
+    const shareUrl = window.location.origin + '/shared.html?id=' + encodeURIComponent(data.id);
+    if (navigator.share) {
+      await navigator.share({ title: '🌊 ' + (session.name || 'Lake Session'), text: 'Read my Lake session:', url: shareUrl });
+    } else {
+      await navigator.clipboard.writeText(shareUrl);
+      alert('🔗 Share link copied!\n\nAnyone with this link can read only this conversation. Links last up to 7 days, or until the server restarts.');
     }
-    if(sharingTide!==request)return;
-    document.getElementById('shareNewPassphrase').value='';
-    document.getElementById('shareConfirmPassphrase').value='';
-    document.getElementById('shareTideUrl').value=location.origin+'/shared.html?id='+result.id;
-    document.getElementById('shareTideResult').hidden=false;
-    status.textContent=(protectedLink?'Passphrase-protected link created. Share the passphrase separately.':'Standard link created. Anyone with the link can read it.')+
-      (defaultSaved?'':' The Tide default could not be saved.');
-  }catch(error){
-    if(sharingTide===request)status.textContent=error.message||'Could not create the share link.';
-  }finally{
-    if(sharingTide===request)button.disabled=false;
-  }
+  } catch(err) { console.error('Share error:', err); alert('Could not create share link. Try again.'); }
+  document.getElementById('shareMenu').style.display = 'none';
 }
-async function copyTideShare(){
-  const field=document.getElementById('shareTideUrl');
-  try{
-    await navigator.clipboard.writeText(field.value);
-    showToast('Share link copied.');
-  }catch{
-    field.select();
-    showToast('Select and copy the link.');
-  }
-}
-document.addEventListener('DOMContentLoaded',()=>{
-  document.getElementById('shareTideDialog').addEventListener('close',()=>{
-    sharingTide=null;
-    document.getElementById('shareTideForm').reset();
-  });
-});
 
 function sessionTranscriptText() {
   const waves = document.querySelectorAll('.wave');

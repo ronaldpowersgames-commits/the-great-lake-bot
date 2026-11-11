@@ -36,26 +36,12 @@
     .attachment, time { color: #a3b5c4; font-size: 12px; }
     time { display: block; margin-top: 3px; }
     a { color: #7fc7fa; }
-    .share-unlock input, .share-unlock button {
-      font: inherit; padding: 8px 12px; border-radius: 6px;
-      border: 1px solid #426780; background: #142a40; color: inherit;
-    }
-    .share-unlock label { display: block; margin-bottom: 5px; }
-    .share-unlock input { width: min(100%, 320px); margin: 0 6px 8px 0; }
-    .share-unlock button { cursor: pointer; }
   </style>
 </head>
 <body>
   <header><div><strong>The Great Lake</strong><span>Shared conversation · Read only</span></div></header>
-  <main><h1 id="title">Loading conversation...</h1><form id="shareUnlock" class="share-unlock" hidden>
-    <label for="sharePassphrase">Shared Tide passphrase</label>
-    <input id="sharePassphrase" type="password" required autocomplete="off" maxlength="512">
-    <button type="submit">Unlock</button>
-    <p id="shareUnlockStatus" role="status"></p>
-  </form><div id="messages" aria-live="polite"></div></main>
+  <main><h1 id="title">Loading conversation...</h1><div id="messages" aria-live="polite"></div></main>
   <script src="/export-names.js"></script>
-  <script src="/full-backup.js"></script>
-  <script src="/shared-session.js"></script>
   <script src="/shared-view.js"></script>
 </body>
 </html>
