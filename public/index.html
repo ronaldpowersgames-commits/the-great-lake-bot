@@ -1391,6 +1391,14 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
   .header-btn  { width: 30px; height: 30px; font-size: 13px; }
   .wave-bubble { font-size: 13px; padding: 10px 13px; }
 }
+#postCardEditor{width:min(850px,calc(100% - 24px));max-height:92dvh;overflow:auto}
+.post-editor-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+.post-editor-layout canvas{width:100%;height:auto;max-height:64dvh;object-fit:contain;background:#112723;border-radius:6px}
+.post-editor-fields{display:grid;gap:5px}
+.post-editor-fields textarea{width:100%;color:inherit;background:var(--input-bg,#14283b);border:1px solid var(--dock-border,#3a5972);border-radius:8px;padding:7px;resize:vertical;font:inherit}
+#postCardEditor menu,#shareWaveDialog menu{flex-wrap:wrap}
+#shareWaveText{white-space:pre-wrap;overflow-wrap:anywhere;max-height:55dvh;overflow:auto;font:inherit}
+@media(max-width:600px){.post-editor-layout{grid-template-columns:1fr}.post-editor-layout canvas{max-height:50dvh}}
 </style>
 </head>
 <body>
@@ -1970,6 +1978,43 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
   </form>
 </dialog>
 
+<dialog class="lake-share-dialog" id="postCardEditor" aria-labelledby="postCardEditorTitle">
+  <form method="dialog">
+    <h2 id="postCardEditorTitle">Post Card preview</h2>
+    <label hidden>Draft <select name="draft"></select></label>
+    <div class="post-editor-layout">
+      <canvas width="1080" height="1350" aria-label="Post Card artwork"></canvas>
+      <div class="post-editor-fields">
+        <label>Title <input name="title" maxlength="64" required></label>
+        <label>Main message <textarea name="message" maxlength="150" rows="2" required></textarea></label>
+        <label>Supporting insight <textarea name="insight" maxlength="190" rows="2" required></textarea></label>
+        <label>Closing statement <textarea name="closing" maxlength="110" rows="2" required></textarea></label>
+        <label>Collection <input name="theme" maxlength="30" required></label>
+        <label>Artwork <select name="artwork"><option value="dawn">Lake McDonald at dawn</option><option value="twilight">Lake McDonald at twilight</option></select></label>
+        <label>Layout <select name="format"><option value="square">Square · 1080 × 1080</option><option value="portrait">Portrait · 1080 × 1350</option><option value="story">Story · 1080 × 1920</option></select></label>
+      </div>
+    </div>
+    <p role="status"></p>
+    <menu>
+      <button type="button" name="share" data-post-export data-primary disabled>Share Post Card</button>
+      <button type="button" name="download" data-post-export disabled>Download PNG</button>
+      <button type="button" name="save" data-post-export disabled>Save to Post Cards</button>
+      <button formnovalidate>Close</button>
+    </menu>
+  </form>
+</dialog>
+<dialog class="lake-share-dialog" id="shareWaveDialog" aria-labelledby="shareWaveTitle">
+  <form method="dialog">
+    <h2 id="shareWaveTitle">Share this Wave</h2>
+    <pre id="shareWaveText" tabindex="0"></pre>
+    <menu>
+      <button type="button" onclick="shareOriginalWave()" data-primary>Share text</button>
+      <button type="button" onclick="copyOriginalWave()">Copy text</button>
+      <button type="button" onclick="openWaveShareImage()">Create share image</button>
+      <button>Close</button>
+    </menu>
+  </form>
+</dialog>
 <dialog class="lake-share-dialog" id="lakeShareDialog" aria-labelledby="lakeShareTitle">
   <form method="dialog">
     <h2 id="lakeShareTitle">🌊 Share The Lake</h2>
@@ -2152,6 +2197,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
 <script src="/adaptive-suggestions.js"></script>
 <script src="/export-names.js"></script>
 <script src="/pdf-export.js"></script>
+<script src="/post-cards.js"></script>
 <script>
 // ============================================
 // STATE
@@ -2635,12 +2681,14 @@ function guideNextWaves(){
 }
 const LAKE_MOOD_CODES={calm:'calm',reg:'calm',default:'calm',shallow:'shallow',splash:'shallow',splashy:'shallow',deep:'analytical',deepdive:'analytical',full:'analytical',stormy:'stormy',storm:'stormy',choppy:'stormy',drip:'drip',drippy:'drip',drop:'drip'};
 function reservedComposerCommand(code){
-  return Object.hasOwn(LAKE_MOOD_CODES,code) || /^(?:w\d*|mood|trigger|untrigger|rename|pdf)$/.test(code);
+  return Object.hasOwn(LAKE_MOOD_CODES,code) || /^(?:w\d*|mood|trigger|untrigger|rename|pdf|post|share)$/.test(code);
 }
 function composerCommands(){
   const commands=new Map();
   commands.set('rename',{label:'Rename this Tide automatically or add a title',command:true});
   commands.set('pdf',{label:'Export this Tide as PDF',command:true});
+  commands.set('post',{label:'Create a Post Card from the latest Wave',command:true});
+  commands.set('share',{label:'Share the latest Wave',command:true});
   const custom=(localStorage.getItem(storageKey('customPrompts'))||'').split(/\r?\n/);
   let moodTriggers={};
   try{moodTriggers=JSON.parse(localStorage.getItem(storageKey('moodTriggers'))||'{}')||{};}catch{}
@@ -5166,6 +5214,13 @@ async function sendWave(options = {}) {
   const commandKey=typeof storageKey==='function' ? storageKey('moodTriggers') : '';
   let triggers={};
   try { triggers=JSON.parse(globalThis.localStorage?.getItem(commandKey)||'{}') || {}; } catch {}
+  if(options.requestText==null && /^\/(?:post|share)$/i.test(text)){
+    const wave = [...document.querySelectorAll('#wavesContainer .wave')].findLast(item =>
+      !item._lakeMessageRef?.snapshot && canonicalMessageText(item));
+    if(!wave){showToast('Choose a Wave first.');return;}
+    input.value='';scheduleInputResize(input);updateComposerCommands(input);
+    return text.toLowerCase()==='/post' ? postFromWave(wave) : shareMessage(wave);
+  }
   if(options.requestText==null && /^\/pdf$/i.test(text)){
     input.value='';scheduleInputResize(input);updateComposerCommands(input);
     return exportAsPDF();
@@ -5472,7 +5527,6 @@ async function sendWave(options = {}) {
       const cleanReflection = options.action==='rename-tide'
         ? renameSaved?`🌊 Tide renamed: **${data.tideTitle}**`:'The Tide title could not be saved, so its original title is unchanged.'
         : suggestionResult.text;
-      if(options.action==='post-card-generator'){loadPostCards();saveGeneratedPostCards(cleanReflection);}
       if(origin.showAdaptiveSuggestions && cleanReflection && !suggestionResult.suggestions.length){
         if(options.guide)suggestionResult.suggestions.push(...guideNextWaves());
         else suggestionResult.suggestions.push({label:'Find one useful next step',kind:'action',prompt:'Based on what I asked and your last reply, suggest one concrete next step that builds on our conversation. If there is no action to take, give me one useful angle I have not considered.'});
@@ -5704,7 +5758,7 @@ function hideRipple() {
 // ============================================
 function handleKey(e) {
   if((e.key==='Tab' || e.key==='Enter') && !e.shiftKey && !e.isComposing && !e.repeat && e.keyCode!==229 && e.target?.dataset?.composing!=='true'){
-    if(e.key==='Enter' && /^\/pdf\s*$/i.test(e.target?.value || '')){
+    if(e.key==='Enter' && /^\/(?:pdf|post|share)\s*$/i.test(e.target?.value || '')){
       e.preventDefault();
       sendWave();
       return;
@@ -5772,36 +5826,26 @@ const LAKE_PUBLIC_URL='https://the-great-lake-bot.onrender.com/';
 const lakeShareState={mode:'invite',wave:null,card:null};
 let postCards=[];
 let postCardsFavoritesFirst=false;
-const POST_CARD_GENERATOR_PROMPT=`Create exactly three original social Post Cards for The Great Lake. Each card must make a fast-scrolling reader pause and leave them with one genuinely useful, humane adjustment to how they see everyday life. Be novel, precise, clever, elegant, warm and thought-provoking without sounding grandiose, preachy, manipulative or like a generic motivational quote. Favor obvious-but-unexamined truths, practical questions and memorable examples. Vary the three cards: one question, one concrete example or observation, and one compact framework. Each card must contain exactly three numbered points—not two, not five.
-
-Use this exact format and no introduction or closing:
-## Card 1 — [short headline]
-[one vivid teaser sentence]
-1. [short label]: [one concise detail]
-2. [short label]: [one concise detail]
-3. [short label]: [one concise detail]
-
-## Card 2 — [short headline]
-[one vivid teaser sentence]
-1. [short label]: [one concise detail]
-2. [short label]: [one concise detail]
-3. [short label]: [one concise detail]
-
-## Card 3 — [short headline]
-[one vivid teaser sentence]
-1. [short label]: [one concise detail]
-2. [short label]: [one concise detail]
-3. [short label]: [one concise detail]`;
 function postCardsStorageKey(){return storageKey('postCards');}
 function loadPostCards(){try{const saved=JSON.parse(localStorage.getItem(postCardsStorageKey())||'[]');postCards=Array.isArray(saved)?saved:[];}catch{postCards=[];}return postCards;}
-function savePostCards(){try{localStorage.setItem(postCardsStorageKey(),JSON.stringify(postCards.slice(0,120)));}catch{showToast('Post Cards could not be saved on this device.');}}
-function postCardMarkdown(card){return `## ${card.title}\n${card.teaser}\n${card.items.slice(0,3).map((item,index)=>`${index+1}. ${item.label}${item.detail?`: ${item.detail}`:''}`).join('\n')}`.trim();}
+function savePostCards(){try{localStorage.setItem(postCardsStorageKey(),JSON.stringify(postCards));return true;}catch{showToast('Post Cards could not be saved on this device.');return false;}}
+function postCardMarkdown(card){
+  if(card.publication){
+    const {title,message,insight,closing}=card.publication;
+    return [title,message,insight,closing].join('\n\n');
+  }
+  return `## ${card.title}\n${card.teaser}\n${card.items.slice(0,3).map((item,index)=>`${index+1}. ${item.label}${item.detail?`: ${item.detail}`:''}`).join('\n')}`.trim();}
 function newPostCard(content,sourceText=''){
   const items=(content.items||[]).slice(0,3).map((item,index)=>({number:String(index+1),label:trimLakeShareText(item.label,42),detail:trimLakeShareText(item.detail,180)}));
   return {id:'post_'+Date.now()+'_'+Math.random().toString(36).slice(2,8),title:trimLakeShareText(content.title,86)||'A thought from the deep',teaser:trimLakeShareText(content.teaser||content.body,230),items,sourceText,created:Date.now(),favorite:false};
 }
 function addPostCard(content,sourceText='',quiet=false){
   const card=newPostCard(content,sourceText);postCards.unshift(card);savePostCards();renderPostCards();if(!quiet)showToast('Saved to Post Cards.');return card;
+}
+function usablePostCard(card){return typeof card?.id==='string' && typeof card.title==='string' && !!card.title.trim() &&
+  Array.isArray(card.items) && card.items.every(item=>typeof item?.label==='string');}
+function deletedPostCardKeys(){
+  try {return new Set(JSON.parse(localStorage.getItem(storageKey('deletedPostCards'))||'[]'));} catch {return new Set();}
 }
 function postCardFingerprint(card){return [card.title,card.teaser,...(card.items||[]).map(item=>item.label+' '+item.detail)].join(' ').toLowerCase().replace(/\W+/g,' ').trim();}
 function postCardContentFromSection(title,body){
@@ -5827,18 +5871,18 @@ function parseGeneratedPostCards(text){
     return content.items.length===3?newPostCard(content,section):null;
   }).filter(Boolean);
 }
-function saveGeneratedPostCards(text){
-  const generated=parseGeneratedPostCards(text);
-  if(!generated.length){showToast('The cards arrived in an unexpected format. The reply is still in your Tide.');return;}
-  const known=new Set(postCards.map(postCardFingerprint));const fresh=generated.filter(card=>!known.has(postCardFingerprint(card)));
-  postCards=[...fresh,...postCards];savePostCards();renderPostCards();showToast(fresh.length?`${fresh.length} Post Card${fresh.length===1?'':'s'} saved.`:'Those Post Cards are already in your library.');
-}
 function recoverGeneratedPostCardsFromHistory(){
-  const recovered=[];const known=new Set(postCards.map(postCardFingerprint));
-  for(let index=0;index<chatHistory.length-1;index++){
-    if(chatHistory[index]?.role!=='user'||chatHistory[index]?.action!=='post-card-generator')continue;
-    const reply=chatHistory.slice(index+1).find(message=>message.role==='assistant');if(!reply)continue;
-    for(const card of parseGeneratedPostCards(reply.content)){const key=postCardFingerprint(card);if(!known.has(key)){known.add(key);recovered.push(card);}}
+  const recovered=[];const known=deletedPostCardKeys();
+  postCards.filter(usablePostCard).forEach(card=>known.add(postCardFingerprint(card)));
+  for(const {history=[]} of allSessions){
+    for(let index=0;index<history.length-1;index++){
+      if(history[index]?.role!=='user'||history[index]?.action!=='post-card-generator')continue;
+      const reply=history[index+1];if(reply?.role!=='assistant')continue;
+      for(const card of parseGeneratedPostCards(reply.content)){
+        const key=postCardFingerprint(card);
+        if(!known.has(key)){known.add(key);recovered.push(card);}
+      }
+    }
   }
   if(recovered.length){postCards=[...recovered,...postCards];savePostCards();showToast(`Recovered ${recovered.length} generated Post Card${recovered.length===1?'':'s'}.`);}
 }
@@ -5852,8 +5896,11 @@ function closePostCards(){document.body.classList.remove('post-cards-open');docu
 function renderPostCards(favoritesFirst=postCardsFavoritesFirst,openId=''){
   postCardsFavoritesFirst=favoritesFirst;
   const list=document.getElementById('postCardsList');if(!list)return;list.replaceChildren();
-  const cards=[...postCards];if(favoritesFirst)cards.sort((a,b)=>Number(b.favorite)-Number(a.favorite));
+  const cards=postCards.filter(usablePostCard);if(favoritesFirst)cards.sort((a,b)=>Number(b.favorite)-Number(a.favorite));
   const favoritesButton=document.getElementById('postCardsFavoritesButton');if(favoritesButton){favoritesButton.textContent=favoritesFirst?'★ Favorites first':'☆ Favorites first';favoritesButton.setAttribute('aria-pressed',String(favoritesFirst));}
+  if(cards.length!==postCards.length){
+    const notice=document.createElement('p');notice.textContent='Some older cards could not be displayed. Their records are still saved.';list.append(notice);
+  }
   if(!cards.length){const empty=document.createElement('div');empty.className='post-cards-empty';empty.innerHTML='<strong>No cards tucked away yet.</strong><br>Generate three fresh ideas, or save any Lake share card here.';list.append(empty);return;}
   cards.forEach((card,index)=>{
     const details=document.createElement('details');details.className='post-card'+(card.favorite?' is-favorite':'');details.dataset.cardId=card.id;details.open=card.id===openId;
@@ -5862,28 +5909,75 @@ function renderPostCards(favoritesFirst=postCardsFavoritesFirst,openId=''){
     const copy=document.createElement('span');copy.className='post-card-copy';const title=document.createElement('div');title.className='post-card-title';title.textContent=card.title;const teaser=document.createElement('div');teaser.className='post-card-teaser';teaser.textContent=card.teaser;copy.append(title,teaser);
     const star=document.createElement('span');star.className='post-card-favorite';star.textContent=card.favorite?'★':'♡';summary.append(number,copy,star);
     const body=document.createElement('div');body.className='post-card-body';const points=document.createElement('ol');points.className='post-card-points';
+    if(card.publication){
+      for(const value of [card.publication.insight,card.publication.closing]){
+        const paragraph=document.createElement('p');paragraph.textContent=value;body.append(paragraph);
+      }
+    }
     card.items.slice(0,3).forEach(item=>{const li=document.createElement('li');const strong=document.createElement('strong');strong.textContent=item.label;li.append(strong,document.createTextNode(item.detail?`: ${item.detail}`:''));points.append(li);});
     const link=document.createElement('a');link.className='post-card-link';link.href=LAKE_PUBLIC_URL;link.target='_blank';link.rel='noopener';link.textContent='🔗 the-great-lake-bot.onrender.com';
     const actions=document.createElement('div');actions.className='post-card-actions';
-    const defs=[['★ Favorite',()=>togglePostCardFavorite(card.id)],['🌊 Chat',()=>launchPostCard(card.id)],['↗ Share',()=>sharePostCard(card.id)],['≈ Similar',()=>generateSimilarPostCard(card.id)],['↑ Up',()=>movePostCard(card.id,-1)],['↓ Down',()=>movePostCard(card.id,1)],['🗑 Remove',()=>removePostCard(card.id)]];
+    const defs=[['★ Favorite',()=>togglePostCardFavorite(card.id)],['🌊 Chat',()=>launchPostCard(card.id)],['↗ Preview / Share',()=>sharePostCard(card.id)],['Copy',()=>copyText(postCardMarkdown(card))],['≈ Similar',()=>generateSimilarPostCard(card.id)],['↑ Up',()=>movePostCard(card.id,-1)],['↓ Down',()=>movePostCard(card.id,1)],['🗑 Remove',()=>removePostCard(card.id)]];
     defs.forEach(([label,handler])=>{const button=document.createElement('button');button.type='button';button.textContent=label;button.onclick=event=>{event.preventDefault();handler();};actions.append(button);});body.append(points,link,actions);details.append(summary,body);list.append(details);
   });
 }
-function findPostCard(id){return postCards.find(card=>card.id===id);}
+function findPostCard(id){return postCards.find(card=>card?.id===id);}
 function togglePostCardsFavoritesFirst(){renderPostCards(!postCardsFavoritesFirst);}
 function togglePostCardFavorite(id){const card=findPostCard(id);if(!card)return;card.favorite=!card.favorite;savePostCards();renderPostCards(postCardsFavoritesFirst,id);showToast(card.favorite?'Added to Post Card favorites.':'Removed from Post Card favorites.');}
-function movePostCard(id,delta){const index=postCards.findIndex(card=>card.id===id),next=Math.max(0,Math.min(postCards.length-1,index+delta));if(index<0||next===index)return;postCards.splice(next,0,postCards.splice(index,1)[0]);savePostCards();renderPostCards(postCardsFavoritesFirst,id);}
+function movePostCard(id,delta){const index=postCards.findIndex(card=>card?.id===id),next=Math.max(0,Math.min(postCards.length-1,index+delta));if(index<0||next===index)return;postCards.splice(next,0,postCards.splice(index,1)[0]);savePostCards();renderPostCards(postCardsFavoritesFirst,id);}
 function shufflePostCards(){for(let i=postCards.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[postCards[i],postCards[j]]=[postCards[j],postCards[i]];}savePostCards();renderPostCards();}
-function removePostCard(id){const card=findPostCard(id);if(!card||!confirm(`Remove “${card.title}” from Post Cards?`))return;postCards=postCards.filter(item=>item.id!==id);savePostCards();renderPostCards();}
+function removePostCard(id){const card=findPostCard(id);if(!card||!confirm(`Remove “${card.title}” from Post Cards?`))return;const deleted=deletedPostCardKeys();deleted.add(postCardFingerprint(card));
+  try{localStorage.setItem(storageKey('deletedPostCards'),JSON.stringify([...deleted]));}catch{showToast('Could not remove this card.');return;}
+  postCards=postCards.filter(item=>item?.id!==id);savePostCards();renderPostCards();}
 function launchPostCard(id){const card=findPostCard(id);if(!card)return;closePostCards();const input=document.getElementById('lakeInput');input.value=`Explore this Post Card with me:\n\n${postCardMarkdown(card)}`;autoResize(input);input.focus();}
-function sharePostCard(id){const card=findPostCard(id);if(!card)return;closePostCards();configureShareDialog('message',null,card);}
-function generatePostCards(seed=''){
-  closePostCards();document.getElementById('shareMenu').style.display='none';
-  return sendWave({action:'post-card-generator',visibleText:'✨ Generate 3 Post Cards',requestText:POST_CARD_GENERATOR_PROMPT+(seed?`\n\nCreate fresh cards inspired by this seed without repeating its wording, claim or examples:\n${seed}`:''),reuseAttachments:false,preserveDraft:true});
+function savePublication(publication, id) {
+  loadPostCards();
+  const existing = id && findPostCard(id);
+  const card = { ...(existing || newPostCard({title:publication.title})), title:publication.title,
+    teaser:publication.message, publication };
+  postCards = existing ? postCards.map(item => item === existing ? card : item) : [card,...postCards];
+  if(!savePostCards()) return null;
+  renderPostCards();
+  return card.id;
+}
+function sharePostCard(id){
+  const card=findPostCard(id);if(!card)return;closePostCards();
+  if(!card.publication)return configureShareDialog('message',null,card);
+  LakePostCards.open([card.publication], publication=>savePublication(publication,id));
+}
+let postCardRequest;
+async function generatePostCards(source='', count=3){
+  if(postCardRequest){showToast('Post Cards are already being prepared.');return;}
+  const profile=postCardsStorageKey();
+  const request=new AbortController();
+  postCardRequest=request;
+  closePostCards();
+  document.getElementById('shareMenu').style.display='none';
+  showToast('Preparing Post Cards…');
+  try{
+    const response=await fetch('/chat/post-cards',{method:'POST',headers:{'Content-Type':'application/json'},
+      signal:request.signal,body:JSON.stringify({source,count})});
+    const data=await response.json();
+    if(!response.ok)throw new Error(data.error || 'Could not generate Post Cards.');
+    if(profile!==postCardsStorageKey())return;
+    const savedIds=[];
+    LakePostCards.open(data.cards,(publication,index)=>{
+      if(profile!==postCardsStorageKey())return false;
+      const id=savePublication(publication,savedIds[index]);
+      if(id)savedIds[index]=id;
+      return Boolean(id);
+    });
+  }catch(error){if(error.name!=='AbortError')showToast(error.message || 'Could not generate Post Cards.');}
+  finally{if(postCardRequest===request)postCardRequest=null;}
+}
+function postFromWave(wave){
+  const source=messageActionText(wave);
+  if(!source || !confirm('Use the selected Wave to draft a public-facing Post Card? You can review and edit it before saving or sharing.'))return;
+  return generatePostCards(source,1);
 }
 function generateSimilarPostCard(id){const card=findPostCard(id);if(card)generatePostCards(postCardMarkdown(card));}
 function saveCurrentShareCard(){
-  if(lakeShareState.card){if(!postCards.some(card=>card.id===lakeShareState.card.id)){postCards.unshift(lakeShareState.card);savePostCards();}showToast('Already safe in Post Cards.');return;}
+  if(lakeShareState.card){if(!postCards.some(card=>card?.id===lakeShareState.card.id)){postCards.unshift(lakeShareState.card);savePostCards();}showToast('Already safe in Post Cards.');return;}
   const source=messageActionText(lakeShareState.wave);if(!source)return;addPostCard(lakeShareContent(source),source);
 }
 function lakeShareSourceText(){return lakeShareState.card?postCardMarkdown(lakeShareState.card):messageActionText(lakeShareState.wave);}
@@ -6324,7 +6418,22 @@ function speechNext(){if(!speechState.chunks.length)return;speechState.index=Mat
 function speechSeek(value){if(!speechState.chunks.length)return;speechState.index=Math.max(0,Math.min(speechState.chunks.length-1,Number(value)||0));speakCurrentChunk();}
 function speechSetRate(value){speechState.rate=Number(value)||1;if(speechState.playing)speakCurrentChunk();}
 
-async function shareMessage(waveEl){configureShareDialog('message',waveEl);}
+let originalShareWave;
+function shareMessage(waveEl){
+  originalShareWave=waveEl;
+  document.getElementById('shareWaveText').textContent=messageActionText(waveEl);
+  document.getElementById('shareWaveDialog').showModal();
+}
+function copyOriginalWave(){return copyText(document.getElementById('shareWaveText').textContent);}
+async function shareOriginalWave(){
+  const text=document.getElementById('shareWaveText').textContent;
+  if(!navigator.share)return copyOriginalWave();
+  try{await navigator.share({text});}catch(error){if(error.name!=='AbortError')showToast('Could not share this Wave. Use Copy text.');}
+}
+function openWaveShareImage(){
+  document.getElementById('shareWaveDialog').close();
+  configureShareDialog('message',originalShareWave);
+}
 function messageSource(waveEl){return {sessionId:currentSessionId,role:waveEl.classList.contains('lake-wave')?'assistant':'user',time:waveEl.querySelector('.wave-time')?.textContent||'',content:canonicalMessageText(waveEl)};}
 function jumpToMessageTop(waveEl){waveEl?.scrollIntoView({behavior:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});}
 function replyToMessage(waveEl){const source=messageSource(waveEl);globalThis.pendingReplySource=source;const input=document.getElementById('lakeInput');input.value=`Regarding this wave:\n“${source.content.slice(0,500)}${source.content.length>500?'…':''}”\n\n`;input.focus();scheduleInputResize(input);}
@@ -6444,7 +6553,7 @@ function buildBubbleActions(waveEl, isLake) {
     const topBtn=document.createElement('button');
     topBtn.className='bubble-action-btn';topBtn.textContent='↑ Message top';topBtn.onclick=()=>jumpToMessageTop(waveEl);
     actions.append(topBtn,pinBtn);
-    const actionSpecs=[['↗ Share',()=>shareMessage(waveEl)],['⬇ Export',()=>exportMessage(waveEl)],['↩ Reply To',()=>replyToMessage(waveEl)],['🌊 New Current',()=>branchFromMessage(waveEl)]];
+    const actionSpecs=[['↗ Share',()=>shareMessage(waveEl)],['Create Post Card',()=>postFromWave(waveEl)],['⬇ Export',()=>exportMessage(waveEl)],['↩ Reply To',()=>replyToMessage(waveEl)],['🌊 New Current',()=>branchFromMessage(waveEl)]];
     actionSpecs.forEach(([label,handler])=>{const button=document.createElement('button');button.className='bubble-action-btn';button.textContent=label;button.onclick=handler;actions.append(button);});
     const favorite=document.createElement('button');favorite.className='bubble-action-btn';favorite.textContent=waveEl._lakeMessageRef?.favorite?'★ Favorite':'☆ Favorite';favorite.onclick=()=>toggleFavorite(waveEl,favorite);actions.append(favorite);
     if(waveEl._lakeMessageRef){
@@ -6467,7 +6576,7 @@ function buildBubbleActions(waveEl, isLake) {
     actions.appendChild(copyBtn);
     const topBtn=document.createElement('button');topBtn.className='bubble-action-btn';topBtn.textContent='↑ Message top';topBtn.onclick=()=>jumpToMessageTop(waveEl);actions.append(topBtn);
     const pinBtn=document.createElement('button');pinBtn.className='bubble-action-btn';pinBtn.textContent=waveEl._lakeMessageRef?.pinned?'📌 Unpin':'📌 Pin';pinBtn.onclick=()=>pinToCurrents(waveEl,pinBtn);actions.append(pinBtn);
-    [['↗ Share',()=>shareMessage(waveEl)],['⬇ Export',()=>exportMessage(waveEl)],['↩ Reply To',()=>replyToMessage(waveEl)],['🌊 New Current',()=>branchFromMessage(waveEl)]].forEach(([label,handler])=>{const button=document.createElement('button');button.className='bubble-action-btn';button.textContent=label;button.onclick=handler;actions.append(button);});
+    [['↗ Share',()=>shareMessage(waveEl)],['Create Post Card',()=>postFromWave(waveEl)],['⬇ Export',()=>exportMessage(waveEl)],['↩ Reply To',()=>replyToMessage(waveEl)],['🌊 New Current',()=>branchFromMessage(waveEl)]].forEach(([label,handler])=>{const button=document.createElement('button');button.className='bubble-action-btn';button.textContent=label;button.onclick=handler;actions.append(button);});
     const favorite=document.createElement('button');favorite.className='bubble-action-btn';favorite.textContent=waveEl._lakeMessageRef?.favorite?'★ Favorite':'☆ Favorite';favorite.onclick=()=>toggleFavorite(waveEl,favorite);actions.append(favorite);
     const editBtn = document.createElement('button');
     editBtn.className = 'bubble-action-btn'; editBtn.innerHTML = '✏️ Edit';

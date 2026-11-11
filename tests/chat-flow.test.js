@@ -292,7 +292,11 @@ function routeContext(reply = () => 'Test reflection') {
   const requests = [];
   let handler;
   let uploads;
-  const router = { post(_path, upload, callback) { handler = callback; uploads = upload; } };
+  let postCards;
+  const router = { post(path, upload, callback) {
+    if (path === '/post-cards') postCards = upload;
+    else { handler = callback; uploads = upload; }
+  } };
   const context = vm.createContext({
     console: { log() {}, warn() {}, error() {} }, Buffer,
     __dirname: path.join(root, 'routes'), module: { exports: {} },
@@ -313,8 +317,35 @@ function routeContext(reply = () => 'Test reflection') {
     }
   });
   vm.runInContext(fs.readFileSync(path.join(root, 'routes/chat.js'), 'utf8'), context);
-  return { requests, handler, uploads, context };
+  return { requests, handler, uploads, context, postCards };
 }
+
+test('Post Cards use a separate structured request and reject duplicated or malformed card copy', async () => {
+  const card = { title: 'Leave room to notice', message: 'A pause can change what you hear.',
+    insight: 'Wait one breath after someone finishes. They may have more to say.',
+    closing: 'Try it in one conversation today.', theme: 'Listening' };
+  const run = async (cards, body) => {
+    const { requests, postCards } = routeContext(() => JSON.stringify({ cards }));
+    let status = 200;
+    let result;
+    await postCards({ body }, {
+      status(code) { status = code; return this; },
+      json(value) { result = value; }
+    });
+    return { requests, status, result };
+  };
+  const source = 'Sometimes I talk before my colleague has finished.';
+  const valid = await run([card], { source, count: 1 });
+  assert.equal(valid.status, 200);
+  assert.equal(valid.result.cards[0].title, card.title);
+  assert.equal(valid.requests[0].messages.length, 2);
+  assert.equal(valid.requests[0].messages[1].content, source);
+  assert.equal(valid.requests[0].response_format.json_schema.strict, true);
+  assert.equal((await run([{ ...card, closing: card.message }], { source })).status, 502);
+  assert.equal((await run([{ ...card, title: '**Markdown**' }], { source })).status, 502);
+  assert.equal((await run([card, card, card], { count: 3 })).status, 502);
+  assert.equal((await run([], { source: '', count: 1 })).requests.length, 0);
+});
 
 test('missing Next Waves get a contextual retry without replacing the answer', async () => {
   const {handler,requests}=routeContext(args=>args.response_format?.type==='json_object'
