@@ -106,4 +106,10 @@ test('sharing and help expose one integrated Lake experience',()=>{
   assert.match(html,/tSummarize/);
   assert.match(html,/class="portable-disclosure"/);
   assert.match(html,/Tap to expand import and export options/);
+  assert.match(html,/\.lake-share-dialog \[hidden\] \{ display:none!important; \}/);
+  assert.match(html,/function cleanLakeShareText/);
+  assert.match(html,/function lakeShareContent/);
+  assert.match(html,/maxItems=story\?5:3/);
+  assert.match(html,/A THOUGHT FROM THE DEEP/);
+  assert.match(html,/DIVE DEEPER AT/);
 });

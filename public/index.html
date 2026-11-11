@@ -1217,16 +1217,24 @@ button.depths-option { width:100%; text-align:start; font-family:inherit; backgr
 .help-list { list-style: none; padding: 0; margin: 12px 0 0 0; display: flex; flex-direction: column; gap: 10px; }
 .help-list li { padding: 8px 10px; background: rgba(255,255,255,0.04); border-radius: 8px; font-size: 13px; line-height: 1.5; color: var(--text-secondary); }
 .help-list li strong { color: var(--text-primary); }
-.lake-share-dialog { width:min(520px,calc(100vw - 24px)); max-height:min(760px,90vh); overflow:auto; border:1px solid var(--dock-border); border-radius:20px; background:var(--dock-bg); color:var(--text-primary); padding:20px; }
+.lake-share-dialog { width:min(540px,calc(100vw - 18px)); max-height:92dvh; overflow:hidden; border:1px solid color-mix(in srgb,var(--lake-light) 25%,var(--dock-border)); border-radius:24px; background:linear-gradient(180deg,#0a192a,#07131f); color:var(--text-primary); padding:0; box-shadow:0 24px 80px rgba(0,0,0,.62),0 0 45px rgba(45,140,240,.10); }
 .lake-share-dialog::backdrop { background:rgba(2,9,16,.78); backdrop-filter:blur(4px); }
-.lake-share-dialog h2 { margin:0 0 6px; color:var(--lake-light); }
-.lake-share-dialog p { color:var(--text-secondary); font-size:13px; }
-.lake-share-dialog label { display:grid; gap:5px; margin:12px 0; color:var(--text-secondary); font-size:12px; }
-.lake-share-dialog input,.lake-share-dialog select { width:100%; padding:9px 11px; border:1px solid var(--dock-border); border-radius:9px; background:var(--lake-surface); color:var(--text-primary); }
-.lake-share-dialog menu,.lake-share-platforms { display:flex; flex-wrap:wrap; gap:8px; padding:0; margin:14px 0 0; }
-.lake-share-dialog button { padding:8px 12px; border:1px solid var(--dock-border); border-radius:999px; background:rgba(45,140,240,.12); color:var(--text-primary); cursor:pointer; }
-.lake-share-dialog button[data-primary] { background:linear-gradient(135deg,var(--lake-glow),#136da4); color:white; }
-#shareCardCanvas { display:block; width:min(100%,360px); height:auto; margin:12px auto; border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,.35); }
+.lake-share-dialog form { max-height:92dvh; overflow:auto; padding:22px; scrollbar-width:thin; }
+.lake-share-dialog [hidden] { display:none!important; }
+.lake-share-dialog h2 { margin:0 0 5px; color:var(--lake-light); font-size:22px; letter-spacing:-.3px; }
+.lake-share-dialog p { margin:0 0 16px; color:var(--text-secondary); font-size:13px; line-height:1.5; }
+.lake-share-preview { position:relative; display:grid; place-items:center; min-height:220px; padding:12px; border:1px solid rgba(79,195,247,.16); border-radius:18px; background:radial-gradient(circle at 50% 110%,rgba(21,172,225,.16),transparent 54%),rgba(3,12,20,.62); overflow:hidden; }
+.lake-share-preview::before { content:'LIVE PREVIEW'; position:absolute; top:10px; left:12px; z-index:1; color:rgba(185,232,255,.62); font-size:8px; font-weight:800; letter-spacing:1.4px; }
+.lake-share-dialog label { display:grid; gap:6px; margin:13px 0; color:var(--text-secondary); font-size:11px; font-weight:700; letter-spacing:.35px; }
+.lake-share-dialog input,.lake-share-dialog select { width:100%; padding:10px 12px; border:1px solid var(--dock-border); border-radius:11px; background:#10263e; color:var(--text-primary); font:inherit; }
+.lake-share-dialog menu { position:sticky; bottom:-22px; z-index:2; display:grid; grid-template-columns:1fr auto; gap:9px; padding:16px 0 22px; margin:12px 0 -22px; background:linear-gradient(180deg,transparent 0,#07131f 28%); }
+.lake-share-platforms { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; padding:0; margin:12px 0 0; }
+.lake-share-dialog button { min-height:42px; padding:9px 13px; border:1px solid var(--dock-border); border-radius:12px; background:rgba(45,140,240,.10); color:var(--text-primary); cursor:pointer; font:inherit; transition:transform .15s ease,background .15s ease,border-color .15s ease; }
+.lake-share-dialog button:hover { transform:translateY(-1px); background:rgba(45,140,240,.18); border-color:rgba(79,195,247,.4); }
+.lake-share-dialog button[data-primary] { background:linear-gradient(135deg,#19b9ee,#1478bd); border-color:#44cdf7; color:white; font-weight:800; box-shadow:0 8px 24px rgba(14,155,211,.22); }
+.share-platform-note { margin:8px 1px 0!important; font-size:10px!important; color:var(--text-dim)!important; text-align:center; }
+#shareCardCanvas { display:block; width:auto; max-width:100%; max-height:min(52dvh,540px); height:auto; margin:8px auto 0; border-radius:16px; box-shadow:0 16px 42px rgba(0,0,0,.48); }
+@media (max-width:520px){.lake-share-dialog form{padding:18px}.lake-share-dialog menu{bottom:-18px;margin-bottom:-18px;padding-bottom:18px}.lake-share-preview{min-height:190px;padding:10px}.lake-share-platforms{gap:7px}#shareCardCanvas{max-height:42dvh}}
 
 /* ── REFLECTION FORMATTING ── */
 .reflection-h3 { font-size: 15px; font-weight: 700; color: var(--sand); margin: 16px 0 8px 0; letter-spacing: 0.5px; }
@@ -1914,7 +1922,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
   <form method="dialog">
     <h2 id="lakeShareTitle">🌊 Share The Lake</h2>
     <p id="lakeShareDescription">Invite someone to jump into The Lake.</p>
-    <canvas id="shareCardCanvas" width="1080" height="1080" hidden aria-label="Lake share card preview"></canvas>
+    <div class="lake-share-preview" id="shareCardPreview" hidden><canvas id="shareCardCanvas" width="1080" height="1080" aria-label="Lake share card preview"></canvas></div>
     <label id="shareFormatRow" hidden>Card format
       <select id="shareCardFormat" onchange="renderLakeShareCard()"><option value="post">Square post</option><option value="story">Story</option></select>
     </label>
@@ -1924,9 +1932,10 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
     <div class="lake-share-platforms" id="sharePlatforms" hidden>
       <button type="button" onclick="shareLakeCard('instagram')">📸 Instagram</button>
       <button type="button" onclick="shareLakeCard('whatsapp')">💬 WhatsApp</button>
-      <button type="button" onclick="shareLakeCard('linkedin')">in LinkedIn</button>
-      <button type="button" onclick="shareLakeCard('x')">𝕏 X</button>
+      <button type="button" onclick="shareLakeCard('linkedin')">in&nbsp; LinkedIn</button>
+      <button type="button" onclick="shareLakeCard('x')">𝕏</button>
     </div>
+    <p class="share-platform-note" id="sharePlatformNote" hidden>Shares a polished image and includes the Lake link.</p>
     <menu>
       <button type="button" id="sharePrimary" data-primary onclick="runPrimaryShare()">Share invite</button>
       <button value="cancel">Cancel</button>
@@ -5570,8 +5579,9 @@ function configureShareDialog(mode,wave=null){
   document.getElementById('sharePassphraseRow').hidden=!isSession;
   document.getElementById('shareFormatRow').hidden=!isMessage;
   document.getElementById('sharePlatforms').hidden=!isMessage;
-  document.getElementById('shareCardCanvas').hidden=!isMessage;
-  document.getElementById('sharePrimary').textContent=isMessage?'Share card':isSession?'Create Tide link':'Share invite';
+  document.getElementById('shareCardPreview').hidden=!isMessage;
+  document.getElementById('sharePlatformNote').hidden=!isMessage;
+  document.getElementById('sharePrimary').textContent=isMessage?'🌊 Share Lake card':isSession?'Create Tide link':'Share invite';
   if(isMessage)renderLakeShareCard();
   document.getElementById('shareMenu').style.display='none';
   if(!dialog.open)dialog.showModal();
@@ -5619,25 +5629,80 @@ async function shareAsGroupSession(passphrase='') {
   document.getElementById('shareMenu').style.display = 'none';
 }
 
+function cleanLakeShareText(value){
+  return String(value||'').replace(/^\s*#{1,6}\s+/,'').replace(/\[([^\]]+)\]\([^)]*\)/g,'$1').replace(/\*\*([^*]+)\*\*/g,'$1').replace(/[_`~]/g,'').replace(/^\s*[-•]\s+/,'').replace(/\s+/g,' ').trim();
+}
+function trimLakeShareText(value,limit){
+  const text=cleanLakeShareText(value);if(text.length<=limit)return text;
+  const cut=text.slice(0,limit+1),natural=Math.max(cut.lastIndexOf('. '),cut.lastIndexOf('; '),cut.lastIndexOf(', '),cut.lastIndexOf(' '));
+  return cut.slice(0,natural>limit*.62?natural:limit).replace(/[.,;:!?\s]+$/,'')+'…';
+}
+function lakeShareContent(value){
+  const raw=String(value||'').split(/\r?\n/).map(line=>line.trim()).filter(Boolean);
+  const cleaned=raw.map(cleanLakeShareText).filter(Boolean);
+  const titleIndex=raw.findIndex(line=>/^#{1,6}\s+/.test(line)||/^\s*(?:🌊\s*)?\*\*[^*]+\*\*\s*$/.test(line));
+  let title=cleaned[Math.max(0,titleIndex)]||'A thought from the deep';
+  if(!titleIndex && title.length>86){const first=title.match(/^.{18,86}?(?:[.!?](?:\s|$)|:)/)?.[0];if(first)title=first;}
+  title=trimLakeShareText(title,86).replace(/^🌊\s*/, '');
+  const items=[];const prose=[];
+  raw.forEach((line,index)=>{
+    if(index===titleIndex || (titleIndex<0&&index===0))return;
+    const item=line.match(/^\s*(\d+)[.)]\s+(.+)$/);
+    if(item){const text=cleanLakeShareText(item[2]);const colon=text.indexOf(':');items.push({number:item[1],label:trimLakeShareText(colon>0?text.slice(0,colon):text,42),detail:colon>0?trimLakeShareText(text.slice(colon+1),180):''});}
+    else prose.push(cleanLakeShareText(line));
+  });
+  if(items.length<2){
+    const joined=cleaned.join(' '),parts=joined.split(/(?=\b\d+[.)]\s+)/).slice(1);
+    parts.forEach(part=>{const match=part.match(/^(\d+)[.)]\s+(.+)$/);if(!match)return;const text=cleanLakeShareText(match[2]);const colon=text.indexOf(':');items.push({number:match[1],label:trimLakeShareText(colon>0?text.slice(0,colon):text,42),detail:colon>0?trimLakeShareText(text.slice(colon+1),180):''});});
+  }
+  const teaser=trimLakeShareText(prose.join(' '),230);
+  return {title,teaser,items:items.filter((item,index,array)=>array.findIndex(other=>other.number===item.number)===index),body:trimLakeShareText(cleaned.filter((_,index)=>index!==Math.max(0,titleIndex)).join(' '),720)};
+}
 function wrapCanvasText(ctx,text,maxWidth,maxLines){
-  const words=String(text||'').replace(/\s+/g,' ').trim().split(' ');const lines=[];let line='';
-  for(const word of words){const next=line?line+' '+word:word;if(ctx.measureText(next).width>maxWidth&&line){lines.push(line);line=word;if(lines.length===maxLines-1)break;}else line=next;}
+  const words=String(text||'').replace(/\s+/g,' ').trim().split(' ').filter(Boolean),lines=[];let line='';
+  for(const word of words){const next=line?line+' '+word:word;if(ctx.measureText(next).width>maxWidth&&line){lines.push(line);line=word;if(lines.length===maxLines)break;}else line=next;}
   if(line&&lines.length<maxLines)lines.push(line);
-  if(words.join(' ').length>lines.join(' ').length)lines[lines.length-1]=lines[lines.length-1].replace(/[.,;:!?]?$/,'…');
+  const rendered=lines.join(' ');if(words.join(' ').length>rendered.length&&lines.length)lines[lines.length-1]=lines[lines.length-1].replace(/[.,;:!?]?$/,'…');
   return lines;
+}
+function drawCanvasLines(ctx,lines,x,y,lineHeight){for(const line of lines){ctx.fillText(line,x,y);y+=lineHeight;}return y;}
+function drawLakeRoundRect(ctx,x,y,width,height,radius,fill,stroke){
+  const r=Math.min(radius,width/2,height/2);ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+width,y,x+width,y+height,r);ctx.arcTo(x+width,y+height,x,y+height,r);ctx.arcTo(x,y+height,x,y,r);ctx.arcTo(x,y,x+width,y,r);ctx.closePath();if(fill){ctx.fillStyle=fill;ctx.fill();}if(stroke){ctx.strokeStyle=stroke;ctx.stroke();}
+}
+function drawLakeCardMark(ctx,x,y,size){
+  const glow=ctx.createLinearGradient(x,y,x+size,y+size);glow.addColorStop(0,'#5de2ff');glow.addColorStop(1,'#087cc7');ctx.fillStyle=glow;ctx.beginPath();ctx.arc(x+size/2,y+size/2,size/2,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='#eaf9ff';ctx.lineWidth=size*.09;ctx.lineCap='round';for(let i=0;i<2;i++){ctx.beginPath();ctx.moveTo(x+size*.18,y+size*(.48+i*.16));ctx.bezierCurveTo(x+size*.38,y+size*(.25+i*.16),x+size*.57,y+size*(.72+i*.08),x+size*.82,y+size*(.43+i*.15));ctx.stroke();}
 }
 function renderLakeShareCard(){
   const canvas=document.getElementById('shareCardCanvas');if(!canvas||lakeShareState.mode!=='message')return;
   const story=document.getElementById('shareCardFormat').value==='story';canvas.width=1080;canvas.height=story?1920:1080;
-  const ctx=canvas.getContext('2d'),h=canvas.height,gradient=ctx.createLinearGradient(0,0,1080,h);
-  gradient.addColorStop(0,'#071524');gradient.addColorStop(.55,'#0d2c49');gradient.addColorStop(1,'#0796d2');ctx.fillStyle=gradient;ctx.fillRect(0,0,1080,h);
-  ctx.globalAlpha=.18;ctx.strokeStyle='#7dd3fc';ctx.lineWidth=4;for(let i=0;i<7;i++){ctx.beginPath();ctx.ellipse(540,h*.34,170+i*100,55+i*34,0,0,Math.PI*2);ctx.stroke();}ctx.globalAlpha=1;
-  ctx.fillStyle='#eef8ff';ctx.font='700 54px system-ui, sans-serif';ctx.fillText('THE GREAT LAKE',92,story?180:118);
-  ctx.fillStyle='#7dd3fc';ctx.font='34px system-ui, sans-serif';ctx.fillText('CALM SURFACE · DEEP INTELLIGENCE',92,story?235:168);
-  const text=messageActionText(lakeShareState.wave);ctx.fillStyle='#ffffff';ctx.font=`600 ${story?58:48}px system-ui, sans-serif`;
-  const lines=wrapCanvasText(ctx,text,896,story?15:11),lineHeight=story?82:68,total=lines.length*lineHeight;
-  let y=Math.max(story?430:280,(h-total)/2);for(const line of lines){ctx.fillText(line,92,y);y+=lineHeight;}
-  ctx.fillStyle='#b9e8ff';ctx.font='32px system-ui, sans-serif';ctx.fillText('Jump into the water:',92,h-150);ctx.font='700 34px system-ui, sans-serif';ctx.fillText(LAKE_PUBLIC_URL.replace(/^https?:\/\//,''),92,h-98);
+  const ctx=canvas.getContext('2d'),w=canvas.width,h=canvas.height,margin=story?92:78,content=lakeShareContent(messageActionText(lakeShareState.wave));
+  const background=ctx.createLinearGradient(0,0,w,h);background.addColorStop(0,'#05101f');background.addColorStop(.52,'#0a2943');background.addColorStop(1,'#087eaf');ctx.fillStyle=background;ctx.fillRect(0,0,w,h);
+  const glow=ctx.createRadialGradient(w*.9,h*.76,20,w*.9,h*.76,w*.72);glow.addColorStop(0,'rgba(38,210,255,.38)');glow.addColorStop(1,'rgba(5,16,31,0)');ctx.fillStyle=glow;ctx.fillRect(0,0,w,h);
+  ctx.save();ctx.globalAlpha=.10;ctx.strokeStyle='#b9efff';ctx.lineWidth=3;for(let i=0;i<7;i++){ctx.beginPath();ctx.ellipse(w*.92,h*.76,150+i*105,55+i*42,-.18,0,Math.PI*2);ctx.stroke();}ctx.restore();
+  const mark=story?76:62,brandY=story?105:70;drawLakeCardMark(ctx,margin,brandY,mark);
+  ctx.fillStyle='#eef9ff';ctx.font=`800 ${story?42:34}px system-ui, sans-serif`;ctx.fillText('THE GREAT LAKE',margin+mark+22,brandY+mark*.47);
+  ctx.fillStyle='#8fdfff';ctx.font=`700 ${story?20:16}px system-ui, sans-serif`;ctx.letterSpacing='2px';ctx.fillText('CALM SURFACE  ·  DEEP INTELLIGENCE',margin+mark+22,brandY+mark*.82);ctx.letterSpacing='0px';
+  const badgeY=story?290:195;drawLakeRoundRect(ctx,margin,badgeY,story?325:280,story?52:44,22,'rgba(93,226,255,.12)','rgba(143,223,255,.30)');ctx.fillStyle='#9ce7ff';ctx.font=`800 ${story?19:16}px system-ui, sans-serif`;ctx.fillText('A THOUGHT FROM THE DEEP',margin+22,badgeY+(story?34:29));
+  let y=badgeY+(story?132:105);ctx.fillStyle='#ffffff';ctx.font=`800 ${story?72:58}px system-ui, sans-serif`;
+  const titleLines=wrapCanvasText(ctx,content.title,w-margin*2,story?4:3);y=drawCanvasLines(ctx,titleLines,margin,y,story?86:68);
+  if(content.teaser){y+=story?24:16;ctx.fillStyle='#b9dded';ctx.font=`500 ${story?35:27}px system-ui, sans-serif`;const teaserLines=wrapCanvasText(ctx,content.teaser,w-margin*2,story?4:3);y=drawCanvasLines(ctx,teaserLines,margin,y,story?49:38);}
+  y+=story?38:26;const footerTop=h-(story?205:145),maxItems=story?5:3;
+  if(content.items.length){
+    const cardGap=story?18:12,cardHeight=story?142:105;
+    for(const item of content.items.slice(0,maxItems)){
+      if(y+cardHeight>footerTop-18)break;drawLakeRoundRect(ctx,margin,y,w-margin*2,cardHeight,story?24:18,'rgba(5,20,34,.50)','rgba(143,223,255,.18)');
+      const bubble=story?62:48;drawLakeRoundRect(ctx,margin+18,y+(cardHeight-bubble)/2,bubble,bubble,bubble/2,'rgba(45,187,235,.18)','rgba(143,223,255,.28)');ctx.fillStyle='#8fe4ff';ctx.textAlign='center';ctx.font=`800 ${story?25:20}px system-ui, sans-serif`;ctx.fillText(item.number,margin+18+bubble/2,y+cardHeight/2+(story?9:7));ctx.textAlign='left';
+      const tx=margin+18+bubble+20;ctx.fillStyle='#eefaff';ctx.font=`800 ${story?29:23}px system-ui, sans-serif`;ctx.fillText(item.label,tx,y+(story?50:39));
+      if(item.detail){ctx.fillStyle='#b6d4e3';ctx.font=`500 ${story?25:19}px system-ui, sans-serif`;const detail=wrapCanvasText(ctx,item.detail,w-margin-tx-26,2);drawCanvasLines(ctx,detail,tx,y+(story?86:69),story?31:24);}
+      y+=cardHeight+cardGap;
+    }
+  }else{
+    drawLakeRoundRect(ctx,margin,y,w-margin*2,Math.max(story?330:220,footerTop-y-20),story?28:22,'rgba(5,20,34,.38)','rgba(143,223,255,.15)');ctx.fillStyle='#effaff';ctx.font=`600 ${story?40:31}px system-ui, sans-serif`;const bodyLines=wrapCanvasText(ctx,content.body,w-margin*2-(story?70:52),story?10:7);drawCanvasLines(ctx,bodyLines,margin+(story?35:26),y+(story?66:50),story?57:44);
+  }
+  ctx.strokeStyle='rgba(185,239,255,.25)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(margin,footerTop);ctx.lineTo(w-margin,footerTop);ctx.stroke();
+  ctx.fillStyle='#8fdfff';ctx.font=`800 ${story?18:15}px system-ui, sans-serif`;ctx.fillText('DIVE DEEPER AT',margin,footerTop+(story?62:45));ctx.fillStyle='#ffffff';ctx.font=`700 ${story?29:23}px system-ui, sans-serif`;ctx.fillText('the-great-lake-bot.onrender.com',margin,footerTop+(story?108:80));
+  ctx.fillStyle='rgba(238,249,255,.60)';ctx.textAlign='right';ctx.font=`600 ${story?19:15}px system-ui, sans-serif`;ctx.fillText('Shared from The Great Lake',w-margin,footerTop+(story?108:80));ctx.textAlign='left';
 }
 function shareCardBlob(){return new Promise(resolve=>document.getElementById('shareCardCanvas').toBlob(resolve,'image/png'));}
 async function shareLakeCard(platform){
