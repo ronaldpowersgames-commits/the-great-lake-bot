@@ -21,7 +21,9 @@
     "pdf-parse": "^1.1.1",
     "mammoth": "^1.6.0",
     "mailparser": "^3.9.37",
-    "jszip": "3.10.2"
+    "jszip": "3.10.2",
+    "pdfjs-dist": "^4.10.38",
+    "jspdf": "^4.2.1"
   },
   "devDependencies": {
     "nodemon": "3.1.11"

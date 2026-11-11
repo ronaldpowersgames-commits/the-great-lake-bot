@@ -92,6 +92,13 @@ app.get('/vendor/jszip.min.js', (_req, res) => {
   res.sendFile(require.resolve('jszip/dist/jszip.min.js'));
 });
 app.use(express.static(path.join(__dirname, 'public')));
+const pdfReaderDir = path.dirname(require.resolve('pdfjs-dist/package.json'));
+app.use('/pdf-reader', express.static(path.join(pdfReaderDir, 'legacy', 'build')));
+app.use('/pdf-reader/cmaps', express.static(path.join(pdfReaderDir, 'cmaps')));
+app.use('/pdf-reader/standard_fonts', express.static(path.join(pdfReaderDir, 'standard_fonts')));
+app.get('/pdf-writer.js', (_req, res) => {
+  res.sendFile(require.resolve('jspdf/dist/jspdf.umd.min.js'));
+});
 
 // ✅ Safeguard for .js files (prevents HTML fallback)
 app.get('/*.js', (req, res) => {
@@ -120,6 +127,7 @@ app.get('/health', (req, res) => {
     name: config.appName,
     status: 'healthy',
     version: '1.3.0',
+    ...(process.env.RENDER_GIT_COMMIT ? { commit: process.env.RENDER_GIT_COMMIT } : {}),
     timestamp: new Date().toISOString(),
     governance: 'Rules 1–27 active',
     lake: 'Still waters — ready to reflect',

@@ -10,8 +10,13 @@
     html{background:var(--deep)}
     body{margin:0;background:var(--deep);color:var(--text);font-family:"Segoe UI",system-ui,sans-serif;line-height:1.55}
     main{width:min(980px,100%);margin:0 auto;padding:34px 28px 64px}
-    .tools{position:sticky;top:0;z-index:2;display:flex;justify-content:flex-end;gap:8px;padding:10px 0;background:linear-gradient(var(--deep) 72%,transparent)}
+    .tools{position:sticky;top:0;z-index:2;display:flex;flex-wrap:wrap;gap:8px;padding:10px 0;background:linear-gradient(var(--deep) 72%,transparent)}
     button{border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--text);padding:8px 14px;cursor:pointer;font:inherit}
+    [hidden]{display:none!important}
+    button:disabled{opacity:.55;cursor:default}
+    #share-pdf:not(:disabled){background:var(--glow);color:var(--deep);font-weight:700}
+    #manual-copy{width:100%;min-height:6rem;margin-bottom:12px;font:inherit}
+    #export-status{margin:0 0 12px;color:var(--dim);font-size:13px}
     button:hover{border-color:var(--glow);color:#fff}
     h1{margin:0;color:var(--glow);font-size:26px;border-bottom:2px solid var(--line);padding-bottom:10px}
     .meta{color:var(--dim);font-size:12px;margin:8px 0 28px}
@@ -25,7 +30,7 @@
       :root{color-scheme:light}
       html,body{background:#fff;color:#172033}
       main{width:auto;margin:0;padding:0}
-      .tools{display:none}
+      .tools,#export-status,#manual-copy{display:none}
       h1{color:#075985;border-color:#bae6fd}
       .meta{color:#526477}
       .sender{color:#075985}.sender.user{color:#1d4ed8}
@@ -35,32 +40,23 @@
 </head>
 <body>
   <main>
-    <div class="tools"><button type="button" onclick="window.print()">Print / Save PDF</button><button type="button" onclick="window.close()">Close</button></div>
-    <h1>🌊 The Great Lake - Session Transcript</h1>
+    <h1 id="title">The Great Lake · Transcript</h1>
     <div class="meta" id="meta"></div>
+    <div class="tools" id="tools" hidden>
+      <button type="button" id="share-pdf" disabled>Share PDF</button>
+      <button type="button" id="copy-text">Copy text</button>
+      <button type="button" id="copy-link" hidden>Copy transcript link</button>
+      <button type="button" id="copy-pdf" hidden>Copy PDF file</button>
+      <button type="button" id="download-pdf" disabled>Download PDF</button>
+      <button type="button" onclick="window.print()">Print</button>
+      <button type="button" onclick="window.close();if(history.length>1)history.back()">Close</button>
+    </div>
+    <p id="export-status" role="status"></p>
+    <textarea id="manual-copy" aria-label="Text to copy" hidden readonly></textarea>
     <section id="messages"></section>
   </main>
   <script src="/export-names.js"></script>
-  <script>
-    (()=>{
-      const id=new URLSearchParams(location.search).get('id');
-      let data=null;
-      try{data=JSON.parse(localStorage.getItem(id)||'null');}catch{}
-      const meta=document.getElementById('meta');const messages=document.getElementById('messages');
-      if(!data || !Array.isArray(data.messages)){
-        meta.textContent='Transcript data is unavailable or has expired.';
-        const empty=document.createElement('div');empty.className='empty';empty.textContent='Return to The Lake and export the transcript again.';messages.append(empty);return;
-      }
-      document.title=LakeExportNames.sessionTranscript('pdf',data.created || data.exported,data.title).replace(/\.pdf$/,'');
-      meta.textContent='Exported: '+data.exported+' · Screenshot-friendly page';
-      data.messages.forEach(message=>{
-        const article=document.createElement('article');article.className='msg';
-        const sender=document.createElement('div');sender.className='sender '+(message.role==='user'?'user':'lake');
-        sender.textContent=(message.role==='user'?'👤 You':'🌊 The Lake')+(message.time?' · '+message.time:'');
-        const text=document.createElement('div');text.className='text';text.textContent=message.text;
-        article.append(sender,text);messages.append(article);
-      });
-    })();
-  </script>
+  <script src="/pdf-writer.js"></script>
+  <script src="/transcript-print.js"></script>
 </body>
 </html>

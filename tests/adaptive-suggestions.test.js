@@ -76,11 +76,13 @@ test('adaptive UI uses compact mood-colored chips and remains dismissible',()=>{
 });
 
 test('transcript export opens a normal screenshot-friendly page',()=>{
-  assert.match(html,/window\.open\('\/transcript-print\.html\?id='/);
-  assert.doesNotMatch(html,/window\.open\('', '_blank'\)/);
+  const exportScript=fs.readFileSync(path.join(root,'public','pdf-export.js'),'utf8');
+  assert.match(html,/LakePdfExport\.open\(/);
+  assert.match(exportScript,/\/transcript-print\.html\?id=/);
   assert.doesNotMatch(html,/visualViewport\.addEventListener\('resize'/);
-  assert.match(printPage,/Screenshot-friendly page/);
-  assert.match(printPage,/Print \/ Save PDF/);
+  assert.match(printPage,/@media print/);
+  assert.match(printPage,/Share PDF/);
+  assert.match(printPage,/window\.print\(\)/);
 });
 
 test('mobile message controls stay compact, discoverable and replay from the start',()=>{

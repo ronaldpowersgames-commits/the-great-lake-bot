@@ -1978,9 +1978,11 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
     <label id="shareFormatRow" hidden>Card format
       <select id="shareCardFormat" onchange="renderLakeShareCard()"><option value="post">Square post</option><option value="story">Story</option></select>
     </label>
-    <label id="sharePassphraseRow" hidden>Optional passphrase
-      <input id="sharePassphrase" type="password" maxlength="200" autocomplete="new-password" placeholder="Leave blank for anyone with the link">
-    </label>
+    <div id="sharePassphraseRow" hidden>
+      <label for="sharePassphrase">Optional passphrase</label>
+      <input id="sharePassphrase" type="text" maxlength="200" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="Leave blank for anyone with the link">
+      <button type="button" id="sharePassphraseVisibility" aria-controls="sharePassphrase" onclick="toggleSharePassphrase()">Hide passphrase</button>
+    </div>
     <div class="lake-share-platforms" id="sharePlatforms" hidden>
       <button type="button" onclick="shareLakeCard('instagram')">📸 Instagram</button>
       <button type="button" onclick="shareLakeCard('whatsapp')">💬 WhatsApp</button>
@@ -2042,7 +2044,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
       <div class="help-item"><span class="help-icon">📅</span><div class="help-text"><strong>Start the day</strong> with Today on the Lake: name one thing that matters or feels stuck. Pick one next move you can make in five minutes.</div></div>
       <div class="help-item"><span class="help-icon">💦</span><div class="help-text"><strong>Splash</strong> gives you a surprising fact. <strong>Riptide</strong> asks a curious question. <strong>Ride a Wave</strong> helps you explore whatever’s on your mind, one question at a time.</div></div>
       <div class="help-item"><span class="help-icon">🎤</span><div class="help-text">Type or speak a few words. Try “What am I assuming?” or “What did I notice about myself today?” Come back for a quick check-in, or use <strong>Patterns Across Chats</strong> to look for recurring themes.</div></div>
-      <div class="help-item"><span class="help-icon">📄</span><div class="help-text"><strong>Transcripts:</strong> A readable, text-based PDF works best when you want to keep the original layout and page references. Use TXT or the Transcript Splitter ZIP for exact, searchable excerpts and Meeting Currents. Tap <strong>tSummarize</strong> for the essential takeaway in a couple of sentences.</div></div>
+      <div class="help-item"><span class="help-icon">📄</span><div class="help-text"><strong>Transcripts:</strong> A readable, text-based PDF works best when you want to keep the original layout and page references. Meeting Currents searches saved text-based PDFs, TXT, and Transcript Splitter ZIP parts. Scans need searchable text. Tap <strong>tSummarize</strong> for the essential takeaway in a couple of sentences.</div></div>
     </div>
     <div class="help-divider"></div>
     <div class="help-section">
@@ -2149,6 +2151,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
 <script src="/transcript-review.js"></script>
 <script src="/adaptive-suggestions.js"></script>
 <script src="/export-names.js"></script>
+<script src="/pdf-export.js"></script>
 <script>
 // ============================================
 // STATE
@@ -2632,11 +2635,12 @@ function guideNextWaves(){
 }
 const LAKE_MOOD_CODES={calm:'calm',reg:'calm',default:'calm',shallow:'shallow',splash:'shallow',splashy:'shallow',deep:'analytical',deepdive:'analytical',full:'analytical',stormy:'stormy',storm:'stormy',choppy:'stormy',drip:'drip',drippy:'drip',drop:'drip'};
 function reservedComposerCommand(code){
-  return Object.hasOwn(LAKE_MOOD_CODES,code) || /^(?:w\d*|mood|trigger|untrigger|rename)$/.test(code);
+  return Object.hasOwn(LAKE_MOOD_CODES,code) || /^(?:w\d*|mood|trigger|untrigger|rename|pdf)$/.test(code);
 }
 function composerCommands(){
   const commands=new Map();
   commands.set('rename',{label:'Rename this Tide automatically or add a title',command:true});
+  commands.set('pdf',{label:'Export this Tide as PDF',command:true});
   const custom=(localStorage.getItem(storageKey('customPrompts'))||'').split(/\r?\n/);
   let moodTriggers={};
   try{moodTriggers=JSON.parse(localStorage.getItem(storageKey('moodTriggers'))||'{}')||{};}catch{}
@@ -4071,7 +4075,7 @@ function scheduleRideHomeTip(){
       ['Pro tip · New Current','Choose a suggested next wave after a reply to explore that thought without having to invent the next question.']
     ];
     const advancedTips=[
-      ['Pro tip · Meeting Currents','Use Meeting Currents to find relevant, cited excerpts across your saved plain-text meeting transcripts.'],
+      ['Pro tip · Meeting Currents','Use Meeting Currents to find relevant, cited excerpts across your saved text-based PDF and TXT meeting transcripts.'],
       ['Pro tip · Patterns Across Chats','Tap ♒️ on the home screen to test recurring themes against evidence from more than one saved Tide.'],
       ['Pro tip · Mirror','Mirror lets you rehearse how your own communication may land, then inspect where the simulation is uncertain.'],
       ['Pro tip · Portable context','Backup & Data can carry selected context between devices without merging it into a public share link.'],
@@ -4132,20 +4136,52 @@ function closeSnapshotMenu(restoreFocus = false) {
   if (restoreFocus) button.focus();
 }
 
-function readMeetingCurrents(queryOverride) {
-  if(waveInFlight || pendingFileLoads) {showToast('Wait for the current reply or upload to finish.');return;}
+const meetingPdfTextCache = new WeakMap();
+let readingMeetingArchive = false;
+
+async function readMeetingCurrents(queryOverride) {
+  if(waveInFlight || pendingFileLoads || readingMeetingArchive) {
+    showToast('Wait for the current reply, upload, or archive search to finish.');return;
+  }
   const query = queryOverride || document.getElementById('lakeInput').value.trim() || 'Read the currents across my meetings';
   if(query.length>4000) {showToast('Keep archive questions under 4,000 characters so there is room for original evidence.');return;}
   const documents = [];
-  for(const session of allSessions) {
-    (session.history || []).forEach((message,messageIndex) => (message.attachments || []).forEach((file,fileIndex) => {
-      if(!/\.(txt|log)$/i.test(file.name) || !file.data) return;
-      let text;
-      try {text = new TextDecoder('utf-8',{fatal:true,ignoreBOM:true}).decode(Uint8Array.from(atob(file.data.split(',')[1]),char => char.charCodeAt(0)));} catch {text = null;}
-      documents.push({id:`${session.id}/${messageIndex}/${fileIndex}`,sessionId:session.id,filename:file.name,meetingDate:file.meetingDate,folderPath:LakeOrganization.folderPath(session.folderId,tideFolders),sessionTitle:session.name,text});
-    }));
+  const originId = currentSessionId;
+  const originKey = storageKey('sessions');
+  readingMeetingArchive = true;
+  try {
+    for(const session of allSessions) {
+      for(const [messageIndex, message] of (session.history || []).entries()) {
+        for(const [fileIndex, file] of (message.attachments || []).entries()) {
+          if(!/\.(txt|log|pdf)$/i.test(file.name) || !file.data) continue;
+          let text = null;
+          try {
+            if(/\.pdf$/i.test(file.name)) {
+              if(!meetingPdfTextCache.has(file)) {
+                const { meetingPdfText } = await import('/meeting-pdf.mjs');
+                meetingPdfTextCache.set(file, await meetingPdfText(file.data));
+              }
+              text = meetingPdfTextCache.get(file);
+            } else {
+              const bytes = Uint8Array.from(atob(file.data.split(',')[1]), char => char.charCodeAt(0));
+              text = new TextDecoder('utf-8',{fatal:true,ignoreBOM:true}).decode(bytes);
+            }
+          } catch {}
+          documents.push({id:[session.id,messageIndex,fileIndex].join('/'),sessionId:session.id,
+            filename:file.name,meetingDate:file.meetingDate,folderPath:LakeOrganization.folderPath(session.folderId,tideFolders),
+            sessionTitle:session.name,text:text?.trim() ? text : null});
+        }
+      }
+    }
+  } finally {
+    readingMeetingArchive = false;
   }
-  if(!documents.length) {showToast('Upload and send meeting TXT parts first. The archive uses transcripts stored on this device.');return;}
+  if(originId!==currentSessionId || originKey!==storageKey('sessions')) return;
+  if(!documents.some(document=>document.text)) {
+    showToast(documents.length ? 'No searchable text found. Use a text-based PDF, OCR a scan, or upload TXT.'
+      : 'Upload and send a text-based PDF or meeting TXT transcript first.');
+    return;
+  }
   const evidence = LakeMeetingMemory.retrieve(documents,query,crewMembers,Math.max(1500,Math.min(24000,28500-query.length)));
   return sendWave({visibleText:`Meeting Currents: ${query}`,requestText:query,action:'meeting-currents',reuseAttachments:false,
     sourceFiles:[new File([JSON.stringify(evidence)],'meeting-evidence.json',{type:'application/json'})],archiveCoverage:evidence.coverage,preserveDraft:Boolean(queryOverride),
@@ -5130,6 +5166,10 @@ async function sendWave(options = {}) {
   const commandKey=typeof storageKey==='function' ? storageKey('moodTriggers') : '';
   let triggers={};
   try { triggers=JSON.parse(globalThis.localStorage?.getItem(commandKey)||'{}') || {}; } catch {}
+  if(options.requestText==null && /^\/pdf$/i.test(text)){
+    input.value='';scheduleInputResize(input);updateComposerCommands(input);
+    return exportAsPDF();
+  }
   if(options.requestText==null){
     const rename=text.match(/^\/rename(?:\s+([\s\S]*?))?\s*$/i);
     if(rename){
@@ -5664,6 +5704,11 @@ function hideRipple() {
 // ============================================
 function handleKey(e) {
   if((e.key==='Tab' || e.key==='Enter') && !e.shiftKey && !e.isComposing && !e.repeat && e.keyCode!==229 && e.target?.dataset?.composing!=='true'){
+    if(e.key==='Enter' && /^\/pdf\s*$/i.test(e.target?.value || '')){
+      e.preventDefault();
+      sendWave();
+      return;
+    }
     const menu=document.getElementById('composerCommands');
     const exact=e.key==='Tab' || /(?:^|\s)\/[a-z][a-z0-9-]*$/i.test(e.target?.value || '');
     if(exact && menu && !menu.hidden && menu.childElementCount===1){
@@ -5860,9 +5905,30 @@ function configureShareDialog(mode,wave=null,card=null){
   if(!dialog.open)dialog.showModal();
 }
 function shareLakeInvite(){configureShareDialog('invite');}
+const sharePassphraseInput = document.getElementById('sharePassphrase');
+const sharePassphraseVisibility = document.getElementById('sharePassphraseVisibility');
+
+function setSharePassphraseHidden(hidden) {
+  sharePassphraseInput.type = hidden ? 'password' : 'text';
+  sharePassphraseVisibility.textContent = hidden ? 'Show passphrase' : 'Hide passphrase';
+}
+
+function toggleSharePassphrase() {
+  const hidden = sharePassphraseInput.type === 'text';
+  setSharePassphraseHidden(hidden);
+  try { localStorage.setItem(storageKey('sharePassphraseHidden'), String(hidden)); } catch {}
+}
+
+document.getElementById('lakeShareDialog').addEventListener('close', () => {
+  sharePassphraseInput.value = '';
+});
 function openSessionShare(){
   if(!currentSessionId || !allSessions.some(session=>session.id===currentSessionId)){showToast('Start a conversation first.');return;}
-  document.getElementById('sharePassphrase').value='';configureShareDialog('session');
+  let hidden = false;
+  try { hidden = localStorage.getItem(storageKey('sharePassphraseHidden')) === 'true'; } catch {}
+  setSharePassphraseHidden(hidden);
+  sharePassphraseInput.value = '';
+  configureShareDialog('session');
 }
 async function runPrimaryShare(){
   if(lakeShareState.mode==='message')return shareLakeCard('native');
@@ -6047,18 +6113,14 @@ function exportAsPDF() {
     const isUser = wave.classList.contains('user-wave');
     const time   = wave.querySelector('.wave-time')?.innerText || '';
     const text   = canonicalMessageText(wave);
-    if(text)messages.push({sender:isUser?'You':'The Lake',role:isUser?'user':'lake',time,text});
+    const message = wave._lakeMessageRef;
+    const privateSnapshot = ['total','both'].includes(message?.snapshot?.scope) ||
+      ['snapshot-total','snapshot-both'].includes(message?.action);
+    if(text)messages.push({sender:isUser?'You':'The Lake',role:isUser?'user':'lake',time,text,privateSnapshot});
   });
-  const id='lake-transcript-'+Date.now()+'-'+Math.random().toString(36).slice(2,8);
+  if(!messages.length){showToast('Start a conversation before exporting.');return;}
   try {
-    const now=Date.now();
-    for(let index=localStorage.length-1;index>=0;index--) {
-      const key=localStorage.key(index);if(!key?.startsWith('lake-transcript-'))continue;
-      try {const saved=JSON.parse(localStorage.getItem(key)||'null');if(!saved?.created || now-saved.created>86400000)localStorage.removeItem(key);}
-      catch {localStorage.removeItem(key);}
-    }
-    localStorage.setItem(id,JSON.stringify({created:now,title:currentExportTitle(),exported:new Date(now).toLocaleString(),messages}));
-    window.open('/transcript-print.html?id='+encodeURIComponent(id),'_blank','noopener');
+    LakePdfExport.open({title:currentExportTitle(),messages});
   } catch(error) {
     showToast('Could not prepare the printable transcript on this device.');
     console.warn('Transcript export failed:',error);

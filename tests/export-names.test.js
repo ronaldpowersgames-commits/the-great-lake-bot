@@ -7,7 +7,7 @@ const names=require('../public/export-names');
 const root=path.join(__dirname,'..');
 const index=fs.readFileSync(path.join(root,'public','index.html'),'utf8');
 const splitter=fs.readFileSync(path.join(root,'public','transcript-splitter-ui.js'),'utf8');
-const printPage=fs.readFileSync(path.join(root,'public','transcript-print.html'),'utf8');
+const printPage=fs.readFileSync(path.join(root,'public','transcript-print.js'),'utf8');
 
 test('Lake exports share one clear sortable naming convention',()=>{
   const date=new Date(2026,10,6,12,0,0);
