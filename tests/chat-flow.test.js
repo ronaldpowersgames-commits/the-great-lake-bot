@@ -23,7 +23,7 @@ function browserContext() {
       return elements.get(id);
     } },
     closeInlineSpeech() {}, showNewTideMoodReminder() {},
-    saveSuggestedCrew() {}, renderCrew() {}, hideRipple() {}, showRipple() {},
+    saveCrew() {}, saveSuggestedCrew() {}, renderCrew() {}, hideRipple() {}, showRipple() {},
     renderFilePreviews() {}, renderTranscriptStatus() {}, renderAdaptiveSuggestions() {}, retireAdaptiveSuggestions() {}, suggestionPreferencePayload() { return {chosen:{},dismissed:{},recent_chosen_kinds:[]}; }, saveSession() {}, updateCurrents() {}, showToast() {},
     storageKey(key) { return 'lake_test_' + key; },
     showBackendModel(model) { context.document.getElementById('backendModelInfo').textContent = `\ud83e\udd16 Model: ${model}`; },
@@ -74,6 +74,25 @@ test('Tag Players shows a short message and resends the latest interaction attac
 test('machine player data is removed from visible replies', () => {
   const context = browserContext();
   assert.equal(vm.runInContext('stripPlayerTagsJson(`Sam needs confirmation.\nPLAYER_TAGS_JSON {"players":[]} END_PLAYER_TAGS_JSON`)', context), 'Sam needs confirmation.');
+});
+
+test('visible player details prefill review and a confirmed self identity tags automatically',()=>{
+  const context=browserContext();
+  vm.runInContext('crewMembers=[{name:"Ronald Powers",nickname:"Ronnie Powers, Ronnie",isSelf:true}];',context);
+  vm.runInContext(`processNamesFromResponse(\`### Player 1: Daniela Chung
+**Name:** Daniela Chung
+**Organisation:** Penguin King
+**Role:** Supplier Account Manager
+**Relationship:** Professional supplier contact
+**Observed communication style:** Playful and direct
+
+PLAYER_TAGS_JSON {"players":[{"name":"Daniela Chung","confidence":"high","needs_confirmation":true,"evidence":"Daniela Chung appears in the supplied screenshot"},{"name":"Ronnie Powers","confidence":"high","needs_confirmation":false,"evidence":"Ronnie Powers appears in the supplied screenshot"}]} END_PLAYER_TAGS_JSON\`);`,context);
+  assert.equal(vm.runInContext('suggestedCrew.length',context),1);
+  assert.equal(vm.runInContext('suggestedCrew[0].organization',context),'Penguin King');
+  assert.equal(vm.runInContext('suggestedCrew[0].role',context),'Supplier Account Manager');
+  assert.equal(vm.runInContext('suggestedCrew[0].relationship',context),'Professional supplier contact');
+  assert.equal(vm.runInContext('suggestedCrew[0].communicationStyle',context),'Playful and direct');
+  assert.equal(vm.runInContext('crewMembers[0].observations.length',context),1);
 });
 
 test('adaptive prompt metadata is hidden from chat and stored as tappable next moves', async () => {

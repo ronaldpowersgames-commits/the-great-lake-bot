@@ -4,6 +4,7 @@
   const canvas = editor.querySelector('canvas');
   const status = editor.querySelector('[role=status]');
   const nav = editor.querySelector('[data-post-nav]');
+  const position = editor.querySelector('[data-slide-position]');
   const fields = ['title', 'message', 'insight', 'closing', 'theme', 'format'];
   const formats = { square: 1080, portrait: 1350, story: 1920 };
   const palettes = {
@@ -17,6 +18,51 @@
   let sourceText = '';
   let revision = 0;
   let file;
+
+  function enableHorizontalScroll(rail) {
+    if (!rail || rail.dataset.horizontalRail === 'true') return;
+    rail.dataset.horizontalRail = 'true';
+    let drag = null;
+    let suppressClick = false;
+    rail.addEventListener('wheel', event => {
+      if (rail.scrollWidth <= rail.clientWidth + 2) return;
+      const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+      if (!delta) return;
+      event.preventDefault();
+      rail.scrollLeft += delta;
+    }, { passive: false });
+    rail.addEventListener('pointerdown', event => {
+      if (event.pointerType !== 'mouse' || event.button !== 0) return;
+      suppressClick = false;
+      drag = { id: event.pointerId, x: event.clientX, left: rail.scrollLeft, moved: false };
+    });
+    rail.addEventListener('pointermove', event => {
+      if (!drag || drag.id !== event.pointerId) return;
+      const delta = event.clientX - drag.x;
+      if (Math.abs(delta) <= 5 && !drag.moved) return;
+      drag.moved = true;
+      rail.setPointerCapture?.(event.pointerId);
+      rail.classList.add('is-dragging');
+      rail.scrollLeft = drag.left - delta;
+      event.preventDefault();
+    });
+    const finish = event => {
+      if (!drag || (event && drag.id !== event.pointerId)) return;
+      suppressClick = drag.moved;
+      drag = null;
+      rail.classList.remove('is-dragging');
+    };
+    rail.addEventListener('pointerup', finish);
+    rail.addEventListener('pointercancel', finish);
+    rail.addEventListener('click', event => {
+      if (!suppressClick || event.detail === 0) return;
+      suppressClick = false;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }, true);
+  }
+
+  editor.querySelectorAll('.post-editor-nav,.post-editor-refinements,.post-editor-platforms').forEach(enableHorizontalScroll);
 
   function wrap(ctx, text, width) {
     const lines = [];
@@ -109,6 +155,9 @@
   function readDraft() { return Object.fromEntries(fields.map(field => [field, form.elements[field].value.trim()])); }
   function disableExports() { file = null; for (const button of form.querySelectorAll('[data-post-export]')) button.disabled = true; }
   function rebuildNav() {
+    position.textContent = `Slide ${active + 1} of ${drafts.length}`;
+    editor.querySelector('[data-slide-prev]').disabled = active === 0;
+    editor.querySelector('[data-slide-next]').disabled = active === drafts.length - 1;
     nav.replaceChildren(...drafts.map((draft, index) => {
       const button = document.createElement('button'); button.type = 'button'; button.textContent = `${index + 1} · ${draft.title.slice(0, 24)}`;
       button.setAttribute('aria-current', String(index === active)); button.onclick = () => showDraft(index); return button;
@@ -177,6 +226,15 @@
   }
 
   form.addEventListener('input', event => { if (!['count', 'optimizeFor'].includes(event.target.name)) void preview(); });
+  form.elements.count.addEventListener('change',()=>{
+    const count=Math.max(1,Math.min(10,Number(form.elements.count.value)||drafts.length));
+    form.elements.count.value=count;
+    if(count===drafts.length)return;
+    status.textContent=`Building a ${count}-slide narrative…`;
+    window.generatePostCards?.(sourceText,count,form.elements.optimizeFor.value,'Walk the reader through one connected point across exactly this many slides.');
+  });
+  editor.querySelector('[data-slide-prev]').onclick=()=>showDraft(active-1);
+  editor.querySelector('[data-slide-next]').onclick=()=>showDraft(active+1);
   editor.addEventListener('close', () => { ++revision; disableExports(); drafts = []; });
   form.elements.save.onclick = () => {
     drafts[active] = readDraft(); let saved = 0;
@@ -186,6 +244,12 @@
   form.elements.download.onclick = () => downloadFiles([file]);
   form.elements.downloadAll.onclick = async () => downloadFiles(await makeFiles());
   form.elements.share.onclick = () => shareFiles();
+  form.elements.applyMood.onclick = () => {
+    drafts[active] = readDraft();
+    const theme=drafts[active].theme;drafts=drafts.map(draft=>({...draft,theme}));
+    status.textContent=`Applied ${form.elements.theme.selectedOptions[0].textContent} to all ${drafts.length} slides.`;
+    rebuildNav();void preview();
+  };
   form.elements.regenerate.onclick = () => window.generatePostCards?.(sourceText, Number(form.elements.count.value), form.elements.optimizeFor.value);
   editor.querySelectorAll('[data-refine]').forEach(button => button.onclick = () => window.generatePostCards?.(
     drafts.map(card => [card.title, card.message, card.insight, card.closing].join('\n')).join('\n\n'),

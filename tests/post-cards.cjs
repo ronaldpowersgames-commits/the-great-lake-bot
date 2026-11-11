@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs/promises');
 const { chromium } = require(process.env.LAKE_PLAYWRIGHT_PATH || 'playwright');
 const base = process.env.LAKE_TEST_URL || 'http://localhost:3012';
-const original = 'I heard the first answer, then realized I had interrupted.';
+const original = '🌊 **Player identified**\n\n**Role:** Supplier Account Manager\n\nI heard the first answer, then realized I had interrupted.';
 const draft = {
   title: 'Leave room to notice',
   message: 'A pause can change what you hear.',
@@ -38,7 +38,8 @@ const draft = {
     const input = page.locator('#lakeInput');
     await input.fill('/share');
     await input.press('Enter');
-    assert.match(await page.locator('#shareWaveText').textContent(), new RegExp(original.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+    assert.match(await page.locator('#shareWaveText').textContent(), /Player identified/);
+    assert.doesNotMatch(await page.locator('#shareWaveText').textContent(), /\*\*/);
     assert.match(await page.locator('#shareWaveText').textContent(), /Create your own Tide/);
     assert.equal(requests.length, 0);
     await page.locator('#shareWaveDialog').getByRole('button', { name: 'Close' }).click();
@@ -49,6 +50,13 @@ const draft = {
     await download.waitFor();
     assert.deepEqual(requests, [{ source: original, count: 1, optimizeFor: 'curiosity', instruction: '' }]);
     assert.equal(await editor.getByLabel('Headline', { exact: true }).inputValue(), draft.title);
+    const refinements = editor.locator('.post-editor-refinements');
+    await page.setViewportSize({ width: 520, height: 900 });
+    const beforeScroll = await refinements.evaluate(node => node.scrollLeft);
+    await refinements.hover();
+    await page.mouse.wheel(0, 220);
+    await page.waitForFunction(before => document.querySelector('.post-editor-refinements').scrollLeft > before, beforeScroll);
+    await page.setViewportSize({ width: 1300, height: 900 });
     await editor.getByLabel('Headline', { exact: true }).fill('Make space to hear');
     for (const [format, height] of Object.entries({ square: 1080, portrait: 1350, story: 1920 })) {
       await editor.getByLabel('Layout').selectOption(format);
@@ -59,7 +67,7 @@ const draft = {
       assert.equal(png.readUInt32BE(16), 1080);
       assert.equal(png.readUInt32BE(20), height);
     }
-    await editor.getByLabel('Mood').selectOption('still');
+    await editor.getByLabel('Slide mood').selectOption('still');
     await editor.getByLabel('Layout').selectOption('portrait');
     await editor.getByRole('button', { name: 'Save to Post Imagery' }).click();
     assert.doesNotMatch(await editor.locator('[role=status]').textContent(), /could not load/);

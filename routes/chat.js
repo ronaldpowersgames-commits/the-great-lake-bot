@@ -564,7 +564,8 @@ router.post('/post-cards', async (req, res) => {
     'Remove identifying and sensitive details. If the source is personal, express the general insight in a way suitable for a public audience.',
     'Give every field a different job: an arresting headline, a concise lead, a supporting insight or second step, a memorable payoff or third step, and a mood.',
     'Never repeat or paraphrase the same sentence across fields. Compress any five-step source framework to its three most consequential steps unless the user explicitly asks otherwise.',
-    count > 1 ? `Return exactly ${count} slides with an arc: hook, development, and a satisfying final insight or invitation. Every slide must stand alone but advance the same narrative.` : 'Return one self-contained slide optimized for immediate comprehension.',
+    count === 2 ? 'Return exactly two connected slides. Slide 1 creates the curiosity gap and states the tension; slide 2 delivers the payoff, usable reframe or action and closes the loop. Do not repeat the hook or premise.' :
+      count > 2 ? `Return exactly ${count} slides that walk the reader through ONE connected point. Treat the sequence like a guided argument, not ${count} separate posts. Slide 1 creates the curiosity gap and states the tension. Slides 2 through ${count-1} each advance one new, necessary beat without recapping earlier slides. Slide ${count} delivers the clearest payoff, usable reframe or action and closes the loop. Make adjacent slides feel incomplete if read out of order, while keeping each readable on its own. Do not reuse a hook, example, claim or conclusion across slides.` : 'Return one self-contained slide optimized for immediate comprehension.',
     `Optimize primarily for ${optimizeFor || 'curiosity'}.`,
     instruction ? `Apply this refinement: ${instruction}` : '',
     'The theme field must be exactly one of: deep, still, dawn.',

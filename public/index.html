@@ -1120,6 +1120,12 @@ button.depths-option { width:100%; text-align:start; font-family:inherit; backgr
 .crew-modal-field select:focus,
 .crew-modal-field textarea:focus { border-color: var(--lake-glow); }
 .crew-modal-field textarea { resize: none; height: 66px; line-height: 1.5; }
+.crew-modal-preferences{margin:4px 0 13px;border:1px solid var(--dock-border);border-radius:10px;background:rgba(45,140,240,.035)}
+.crew-modal-preferences>summary{padding:10px 12px;cursor:pointer;color:var(--text-secondary);font-size:12px;font-weight:650;list-style:none}
+.crew-modal-preferences>summary::-webkit-details-marker{display:none}
+.crew-modal-preferences>summary::before{content:'›';display:inline-block;margin-right:8px;color:var(--lake-light);transition:transform .16s ease}
+.crew-modal-preferences[open]>summary::before{transform:rotate(90deg)}
+.crew-modal-preferences-body{padding:2px 12px 1px;border-top:1px solid var(--dock-border)}
 .crew-modal-actions { display: flex; gap: 9px; margin-top: 18px; }
 .crew-modal-save {
   flex: 1; padding: 11px;
@@ -1398,9 +1404,12 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
 .post-editor-layout{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(280px,.92fr);gap:16px;align-items:start}
 .post-editor-preview{display:grid;gap:8px;min-width:0}
 .post-editor-layout canvas{width:100%;height:auto;max-height:68dvh;object-fit:contain;background:#081b2d;border-radius:14px;box-shadow:0 12px 34px #0008}
-.post-editor-nav,.post-editor-refinements,.post-editor-platforms{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:2px 0}
+.post-editor-nav,.post-editor-refinements,.post-editor-platforms{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:2px 0;cursor:grab;overscroll-behavior-x:contain;touch-action:pan-x pan-y}
 .post-editor-nav::-webkit-scrollbar,.post-editor-refinements::-webkit-scrollbar,.post-editor-platforms::-webkit-scrollbar{display:none}
+.post-editor-nav.is-dragging,.post-editor-refinements.is-dragging,.post-editor-platforms.is-dragging{cursor:grabbing;user-select:none}
 .post-editor-nav button[aria-current="true"]{border-color:var(--lake-light);color:var(--lake-light)}
+.post-editor-progress{display:grid;grid-template-columns:auto 1fr auto;gap:7px;align-items:center}
+.post-editor-progress span{text-align:center;color:var(--text-secondary);font-size:12px;font-weight:700}
 .post-editor-fields{display:grid;gap:5px}
 .post-editor-fields textarea{width:100%;color:inherit;background:var(--input-bg,#14283b);border:1px solid var(--dock-border,#3a5972);border-radius:8px;padding:7px;resize:vertical;font:inherit}
 .post-editor-fields input,.post-editor-fields select{width:100%}
@@ -1904,17 +1913,22 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
   <div class="crew-modal">
     <h3 id="crewModalTitle">🪶 Add to The Crew</h3>
     <div class="crew-modal-field"><label>Real Name</label><input type="text" id="crewModalName" placeholder="How you know them..."></div>
-    <div class="crew-modal-field"><label>Nicknames / Aliases <span style="color:var(--text-dim);font-weight:normal;font-size:10px">*optional</span></label><input type="text" id="crewModalNickname" placeholder="e.g. User, Ronnie, Ron"></div>
     <div class="crew-modal-field"><label for="crewModalRole">Role</label><input id="crewModalRole" type="text" placeholder="e.g. CRM Lead, teammate, client"></div>
     <div class="crew-modal-field"><label for="crewModalOrganization">Organisation</label><input id="crewModalOrganization" type="text" placeholder="e.g. Penguin King"></div>
     <div class="crew-modal-field"><label for="crewModalRelationship">Relationship</label><input id="crewModalRelationship" type="text" placeholder="e.g. Professional contact, friendly rapport"></div>
     <div class="crew-modal-field"><label for="crewModalCommunicationStyle">Communication style</label><input id="crewModalCommunicationStyle" type="text" placeholder="e.g. Direct, playful, detail-oriented"></div>
-    <div class="crew-modal-field"><label><input id="crewModalVisible" type="checkbox" checked> Show in sidebar</label></div>
-    <div class="crew-modal-field"><label><input id="crewModalSelf" type="checkbox"> ⭐ This is me</label></div>
-    <div class="crew-modal-field" id="crewMatchField" hidden><label for="crewMatchSelect">Link To Crew Member</label><select id="crewMatchSelect"></select></div>
-    <div class="crew-modal-field"><label>Avatar Emoji <span style="color:var(--text-dim);font-weight:normal;font-size:10px">*optional</span></label><input type="text" id="crewModalEmoji" placeholder="e.g. 🦈 🌊 🔥 🦊"></div>
-    <div class="crew-modal-field"><label>🎭 Codename</label><input type="text" id="crewModalCodename" placeholder="e.g. The Architect, Driftwood..."></div>
     <div class="crew-modal-field"><label for="crewModalContext">📝 Context Note</label><textarea id="crewModalContext" placeholder="e.g. She’s my go-to person when I need to think out loud."></textarea></div>
+    <details class="crew-modal-preferences" id="crewModalPreferences">
+      <summary>Preferences &amp; extras</summary>
+      <div class="crew-modal-preferences-body">
+        <div class="crew-modal-field"><label>Nicknames / Aliases <span style="color:var(--text-dim);font-weight:normal;font-size:10px">*optional</span></label><input type="text" id="crewModalNickname" placeholder="e.g. User, Ronnie, Ron"></div>
+        <div class="crew-modal-field"><label><input id="crewModalVisible" type="checkbox" checked> Show in sidebar</label></div>
+        <div class="crew-modal-field"><label><input id="crewModalSelf" type="checkbox"> ⭐ This is me</label></div>
+        <div class="crew-modal-field" id="crewMatchField" hidden><label for="crewMatchSelect">Link To Crew Member</label><select id="crewMatchSelect"></select></div>
+        <div class="crew-modal-field"><label>Avatar Emoji <span style="color:var(--text-dim);font-weight:normal;font-size:10px">*optional</span></label><input type="text" id="crewModalEmoji" placeholder="e.g. 🦈 🌊 🔥 🦊"></div>
+        <div class="crew-modal-field"><label>🎭 Codename</label><input type="text" id="crewModalCodename" placeholder="e.g. The Architect, Driftwood..."></div>
+      </div>
+    </details>
     <div class="crew-modal-actions">
       <button class="crew-modal-cancel" onclick="closeCrewModal()">Cancel</button>
       <button class="crew-modal-delete" id="crewModalDelete" style="display:none" onclick="deleteCrewFromModal()">🗑</button>
@@ -1996,6 +2010,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
     <div class="post-editor-layout">
       <div class="post-editor-preview">
         <canvas width="1080" height="1350" aria-label="Lake post image preview"></canvas>
+        <div class="post-editor-progress"><button type="button" data-slide-prev aria-label="Previous slide">‹</button><span data-slide-position>Slide 1 of 1</span><button type="button" data-slide-next aria-label="Next slide">›</button></div>
         <div class="post-editor-nav" data-post-nav aria-label="Carousel slides"></div>
       </div>
       <div class="post-editor-fields">
@@ -2007,7 +2022,8 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
         <label>Lead <textarea name="message" maxlength="110" rows="2" required></textarea></label>
         <label>Insight / step 2 <textarea name="insight" maxlength="135" rows="2" required></textarea></label>
         <label>Payoff / step 3 <textarea name="closing" maxlength="95" rows="2" required></textarea></label>
-        <label>Mood <select name="theme"><option value="deep">Deep water</option><option value="still">Still water</option><option value="dawn">First light</option></select></label>
+        <label>Slide mood <select name="theme"><option value="deep">Deep water</option><option value="still">Still water</option><option value="dawn">First light</option></select></label>
+        <button type="button" name="applyMood">Apply this mood to all slides</button>
         <label>Layout <select name="format"><option value="square">Square · 1080 × 1080</option><option value="portrait">Portrait · 1080 × 1350</option><option value="story">Story · 1080 × 1920</option></select></label>
         <div class="post-editor-refinements" aria-label="Quick refinements">
           <button type="button" data-refine="Make the hook shorter and more arresting without hype.">Punchier hook</button>
@@ -2498,6 +2514,21 @@ function detectNamesFromText(text) {
   return Array.from(found.entries()).filter(([,score]) => score >= 2).map(([name]) => name);
 }
 
+function visiblePlayerProfiles(responseText){
+  const visible=String(responseText||'').replace(/PLAYER_TAGS_JSON[\s\S]*?(?:END_PLAYER_TAGS_JSON|$)/gi,'');
+  const names=[...visible.matchAll(/(?:^|\n)\s*(?:[-•▸]\s*)?(?:\*\*)?Name(?:\*\*)?\s*:\s*([^\n]+)/gim)];
+  const clean=value=>String(value||'').replace(/[*_`#]/g,'').replace(/\s+[—–-]\s+.*$/,'').trim();
+  const read=(section,labels)=>{
+    const label=labels.map(value=>value.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|');
+    return clean(section.match(new RegExp(`(?:^|\\n)\\s*(?:[-•▸]\\s*)?(?:\\*\\*)?(?:${label})(?:\\*\\*)?\\s*:\\s*([^\\n]+)`,'im'))?.[1]);
+  };
+  return names.map((match,index)=>{
+    const section=visible.slice(match.index,names[index+1]?.index??visible.length);
+    return {name:clean(match[1]),organization:read(section,['Organisation','Organization']),role:read(section,['Role']),
+      relationship:read(section,['Relationship']),communicationStyle:read(section,['Observed communication style','Communication style'])};
+  }).filter(profile=>profile.name);
+}
+
 function parsePlayerTags(responseText) {
   const match = responseText.match(/PLAYER_TAGS_JSON\s*([\s\S]*?)\s*END_PLAYER_TAGS_JSON/i);
   if (!match) return [];
@@ -2505,22 +2536,27 @@ function parsePlayerTags(responseText) {
   try {
     const parsed = JSON.parse(match[1].trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, ''));
     const players = Array.isArray(parsed.players) ? parsed.players : [];
+    const profiles=visiblePlayerProfiles(responseText);
+    const key=value=>String(value||'').normalize('NFKD').replace(/\p{M}/gu,'').toLowerCase().replace(/[^\p{L}\p{N}]+/gu,' ').trim();
     return players
       .filter(player => player && typeof player === 'object')
-      .map(player => ({
-        name: String(player.name || player.label || '').trim(),
+      .map(player => {
+        const name=String(player.name || player.label || '').trim();
+        const profile=profiles.find(item=>key(item.name)===key(name) || key(item.name).split(' ')[0]===key(name).split(' ')[0])||{};
+        return {
+        name,
         nickname: String(player.nickname || '').trim(),
         codename: String(player.codename || '').trim(),
-        organization: String(player.organization || player.organisation || '').trim(),
-        role: String(player.role || '').trim(),
-        relationship: String(player.relationship || '').trim(),
-        communicationStyle: String(player.communication_style || '').trim(),
+        organization: String(player.organization || player.organisation || profile.organization || '').trim(),
+        role: String(player.role || profile.role || '').trim(),
+        relationship: String(player.relationship || profile.relationship || '').trim(),
+        communicationStyle: String(player.communication_style || profile.communicationStyle || '').trim(),
         confidence: String(player.confidence || 'uncertain').trim(),
         evidence: String(player.evidence || '').trim(),
         relationshipNote: String(player.relationship_note || '').trim(),
         needsConfirmation: Boolean(player.needs_confirmation),
         source: 'tag-players'
-      }))
+      };})
       .filter(player => player.name);
   } catch(err) {
     console.warn('Could not parse player tags:', err);
@@ -2654,6 +2690,20 @@ function processNamesFromResponse(responseText, source = { id: currentSessionId,
     const matches=confidentCrewMatches(personKey);
     const evidence=player.evidence.trim();
     const exactMatch=matches.length===1 && getCrewAliases(matches[0]).includes(personKey);
+    const confirmedSelf=exactMatch && matches[0].isSelf===true;
+    if(confirmedSelf){
+      const member=matches[0];member.observations ||= [];
+      if(!member.observations.some(item=>item.sessionId===source.id && item.evidence===evidence)){
+        member.observations.push({date:new Date().toISOString(),sessionId:source.id,evidence,
+          note:player.relationshipNote || 'Matched automatically to your confirmed self Crew identity.',
+          sources:[...new Set(dates.map(item=>item.filename))],meetingDates:dates,reviewed:true});
+        if(player.organization && !member.organization)member.organization=player.organization;
+        if(player.role && !member.role)member.role=player.role;
+        if(player.communicationStyle && !member.communicationStyle)member.communicationStyle=player.communicationStyle;
+        saveCrew();changed=true;
+      }
+      return;
+    }
     const verified=evidence.length>=12 && (' '+normalizePersonKey(evidence)+' ').includes(' '+personKey+' ') &&
       source.history.some(message=>message.role==='user' && message.content?.includes(evidence));
     const fullNameMatch=exactMatch && personKey.includes(' ') && normalizePersonKey(matches[0].name)===personKey;
@@ -6476,8 +6526,21 @@ function speechSetRate(value){speechState.rate=Number(value)||1;if(speechState.p
 
 let originalShareWave;
 function originalWaveShareText(){
-  const message=messageActionText(originalShareWave);
-  return `${message}\n\n🌊 Create your own Tide in The Lake:\n${LAKE_PUBLIC_URL}`;
+  const message=formatSharedWaveText(messageActionText(originalShareWave));
+  return `🌊 A Wave from The Great Lake\n\n${message}\n\nCreate your own Tide:\n${LAKE_PUBLIC_URL}`;
+}
+function formatSharedWaveText(value){
+  return String(value||'').replace(/\r\n?/g,'\n')
+    .replace(/^\s*#{1,6}\s+/gm,'')
+    .replace(/^\s*>\s?/gm,'')
+    .replace(/^\s*[-*]\s+/gm,'• ')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g,'$1 ($2)')
+    .replace(/\*\*([^*]+)\*\*/g,'$1')
+    .replace(/__([^_]+)__/g,'$1')
+    .replace(/(?<!\*)\*([^*\n]+)\*(?!\*)/g,'$1')
+    .replace(/`([^`]+)`/g,'$1')
+    .replace(/[ \t]+$/gm,'')
+    .replace(/\n{3,}/g,'\n\n').trim();
 }
 function shareMessage(waveEl){
   originalShareWave=waveEl;
@@ -6504,7 +6567,7 @@ function jumpToMessageTop(waveEl){waveEl?.scrollIntoView({behavior:window.matchM
 function replyToMessage(waveEl){const source=messageSource(waveEl);globalThis.pendingReplySource=source;const input=document.getElementById('lakeInput');input.value=`Regarding this wave:\n“${source.content.slice(0,500)}${source.content.length>500?'…':''}”\n\n`;input.focus();scheduleInputResize(input);}
 function branchFromMessage(waveEl){const source=messageSource(waveEl);newSession();globalThis.pendingBranchSource=source;const input=document.getElementById('lakeInput');input.value=`Start a new current from this wave:\n“${source.content.slice(0,900)}${source.content.length>900?'…':''}”\n\n`;input.focus();scheduleInputResize(input);}
 function exportMessage(waveEl){const text=messageActionText(waveEl);const link=document.createElement('a');link.href=URL.createObjectURL(new Blob([text],{type:'text/plain'}));link.download=LakeExportNames.artifact('message-'+currentExportTitle(),'txt');link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000);}
-function toggleFavorite(waveEl,button){const ref=waveEl._lakeMessageRef;const next=!(ref?.favorite||waveEl.dataset.favorite==='true');waveEl.dataset.favorite=String(next);if(ref)ref.favorite=next;button.textContent=next?'★ Favorite':'☆ Favorite';saveSession().catch(()=>{});showToast(next?'Saved to favorites':'Removed from favorites');}
+function toggleFavorite(waveEl,button){const ref=waveEl._lakeMessageRef;const next=!(ref?.favorite||waveEl.dataset.favorite==='true');waveEl.dataset.favorite=String(next);if(ref)ref.favorite=next;button.textContent=next?'★':'☆';button.title=next?'Remove from favorites':'Favorite';button.setAttribute('aria-label',button.title);saveSession().catch(()=>{});showToast(next?'Saved to favorites':'Removed from favorites');}
 
 function regenerateMessage(waveEl) {
   const index=chatHistory.indexOf(waveEl._lakeMessageRef);
@@ -6532,7 +6595,9 @@ function pinToCurrents(waveEl,button) {
   const message=waveEl._lakeMessageRef;
   if(!message)return;
   message.pinned=!message.pinned;
-  button.textContent=message.pinned?'📌 Unpin':'📌 Pin';
+  button.textContent=message.pinned?'📌✓':'📌';
+  button.title=message.pinned?'Unpin':'Pin';
+  button.setAttribute('aria-label',button.title);
   renderPinnedMessages();
   saveSession().catch(()=>{});
 }
@@ -6616,27 +6681,26 @@ function showLatestBubbleActions() {
 function buildBubbleActions(waveEl, isLake) {
   const actions = document.createElement('div');
   actions.className = 'bubble-actions';
-  const add=(label,handler,extra=false)=>{const button=document.createElement('button');button.className='bubble-action-btn'+(extra?' bubble-action-extra':'');button.textContent=label;button.onclick=handler;actions.append(button);return button;};
-  add('🔊',()=>speakMessage(waveEl)).title='Speak';
-  add('📋',()=>copyText(messageActionText(waveEl))).title='Copy';
-  add('↑',()=>jumpToMessageTop(waveEl)).title='Message top';
-  const pinBtn=add(waveEl._lakeMessageRef?.pinned?'📌✓':'📌',()=>pinToCurrents(waveEl,pinBtn));pinBtn.title='Pin';
-  add('↗ Share',()=>shareMessage(waveEl));
-  add('🖼 Post',()=>postFromWave(waveEl));
+  const add=(label,handler,extra=false,title='')=>{const button=document.createElement('button');button.className='bubble-action-btn'+(extra?' bubble-action-extra':'');button.textContent=label;button.onclick=handler;if(title){button.title=title;button.setAttribute('aria-label',title);}actions.append(button);return button;};
+  add('🔊',()=>speakMessage(waveEl),false,'Speak');
+  add('📋',()=>copyText(messageActionText(waveEl)),false,'Copy');
+  add('↑',()=>jumpToMessageTop(waveEl),false,'Message top');
+  const pinBtn=add(waveEl._lakeMessageRef?.pinned?'📌✓':'📌',()=>pinToCurrents(waveEl,pinBtn),false,'Pin');
+  add('↗',()=>shareMessage(waveEl),false,'Share');
+  add('🖼 Post',()=>postFromWave(waveEl),false,'Create post imagery');
   const more=add('•••',()=>{actions.classList.toggle('more-open');more.setAttribute('aria-expanded',String(actions.classList.contains('more-open')));requestAnimationFrame(()=>updateBubbleActionsOverflow(actions));});
   more.title='More actions';more.setAttribute('aria-expanded','false');
-  add('↩ Reply',()=>replyToMessage(waveEl),true);
-  add('⬇ Export',()=>exportMessage(waveEl),true);
-  add('🌊 New Current',()=>branchFromMessage(waveEl),true);
-  const favorite=add(waveEl._lakeMessageRef?.favorite?'★ Favorite':'☆ Favorite',()=>toggleFavorite(waveEl,favorite),true);
+  add('↩',()=>replyToMessage(waveEl),true,'Reply');
+  add('🌊',()=>branchFromMessage(waveEl),true,'New Current');
+  const favorite=add(waveEl._lakeMessageRef?.favorite?'★':'☆',()=>toggleFavorite(waveEl,favorite),true,waveEl._lakeMessageRef?.favorite?'Remove from favorites':'Favorite');
   if(isLake){
-    if(waveEl._lakeMessageRef)add('🗑 Delete',()=>deleteBubble(waveEl),true);
-    add('🔁 Regenerate',()=>regenerateMessage(waveEl),true);
+    if(waveEl._lakeMessageRef)add('🗑',()=>deleteBubble(waveEl),true,'Delete');
+    add('🔁',()=>regenerateMessage(waveEl),true,'Regenerate');
     const progression=messageActionText(waveEl).match(/^[^\n]*?([A-G][#♯b♭]?(?:maj7|m7|m|7|sus[24]|add9|dim)?(?:\s*[→–—]\s*[A-G][#♯b♭]?(?:maj7|m7|m|7|sus[24]|add9|dim)?){2,7})(?![\w#/♯♭])/m);
-    if(progression){const play=add('🎹 Chords',()=>playChordProgression(progression[1],play),true);}
+    if(progression){const play=add('🎹',()=>playChordProgression(progression[1],play),true,'Play chords');}
   } else {
-    add('✏️ Edit',()=>editAndResend(waveEl._lakeMessageRef),true);
-    add('🗑 Delete',()=>deleteBubble(waveEl),true);
+    add('✏️',()=>editAndResend(waveEl._lakeMessageRef),true,'Edit and resend');
+    add('🗑',()=>deleteBubble(waveEl),true,'Delete');
   }
   actions.addEventListener('scroll',()=>updateBubbleActionsOverflow(actions),{passive:true});
   if('ResizeObserver' in window)new ResizeObserver(()=>updateBubbleActionsOverflow(actions)).observe(actions);
