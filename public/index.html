@@ -4207,6 +4207,7 @@ function setTranscriptRowHidden(hidden){
   if(hidden)localStorage.setItem(transcriptRowKey(),'true');
   else localStorage.removeItem(transcriptRowKey());
   renderSourceControls();
+  if(hidden)showToast('Transcript row hidden. Reopen it anytime from Sources ▾.');
 }
 
 async function removeChatSource(matches,name){
@@ -4342,12 +4343,14 @@ function renderSourceControls() {
   const wholeContext=LakeTranscriptReview.memory(transcriptSources(),chatHistory).complete;
   button.hidden = sources.size === 0;
   button.textContent = `Sources ${[...sources.values()].filter(file => !file.excluded).length}/${sources.size} ▾`;
+  button.title=transcriptSources().length && localStorage.getItem(transcriptRowKey())==='true'?'Sources and hidden transcript workflow':'Choose source files for the next message';
   menu.replaceChildren();
   if (!sources.size) closeSourceMenu();
   if(sources.size) {
     const heading=document.createElement('strong');heading.textContent='Files for the next message';menu.append(heading);
     if(transcriptSources().length && localStorage.getItem(transcriptRowKey())==='true'){
-      const show=document.createElement('button');show.className='quick-action-btn';show.textContent='Show transcript workflow';
+      const show=document.createElement('button');show.className='quick-action-btn';show.textContent='📖 Show transcript workflow';
+      show.title='Restore the transcript progress and actions row above the composer';
       show.onclick=()=>setTranscriptRowHidden(false);menu.append(show);
     }
     const summary=document.createElement('div');summary.className='source-summary';
