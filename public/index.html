@@ -357,6 +357,8 @@ body {
   box-shadow: 0 8px 32px rgba(0,0,0,0.5); min-width: 220px; max-width: calc(100vw - 32px);
 }
 .mood-selector.show { display: block; }
+.mood-selector.shore-wave-arrival { transform-origin:100% 0; animation:shoreWaveArrival .72s cubic-bezier(.18,.82,.24,1) both; }
+.mood-selector.shore-wave-recede { animation:shoreWaveRecede .46s ease-in both; }
 .mood-option {
   padding: 9px 13px; border-radius: 9px; cursor: pointer;
   display: flex; align-items: center; gap: 9px;
@@ -423,6 +425,15 @@ button.welcome-icon { background:none; border:0; padding:0; }
   padding:14px 28px 12px; text-align:center; border:1px solid var(--dock-border);
   border-radius:14px; background:var(--dock-bg); box-shadow:0 0 18px color-mix(in srgb,var(--lake-glow) 20%,transparent);
 }
+.ride-home-tip.shore-wave-arrival { transform-origin:100% 0; animation:shoreWaveArrival .78s cubic-bezier(.18,.82,.24,1) both; }
+.ride-home-tip.shore-wave-recede { animation:shoreWaveRecede .48s ease-in both; }
+@keyframes shoreWaveArrival {
+  0% { opacity:0; transform:translate3d(34px,-10px,0) rotate(1.6deg) scale(.94); clip-path:inset(0 0 100% 0 round 14px); }
+  48% { opacity:1; transform:translate3d(-6px,5px,0) rotate(-.4deg) scale(1.015); clip-path:inset(0 0 0 0 round 14px); }
+  72% { transform:translate3d(2px,-2px,0) rotate(.15deg) scale(.997); }
+  100% { opacity:1; transform:none; clip-path:inset(0 0 0 0 round 14px); }
+}
+@keyframes shoreWaveRecede { to { opacity:0; transform:translate3d(28px,-7px,0) scale(.96); clip-path:inset(100% 0 0 0 round 14px); } }
 .ride-home-tip h3 { margin:0 0 8px; color:var(--lake-light); font-size:15px; }
 .ride-home-tip p { margin:8px 0 0; color:var(--text-secondary); font-size:11px; }
 .ride-home-tip .ride-home-manual { margin-top:10px; }
@@ -1227,14 +1238,52 @@ button.depths-option { width:100%; text-align:start; font-family:inherit; backgr
 .lake-share-preview::before { content:'LIVE PREVIEW'; position:absolute; top:10px; left:12px; z-index:1; color:rgba(185,232,255,.62); font-size:8px; font-weight:800; letter-spacing:1.4px; }
 .lake-share-dialog label { display:grid; gap:6px; margin:13px 0; color:var(--text-secondary); font-size:11px; font-weight:700; letter-spacing:.35px; }
 .lake-share-dialog input,.lake-share-dialog select { width:100%; padding:10px 12px; border:1px solid var(--dock-border); border-radius:11px; background:#10263e; color:var(--text-primary); font:inherit; }
-.lake-share-dialog menu { position:sticky; bottom:-22px; z-index:2; display:grid; grid-template-columns:1fr auto; gap:9px; padding:16px 0 22px; margin:12px 0 -22px; background:linear-gradient(180deg,transparent 0,#07131f 28%); }
+.lake-share-dialog menu { position:sticky; bottom:-22px; z-index:2; display:grid; grid-template-columns:minmax(0,1fr) auto; gap:9px; padding:16px 0 22px; margin:12px 0 -22px; background:linear-gradient(180deg,transparent 0,#07131f 28%); }
+.lake-share-dialog #shareSaveCard { grid-column:1/-1; }
 .lake-share-platforms { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; padding:0; margin:12px 0 0; }
 .lake-share-dialog button { min-height:42px; padding:9px 13px; border:1px solid var(--dock-border); border-radius:12px; background:rgba(45,140,240,.10); color:var(--text-primary); cursor:pointer; font:inherit; transition:transform .15s ease,background .15s ease,border-color .15s ease; }
 .lake-share-dialog button:hover { transform:translateY(-1px); background:rgba(45,140,240,.18); border-color:rgba(79,195,247,.4); }
 .lake-share-dialog button[data-primary] { background:linear-gradient(135deg,#19b9ee,#1478bd); border-color:#44cdf7; color:white; font-weight:800; box-shadow:0 8px 24px rgba(14,155,211,.22); }
 .share-platform-note { margin:8px 1px 0!important; font-size:10px!important; color:var(--text-dim)!important; text-align:center; }
 #shareCardCanvas { display:block; width:auto; max-width:100%; max-height:min(52dvh,540px); height:auto; margin:8px auto 0; border-radius:16px; box-shadow:0 16px 42px rgba(0,0,0,.48); }
-@media (max-width:520px){.lake-share-dialog form{padding:18px}.lake-share-dialog menu{bottom:-18px;margin-bottom:-18px;padding-bottom:18px}.lake-share-preview{min-height:190px;padding:10px}.lake-share-platforms{gap:7px}#shareCardCanvas{max-height:42dvh}}
+.post-cards-tab { position:fixed; right:0; top:42%; z-index:84; display:flex; align-items:center; gap:5px; padding:11px 7px; border:1px solid rgba(79,195,247,.35); border-right:0; border-radius:13px 0 0 13px; background:linear-gradient(180deg,#123454,#09233b); color:#dff7ff; box-shadow:0 8px 30px rgba(0,0,0,.38); cursor:pointer; writing-mode:vertical-rl; font:700 10px/1 system-ui; letter-spacing:.7px; }
+.post-cards-tab[hidden] { display:none; }
+body.post-cards-open .dock-toggle { display:none!important; }
+.post-cards-tab span { writing-mode:horizontal-tb; font-size:16px; }
+.post-cards-overlay { position:fixed; inset:0; z-index:85; background:rgba(2,9,16,.58); backdrop-filter:blur(2px); opacity:0; pointer-events:none; transition:opacity .25s ease; }
+.post-cards-overlay.show { opacity:1; pointer-events:auto; }
+.post-cards-drawer { position:fixed; z-index:86; top:0; right:0; bottom:0; width:min(430px,calc(100vw - 22px)); display:flex; flex-direction:column; background:linear-gradient(180deg,#091a2c,#06121f); border-left:1px solid rgba(79,195,247,.28); box-shadow:-18px 0 60px rgba(0,0,0,.55); transform:translateX(105%); transition:transform .42s cubic-bezier(.18,.82,.24,1); }
+.post-cards-drawer.open { transform:none; }
+.post-cards-head { display:flex; align-items:flex-start; gap:10px; padding:18px; border-bottom:1px solid var(--dock-border); }
+.post-cards-head-text { flex:1; min-width:0; }
+.post-cards-head h2 { margin:0; color:var(--lake-light); font-size:20px; }
+.post-cards-head p { margin:5px 0 0; color:var(--text-secondary); font-size:11px; line-height:1.45; }
+.post-cards-head button,.post-cards-toolbar button,.post-card-actions button { border:1px solid var(--dock-border); border-radius:9px; background:rgba(45,140,240,.10); color:var(--text-primary); cursor:pointer; }
+.post-cards-close { width:38px; height:38px; flex:0 0 auto; font-size:18px; }
+.post-cards-toolbar { display:flex; gap:8px; padding:11px 14px; overflow-x:auto; border-bottom:1px solid var(--dock-border); }
+.post-cards-toolbar { scrollbar-width:none; -ms-overflow-style:none; }
+.post-cards-toolbar::-webkit-scrollbar { display:none; }
+.post-cards-toolbar button { flex:0 0 auto; padding:9px 11px; font-weight:700; }
+.post-cards-toolbar button:first-child { color:white; border-color:#36c7f4; background:linear-gradient(135deg,#159ed7,#176fb1); }
+.post-cards-list { flex:1; overflow:auto; padding:13px; display:grid; gap:12px; }
+.post-cards-empty { margin:auto; max-width:280px; text-align:center; color:var(--text-secondary); line-height:1.55; }
+.post-card { border:1px solid rgba(79,195,247,.20); border-radius:16px; overflow:hidden; background:linear-gradient(150deg,rgba(16,53,82,.92),rgba(7,25,42,.95)); box-shadow:0 10px 26px rgba(0,0,0,.22); }
+.post-card.is-favorite { border-color:rgba(250,204,21,.48); }
+.post-card-summary { display:flex; gap:10px; align-items:flex-start; padding:14px; cursor:pointer; list-style:none; }
+.post-card-summary::-webkit-details-marker { display:none; }
+.post-card-number { width:28px; height:28px; display:grid; place-items:center; flex:0 0 auto; border-radius:50%; background:rgba(79,195,247,.14); color:#8fe4ff; font-weight:800; }
+.post-card-copy { flex:1; min-width:0; }
+.post-card-title { color:#f4fbff; font-weight:800; line-height:1.25; }
+.post-card-teaser { margin-top:5px; color:#b7d5e5; font-size:12px; line-height:1.45; }
+.post-card-favorite { color:#ffd84d; }
+.post-card-body { padding:0 14px 14px; }
+.post-card-points { display:grid; gap:7px; margin:0 0 11px; padding:0; list-style:none; }
+.post-card-points li { padding:8px 9px; border:1px solid rgba(79,195,247,.13); border-radius:9px; color:var(--text-secondary); font-size:11px; line-height:1.4; }
+.post-card-link { display:inline-flex; align-items:center; gap:6px; color:#7fdfff; font-size:11px; overflow-wrap:anywhere; }
+.post-card-actions { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; margin-top:11px; }
+.post-card-actions button { min-height:38px; padding:6px; font-size:10px; }
+@media (prefers-reduced-motion:reduce){.shore-wave-arrival,.shore-wave-recede,.post-cards-drawer{animation:none!important;transition:none!important}}
+@media (max-width:520px){.lake-share-dialog form{padding:18px}.lake-share-dialog menu{bottom:-18px;margin-bottom:-18px;padding-bottom:18px}.lake-share-preview{min-height:190px;padding:10px}.lake-share-platforms{gap:7px}#shareCardCanvas{max-height:42dvh}.post-cards-drawer{width:100vw;border-left:0}.post-cards-tab{top:36%}}
 
 /* ── REFLECTION FORMATTING ── */
 .reflection-h3 { font-size: 15px; font-weight: 700; color: var(--sand); margin: 16px 0 8px 0; letter-spacing: 0.5px; }
@@ -1464,6 +1513,8 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
       <!-- Share menu -->
       <div class="share-menu" id="shareMenu">
         <div onclick="shareLakeInvite()">🌊 Invite someone to jump in</div>
+        <div onclick="openPostCards()">✨ Post Cards library</div>
+        <div onclick="generatePostCards()">🪄 Generate 3 Post Cards</div>
         <div onclick="openSessionShare()">🔗 Share this Tide</div>
         <div onclick="exportAsTxt()">📄 Export as .txt</div>
         <div onclick="exportSplitTranscriptZip()">🗜️ Split chat transcript ZIP</div>
@@ -1633,6 +1684,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
         </div>
       </div>
       <div class="quick-actions">
+        <button type="button" class="quick-action-btn" onclick="openPostCards()">✨ Post Cards</button>
         <button type="button" class="quick-action-btn" data-dock-prompt="Summarize the material available in this Tide, emphasizing the latest substantive Lake analysis and its sources. Give only an elegant bottom line in one or two short sentences: the core takeaway, the most consequential decision or next step if present, and any caveat that changes what I should do. Keep the fewest words that preserve meaning. No heading, list, recap of minor details, suggestions, or follow-up question. Do not invent facts or imply coverage beyond the material you can see." onclick="summarizeTide(this.dataset.dockPrompt)">tSummarize</button>
         <button class="quick-action-btn" onclick="triggerFileInput()">📎 Drop a Chat-Log</button>
         <button class="quick-action-btn" onclick="triggerCamera()">📷 Take Photo</button>
@@ -1937,11 +1989,27 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
     </div>
     <p class="share-platform-note" id="sharePlatformNote" hidden>Shares a polished image and includes the Lake link.</p>
     <menu>
+      <button type="button" id="shareSaveCard" onclick="saveCurrentShareCard()" hidden>♡ Save to Post Cards</button>
       <button type="button" id="sharePrimary" data-primary onclick="runPrimaryShare()">Share invite</button>
       <button value="cancel">Cancel</button>
     </menu>
   </form>
 </dialog>
+
+<button type="button" class="post-cards-tab" id="postCardsTab" onclick="openPostCards()" aria-controls="postCardsDrawer" aria-expanded="false" hidden><span>✨</span>POST CARDS</button>
+<div class="post-cards-overlay" id="postCardsOverlay" onclick="closePostCards()"></div>
+<aside class="post-cards-drawer" id="postCardsDrawer" aria-label="Post Cards library" aria-hidden="true">
+  <header class="post-cards-head">
+    <div class="post-cards-head-text"><h2>✨ Post Cards</h2><p>Your pocket library of questions, examples and tiny perspective shifts. Saved on this device.</p></div>
+    <button type="button" class="post-cards-close" onclick="closePostCards()" aria-label="Close Post Cards">×</button>
+  </header>
+  <div class="post-cards-toolbar">
+    <button type="button" onclick="generatePostCards()">🪄 Generate 3</button>
+    <button type="button" onclick="shufflePostCards()">⇄ Shuffle</button>
+    <button type="button" onclick="renderPostCards(true)">★ Favorites first</button>
+  </div>
+  <div class="post-cards-list" id="postCardsList"></div>
+</aside>
 
 <div class="help-overlay" id="helpOverlay" onclick="closeHelp(event)">
   <div class="help-modal">
@@ -1988,6 +2056,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
       <div class="help-item"><span class="help-icon">🌊</span><div class="help-text"><strong>Invite someone</strong> shares the public Lake homepage so they can start their own Tide.</div></div>
       <div class="help-item"><span class="help-icon">🔐</span><div class="help-text"><strong>Share this Tide</strong> creates a read-only link for this conversation. Add an optional passphrase when the contents need another layer of privacy.</div></div>
       <div class="help-item"><span class="help-icon">📸</span><div class="help-text">A message’s <strong>Share</strong> action can create a Lake-styled square post or story for Instagram, WhatsApp, LinkedIn, X, or your device’s share sheet.</div></div>
+      <div class="help-item"><span class="help-icon">✨</span><div class="help-text"><strong>Post Cards</strong> is your on-device pull-tab library. Generate exactly three fresh questions/examples at a time, or save a card from Share; then favorite, reorder, expand, generate similar, launch it into chat, or post it. Every shared card carries the Lake’s 🔗 link.</div></div>
     </div>
     <div class="help-divider"></div>
     <div class="help-section">
@@ -2980,6 +3049,7 @@ function doGuestLogin() {
 
 async function enterLake() {
   document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('postCardsTab').hidden=false;
   document.getElementById('dockUserName').textContent    = currentUser.name;
   document.getElementById('depthsProfileName').textContent = currentUser.name;
   document.getElementById('myChatAliases').value = currentUser.aliases || '';
@@ -3009,6 +3079,7 @@ function doLogout() {
   currentUser = null; currentProfilePic = null; chatHistory = []; currentSessionId = null;
   document.getElementById('depthsPanel').classList.remove('show');
   document.getElementById('loginScreen').classList.remove('hidden');
+  closePostCards();document.getElementById('postCardsTab').hidden=true;
   document.getElementById('loginName').value = '';
   document.getElementById('loginPass').value = '';
   newSession();
@@ -3318,9 +3389,9 @@ function showNewTideMoodReminder(){
   const session=currentSessionId;
   moodReminderTimer=setTimeout(()=>{
     if(session!==currentSessionId || picker.classList.contains('show'))return;
-    picker.classList.add('show');
-    moodReminderTimer=setTimeout(()=>picker.classList.remove('show'),4000);
-  },3000);
+    picker.classList.remove('shore-wave-recede');picker.classList.add('show','shore-wave-arrival');
+    moodReminderTimer=setTimeout(()=>{picker.classList.remove('shore-wave-arrival');picker.classList.add('shore-wave-recede');moodReminderTimer=setTimeout(()=>picker.classList.remove('show','shore-wave-recede'),460);},4000);
+  },5000);
 }
 function clearTideOverlays(){
   if(document.getElementById('blindMirror')?.open)closeBlindMirror();
@@ -3440,6 +3511,18 @@ function toggleSuggestions() {
   const btn  = document.querySelector('.suggestions-toggle');
   list.classList.toggle('open');
   btn.textContent = list.classList.contains('open') ? '💡 Prompt Suggestions ▴' : '💡 Prompt Suggestions ▾';
+}
+function collapseComposerFolders(){
+  const suggestions=document.getElementById('suggestionsList');suggestions?.classList.remove('open');
+  const suggestionsButton=document.querySelector('.suggestions-toggle');if(suggestionsButton)suggestionsButton.textContent='💡 Prompt Suggestions ▾';
+  const hotkeys=document.getElementById('lakeHotkeys');hotkeys?.classList.remove('open');
+  const hotkeysButton=document.getElementById('lakeHotkeysButton');if(hotkeysButton){hotkeysButton.setAttribute('aria-expanded','false');hotkeysButton.textContent='⚡ Hotkeys ▾';}
+  document.getElementById('attachMenu')?.classList.remove('show');
+  const snapshot=document.getElementById('snapshotMenu');if(snapshot)snapshot.hidden=true;
+  document.getElementById('snapshotMenuButton')?.setAttribute('aria-expanded','false');
+  const source=document.getElementById('sourceMenu');if(source)source.hidden=true;
+  document.getElementById('sourceMenuButton')?.setAttribute('aria-expanded','false');
+  const commands=document.getElementById('composerCommands');if(commands)commands.hidden=true;
 }
 
 // ============================================
@@ -3869,7 +3952,8 @@ function dismissRideHomeTip(){
   const tip=document.getElementById('rideHomeTip');
   if(tip){
     tip.dataset.paused='true';
-    tip.classList.add('is-tucked');
+    tip.classList.remove('shore-wave-arrival');tip.classList.add('shore-wave-recede');
+    setTimeout(()=>{if(!tip.isConnected)return;tip.classList.remove('shore-wave-recede');tip.classList.add('is-tucked');},480);
   }
   return Boolean(tip);
 }
@@ -3911,7 +3995,7 @@ function scheduleRideHomeTip(){
     if(!home.isConnected || document.getElementById('rideHomeTip'))return;
     const tip=document.createElement('aside');
     tip.id='rideHomeTip';
-    tip.className='ride-home-tip';
+    tip.className='ride-home-tip shore-wave-arrival';
     tip.setAttribute('aria-label','Ride a Wave tip');
     tip.innerHTML='<button type="button" class="ride-home-tip-close" aria-label="Dismiss tip">×</button><h3>Not sure where to start?</h3><button type="button" class="welcome-prompt-featured">🌊 Ride a Wave</button><p>Start with one easy question. For a lighter opening, try <strong>💦 Splash</strong> for a surprising fact or <strong>🌀 Riptide</strong> for one curious question.</p><button type="button" class="welcome-prompt-featured ride-home-manual">📖 How to use The Lake</button><p>See what the Lake can help with and how to use its tools.</p>';
     tip.querySelector('.ride-home-tip-close').onclick=dismissRideHomeTip;
@@ -3922,7 +4006,7 @@ function scheduleRideHomeTip(){
     reopen.textContent='🌊';
     reopen.onclick=()=>{
       tip.dataset.paused='true';
-      tip.classList.remove('is-tucked');
+      tip.classList.remove('is-tucked','shore-wave-recede');tip.classList.add('shore-wave-arrival');
       tip.querySelector('.ride-home-tip-close').focus();
     };
     const todayLink=document.createElement('button');
@@ -3954,22 +4038,36 @@ function scheduleRideHomeTip(){
     const manual=tip.querySelector('.ride-home-manual');
     const manualCopy=manual.nextElementSibling;
     const standard=[tipTitle.textContent,starterCopy.innerHTML];
-    const featureTips=[
-      ['Pro tip · tSummarize','After a long analysis, tap tSummarize for the takeaway in one or two sentences.'],
-      ['Pro tip · Prompt dock','Drag a dock prompt into the text box to edit it before sending. On touch screens, hold and drag.'],
-      ['Pro tip · Start your day','Tap the calendar and tell the Lake one thing that needs to move today. It can help you choose a five-minute first step.'],
-      ['Pro tip · Meeting Currents','Use Meeting Currents to find relevant, cited excerpts across your saved plain-text meeting transcripts.']
+    const coreTips=[
+      ['Pro tip · Ride a Wave','Not sure what to ask? Ride a Wave opens with one easy question and builds from your answer.'],
+      ['Pro tip · Lake Mood','Tap 🎭 before a message to choose its length and depth—from a tiny Drip to a Deep Dive.'],
+      ['Pro tip · tSummarize','After a long analysis, tap tSummarize for the consequential takeaway in one or two sentences.'],
+      ['Pro tip · Prompt dock','Tap a dock prompt to send it, or drag it into the text box when you want to edit the wording first.'],
+      ['Pro tip · Attach context','Drop a screenshot, transcript or document into the composer; the Lake reads the files together with your question.'],
+      ['Pro tip · Start your day','Tap 📅 and name one thing that must move today. The Lake can turn it into a realistic five-minute first step.'],
+      ['Pro tip · Share a wave','Use Share on a Lake reply to make a polished post or story with a working invitation back to The Lake.'],
+      ['Pro tip · Post Cards','Open ✨ Post Cards to keep, favorite, reorder, share or explore your best tiny ideas.'],
+      ['Pro tip · New Current','Choose a suggested next wave after a reply to explore that thought without having to invent the next question.']
+    ];
+    const advancedTips=[
+      ['Pro tip · Meeting Currents','Use Meeting Currents to find relevant, cited excerpts across your saved plain-text meeting transcripts.'],
+      ['Pro tip · Patterns Across Chats','Tap ♒️ on the home screen to test recurring themes against evidence from more than one saved Tide.'],
+      ['Pro tip · Mirror','Mirror lets you rehearse how your own communication may land, then inspect where the simulation is uncertain.'],
+      ['Pro tip · Portable context','Backup & Data can carry selected context between devices without merging it into a public share link.'],
+      ['Pro tip · Voice','Hold the microphone for Lake Voice, or use Read Aloud on a reply when listening fits better than scrolling.']
     ];
     const tipKey=storageKey('homeTipAppearances');
     let appearances=0;
     try{appearances=Number(localStorage.getItem(tipKey))||0;}catch{}
     const refreshTip=()=>{
-      appearances=appearances%(featureTips.length*4)+1;
+      appearances=appearances%1000+1;
       try{localStorage.setItem(tipKey,String(appearances));}catch{}
       const featured=appearances%4===0;
-      const index=(appearances/4-1)%featureTips.length;
-      tipTitle.textContent=featured?featureTips[index][0]:standard[0];
-      if(featured)starterCopy.textContent=featureTips[index][1];
+      const tipPool=appearances%16===0?advancedTips:coreTips;
+      const tipIndex=Math.floor(appearances/4-1)%tipPool.length;
+      const featureTip=tipPool[(tipIndex+tipPool.length)%tipPool.length];
+      tipTitle.textContent=featured?featureTip[0]:standard[0];
+      if(featured)starterCopy.textContent=featureTip[1];
       else starterCopy.innerHTML=standard[1];
       for(const item of [starter,manual,manualCopy,todayLink])item.hidden=featured;
     };
@@ -3988,7 +4086,7 @@ function scheduleRideHomeTip(){
       if(!tucked)refreshTip();
       setTimeout(cycle,tucked?22000:5000);
     };
-    setTimeout(cycle,5000);
+    setTimeout(cycle,6000);
   },6200);
 }
 function triggerDailyPrinciple() {
@@ -5180,6 +5278,7 @@ async function sendWave(options = {}) {
   if (!options.snapshot && isRequestVisible(origin)) {
     if(!options.preserveDraft) {input.value='';input.style.height='auto';updateComposerCommands(input);}
     if(options.action!=='meeting-currents') selectedFiles=[];
+    globalThis.collapseComposerFolders?.();
   }
   renderFilePreviews();
   if (isRequestVisible(origin)) showRipple();
@@ -5278,6 +5377,7 @@ async function sendWave(options = {}) {
       }
       const suggestionResult=options.snapshot?{text:JSON.stringify(data.handoff || JSON.parse(data.reflection), null, 2),suggestions:[]}:extractAdaptiveSuggestions(data.reflection,origin.firstResponseSuggestions,origin.showAdaptiveSuggestions);
       const cleanReflection = suggestionResult.text;
+      if(options.action==='post-card-generator'){loadPostCards();saveGeneratedPostCards(cleanReflection);}
       if(origin.showAdaptiveSuggestions && cleanReflection && !suggestionResult.suggestions.length){
         if(options.guide)suggestionResult.suggestions.push(...guideNextWaves());
         else suggestionResult.suggestions.push({label:'Find one useful next step',kind:'action',prompt:'Based on what I asked and your last reply, suggest one concrete next step that builds on our conversation. If there is no action to take, give me one useful angle I have not considered.'});
@@ -5569,9 +5669,96 @@ function toggleShareMenu() {
 }
 
 const LAKE_PUBLIC_URL='https://the-great-lake-bot.onrender.com/';
-const lakeShareState={mode:'invite',wave:null};
-function configureShareDialog(mode,wave=null){
-  lakeShareState.mode=mode;lakeShareState.wave=wave;
+const lakeShareState={mode:'invite',wave:null,card:null};
+let postCards=[];
+const POST_CARD_GENERATOR_PROMPT=`Create exactly three original social Post Cards for The Great Lake. Each card must make a fast-scrolling reader pause and leave them with one genuinely useful, humane adjustment to how they see everyday life. Be novel, precise, clever, elegant, warm and thought-provoking without sounding grandiose, preachy, manipulative or like a generic motivational quote. Favor obvious-but-unexamined truths, practical questions and memorable examples. Vary the three cards: one question, one concrete example or observation, and one compact framework. Each card must contain exactly three numbered points—not two, not five.
+
+Use this exact format and no introduction or closing:
+## Card 1 — [short headline]
+[one vivid teaser sentence]
+1. [short label]: [one concise detail]
+2. [short label]: [one concise detail]
+3. [short label]: [one concise detail]
+
+## Card 2 — [short headline]
+[one vivid teaser sentence]
+1. [short label]: [one concise detail]
+2. [short label]: [one concise detail]
+3. [short label]: [one concise detail]
+
+## Card 3 — [short headline]
+[one vivid teaser sentence]
+1. [short label]: [one concise detail]
+2. [short label]: [one concise detail]
+3. [short label]: [one concise detail]`;
+function postCardsStorageKey(){return storageKey('postCards');}
+function loadPostCards(){try{const saved=JSON.parse(localStorage.getItem(postCardsStorageKey())||'[]');postCards=Array.isArray(saved)?saved:[];}catch{postCards=[];}return postCards;}
+function savePostCards(){try{localStorage.setItem(postCardsStorageKey(),JSON.stringify(postCards.slice(0,120)));}catch{showToast('Post Cards could not be saved on this device.');}}
+function postCardMarkdown(card){return `## ${card.title}\n${card.teaser}\n${card.items.slice(0,3).map((item,index)=>`${index+1}. ${item.label}${item.detail?`: ${item.detail}`:''}`).join('\n')}`.trim();}
+function newPostCard(content,sourceText=''){
+  const items=(content.items||[]).slice(0,3).map((item,index)=>({number:String(index+1),label:trimLakeShareText(item.label,42),detail:trimLakeShareText(item.detail,180)}));
+  return {id:'post_'+Date.now()+'_'+Math.random().toString(36).slice(2,8),title:trimLakeShareText(content.title,86)||'A thought from the deep',teaser:trimLakeShareText(content.teaser||content.body,230),items,sourceText,created:Date.now(),favorite:false};
+}
+function addPostCard(content,sourceText='',quiet=false){
+  const card=newPostCard(content,sourceText);postCards.unshift(card);savePostCards();renderPostCards();if(!quiet)showToast('Saved to Post Cards.');return card;
+}
+function parseGeneratedPostCards(text){
+  const matches=[...String(text||'').matchAll(/^##\s*Card\s*\d+\s*[—–-]\s*(.+)$/gmi)];
+  return matches.slice(0,3).map((match,index)=>{
+    const end=matches[index+1]?.index??text.length;const section=`## ${match[1]}\n${text.slice(match.index+match[0].length,end).trim()}`;
+    const content=lakeShareContent(section);content.items=content.items.slice(0,3).map((item,itemIndex)=>({...item,number:String(itemIndex+1)}));
+    return content.items.length===3?newPostCard(content,section):null;
+  }).filter(Boolean);
+}
+function saveGeneratedPostCards(text){
+  const generated=parseGeneratedPostCards(text);
+  if(!generated.length){showToast('The cards arrived in an unexpected format. The reply is still in your Tide.');return;}
+  postCards=[...generated,...postCards];savePostCards();renderPostCards();showToast(`${generated.length} Post Card${generated.length===1?'':'s'} saved.`);
+}
+function openPostCards(){
+  loadPostCards();renderPostCards();document.getElementById('shareMenu').style.display='none';
+  document.body.classList.add('post-cards-open');
+  document.getElementById('postCardsDrawer').classList.add('open');document.getElementById('postCardsDrawer').setAttribute('aria-hidden','false');
+  document.getElementById('postCardsOverlay').classList.add('show');document.getElementById('postCardsTab').setAttribute('aria-expanded','true');
+}
+function closePostCards(){document.body.classList.remove('post-cards-open');document.getElementById('postCardsDrawer').classList.remove('open');document.getElementById('postCardsDrawer').setAttribute('aria-hidden','true');document.getElementById('postCardsOverlay').classList.remove('show');document.getElementById('postCardsTab').setAttribute('aria-expanded','false');}
+function renderPostCards(favoritesFirst=false){
+  const list=document.getElementById('postCardsList');if(!list)return;list.replaceChildren();
+  const cards=[...postCards];if(favoritesFirst)cards.sort((a,b)=>Number(b.favorite)-Number(a.favorite));
+  if(!cards.length){const empty=document.createElement('div');empty.className='post-cards-empty';empty.innerHTML='<strong>No cards tucked away yet.</strong><br>Generate three fresh ideas, or save any Lake share card here.';list.append(empty);return;}
+  cards.forEach((card,index)=>{
+    const details=document.createElement('details');details.className='post-card'+(card.favorite?' is-favorite':'');details.dataset.cardId=card.id;
+    const summary=document.createElement('summary');summary.className='post-card-summary';
+    const number=document.createElement('span');number.className='post-card-number';number.textContent=String(index+1);
+    const copy=document.createElement('span');copy.className='post-card-copy';const title=document.createElement('div');title.className='post-card-title';title.textContent=card.title;const teaser=document.createElement('div');teaser.className='post-card-teaser';teaser.textContent=card.teaser;copy.append(title,teaser);
+    const star=document.createElement('span');star.className='post-card-favorite';star.textContent=card.favorite?'★':'♡';summary.append(number,copy,star);
+    const body=document.createElement('div');body.className='post-card-body';const points=document.createElement('ol');points.className='post-card-points';
+    card.items.slice(0,3).forEach(item=>{const li=document.createElement('li');const strong=document.createElement('strong');strong.textContent=item.label;li.append(strong,document.createTextNode(item.detail?`: ${item.detail}`:''));points.append(li);});
+    const link=document.createElement('a');link.className='post-card-link';link.href=LAKE_PUBLIC_URL;link.target='_blank';link.rel='noopener';link.textContent='🔗 the-great-lake-bot.onrender.com';
+    const actions=document.createElement('div');actions.className='post-card-actions';
+    const defs=[['★ Favorite',()=>togglePostCardFavorite(card.id)],['🌊 Chat',()=>launchPostCard(card.id)],['↗ Share',()=>sharePostCard(card.id)],['≈ Similar',()=>generateSimilarPostCard(card.id)],['↑ Up',()=>movePostCard(card.id,-1)],['↓ Down',()=>movePostCard(card.id,1)],['🗑 Remove',()=>removePostCard(card.id)]];
+    defs.forEach(([label,handler])=>{const button=document.createElement('button');button.type='button';button.textContent=label;button.onclick=event=>{event.preventDefault();handler();};actions.append(button);});body.append(points,link,actions);details.append(summary,body);list.append(details);
+  });
+}
+function findPostCard(id){return postCards.find(card=>card.id===id);}
+function togglePostCardFavorite(id){const card=findPostCard(id);if(!card)return;card.favorite=!card.favorite;savePostCards();renderPostCards();}
+function movePostCard(id,delta){const index=postCards.findIndex(card=>card.id===id),next=Math.max(0,Math.min(postCards.length-1,index+delta));if(index<0||next===index)return;postCards.splice(next,0,postCards.splice(index,1)[0]);savePostCards();renderPostCards();}
+function shufflePostCards(){for(let i=postCards.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[postCards[i],postCards[j]]=[postCards[j],postCards[i]];}savePostCards();renderPostCards();}
+function removePostCard(id){const card=findPostCard(id);if(!card||!confirm(`Remove “${card.title}” from Post Cards?`))return;postCards=postCards.filter(item=>item.id!==id);savePostCards();renderPostCards();}
+function launchPostCard(id){const card=findPostCard(id);if(!card)return;closePostCards();const input=document.getElementById('lakeInput');input.value=`Explore this Post Card with me:\n\n${postCardMarkdown(card)}`;autoResize(input);input.focus();}
+function sharePostCard(id){const card=findPostCard(id);if(!card)return;closePostCards();configureShareDialog('message',null,card);}
+function generatePostCards(seed=''){
+  closePostCards();document.getElementById('shareMenu').style.display='none';
+  return sendWave({action:'post-card-generator',visibleText:'✨ Generate 3 Post Cards',requestText:POST_CARD_GENERATOR_PROMPT+(seed?`\n\nCreate fresh cards inspired by this seed without repeating its wording, claim or examples:\n${seed}`:''),reuseAttachments:false,preserveDraft:true});
+}
+function generateSimilarPostCard(id){const card=findPostCard(id);if(card)generatePostCards(postCardMarkdown(card));}
+function saveCurrentShareCard(){
+  if(lakeShareState.card){if(!postCards.some(card=>card.id===lakeShareState.card.id)){postCards.unshift(lakeShareState.card);savePostCards();}showToast('Already safe in Post Cards.');return;}
+  const source=messageActionText(lakeShareState.wave);if(!source)return;addPostCard(lakeShareContent(source),source);
+}
+function lakeShareSourceText(){return lakeShareState.card?postCardMarkdown(lakeShareState.card):messageActionText(lakeShareState.wave);}
+function configureShareDialog(mode,wave=null,card=null){
+  lakeShareState.mode=mode;lakeShareState.wave=wave;lakeShareState.card=card;
   const dialog=document.getElementById('lakeShareDialog');
   const isMessage=mode==='message',isSession=mode==='session';
   document.getElementById('lakeShareTitle').textContent=isMessage?'🌊 Share this wave':isSession?'🔗 Share this Tide':'🌊 Invite someone into The Lake';
@@ -5581,6 +5768,7 @@ function configureShareDialog(mode,wave=null){
   document.getElementById('sharePlatforms').hidden=!isMessage;
   document.getElementById('shareCardPreview').hidden=!isMessage;
   document.getElementById('sharePlatformNote').hidden=!isMessage;
+  document.getElementById('shareSaveCard').hidden=!isMessage;
   document.getElementById('sharePrimary').textContent=isMessage?'🌊 Share Lake card':isSession?'Create Tide link':'Share invite';
   if(isMessage)renderLakeShareCard();
   document.getElementById('shareMenu').style.display='none';
@@ -5676,7 +5864,7 @@ function drawLakeCardMark(ctx,x,y,size){
 function renderLakeShareCard(){
   const canvas=document.getElementById('shareCardCanvas');if(!canvas||lakeShareState.mode!=='message')return;
   const story=document.getElementById('shareCardFormat').value==='story';canvas.width=1080;canvas.height=story?1920:1080;
-  const ctx=canvas.getContext('2d'),w=canvas.width,h=canvas.height,margin=story?92:78,content=lakeShareContent(messageActionText(lakeShareState.wave));
+  const ctx=canvas.getContext('2d'),w=canvas.width,h=canvas.height,margin=story?92:78,content=lakeShareContent(lakeShareSourceText());
   const background=ctx.createLinearGradient(0,0,w,h);background.addColorStop(0,'#05101f');background.addColorStop(.52,'#0a2943');background.addColorStop(1,'#087eaf');ctx.fillStyle=background;ctx.fillRect(0,0,w,h);
   const glow=ctx.createRadialGradient(w*.9,h*.76,20,w*.9,h*.76,w*.72);glow.addColorStop(0,'rgba(38,210,255,.38)');glow.addColorStop(1,'rgba(5,16,31,0)');ctx.fillStyle=glow;ctx.fillRect(0,0,w,h);
   ctx.save();ctx.globalAlpha=.10;ctx.strokeStyle='#b9efff';ctx.lineWidth=3;for(let i=0;i<7;i++){ctx.beginPath();ctx.ellipse(w*.92,h*.76,150+i*105,55+i*42,-.18,0,Math.PI*2);ctx.stroke();}ctx.restore();
@@ -5701,14 +5889,14 @@ function renderLakeShareCard(){
     drawLakeRoundRect(ctx,margin,y,w-margin*2,Math.max(story?330:220,footerTop-y-20),story?28:22,'rgba(5,20,34,.38)','rgba(143,223,255,.15)');ctx.fillStyle='#effaff';ctx.font=`600 ${story?40:31}px system-ui, sans-serif`;const bodyLines=wrapCanvasText(ctx,content.body,w-margin*2-(story?70:52),story?10:7);drawCanvasLines(ctx,bodyLines,margin+(story?35:26),y+(story?66:50),story?57:44);
   }
   ctx.strokeStyle='rgba(185,239,255,.25)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(margin,footerTop);ctx.lineTo(w-margin,footerTop);ctx.stroke();
-  ctx.fillStyle='#8fdfff';ctx.font=`800 ${story?18:15}px system-ui, sans-serif`;ctx.fillText('DIVE DEEPER AT',margin,footerTop+(story?62:45));ctx.fillStyle='#ffffff';ctx.font=`700 ${story?29:23}px system-ui, sans-serif`;ctx.fillText('the-great-lake-bot.onrender.com',margin,footerTop+(story?108:80));
+  ctx.fillStyle='#8fdfff';ctx.font=`800 ${story?18:15}px system-ui, sans-serif`;ctx.fillText('DIVE DEEPER AT',margin,footerTop+(story?62:45));ctx.fillStyle='#ffffff';ctx.font=`700 ${story?29:23}px system-ui, sans-serif`;ctx.fillText('🔗  the-great-lake-bot.onrender.com',margin,footerTop+(story?108:80));
   ctx.fillStyle='rgba(238,249,255,.60)';ctx.textAlign='right';ctx.font=`600 ${story?19:15}px system-ui, sans-serif`;ctx.fillText('Shared from The Great Lake',w-margin,footerTop+(story?108:80));ctx.textAlign='left';
 }
 function shareCardBlob(){return new Promise(resolve=>document.getElementById('shareCardCanvas').toBlob(resolve,'image/png'));}
 async function shareLakeCard(platform){
   renderLakeShareCard();const blob=await shareCardBlob();if(!blob){showToast('Could not create the share card.');return;}
   const story=document.getElementById('shareCardFormat').value==='story';const file=new File([blob],`great-lake-${story?'story':'post'}.png`,{type:'image/png'});
-  const text='A thought from The Great Lake 🌊';
+  const cardTitle=lakeShareContent(lakeShareSourceText()).title;const text=`${cardTitle} — a thought from The Great Lake 🌊`;
   try{
     if(navigator.share&&navigator.canShare?.({files:[file]})){await navigator.share({title:'The Great Lake',text,url:LAKE_PUBLIC_URL,files:[file]});return;}
     const links={whatsapp:`https://wa.me/?text=${encodeURIComponent(text+' '+LAKE_PUBLIC_URL)}`,linkedin:`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(LAKE_PUBLIC_URL)}`,x:`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(LAKE_PUBLIC_URL)}`};
@@ -5806,6 +5994,7 @@ function exportAsPDF() {
 history.pushState({ lake: true }, '');
 function closeTopmostLayer(){
   const shown=(id,selector='.show')=>document.getElementById(id)?.matches(selector);
+  if(document.getElementById('postCardsDrawer')?.classList.contains('open')){closePostCards();return true;}
   if(shown('attachmentLightbox')){document.getElementById('attachmentLightbox').classList.remove('show');return true;}
   if(shown('crewCardOverlay')){closeCrewCard();return true;}
   if(shown('crewModalOverlay')){document.getElementById('crewModalOverlay').classList.remove('show');return true;}
