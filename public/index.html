@@ -721,6 +721,7 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
 .adaptive-suggestions.is-collapsed .adaptive-suggestions-list { max-height:0; opacity:0; transform:translateY(8px); padding-block:0; pointer-events:none; }
 @media (prefers-reduced-motion:reduce) { .adaptive-suggestions .adaptive-suggestions-list { transition:none; } }
 .adaptive-suggestions.is-collapsed { padding-bottom: 1px; }
+.adaptive-suggestions.is-collapsed .adaptive-suggestions-head { width:calc(100% - 12px); margin-inline:6px; }
 .adaptive-suggestions-head { display: flex; width:100%; align-items: center; justify-content: space-between; gap: 4px; min-height: 28px; }
 .adaptive-suggestions-title { color: var(--text-dim); font-size: 8px; font-weight: 650; letter-spacing: .35px; }
 .adaptive-suggestions-close { width: 24px; height: 20px; border: 0; border-radius: 999px; background: transparent; color: var(--text-dim); cursor: pointer; font-size: 14px; line-height: 1; }
@@ -1542,7 +1543,6 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
         <div onclick="shareLakeInvite()">🌊 Invite someone to jump in</div>
         <div onclick="openSessionShare()">🔗 Share this Tide</div>
         <div onclick="exportAsTxt()">📄 Export as .txt</div>
-        <div onclick="exportSplitTranscriptZip()">🗜️ Split chat transcript ZIP</div>
         <div onclick="exportAsPDF()">📊 Printable transcript / PDF</div>
       </div>
       <!-- Mood selector -->
@@ -1683,7 +1683,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
           <button class="suggestions-toggle" onclick="toggleSuggestions()">💡 Prompt Suggestions ▾</button>
           <button type="button" class="suggestions-toggle" id="lakeHotkeysButton" aria-expanded="false" aria-controls="lakeHotkeys" onclick="toggleLakeHotkeys()">⚡ Hotkeys ▾</button>
           <button class="quick-action-btn" onclick="tagPlayers()">🏷️ Tag Players</button>
-          <button class="quick-action-btn" id="snapshotMenuButton" onclick="toggleSnapshotMenu()" aria-haspopup="menu" aria-expanded="false" aria-controls="snapshotMenu">📋 Snapshot ▾</button>
+          <button class="quick-action-btn" id="snapshotMenuButton" onclick="toggleSnapshotMenu()" aria-haspopup="menu" aria-expanded="false" aria-controls="snapshotMenu">🧰 Tools ▾</button>
           <button class="quick-action-btn" id="sourceMenuButton" onclick="toggleSourceMenu()" aria-expanded="false" aria-controls="sourceMenu" hidden>Sources</button>
           <button class="quick-action-btn" id="downloadSnapshotButton" onclick="downloadLatestSnapshot()" title="Download the latest snapshot" aria-label="Download latest snapshot" hidden>⬇</button>
         </div>
@@ -1709,7 +1709,6 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
         </div>
       </div>
       <div class="quick-actions">
-        <button type="button" class="quick-action-btn" onclick="openPostCards()">📮 Post Imagery</button>
         <button type="button" class="quick-action-btn" data-dock-prompt="Summarize the material available in this Tide, emphasizing the latest substantive Lake analysis and its sources. Give only an elegant bottom line in one or two short sentences: the core takeaway, the most consequential decision or next step if present, and any caveat that changes what I should do. Keep the fewest words that preserve meaning. No heading, list, recap of minor details, suggestions, or follow-up question. Do not invent facts or imply coverage beyond the material you can see." onclick="summarizeTide(this.dataset.dockPrompt)">tSummarize</button>
         <button class="quick-action-btn" onclick="triggerFileInput()">📎 Drop a Chat-Log</button>
         <button class="quick-action-btn" onclick="triggerCamera()">📷 Take Photo</button>
@@ -1719,8 +1718,9 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
         <button type="button" class="quick-action-btn" onclick="openMirrorSetup()">🪞 Mirror</button>
         <button type="button" class="quick-action-btn" onclick="readMeetingCurrents()">Meeting Currents</button>
       </div>
-      <div class="snapshot-menu" id="snapshotMenu" role="menu" aria-label="Snapshot scope" hidden>
-        <button role="menuitem" onclick="exportSplitTranscriptZip()">🗜️ Split chat transcript ZIP</button>
+      <div class="snapshot-menu" id="snapshotMenu" role="menu" aria-label="Tools" hidden>
+        <button role="menuitem" onclick="closeSnapshotMenu();openPostCards()" title="Aspirational prototype retained for future Studio development">📮 Post Imagery · prototype</button>
+        <button role="menuitem" onclick="exportSplitTranscriptZip()">🗜️ Transcript Splitter</button>
         <button role="menuitem" onclick="createSnapshot('chat')" title="Export this conversation for another AI instance">📋 Chat Snapshot</button>
         <button role="menuitem" onclick="createSnapshot('total')" title="Export this device's context for another AI instance">🗂️ Total Snapshot</button>
         <button role="menuitem" onclick="createSnapshot('both')" title="Export both and explain this conversation's contribution">🔗 Both</button>
@@ -2006,7 +2006,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
 <dialog class="lake-share-dialog" id="postCardEditor" aria-labelledby="postCardEditorTitle">
   <form method="dialog">
     <h2 id="postCardEditorTitle">🌊 Post Imagery</h2>
-    <p>Shape one polished Lake image or a threaded carousel. Each slide should earn its place.</p>
+    <p><strong>Aspirational prototype:</strong> this preserves an early idea for a future Studio. It is intentionally incomplete and may ultimately work very differently.</p>
     <div class="post-editor-layout">
       <div class="post-editor-preview">
         <canvas width="1080" height="1350" aria-label="Lake post image preview"></canvas>
@@ -2058,7 +2058,6 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
       <button type="button" onclick="shareOriginalWave()" data-primary>Share text</button>
       <button type="button" onclick="copyOriginalWave()">Copy text</button>
       <button type="button" onclick="exportOriginalWaveText()">Export .txt</button>
-      <button type="button" onclick="openWaveShareImage()">Create post imagery</button>
       <button>Close</button>
     </menu>
   </form>
@@ -2091,11 +2090,11 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
   </form>
 </dialog>
 
-<button type="button" class="post-cards-tab" id="postCardsTab" onclick="openPostCards()" aria-label="Open Post Cards" title="Post Imagery" aria-controls="postCardsDrawer" aria-expanded="false" hidden><span>📮</span></button>
+<button type="button" class="post-cards-tab" id="postCardsTab" onclick="openPostCards()" aria-label="Open Post Cards" title="Post Imagery prototype" aria-controls="postCardsDrawer" aria-expanded="false" hidden><span>📮</span></button>
 <div class="post-cards-overlay" id="postCardsOverlay" onclick="closePostCards()"></div>
 <aside class="post-cards-drawer" id="postCardsDrawer" aria-label="Post Imagery library" aria-hidden="true">
   <header class="post-cards-head">
-    <div class="post-cards-head-text"><h2>📮 Post Imagery</h2><p>Your saved Lake slides and carousel narratives. Saved on this device.</p></div>
+    <div class="post-cards-head-text"><h2>📮 Post Imagery · prototype</h2><p>An aspirational, incomplete idea retained for a future Studio. Its final form may be quite different. Saved locally on this device.</p></div>
     <button type="button" class="post-cards-close" onclick="closePostCards()" aria-label="Close Post Imagery">×</button>
   </header>
   <div class="post-cards-toolbar">
@@ -2150,8 +2149,8 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
       <div class="help-section-title">🔗 Sharing &amp; privacy</div>
       <div class="help-item"><span class="help-icon">🌊</span><div class="help-text"><strong>Invite someone</strong> shares the public Lake homepage so they can start their own Tide.</div></div>
       <div class="help-item"><span class="help-icon">🔐</span><div class="help-text"><strong>Share this Tide</strong> creates a read-only link for this conversation. Add an optional passphrase when the contents need another layer of privacy.</div></div>
-      <div class="help-item"><span class="help-icon">📸</span><div class="help-text">A message’s <strong>Share</strong> action can create a Lake-styled square post or story for Instagram, WhatsApp, LinkedIn, X, or your device’s share sheet.</div></div>
-      <div class="help-item"><span class="help-icon">✨</span><div class="help-text"><strong>Post Cards</strong> is your on-device pull-tab library. Generate exactly three fresh questions/examples at a time, or save a card from Share; then favorite, reorder, expand, generate similar, launch it into chat, or post it. Every shared card carries the Lake’s 🔗 link.</div></div>
+      <div class="help-item"><span class="help-icon">↗️</span><div class="help-text">A message’s <strong>Share</strong> action opens a simple preview where you can share, copy, or export that Wave as text.</div></div>
+      <div class="help-item"><span class="help-icon">🧰</span><div class="help-text"><strong>Tools</strong> keeps advanced utilities out of the main chat. Transcript Splitter lives there, along with an aspirational Post Imagery prototype retained for future Studio work.</div></div>
     </div>
     <div class="help-divider"></div>
     <div class="help-section">
@@ -3196,7 +3195,6 @@ function doGuestLogin() {
 
 async function enterLake() {
   document.getElementById('loginScreen').classList.add('hidden');
-  document.getElementById('postCardsTab').hidden=false;
   document.getElementById('dockUserName').textContent    = currentUser.name;
   document.getElementById('depthsProfileName').textContent = currentUser.name;
   document.getElementById('myChatAliases').value = currentUser.aliases || '';
@@ -4221,8 +4219,7 @@ function scheduleRideHomeTip(){
       ['Pro tip · Prompt dock','Tap a dock prompt to send it, or drag it into the text box when you want to edit the wording first.'],
       ['Pro tip · Attach context','Drop a screenshot, transcript or document into the composer; the Lake reads the files together with your question.'],
       ['Pro tip · Start your day','Tap 📅 and name one thing that must move today. The Lake can turn it into a realistic five-minute first step.'],
-      ['Pro tip · Share a wave','Use Share on a Lake reply to copy or export its text, or turn the insight into polished Post Imagery with a working Lake invitation.'],
-      ['Pro tip · Post Imagery','Open 📮 Post Imagery to create a single slide or a threaded carousel, then refine, save, reorder and share it.'],
+      ['Pro tip · Share a wave','Use Share on a Lake reply to preview, copy, export, or send that Wave as clean text.'],
       ['Pro tip · New Current','Choose a suggested next wave after a reply to explore that thought without having to invent the next question.']
     ];
     const advancedTips=[
@@ -6567,7 +6564,7 @@ function jumpToMessageTop(waveEl){waveEl?.scrollIntoView({behavior:window.matchM
 function replyToMessage(waveEl){const source=messageSource(waveEl);globalThis.pendingReplySource=source;const input=document.getElementById('lakeInput');input.value=`Regarding this wave:\n“${source.content.slice(0,500)}${source.content.length>500?'…':''}”\n\n`;input.focus();scheduleInputResize(input);}
 function branchFromMessage(waveEl){const source=messageSource(waveEl);newSession();globalThis.pendingBranchSource=source;const input=document.getElementById('lakeInput');input.value=`Start a new current from this wave:\n“${source.content.slice(0,900)}${source.content.length>900?'…':''}”\n\n`;input.focus();scheduleInputResize(input);}
 function exportMessage(waveEl){const text=messageActionText(waveEl);const link=document.createElement('a');link.href=URL.createObjectURL(new Blob([text],{type:'text/plain'}));link.download=LakeExportNames.artifact('message-'+currentExportTitle(),'txt');link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000);}
-function toggleFavorite(waveEl,button){const ref=waveEl._lakeMessageRef;const next=!(ref?.favorite||waveEl.dataset.favorite==='true');waveEl.dataset.favorite=String(next);if(ref)ref.favorite=next;button.textContent=next?'★':'☆';button.title=next?'Remove from favorites':'Favorite';button.setAttribute('aria-label',button.title);saveSession().catch(()=>{});showToast(next?'Saved to favorites':'Removed from favorites');}
+function toggleFavorite(waveEl,button){const ref=waveEl._lakeMessageRef;const next=!(ref?.favorite||waveEl.dataset.favorite==='true');waveEl.dataset.favorite=String(next);if(ref)ref.favorite=next;button.textContent=next?'★ Favorite':'☆ Favorite';button.title=next?'Remove from favorites':'Favorite';button.setAttribute('aria-label',button.title);saveSession().catch(()=>{});showToast(next?'Saved to favorites':'Removed from favorites');}
 
 function regenerateMessage(waveEl) {
   const index=chatHistory.indexOf(waveEl._lakeMessageRef);
@@ -6595,7 +6592,7 @@ function pinToCurrents(waveEl,button) {
   const message=waveEl._lakeMessageRef;
   if(!message)return;
   message.pinned=!message.pinned;
-  button.textContent=message.pinned?'📌✓':'📌';
+  button.textContent=message.pinned?'📌 Unpin':'📌 Pin';
   button.title=message.pinned?'Unpin':'Pin';
   button.setAttribute('aria-label',button.title);
   renderPinnedMessages();
@@ -6681,26 +6678,23 @@ function showLatestBubbleActions() {
 function buildBubbleActions(waveEl, isLake) {
   const actions = document.createElement('div');
   actions.className = 'bubble-actions';
-  const add=(label,handler,extra=false,title='')=>{const button=document.createElement('button');button.className='bubble-action-btn'+(extra?' bubble-action-extra':'');button.textContent=label;button.onclick=handler;if(title){button.title=title;button.setAttribute('aria-label',title);}actions.append(button);return button;};
-  add('🔊',()=>speakMessage(waveEl),false,'Speak');
-  add('📋',()=>copyText(messageActionText(waveEl)),false,'Copy');
-  add('↑',()=>jumpToMessageTop(waveEl),false,'Message top');
-  const pinBtn=add(waveEl._lakeMessageRef?.pinned?'📌✓':'📌',()=>pinToCurrents(waveEl,pinBtn),false,'Pin');
-  add('↗',()=>shareMessage(waveEl),false,'Share');
-  add('🖼 Post',()=>postFromWave(waveEl),false,'Create post imagery');
-  const more=add('•••',()=>{actions.classList.toggle('more-open');more.setAttribute('aria-expanded',String(actions.classList.contains('more-open')));requestAnimationFrame(()=>updateBubbleActionsOverflow(actions));});
-  more.title='More actions';more.setAttribute('aria-expanded','false');
-  add('↩',()=>replyToMessage(waveEl),true,'Reply');
-  add('🌊',()=>branchFromMessage(waveEl),true,'New Current');
-  const favorite=add(waveEl._lakeMessageRef?.favorite?'★':'☆',()=>toggleFavorite(waveEl,favorite),true,waveEl._lakeMessageRef?.favorite?'Remove from favorites':'Favorite');
+  const add=(label,handler,title='')=>{const button=document.createElement('button');button.className='bubble-action-btn';button.textContent=label;button.onclick=handler;if(title){button.title=title;button.setAttribute('aria-label',title);}actions.append(button);return button;};
+  add('🔊 Speak',()=>speakMessage(waveEl),'Speak');
+  add('📋 Copy',()=>copyText(messageActionText(waveEl)),'Copy');
+  add('↑ Message top',()=>jumpToMessageTop(waveEl),'Message top');
+  const pinBtn=add(waveEl._lakeMessageRef?.pinned?'📌 Unpin':'📌 Pin',()=>pinToCurrents(waveEl,pinBtn),'Pin');
+  add('↗ Share',()=>shareMessage(waveEl),'Share');
+  add('↩ Reply To',()=>replyToMessage(waveEl),'Reply');
+  add('🌊 New Current',()=>branchFromMessage(waveEl),'New Current');
+  const favorite=add(waveEl._lakeMessageRef?.favorite?'★ Favorite':'☆ Favorite',()=>toggleFavorite(waveEl,favorite),waveEl._lakeMessageRef?.favorite?'Remove from favorites':'Favorite');
   if(isLake){
-    if(waveEl._lakeMessageRef)add('🗑',()=>deleteBubble(waveEl),true,'Delete');
-    add('🔁',()=>regenerateMessage(waveEl),true,'Regenerate');
+    if(waveEl._lakeMessageRef)add('🗑 Delete',()=>deleteBubble(waveEl),'Delete');
+    add('🔁 Regenerate',()=>regenerateMessage(waveEl),'Regenerate');
     const progression=messageActionText(waveEl).match(/^[^\n]*?([A-G][#♯b♭]?(?:maj7|m7|m|7|sus[24]|add9|dim)?(?:\s*[→–—]\s*[A-G][#♯b♭]?(?:maj7|m7|m|7|sus[24]|add9|dim)?){2,7})(?![\w#/♯♭])/m);
-    if(progression){const play=add('🎹',()=>playChordProgression(progression[1],play),true,'Play chords');}
+    if(progression){const play=add('🎹 Play chords',()=>playChordProgression(progression[1],play),'Play chords');}
   } else {
-    add('✏️',()=>editAndResend(waveEl._lakeMessageRef),true,'Edit and resend');
-    add('🗑',()=>deleteBubble(waveEl),true,'Delete');
+    add('✏️ Edit',()=>editAndResend(waveEl._lakeMessageRef),'Edit and resend');
+    add('🗑 Delete',()=>deleteBubble(waveEl),'Delete');
   }
   actions.addEventListener('scroll',()=>updateBubbleActionsOverflow(actions),{passive:true});
   if('ResizeObserver' in window)new ResizeObserver(()=>updateBubbleActionsOverflow(actions)).observe(actions);

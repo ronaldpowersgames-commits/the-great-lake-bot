@@ -142,7 +142,7 @@ test('Enter sends and Shift+Enter makes a newline without sending during IME or 
   assert.equal(vm.runInContext('sendCount', context), 1);
 });
 
-test('Post Card generation accepts three bold labeled points and uses a compact post tab',()=>{
+test('aspirational Post Imagery keeps its learnings behind Tools instead of core chat',()=>{
   const context=vm.createContext({console,Date,Math});
   vm.runInContext(script.slice(script.indexOf('function cleanLakeShareText'),script.indexOf('function wrapCanvasText')),context);
   vm.runInContext(script.slice(script.indexOf('let postCards=[]'),script.indexOf('function configureShareDialog')),context);
@@ -167,6 +167,10 @@ Not every resistance is a warning.
   assert.equal(vm.runInContext('parseGeneratedPostCards(sample)[0].items[1].label',context),'Story');
   assert.match(html,/id="postCardsTab"[^>]+aria-label="Open Post Cards"[^>]*><span>📮<\/span><\/button>/);
   assert.doesNotMatch(html,/id="postCardsTab"[^>]*>[^<]*POST CARDS/);
+  assert.match(html,/🧰 Tools ▾/);
+  assert.match(html,/Post Imagery · prototype/);
+  assert.doesNotMatch(html,/postCardsTab'\)\.hidden=false/);
+  assert.doesNotMatch(html,/onclick="openWaveShareImage\(\)"/);
 });
 
 test('rename is a real reserved command with Hotkey and persistent title execution',()=>{

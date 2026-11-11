@@ -91,6 +91,11 @@ test('mobile message controls stay compact, discoverable and replay from the sta
   assert.match(html,/speechState\.index=0;stopSpeech\(false\)/);
   assert.match(html,/bubble-actions\.has-overflow:not\(\.at-end\)::after/);
   assert.match(html,/function updateBubbleActionsOverflow/);
+  assert.match(html,/add\('🔊 Speak'/);
+  assert.match(html,/add\('↗ Share'/);
+  assert.doesNotMatch(html,/add\('🖼 Post'/);
+  assert.doesNotMatch(html,/const more=add\('•••'/);
+  assert.match(html,/adaptive-suggestions\.is-collapsed \.adaptive-suggestions-head \{ width:calc\(100% - 12px\); margin-inline:6px; \}/);
   assert.match(html,/const sectionAt=line=>\/\^#\{2,4\}\\s\+\.\+\//);
   assert.doesNotMatch(html,/sectionAt=line=>[^\n]+\\d\+/);
 });

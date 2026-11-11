@@ -530,6 +530,8 @@ function receiveUploads(req, res, next) {
 // ======================================================
 // POST /chat — OPENAI CHAT COMPLETIONS API
 // ======================================================
+// ASPIRATIONAL PROTOTYPE: kept behind Tools to preserve learnings for a future Studio.
+// Its present schema and generation flow are explicitly not a mature product contract.
 const postCardFields = { title: 60, message: 110, insight: 135, closing: 95, theme: 12 };
 const postCardSchema = {
   type: 'object',

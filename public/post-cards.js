@@ -1,3 +1,9 @@
+/*
+ * ASPIRATIONAL PROTOTYPE — retained for future Studio exploration.
+ * This is not a mature core-chat feature or a settled product design. Preserve the
+ * useful generation, canvas and library learnings, but expect its eventual Studio
+ * implementation and interaction model to be substantially different.
+ */
 (() => {
   const editor = document.getElementById('postCardEditor');
   const form = editor.querySelector('form');

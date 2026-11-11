@@ -55,7 +55,7 @@ function handoff(scope) {
     const menuBounds = await page.locator('#snapshotMenu').boundingBox();
     assert.ok(menuBounds.x >= 0 && menuBounds.x + menuBounds.width <= 1365 && menuBounds.y >= 0);
     await page.keyboard.press('ArrowDown');
-    assert.match(await page.locator(':focus').innerText(),/Total Snapshot/);
+    assert.match(await page.locator(':focus').innerText(),/Transcript Splitter/);
     await page.keyboard.press('Escape');
     assert.equal(await page.locator('#snapshotMenuButton').evaluate(el => el === document.activeElement),true);
     await input.fill('Line one');
@@ -87,7 +87,7 @@ function handoff(scope) {
     const downloadEvent = page.waitForEvent('download');
     await page.getByRole('button', {name:'Download latest snapshot'}).click();
     const download = await downloadEvent;
-    assert.match(download.suggestedFilename(), /both-ai-handoff.*\.json$/);
+    assert.match(download.suggestedFilename(), /ai-handoff-both.*\.json$/);
     const exported = JSON.parse(fs.readFileSync(await download.path(), 'utf8'));
     assert.equal(exported.format_version, 'lake-ai-handoff/1');
     assert.equal(exported.handoff.scope, 'both');
