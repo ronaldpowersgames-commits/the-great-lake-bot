@@ -9,6 +9,7 @@
       messages: (session.history || []).filter(message => !message.snapshot && !String(message.action || '').startsWith('snapshot-')).map((message, index) => ({
         sourceMessage: index + 1,
         role: message.role, content: String(message.content || ''), time: message.time,
+        ...(message.mirror ? {simulation:true,simulationRole:message.role==='assistant'?'simulated user or Mirror analysis':'roleplayed recipient',learningEvidence:false} : {}),
         attachments: (message.attachments || []).map(file => ({ name: file.name, type: file.type, meetingDate: file.meetingDate || null }))
       }))
     }));

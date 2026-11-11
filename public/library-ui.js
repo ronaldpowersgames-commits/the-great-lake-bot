@@ -206,7 +206,10 @@ function openCrewManager(){showDepthsTab('crew');document.getElementById('depths
 function renderCrewManager() {
   const list=document.getElementById('crewManagerList');if(!list)return;list.replaceChildren();
   const query=document.getElementById('crewManagerSearch').value.toLowerCase();
-  for(const [index,member] of crewMembers.entries()) {
+  const mode=crewSortMode();
+  const entries=orderedCrewEntries(mode);
+  const movable=entries.filter(([,member])=>!member.isSelf);
+  for(const [index,member] of entries) {
     if(![member.name,member.nickname,member.role,member.context,member.codename].join(' ').toLowerCase().includes(query))continue;
     const row=document.createElement('div');row.className='manager-row';
     const name=document.createElement('div');name.className='manager-name';name.textContent=(member.isSelf?'⭐ ':'')+member.name;if(member.isSelf)name.title='This is you';
@@ -221,6 +224,15 @@ function renderCrewManager() {
     candidates.forEach(({candidate,targetIndex})=>select.append(new Option(candidate.name+(matches.includes(candidate)?' · possible match':''),String(targetIndex))));
     const link=libraryButton('🔗','Connect duplicate',()=>connectCrewMembers(index,Number(select.value)));link.disabled=true;select.onchange=()=>{link.disabled=select.value==='';};
     tools.append(label,libraryButton('✎','Edit '+member.name,()=>openCrewModal('edit',index)),select,link);
+    if(mode==='custom' && !member.isSelf){
+      const position=movable.findIndex(([original])=>original===index);
+      for(const [direction,icon,label] of [[-1,'↑','up'],[1,'↓','down']]){
+        const move=libraryButton(icon,'Move '+member.name+' '+label,()=>moveCrewMember(index,direction));
+        move.dataset.crewMove=index+':'+direction;
+        move.disabled=!movable[position+direction];
+        tools.append(move);
+      }
+    }
     row.append(name,detail,tools);list.append(row);
   }
   for(const [index,suggestion] of suggestedCrew.entries()) {

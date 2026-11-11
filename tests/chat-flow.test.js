@@ -12,6 +12,7 @@ function browserContext() {
   const elements = new Map();
   const context = vm.createContext({
     console, FormData, File, Blob, Date, atob, TextDecoder, crypto:require('node:crypto').webcrypto,
+    LakeMirror: require('../public/mirror-mode'),
     LakeTranscriptReview: require('../public/transcript-review'),
     LakeMeetingMemory: require('../public/meeting-memory'),
     LakeOrganization: require('../public/organization'),
@@ -521,7 +522,7 @@ test('score cards separate whole-call and participant ratings with coverage limi
   const schema=require('../core/model/lake_score_model.json').lake_model_schema;
   assert.equal(schema.scoring_methods.lake_score_formula,'(clarity + depth + authenticity + volatility + symbolic_cohesion) / 5');
   assert.ok(schema.scoring_methods.whole_interaction);
-  const button=html.match(/onclick="sendPrompt\('([^']*Overall Lake Score[^']*)'\)"/);
+  const button=html.match(/data-dock-prompt="([^"]*Overall Lake Score[^"]*)"/);
   assert.ok(button,'Score Cards quick action requests the whole-interaction score');
   assert.match(button[1],/separate cards for participants/);
 });
@@ -727,4 +728,26 @@ test('email encoding is decoded while sender and reply metadata are preserved', 
   assert.match(text, /sam@example.com/);
   assert.match(text, /In-Reply-To: <previous@example.com>/);
   assert.match(text, /I\u2019ll reply tomorrow/);
+});
+
+test('Mirror requests disable personal learning and give evidence-grounded simulation instructions', async () => {
+  const {handler,requests}=routeContext();
+  await handler({body:{message:'Let us begin',mood:'calm',mirror:JSON.stringify({mode:'pure',control:'talk',context:'Professional',evidence:'What problem does this solve?'}),learnFromMessage:'true'},files:[]},{json(){},status(){return this;}});
+  const prompt=requests.at(-1).messages[0].content;
+  assert.match(prompt,/MIRROR EXERCISE/);
+  assert.match(prompt,/What problem does this solve/);
+  assert.match(prompt,/cannot establish facts about the real user/);
+  assert.doesNotMatch(prompt,/After the visible answer and any Next Waves, optionally append LAKE_PROFILE_JSON/);
+});
+
+test('Mirror state persists from user markers and ordinary chat excludes simulated history', async () => {
+  const mirror=require('../public/mirror-mode');
+  const state={mode:'lab',control:'talk',context:'Social',runId:'one'};
+  assert.deepEqual(mirror.state([{role:'user',mirror:state},{role:'assistant',content:'roleplay'}]),state);
+  assert.equal(mirror.command('Break the Mirror.'),'break');
+  assert.equal(mirror.parse('{bad'),null);
+  assert.equal(mirror.parse({mode:'unknown',control:'talk'}),null);
+  const {handler,requests}=routeContext();
+  await handler({body:{message:'Normal conversation',history:JSON.stringify([{role:'assistant',content:'invented behavior',mirror:state},{role:'user',content:'actual question'}])},files:[]},{json(){},status(){return this;}});
+  assert.equal(requests.at(-1).messages.some(message=>message.content==='invented behavior'),false);
 });

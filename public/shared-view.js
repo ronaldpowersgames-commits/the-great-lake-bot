@@ -14,9 +14,10 @@
     for (const message of session.history) {
       const article = document.createElement('article');
       article.className = message.role === 'user' ? 'user' : 'assistant';
+      if(['drip','shallow','calm','analytical','stormy'].includes(message.mood)) article.dataset.sentMood=message.mood;
       const sender = document.createElement('div');
       sender.className = 'sender';
-      sender.textContent = message.role === 'user' ? 'You (conversation author)' : 'The Lake';
+      sender.textContent = message.role === 'user' ? (message.mirror?'You (Mirror exercise)':'You (conversation author)') : (message.mirror?'The Lake · Mirror exercise':'The Lake');
       const bubble = document.createElement('div');
       bubble.className = 'bubble';
       // Construct formatting with text nodes, never untrusted HTML.

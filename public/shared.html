@@ -19,7 +19,17 @@
     .sender { font-size: 12px; color: #a3b5c4; margin-bottom: 4px; }
     .user .sender { text-align: right; }
     .bubble { padding: 10px 14px; border: 1px solid #294154; border-radius: 8px; background: #142a40; overflow-wrap: anywhere; }
-    .user .bubble { background: #143932; border-color: #315d54; }
+    .user .bubble {
+      background: color-mix(in srgb, #272334 83%, var(--sent-mood, #a393bc));
+      border: 1px solid color-mix(in srgb, #42384e 65%, var(--sent-mood, #a393bc));
+      border-inline-end: 3px solid var(--sent-mood, #a393bc);
+      border-top-right-radius: 4px;
+    }
+    .user[data-sent-mood="drip"] { --sent-mood:#facc15; }
+    .user[data-sent-mood="shallow"] { --sent-mood:#35c98a; }
+    .user[data-sent-mood="calm"] { --sent-mood:#4fc3f7; }
+    .user[data-sent-mood="analytical"] { --sent-mood:#9b7aff; }
+    .user[data-sent-mood="stormy"] { --sent-mood:#ff805c; }
     .bubble p { margin: 0 0 8px; white-space: pre-wrap; }
     .bubble p:last-child { margin-bottom: 0; }
     .bubble img { display: block; max-width: 100%; max-height: 600px; height: auto; margin-top: 8px; }
