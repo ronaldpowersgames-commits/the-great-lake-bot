@@ -1616,6 +1616,10 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
         <button type="button" onclick="sendMirrorControl('break')">Break the Mirror</button>
         <button type="button" onclick="sendMirrorControl('exit')">Exit Mirror</button>
       </div>
+      <div id="debateControls" class="mirror-controls" hidden>
+        <span>⚔️ Debate Me</span>
+        <button type="button" onclick="sendWave({action:'debate-end',visibleText:'End debate',requestText:'End the debate and briefly recap the strongest argument and one way to improve it.',reuseAttachments:false,preserveDraft:true})">End debate</button>
+      </div>
       <div class="input-row">
         <div class="source-menu" id="sourceMenu" hidden></div>
         <div class="input-wrap">
@@ -1793,6 +1797,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
     <div class="crew-modal-field"><label>Real Name</label><input type="text" id="crewModalName" placeholder="How you know them..."></div>
     <div class="crew-modal-field"><label>Nicknames / Aliases <span style="color:var(--text-dim);font-weight:normal;font-size:10px">*optional</span></label><input type="text" id="crewModalNickname" placeholder="e.g. User, Ronnie, Ron"></div>
     <div class="crew-modal-field"><label for="crewModalRole">Role</label><input id="crewModalRole" type="text" placeholder="e.g. CRM Lead, teammate, client"></div>
+    <div class="crew-modal-field"><label><input id="crewModalProtectedShare" type="checkbox"> Require a passphrase by default when I share with this person</label></div>
     <div class="crew-modal-field"><label><input id="crewModalVisible" type="checkbox" checked> Show in sidebar</label></div>
     <div class="crew-modal-field"><label><input id="crewModalSelf" type="checkbox"> ⭐ This is me</label></div>
     <div class="crew-modal-field" id="crewMatchField" hidden><label for="crewMatchSelect">Link To Crew Member</label><select id="crewMatchSelect"></select></div>
@@ -1838,6 +1843,34 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
 </div>
 
 <!-- HELP MODAL -->
+<dialog id="shareTideDialog" class="mirror-setup">
+  <form id="shareTideForm" onsubmit="event.preventDefault();createTideShare()">
+    <h2>Share Tide</h2>
+    <p>The link opens a read-only copy of this Tide’s shareable messages and images. It lasts up to seven days or until the server restarts.</p>
+    <label>Use sharing preference for <select id="shareCrewRecipient" onchange="updateShareProtection()"></select></label>
+    <label>Default for this Tide
+      <select id="shareTideDefault" onchange="updateShareProtection()">
+        <option value="crew">Use Crew default</option>
+        <option value="protected">Require a passphrase</option>
+        <option value="standard">Standard link</option>
+      </select>
+    </label>
+    <label><input id="shareProtected" type="checkbox" onchange="updateSharePassphraseFields()"> Require a passphrase for this link</label>
+    <div id="sharePassphraseFields" hidden>
+      <label>Passphrase <input id="shareNewPassphrase" type="password" autocomplete="new-password" minlength="12" maxlength="512"></label>
+      <label>Confirm passphrase <input id="shareConfirmPassphrase" type="password" autocomplete="new-password" maxlength="512"></label>
+      <p>Use at least 12 characters. Anyone with the link and passphrase can open it. Send the passphrase separately.</p>
+    </div>
+    <button type="submit" id="shareCreateButton">Create link</button>
+    <button type="button" onclick="document.getElementById('shareTideDialog').close()">Close</button>
+    <p id="shareTideStatus" role="status"></p>
+    <div id="shareTideResult" hidden>
+      <label>Share link <input id="shareTideUrl" type="url" readonly></label>
+      <button type="button" onclick="copyTideShare()">Copy link</button>
+    </div>
+  </form>
+</dialog>
+
 <dialog id="blindMirror" class="mirror-setup">
   <form onsubmit="event.preventDefault();runBlindMirror()">
     <h2>🪞 Blind comparison</h2>
@@ -1899,6 +1932,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
     <div class="help-divider"></div>
     <div class="help-section">
       <div class="help-section-title">☀️ A daily dip</div>
+      <div class="help-item"><span class="help-icon">⚔️</span><div class="help-text"><strong>Debate Me</strong> is in the fifth homepage pair with Mirror Mode. Bring a position or ask the Lake to pick a topic. Expect a spirited, fair challenge to your reasoning. Tap End debate for a brief recap and one way to sharpen your argument.</div></div>
       <div class="help-item"><span class="help-icon">🪞</span><div class="help-text"><strong>Mirror Mode</strong> lets you experience a simulation of talking with yourself. Open Mirror in the dock, choose Pure Mirror or Mirror Lab, and confirm your own communication examples. You play the other person. Inspect evidence to pause, Resume to continue, or Break the Mirror for a debrief and one practical adjustment. Generated dialogue stays labeled as a simulation and is excluded from personal learning. <strong>Blind comparison</strong> within an active Mirror lets you compare a generated response with a real reply kept out of the generation request, then reveal which is which.</div></div>
       <div class="help-item"><span class="help-icon">📅</span><div class="help-text"><strong>Start the day</strong> with Today on the Lake: name one thing that matters or feels stuck. Pick one next move you can make in five minutes.</div></div>
       <div class="help-item"><span class="help-icon">💦</span><div class="help-text"><strong>Splash</strong> gives you a surprising fact. <strong>Riptide</strong> asks a curious question. <strong>Ride a Wave</strong> helps you explore whatever’s on your mind, one question at a time.</div></div>
@@ -1987,6 +2021,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
 <script src="/session-store.js"></script>
 <script src="/snapshot-context.js"></script>
 <script src="/full-backup.js"></script>
+<script src="/shared-session.js"></script>
 <script src="/meeting-memory.js"></script>
 <script src="/organization.js"></script>
 <script src="/prompt-types.js"></script>
@@ -3460,6 +3495,7 @@ function openCrewModal(mode, idx = -1, prefill = '') {
     document.getElementById('crewModalNickname').value = m.nickname || '';
     document.getElementById('crewModalRole').value=m.role||'';document.getElementById('crewModalVisible').checked=!m.hidden;
     document.getElementById('crewModalSelf').checked=m.isSelf===true;
+    document.getElementById('crewModalProtectedShare').checked=m.requireSharePassphrase===true;
     document.getElementById('crewModalCodename').value = m.codename || '';
     document.getElementById('crewModalEmoji').value    = m.emoji    || '';
     document.getElementById('crewModalContext').value  = m.context  || '';
@@ -3470,6 +3506,7 @@ function openCrewModal(mode, idx = -1, prefill = '') {
     document.getElementById('crewModalNickname').value = suggested.nickname || '';
     document.getElementById('crewModalRole').value=suggested.role||'';document.getElementById('crewModalVisible').checked=!suggested.hidden;
     document.getElementById('crewModalSelf').checked=false;
+    document.getElementById('crewModalProtectedShare').checked=suggested.requireSharePassphrase===true;
     document.getElementById('crewModalCodename').value = suggested.codename || '';
     document.getElementById('crewModalEmoji').value    = suggested.emoji || '';
     document.getElementById('crewModalContext').value  = suggested.context || '';
@@ -3497,6 +3534,7 @@ function saveCrewFromModal() {
     nickname: document.getElementById('crewModalNickname').value.trim(),
     role:document.getElementById('crewModalRole').value.trim(),hidden:!document.getElementById('crewModalVisible').checked,
     isSelf:document.getElementById('crewModalSelf').checked,
+    requireSharePassphrase:document.getElementById('crewModalProtectedShare').checked,
     codename: document.getElementById('crewModalCodename').value.trim(),
     emoji:    document.getElementById('crewModalEmoji').value.trim(),
     context:  document.getElementById('crewModalContext').value.trim()
@@ -3708,7 +3746,7 @@ function updateCurrents(text) {
 // ============================================
 const LAKE_MANUAL_PROMPT = `Write a concise practical manual for The Great Lake. Open with low-friction daily chats: Today on the Lake to pick one next step, Splash for a surprising fact, Riptide for a curious question, and Ride a Wave to explore one thing. Mention voice, Patterns Across Chats, and a quick example of testing an assumption or noticing a pattern in yourself. Then group details by task under Markdown level-two headings. Mention that a readable text-based PDF preserves transcript layout, while TXT or the Splitter ZIP supports exact searchable excerpts and Meeting Currents. Explain that tSumarize gives the essential takeaway in one or two sentences. Give short examples and cover only supported features:
 - Homepage: the top-left wave logo returns home. The floating wave starts Ride a Wave, Splash offers a fact, Riptide asks a question, 📅 Today on the Lake helps plan the day around priorities, blockers and energy, and ♒️ Patterns Across Chats looks for recurring patterns using a sample of saved chats. The 🎤 shortcut below it opens a fresh Lake Voice session on supported browsers. Pick a mood and voice, tap Start talking, and take turns speaking with automatic replies. Tap to interrupt or end the session. The composer microphone supports editable dictation.
-- Mirror: open Mirror in the dock, choose Pure Mirror or Mirror Lab, choose a relationship/context, and confirm examples you authored. The Lake simulates your evidenced communication while you play the other person. Inspect evidence pauses; Resume continues; Break the Mirror debriefs; Exit Mirror returns to normal. Mirror Calibration compares actual examples with generated dialogue. Inside an active Mirror exercise, Blind comparison holds your actual reply on this device while the Lake generates a response from your confirmed examples and a new situation. Choose A or B, then reveal the sources. It is a local comparison, not a validated personality test. Historical replay requires exact attributed lines and marks any move into generated conversation. Fidelity stays unestablished without enough comparison evidence.\n- Moods: Drip gives an immediate minimal answer, Shallow is short and simple, Calm is reflective and digestible, Deep Dive gives careful expanded analysis, and Stormy is candid and decisive. The 🎭 menu lists codes. Use them at either end of a message and the mood stays active until changed. List /drip /drippy /drop, /shallow /splash /splashy, /calm /reg /default, /deep /deepdive /full, and /stormy /storm /choppy. Personalize explains custom triggers, for example /trigger /focus /deep and /untrigger /focus.
+- Debate Me: open the fifth homepage pair, bring a position or let the Lake offer a topic, then test your reasoning in a spirited debate. End debate gives a short debrief.\n- Mirror: open Mirror in the dock or the fifth homepage pair, choose Pure Mirror or Mirror Lab, choose a relationship/context, and confirm examples you authored. The Lake simulates your evidenced communication while you play the other person. Inspect evidence pauses; Resume continues; Break the Mirror debriefs; Exit Mirror returns to normal. Mirror Calibration compares actual examples with generated dialogue. Inside an active Mirror exercise, Blind comparison holds your actual reply on this device while the Lake generates a response from your confirmed examples and a new situation. Choose A or B, then reveal the sources. It is a local comparison, not a validated personality test. Historical replay requires exact attributed lines and marks any move into generated conversation. Fidelity stays unestablished without enough comparison evidence.\n- Moods: Drip gives an immediate minimal answer, Shallow is short and simple, Calm is reflective and digestible, Deep Dive gives careful expanded analysis, and Stormy is candid and decisive. The 🎭 menu lists codes. Use them at either end of a message and the mood stays active until changed. List /drip /drippy /drop, /shallow /splash /splashy, /calm /reg /default, /deep /deepdive /full, and /stormy /storm /choppy. Personalize explains custom triggers, for example /trigger /focus /deep and /untrigger /focus.
 - Next Waves: tap to send, hover or hold to preview, drag into the desktop composer to edit, or type /w followed by a number and choose the matching suggestion to insert the full prompt. Settings → Slash Commands lets you create, edit, disable or remove personal prompt shortcuts. /mood opens the mood picker. The desktop wheel scrolls the rail sideways. Explain collapsible reply sections and message actions.
 - Creative tools: Writer, Music and Drawing Types offer starters and practice. Relevant chord replies can offer Play chords. Hotkeys can make a song, written piece, drawing concept, voluntary hypnosis script or other remix directly in the chat. Make Something From This opens a separate creative branch that draws on bounded text excerpts from the source chat.
 - Cover attachments, whole-transcript workflows, Crew and memory controls, Past Tides and Recovery, and adding the app from a mobile browser to the Home Screen. For transcripts, mention text-based PDFs as an option when preserving the readable layout helps, and numbered TXT or a split ZIP when exact text coverage matters. Explain Backup ZIP, password-protected backup and Restore backup from file. Keep the guide focused on functionality. Do not start an onboarding question or personal analysis.`;
@@ -4634,11 +4672,22 @@ document.addEventListener('DOMContentLoaded',()=>{
 function mirrorState(history=chatHistory){
   return LakeMirror.state(history);
 }
+function debateIsActive(){
+  for(let index=chatHistory.length-1;index>=0;index--){
+    const message=chatHistory[index];
+    if(message.role!=='user')continue;
+    if(message.action==='debate-end')return false;
+    if(message.action==='debate-start')return true;
+  }
+  return false;
+}
 function renderMirrorControls(){
   const state=mirrorState();
   const controls=document.getElementById('mirrorControls');
   if(!controls)return;
   controls.hidden=!state || state.control==='exit' || state.control==='break';
+  const debateControls=document.getElementById('debateControls');
+  if(debateControls)debateControls.hidden=!controls.hidden || !debateIsActive();
   document.getElementById('mirrorStatus').textContent=state
     ? '🪞 '+(state.mode==='lab'?'Mirror Lab':'Pure Mirror')+' · '+state.context+' · '+(state.control==='check'?'paused':'simulation') : '';
 }
@@ -4981,6 +5030,15 @@ async function sendWave(options = {}) {
   } else if(!options.mirror && priorMirror && !['break','exit'].includes(priorMirror.control) && !options.snapshot){
     options.mirror={...priorMirror,control:priorMirror.control==='check'?'check':'talk'};
   }
+  if(!options.mirror && !options.snapshot && !options.action && options.requestText==null){
+    if(debateIsActive() && /^(end|exit|stop) (the )?debate[.!]?$/i.test(text)){
+      options.action='debate-end';
+    }else if(/^debate me(?:\s*[:—]\s*.+)?[.!]?$/i.test(text)){
+      options.action='debate-start';
+    }else if(debateIsActive()){
+      options.action='debate-turn';
+    }
+  }
   const visibleText = options.visibleText ?? text;
   if (!text && selectedFiles.length === 0) return;
   waveInFlight = true;
@@ -5000,7 +5058,7 @@ async function sendWave(options = {}) {
   };
   if(options.action==='tsummarize')origin.showAdaptiveSuggestions=false;
   origin.firstResponseSuggestions=!options.mirror && options.action!=='tsummarize' && !options.snapshot && !origin.history.some(message=>message.role==='assistant') && !/\b(?:no follow[- ]?up|no suggestions?|just answer|one word)\b/i.test(text);
-  origin.showAdaptiveSuggestions=!options.mirror && options.action!=='tsummarize' && !options.snapshot && (options.requestText != null ||
+  origin.showAdaptiveSuggestions=!options.mirror && !options.action?.startsWith('debate-') && options.action!=='tsummarize' && !options.snapshot && (options.requestText != null ||
     !/\b(?:no follow[- ]?ups?|no suggestions?|skip (?:the )?next waves)\b/i.test(text));
   const reviewInventory=transcriptSources(origin.history,selectedFiles).map(file=>({id:file.sourceId,name:file.name,selected:!file.excluded}));
   origin.sourceInventory=reviewInventory;
@@ -5111,7 +5169,7 @@ async function sendWave(options = {}) {
     const learning=Boolean(profileStorage && profileStorage.getItem(learningKey)!=='false' && !options.snapshot && options.action!=='tsummarize' && !options.mirror);
     if(learning){
       formData.append('learnedProfile',profileStorage.getItem(profileKey)||'[]');
-      if(options.requestText==null || options.action==='save-skill')formData.append('learnFromMessage','true');
+      if(!options.action?.startsWith('debate-') && (options.requestText==null || options.action==='save-skill'))formData.append('learnFromMessage','true');
     }
     if(!options.snapshot && profileStorage?.getItem(learningKey)!=='false' && globalThis.LakeSessionStore){
       const packages=await LakeSessionStore.read(origin.key+':portable').catch(()=>[]);
@@ -5147,7 +5205,7 @@ async function sendWave(options = {}) {
     formData.append('sourceMetadata',JSON.stringify(filesToSend.map(file => ({filename:file.name,meetingDate:file.meetingDate || ''}))));
     if(!options.snapshot && options.action!=='meeting-currents')formData.append('transcriptInventory',JSON.stringify({files:origin.sourceInventory,previouslySent:origin.previousReceipts,currentFiles:filesToSend.map(file=>file.sourceId).filter(Boolean)}));
     if(useWholeMemory)formData.append('transcriptWorkingMemory',JSON.stringify({parts:transcriptWorkingMemory.parts,complete:true,total:transcriptWorkingMemory.total}));
-    if(!options.snapshot && !['transcript-memory','meeting-currents'].includes(options.action)){
+    if(!options.snapshot && !options.action?.startsWith('debate-') && !['transcript-memory','meeting-currents'].includes(options.action)){
       const currentTranscripts=useWholeMemory?transcriptSources(origin.history):filesToSend.filter(file=>/\.(txt|log)$/i.test(file.name));
       const prior=await recurringMeetingEvidence(currentTranscripts,origin.id,text);
       if(prior)formData.append('priorMeetingEvidence',JSON.stringify(prior));
@@ -5449,35 +5507,110 @@ function toggleShareMenu() {
   menu.style.display = menu.style.display === 'none' || menu.style.display === '' ? 'block' : 'none';
 }
 
-async function shareAsGroupSession() {
-  if (!currentSessionId) { alert('Start a conversation first!'); return; }
-  const session = allSessions.find(s => s.id === currentSessionId);
-  if (!session) { alert('Session not found!'); return; }
-  if (!confirm('Share only this conversation? Anyone with the link can read its messages and attached images. Your profile, Crew, other chats and total-context snapshots are not included.')) return;
-  try {
-    const shareSession = {
-      name: session.name, time: session.time,
-      history: session.history.filter(message => !['total', 'both'].includes(message.snapshot?.scope) &&
-        !['snapshot-total', 'snapshot-both'].includes(message.action)).map(message => ({
-        role: message.role, content: message.content, time: message.time, mood:message.mood,
-        ...(message.mirror?{mirror:message.mirror}:{}),
-        attachments: (message.attachments || []).map(file => ({name:file.name,data:file.data}))
-      }))
-    };
-    const res  = await fetch('/share', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ session: shareSession }) });
-    const data = await res.json();
-    if (!data.id) throw new Error('No ID');
-    if (!res.ok) throw new Error(data.error || 'Could not share conversation');
-    const shareUrl = window.location.origin + '/shared.html?id=' + encodeURIComponent(data.id);
-    if (navigator.share) {
-      await navigator.share({ title: '🌊 ' + (session.name || 'Lake Session'), text: 'Read my Lake session:', url: shareUrl });
-    } else {
-      await navigator.clipboard.writeText(shareUrl);
-      alert('🔗 Share link copied!\n\nAnyone with this link can read only this conversation. Links last up to 7 days, or until the server restarts.');
-    }
-  } catch(err) { console.error('Share error:', err); alert('Could not create share link. Try again.'); }
-  document.getElementById('shareMenu').style.display = 'none';
+let sharingTide=null;
+function shareAsGroupSession(){
+  const session=allSessions.find(item=>item.id===currentSessionId);
+  if(!session){showToast('Start a conversation first.');return;}
+  const dialog=document.getElementById('shareTideDialog');
+  if(dialog.open)return;
+  sharingTide={id:session.id,key:storageKey('sessions')};
+  document.getElementById('shareTideForm').reset();
+  const recipient=document.getElementById('shareCrewRecipient');
+  recipient.replaceChildren(new Option('Anyone with the link',''));
+  crewMembers.filter(member=>!member.isSelf).forEach(member=>{
+    const option=new Option(member.codename||member.name,String(recipient.options.length));
+    option.dataset.requiresPassphrase=String(member.requireSharePassphrase===true);
+    recipient.add(option);
+  });
+  document.getElementById('shareTideDefault').value=session.shareProtection||'crew';
+  document.getElementById('shareTideStatus').textContent='';
+  document.getElementById('shareTideResult').hidden=true;
+  document.getElementById('shareCreateButton').disabled=false;
+  updateShareProtection();
+  document.getElementById('shareMenu').style.display='none';
+  dialog.showModal();
 }
+function updateShareProtection(){
+  const policy=document.getElementById('shareTideDefault').value;
+  const recipient=document.getElementById('shareCrewRecipient').selectedOptions[0];
+  document.getElementById('shareProtected').checked=policy==='protected' ||
+    (policy==='crew' && recipient?.dataset.requiresPassphrase==='true');
+  updateSharePassphraseFields();
+}
+function updateSharePassphraseFields(){
+  const protectedLink=document.getElementById('shareProtected').checked;
+  document.getElementById('sharePassphraseFields').hidden=!protectedLink;
+  for(const id of ['shareNewPassphrase','shareConfirmPassphrase']){
+    const field=document.getElementById(id);
+    field.disabled=!protectedLink;
+    field.required=protectedLink;
+    if(!protectedLink)field.value='';
+  }
+}
+async function createTideShare(){
+  const button=document.getElementById('shareCreateButton');
+  if(button.disabled)return;
+  const request=sharingTide;
+  const session=allSessions.find(item=>item.id===request?.id);
+  const status=document.getElementById('shareTideStatus');
+  const policy=document.getElementById('shareTideDefault').value;
+  const protectedLink=document.getElementById('shareProtected').checked;
+  const password=document.getElementById('shareNewPassphrase').value;
+  if(!session || request.key!==storageKey('sessions'))return;
+  if(protectedLink && (password.trim().length<12 || password!==document.getElementById('shareConfirmPassphrase').value)){
+    status.textContent='Enter matching passphrases of at least 12 characters.';
+    return;
+  }
+  button.disabled=true;
+  document.getElementById('shareTideResult').hidden=true;
+  status.textContent=protectedLink?'Encrypting and creating link…':'Creating link…';
+  try{
+    const shareSession=LakeSharedSession(session);
+    const payload=protectedLink
+      ? {encryptedSession:await LakeFullBackup.encrypt(shareSession,password)}
+      : {session:shareSession};
+    const response=await fetch('/share',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    if(!response.ok)throw new Error(response.status===413?'This Tide is too large to share as a link.':'Could not create the share link.');
+    const result=await response.json();
+    if(!/^[a-f0-9]{48}$/.test(result.id))throw new Error('The share link could not be verified.');
+    if(sharingTide!==request || request.key!==storageKey('sessions'))return;
+    const saved=allSessions.find(item=>item.id===request.id);
+    let defaultSaved=true;
+    if(saved && saved.shareProtection!==policy){
+      try{
+        await LakeSessionStore.upsert(request.key,{...saved,shareProtection:policy});
+        saved.shareProtection=policy;
+      }catch{defaultSaved=false;}
+    }
+    if(sharingTide!==request)return;
+    document.getElementById('shareNewPassphrase').value='';
+    document.getElementById('shareConfirmPassphrase').value='';
+    document.getElementById('shareTideUrl').value=location.origin+'/shared.html?id='+result.id;
+    document.getElementById('shareTideResult').hidden=false;
+    status.textContent=(protectedLink?'Passphrase-protected link created. Share the passphrase separately.':'Standard link created. Anyone with the link can read it.')+
+      (defaultSaved?'':' The Tide default could not be saved.');
+  }catch(error){
+    if(sharingTide===request)status.textContent=error.message||'Could not create the share link.';
+  }finally{
+    if(sharingTide===request)button.disabled=false;
+  }
+}
+async function copyTideShare(){
+  const field=document.getElementById('shareTideUrl');
+  try{
+    await navigator.clipboard.writeText(field.value);
+    showToast('Share link copied.');
+  }catch{
+    field.select();
+    showToast('Select and copy the link.');
+  }
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('shareTideDialog').addEventListener('close',()=>{
+    sharingTide=null;
+    document.getElementById('shareTideForm').reset();
+  });
+});
 
 function sessionTranscriptText() {
   const waves = document.querySelectorAll('.wave');
@@ -6158,7 +6291,8 @@ function initFeaturedPages(){
   const indicators=document.createElement('div');
   indicators.className='carousel-dots';
   const pairs=[[['manual','📖 Chat Manual'],['personalize','🎛️ Personalize']],null,
-    [['splash','💦 Splash'],['riptide','🌀 Riptide']],[['solve','⚡ Solve a Problem'],['decide','🧭 Make a Decision']]];
+    [['splash','💦 Splash'],['riptide','🌀 Riptide']],[['solve','⚡ Solve a Problem'],['decide','🧭 Make a Decision']],
+    [['mirror','🪞 Mirror Mode'],['debate','⚔️ Debate Me']]];
   original[0].before(rail,indicators);
   let active=2;
   let railWidth=0;
@@ -6172,8 +6306,16 @@ function initFeaturedPages(){
       button.type='button';
       button.className='welcome-prompt-featured';
       button.textContent=label;
-      button.onclick=()=>startHomepageWave(kind);
-      enablePromptDrag(button,()=>homepageWave(kind).requestText);
+      if(kind==='mirror'){
+        button.onclick=openMirrorSetup;
+        enablePromptDrag(button,()=> 'Mirror Mode');
+      }else if(kind==='debate'){
+        button.onclick=()=>sendWave({action:'debate-start',visibleText:'⚔️ Debate Me',requestText:'Start Debate Me. Ask me if I have a topic to debate.',reuseAttachments:false,preserveDraft:true});
+        enablePromptDrag(button,()=> 'Debate me');
+      }else{
+        button.onclick=()=>startHomepageWave(kind);
+        enablePromptDrag(button,()=>homepageWave(kind).requestText);
+      }
       page.append(button);
     }
     rail.append(page);

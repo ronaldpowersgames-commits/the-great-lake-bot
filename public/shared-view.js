@@ -2,12 +2,8 @@
 (async function () {
   const title = document.getElementById('title');
   const messages = document.getElementById('messages');
-  try {
-    const id = new URLSearchParams(location.search).get('id');
-    if (!id) throw new Error('This share link is missing its conversation ID.');
-    const response = await fetch('/share/' + encodeURIComponent(id), { cache: 'no-store', credentials: 'omit' });
-    if (!response.ok) throw new Error('This shared conversation is unavailable or has expired.');
-    const { session } = await response.json();
+  function renderSession(session) {
+    messages.replaceChildren();
     if (!session || !Array.isArray(session.history)) throw new Error('This shared conversation could not be read.');
     title.textContent = session.name || 'Shared conversation';
     document.title = LakeExportNames.sessionTranscript('pdf',session.time,session.name).replace(/\.pdf$/,'');
@@ -54,6 +50,45 @@
       }
       messages.appendChild(article);
     }
+  }
+
+  function askForPassphrase(encryptedSession) {
+    title.textContent = 'Passphrase required';
+    const form = document.getElementById('shareUnlock');
+    const input = document.getElementById('sharePassphrase');
+    const status = document.getElementById('shareUnlockStatus');
+    const button = form.querySelector('button');
+    form.hidden = false;
+    input.focus();
+    form.onsubmit = async event => {
+      event.preventDefault();
+      button.disabled = true;
+      status.textContent = 'Unlocking…';
+      const passphrase = input.value;
+      input.value = '';
+      try {
+        const decoded = await LakeFullBackup.decrypt(encryptedSession, passphrase);
+        const session = LakeSharedSession(decoded);
+        renderSession(session);
+        status.textContent = '';
+        form.hidden = true;
+      } catch {
+        status.textContent = 'The passphrase didn’t unlock this link. Check it and try again.';
+        input.focus();
+      } finally {
+        button.disabled = false;
+      }
+    };
+  }
+
+  try {
+    const id = new URLSearchParams(location.search).get('id');
+    if (!id) throw new Error('This share link is missing its conversation ID.');
+    const response = await fetch('/share/' + encodeURIComponent(id), { cache: 'no-store', credentials: 'omit' });
+    if (!response.ok) throw new Error('This shared conversation is unavailable or has expired.');
+    const { session, encryptedSession } = await response.json();
+    if (encryptedSession) askForPassphrase(encryptedSession);
+    else renderSession(session);
   } catch (error) {
     title.textContent = 'Conversation unavailable';
     messages.textContent = error.message;

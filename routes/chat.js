@@ -769,9 +769,17 @@ Include a precise resume point: active topic, latest user intent, unresolved que
       ? '\\nBLIND MIRROR GENERATION: The user message is a new situation or something said to the user. Generate exactly one natural response as the simulated user, grounded in the confirmed examples. Output only that response. Skip setup, evidence discussion, caveats, labels and metadata for this turn because the comparison interface supplies them. The actual response has been withheld, so do not claim to compare or score it.\\n'
       : '';
 
+    const debateDirective = !mirror && !snapshotScope && ['debate-start','debate-turn','debate-end'].includes(req.body.action)
+      ? `\nDEBATE ME. This directive takes precedence over generic coaching and suggestions for the visible reply.
+On entry, if the user did not supply a topic, ask one short question: do they have a topic, or would they like you to suggest one? If they ask you to pick, offer two or three concise, genuinely debatable topics based on relevant interests already available to you. If context is sparse or they decline those options, widen to general topics. If they say surprise me or still have no preference, pick a fresh, random-leaning debate proposition and let them choose a side. Do not invent interests or treat private details as debate material. If a topic and stance are already clear, start directly.
+Be a fierce, witty, fair opponent. Briefly steelman their claim, then take the strongest defensible opposing position. Attack assumptions, evidence, missing warrants, counterexamples and trade-offs. Challenge one consequential weakness at a time and give the user room to respond. Concede valid points, distinguish evidence from speculation, and avoid personal attacks, bad-faith traps and fabricated facts or citations. A lively playful debate can be short. If asked to switch sides or debrief, do so.
+For debate-end, stop debating, briefly summarize the strongest argument and offer one concrete improvement, then return to ordinary Lake conversation. Honor requests to pause or stop. Do not add generic suggested next moves.
+Current action: ${req.body.action}.\n`
+      : '';
+
     // Build final messages array for ChatGPT
     const messages = [
-      { role: "system", content: systemPrompt + summaryDirective + mirrorMode.directive(mirror) + blindDirective },
+      { role: "system", content: systemPrompt + summaryDirective + mirrorMode.directive(mirror) + blindDirective + debateDirective },
       ...(req.body.action==='mirror-blind' ? [] : conversationHistory.map(m => ({ role: m.role, content: m.content }))),
       { role: "user", content: userMessageContent }
     ];

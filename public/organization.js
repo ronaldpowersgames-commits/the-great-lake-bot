@@ -54,7 +54,7 @@
       if(!keys.has(key)){keys.add(key);observations.push(observation);}
     }
     const note=[source.role ? `Role recorded for ${source.name}: ${source.role}` : '',source.context].filter(Boolean).join('\n');
-    return {...target,isSelf:target.isSelf===true || source.isSelf===true,role:target.role || source.role || '',nickname:aliases.join(', '),observations,
+    return {...target,requireSharePassphrase:target.requireSharePassphrase===true || source.requireSharePassphrase===true,isSelf:target.isSelf===true || source.isSelf===true,role:target.role || source.role || '',nickname:aliases.join(', '),observations,
       context:[target.context,note?`Linked from ${source.name}:\n${note}`:''].filter(Boolean).join('\n\n'),
       mergedFrom:[...(target.mergedFrom||[]),{id:source.id,name:source.name,nickname:source.nickname,role:source.role,context:source.context,hidden:source.hidden},...(source.mergedFrom||[])]};
   }
