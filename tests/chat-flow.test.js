@@ -15,6 +15,7 @@ function browserContext() {
     LakeMirror: require('../public/mirror-mode'),
     LakeTranscriptReview: require('../public/transcript-review'),
     LakeMeetingMemory: require('../public/meeting-memory'),
+    LakeMemoryAnchors: require('../public/memory-anchors'),
     LakeOrganization: require('../public/organization'),
     LakeAdaptiveSuggestions: require('../public/adaptive-suggestions'),
     window: {addEventListener() {}},
@@ -346,6 +347,25 @@ function routeContext(reply = () => 'Test reflection') {
   vm.runInContext(fs.readFileSync(path.join(root, 'routes/chat.js'), 'utf8'), context);
   return { requests, handler, uploads, context, postCards };
 }
+
+test('ordinary replies validate Captain evidence and route explicit introductions to Crew review', async () => {
+  const message = 'I prefer written agendas. My teammate Jamie Vale owns the calendar.';
+  const candidates = [
+    { key: 'agenda', value: 'Prefers written agendas', evidence: 'I prefer written agendas.' },
+    { key: 'person_jamie', person: 'Jamie Vale', value: 'Teammate', evidence: 'My teammate Jamie Vale owns the calendar.' },
+    { key: 'person_someone', person: 'Alex', value: 'Teammate', evidence: 'My teammate Jamie Vale owns the calendar.' }
+  ];
+  const { handler, requests } = routeContext(() => 'A reply.\nLAKE_PROFILE_JSON ' + JSON.stringify(candidates) + ' END_LAKE_PROFILE_JSON');
+  let result;
+  await handler({ body: { message, learnFromMessage: 'true',
+    memoryCoverage: JSON.stringify({ captain: 'unavailable', crew: 'stored', crewStored: 2, crewIncluded: 0 }) }, files: [] },
+  { json(value) { result = value; }, status() { return this; } });
+  assert.equal(result.profileUpdates.length, 2);
+  assert.equal(result.profileUpdates[0].classification, 'user reported');
+  assert.equal(result.profileUpdates[1].person, 'Jamie Vale');
+  assert.doesNotMatch(result.reflection, /LAKE_PROFILE_JSON/);
+  assert.match(requests[0].messages[0].content, /"captain":"unavailable","crew":"stored"/);
+});
 
 test('Post Cards use a separate structured request and reject duplicated or malformed card copy', async () => {
   const card = { title: 'Leave room to notice', message: 'A pause can change what you hear.',

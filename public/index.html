@@ -1419,6 +1419,10 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
 #postCardEditor menu,#shareWaveDialog menu{flex-wrap:wrap}
 #shareWaveText{white-space:pre-wrap;overflow-wrap:anywhere;max-height:55dvh;overflow:auto;font:inherit}
 @media(max-width:600px){.post-editor-layout{grid-template-columns:1fr}.post-editor-layout canvas{max-height:50dvh}}
+#memoryCabin{max-height:88dvh;overflow:auto}
+#memoryCabin section{margin:14px 0;padding:10px;border:1px solid var(--dock-border);border-radius:8px}
+#memoryCabin details{margin-top:8px;overflow-wrap:anywhere}
+#memoryCabin button{margin:3px}
 </style>
 </head>
 <body>
@@ -1840,6 +1844,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
       </details>
       <label for="lakeVoicePreference">Default speaking voice</label>
       <select id="lakeVoicePreference" onchange="saveLakeVoice(this.value)"><option value="">Auto voice</option></select>
+      <button type="button" class="depths-option" onclick="openMemoryCabin()">Captain’s Cabin<small>Review and back up your Captain’s Profile and Crew Memory</small></button>
       <label for="lakePersonalNotes">Personal memory</label>
       <label><input id="lakeLearnProfile" type="checkbox" onchange="localStorage.setItem(storageKey('learnProfile'),String(this.checked))"> Learn from my messages across chats</label>
       <button type="button" class="quick-action-btn" onclick="clearLearnedProfile()">Clear learned profile</button>
@@ -1968,6 +1973,26 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
 </div>
 
 <!-- HELP MODAL -->
+<dialog class="lake-share-dialog" id="memoryCabin" aria-labelledby="memoryCabinTitle">
+  <form method="dialog"><h2 id="memoryCabinTitle">Captain’s Cabin</h2><button>Close</button></form>
+  <p id="memoryHealth" role="status"></p>
+  <section aria-labelledby="captainMemoryTitle">
+    <h3 id="captainMemoryTitle">My Captain’s Profile</h3>
+    <p id="captainMemoryIdentity"></p>
+    <button type="button" onclick="editCaptainMemory()">Add a memory</button>
+    <div id="captainMemoryList"></div>
+  </section>
+  <section aria-labelledby="crewMemoryTitle">
+    <h3 id="crewMemoryTitle">My Crew</h3>
+    <label>Search Crew <input type="search" id="memoryCrewSearch" oninput="renderMemoryCabin()"></label>
+    <div id="memoryCrewList"></div>
+  </section>
+  <menu>
+    <button type="button" onclick="exportMemoryAnchors()">Export encrypted memory</button>
+    <button type="button" onclick="document.getElementById('memoryImport').click()">Restore memory</button>
+  </menu>
+  <input type="file" id="memoryImport" accept=".json,application/json" hidden onchange="importMemoryAnchors(this.files[0]);this.value=''">
+</dialog>
 <dialog id="blindMirror" class="mirror-setup">
   <form onsubmit="event.preventDefault();runBlindMirror()">
     <h2>🪞 Blind comparison</h2>
@@ -2234,6 +2259,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
 <script src="/session-store.js"></script>
 <script src="/snapshot-context.js"></script>
 <script src="/full-backup.js"></script>
+<script src="/memory-anchors.js"></script>
 <script src="/meeting-memory.js"></script>
 <script src="/organization.js"></script>
 <script src="/prompt-types.js"></script>
@@ -2263,6 +2289,7 @@ let sessionHistoryKey = null;
 let sessionLoadPromise = Promise.resolve();
 let lastResponseModel = null;
 let crewMembers       = [];
+let crewMemoryBaseline;
 let suggestedCrew     = [];
 
 // ============================================
@@ -2645,6 +2672,7 @@ function confidentCrewMatches(name) {
 function addSuggestedCrewMember(suggestion, existingNames) {
   const key = normalizePersonKey(suggestion.name);
   if (['the lake', 'lake', 'the great lake'].includes(key)) return false;
+  if(globalThis.localStorage && lakeMemory().read('crew').deleted.includes(LakeMemoryAnchors.crewNameKey(suggestion.name)))return false;
   if (existingNames.has(key)) {
     const pending = suggestedCrew.find(member => normalizePersonKey(member.name) === key);
     if (pending && suggestion.observation) {
@@ -3694,11 +3722,27 @@ let crewModalMode  = null;
 let crewModalIndex = -1;
 
 function loadCrew() {
-  try { crewMembers = JSON.parse(localStorage.getItem(storageKey('crew')) || '[]'); }
-  catch(e) { crewMembers = []; }
+  const memory = lakeMemory().read('crew');
+  crewMembers = memory.records;
+  crewMemoryBaseline = JSON.stringify(memory.records);
+  if(memory.status==='unavailable')showToast('Crew Memory is unavailable on this device.');
   renderCrew();
 }
-function saveCrew() { localStorage.setItem(storageKey('crew'), JSON.stringify(crewMembers)); }
+function saveCrew() {
+  try {
+    crewMembers=lakeMemory().update('crew', current=>{
+      if(crewMemoryBaseline!==undefined && crewMemoryBaseline!==JSON.stringify(current.records))
+        throw new Error('Crew Memory changed in another tab. Review the latest version and try again.');
+      return LakeMemoryAnchors.crewUpdate(current,crewMembers);
+    }).records;
+    crewMemoryBaseline=JSON.stringify(crewMembers);
+    return true;
+  } catch(error) {
+    loadCrew();
+    showToast('Could not save Crew Memory. '+error.message);
+    return false;
+  }
+}
 
 const CREW_SORTS=['relevance','alphabetical','recency','custom'];
 function crewSortMode(){
@@ -3972,27 +4016,191 @@ function toggleDepths() {
     document.getElementById('lakeLearnProfile').checked=localStorage.getItem(storageKey('learnProfile'))!=='false';
   }
 }
+function lakeMemory(storage=localStorage, keyFor=storageKey){
+  return LakeMemoryAnchors.create(storage,keyFor);
+}
+function openMemoryCabin(){
+  renderMemoryCabin();
+  document.getElementById('memoryCabin').showModal();
+}
+function memoryButton(label, action){
+  const button=document.createElement('button');
+  button.type='button';button.textContent=label;button.onclick=action;
+  return button;
+}
+function renderMemoryCabin(){
+  const store=lakeMemory(), captain=store.read('captain'), crew=store.read('crew');
+  const sourceExists=id=>id===currentSessionId || allSessions.some(session=>session.id===id);
+  const sourceIds=new Set([...captain.records.flatMap(record=>[record.source?.sessionId,record.pending?.source?.sessionId]),
+    ...crew.records.flatMap(member=>(member.observations||[]).map(observation=>observation.sessionId))].filter(Boolean));
+  const describe=(label, memory)=>memory.status==='unavailable' ? label+' unavailable' :
+    label+' · '+memory.records.length+' saved'+(memory.savedAt ? ' · last save '+new Date(memory.savedAt).toLocaleString() : '');
+  document.getElementById('memoryHealth').textContent=[
+    describe('Captain',captain),describe('Crew',{...crew,records:crew.records.filter(member=>!member.isSelf)}),suggestedCrew.length+' Crew reviews pending',
+    captain.records.filter(record=>record.pending).length+' Captain updates to review',
+    [...sourceIds].filter(id=>!sourceExists(id)).length+' referenced Tides unavailable on this device',
+    localStorage.getItem(storageKey('memoryExportedAt')) ? 'Last export prepared '+new Date(localStorage.getItem(storageKey('memoryExportedAt'))).toLocaleString() : 'No memory export recorded on this device'
+  ].join(' | ');
+  document.getElementById('captainMemoryIdentity').textContent=[currentUser?.name,currentUser?.aliases].filter(Boolean).join(' · ');
+  const list=document.getElementById('captainMemoryList');list.replaceChildren();
+  if(!captain.records.length)list.textContent=captain.status==='unavailable'?'Could not read the saved profile.':'No Captain’s Profile notes saved yet.';
+  for(const record of captain.records){
+    const details=document.createElement('details'), summary=document.createElement('summary');
+    summary.textContent=record.value;details.append(summary);
+    for(const item of [record,record.pending,...(record.revisions||[]).slice().reverse()].filter(Boolean)){
+      const line=document.createElement('p');
+      const kind=item===record?'Current':item===record.pending?'Conflicting evidence to review':'Earlier version';
+      const source=item.source?.sessionId;
+      const available=source && sourceExists(source);
+      line.textContent=[kind,item.classification,item!==record && item.value,item.evidence,item.updatedAt,
+        source && (available?'Source Tide available':'Source Tide unavailable on this device')].filter(Boolean).join(' · ');
+      details.append(line);
+      if(available)line.append(memoryButton('Open source Tide',()=>{document.getElementById('memoryCabin').close();loadTide(source);}));
+      if(item!==record && item.review!=='rejected')line.append(memoryButton(item===record.pending?'Accept update':'Restore this version',()=>editCaptainMemory(record,item)));
+      if(item===record.pending)line.append(memoryButton('Reject update',()=>{
+        try{
+          store.update('captain', current=>({deleted:current.deleted,records:current.records.map(entry=>{
+            if(entry.key!==record.key || entry.pending?.value!==item.value)return entry;
+            const {pending,...active}=entry;
+            return {...active,revisions:[...(active.revisions||[]),{...pending,review:'rejected'}]};
+          })}));
+          renderMemoryCabin();
+        }catch(error){showToast(error.message);}
+      }));
+    }
+    if(record.classification!=='user confirmed')details.append(memoryButton('Confirm',()=>editCaptainMemory(record,{...record,classification:'user confirmed'})));
+    details.append(memoryButton('Edit',()=>editCaptainMemory(record)),memoryButton('Remove',()=>{
+      if(!confirm('Remove this memory and its revisions from the active profile?'))return;
+      try{
+        store.update('captain',current=>({records:current.records.filter(item=>item.key!==record.key),deleted:[...current.deleted,record.key]}));
+        renderMemoryCabin();
+      }catch(error){showToast(error.message);}
+    }));
+    list.append(details);
+  }
+  const crewList=document.getElementById('memoryCrewList');crewList.replaceChildren();
+  const query=normalizePersonKey(document.getElementById('memoryCrewSearch').value);
+  crewMembers.forEach((member,index)=>{
+    if(member.isSelf)return;
+    if(query && !getCrewAliases(member).some(alias=>alias.includes(query)))return;
+    const label=[member.name,member.relationship].filter(Boolean).join(' · ');
+    const details=document.createElement('details'), summary=document.createElement('summary');
+    summary.textContent=label;details.append(summary);
+    details.append(memoryButton('Open Crew profile',()=>{document.getElementById('memoryCabin').close();openCrewProfile(index);}));
+    for(const previous of member.revisions||[]){
+      const history=document.createElement('p');
+      history.textContent=['Earlier version',previous.updatedAt,previous.name,previous.role,previous.relationship,previous.context].filter(Boolean).join(' · ');
+      details.append(history);
+    }
+    crewList.append(details);
+  });
+  if(!crewList.childElementCount)crewList.textContent=crew.status==='unavailable'?'Could not read Crew Memory.':'No matching Crew profiles.';
+}
+function editCaptainMemory(record, version){
+  const value=version?.value || prompt('What should the Lake remember about you?',record?.value||'')?.trim();
+  if(!value)return;
+  const entry={key:record?.key||'note_'+crypto.randomUUID(),value,
+    evidence:version?.evidence||value,classification:version?.classification||'user confirmed'};
+  if(version===record?.pending)entry.classification='user confirmed';
+  try{
+    lakeMemory().update('captain',current=>LakeMemoryAnchors.captainUpdate(current,[entry],version?.source||null,true));
+    renderMemoryCabin();
+  }catch(error){showToast(error.message);}
+}
+function rememberCrewCandidates(updates,source){
+  const store=lakeMemory().read('crew');
+  if(store.status==='unavailable')return;
+  const existing=new Set([...crewMembers,...suggestedCrew].map(member=>normalizePersonKey(member.name)));
+  let changed=false;
+  for(const {person,value,evidence} of updates){
+    if(!person || !value || store.deleted.includes(LakeMemoryAnchors.crewNameKey(person)))continue;
+    if(crewMembers.some(member=>getCrewAliases(member).includes(normalizePersonKey(person))))continue;
+    changed=addSuggestedCrewMember({name:person,relationship:value,source:'memory-introduction',confidence:'needs confirmation',
+      observation:{date:source.recordedAt,sessionId:source.sessionId,evidence,note:value,classification:'user reported'}},existing)||changed;
+  }
+  if(changed){saveSuggestedCrew();renderCrew();}
+}
+function memoryBackupData(){
+  const store=lakeMemory(), anchors={};
+  for(const kind of ['captain','crew']){
+    const {status,...data}=store.read(kind);
+    if(status!=='unavailable')anchors[kind]=data;
+  }
+  const relationships=(anchors.crew?.records||[]).filter(member=>!member.isSelf && member.relationship)
+    .map(member=>({crewId:member.id,relationship:member.relationship,
+      sourceTides:[...new Set((member.observations||[]).map(item=>item.sessionId).filter(Boolean))]}));
+  return {format_version:'lake-memory/1',createdAt:new Date().toISOString(),
+    profile:{name:currentUser?.name||'',aliases:currentUser?.aliases||'',email:currentUser?.email||''},anchors,relationships};
+}
+function restoreMemoryBackup(data){
+  if(data?.format_version!=='lake-memory/1' || !data.anchors ||
+    !['captain','crew'].some(kind=>data.anchors[kind]))throw new Error('Choose a Lake memory backup.');
+  for(const kind of ['captain','crew'])if(data.anchors[kind])LakeMemoryAnchors.validate(kind,data.anchors[kind]);
+  const failed=[];
+  for(const kind of ['captain','crew']){
+    if(!data.anchors[kind])continue;
+    try{lakeMemory().restore(kind,data.anchors[kind]);}
+    catch{failed.push(kind);}
+  }
+  loadCrew();
+  if(failed.length)throw new Error('Could not restore '+failed.join(' and ')+' memory. Other available records were kept.');
+}
+async function exportMemoryAnchors(){
+  const data=memoryBackupData();
+  if(!Object.keys(data.anchors).length){showToast('Neither memory store is available for export.');return;}
+  const password=prompt('Choose a password of at least 12 characters for the memory backup.');
+  if(password===null)return;
+  if(password.length<12 || prompt('Repeat the password')!==password){showToast('Use matching passwords of at least 12 characters.');return;}
+  const profile=storageKey('sessions');
+  try{
+    const encrypted=await LakeFullBackup.encrypt(data,password);
+    if(profile!==storageKey('sessions'))return;
+    const url=URL.createObjectURL(new Blob([JSON.stringify(encrypted)],{type:'application/json'}));
+    const link=document.createElement('a');link.href=url;link.download=LakeExportNames.artifact('memory','json');link.click();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+    localStorage.setItem(storageKey('memoryExportedAt'),new Date().toISOString());renderMemoryCabin();
+  }catch(error){showToast(error.message);}
+}
+async function importMemoryAnchors(file){
+  if(!file)return;
+  const profile=storageKey('sessions');
+  try{
+    let data=JSON.parse(await file.text());
+    if(data.format_version==='lake-encrypted-backup/1'){
+      const password=prompt('Enter the memory backup password.');
+      if(password===null)return;
+      data=await LakeFullBackup.decrypt(data,password);
+    }
+    if(profile!==storageKey('sessions') || !confirm('Restore saved memory into this Lake profile? Current records will be kept.'))return;
+    restoreMemoryBackup(data);
+    renderMemoryCabin();
+  }catch(error){showToast(error.message);}
+}
 function clearLearnedProfile(){
-  const current=localStorage.getItem(storageKey('learnedProfile'));
-  if(!current || current==='[]'){showToast('No learned profile to clear');return;}
-  try {localStorage.setItem(storageKey('clearedProfile'),current);}
-  catch {showToast('Could not save a recovery copy. Profile kept.');return;}
-  localStorage.removeItem(storageKey('learnedProfile'));
-  localStorage.setItem(storageKey('profileReset'),String(Date.now()));
-  showToast('Learned profile cleared');
+  if(!confirm('Clear the current Captain’s Profile memories? A local recovery copy will be kept.'))return;
+  try{
+    lakeMemory().update('captain', current=>{
+      if(!current.records.length)return null;
+      localStorage.setItem(storageKey('clearedProfile'),JSON.stringify(current.records));
+      return {records:[],deleted:[...current.deleted,...current.records.map(record=>record.key)]};
+    });
+    localStorage.setItem(storageKey('profileReset'),String(Date.now()));
+    showToast('Captain’s Profile cleared.');
+  }catch(error){showToast(error.message);}
 }
 function restoreLearnedProfile(){
-  const recoveryKey=storageKey('clearedProfile');
-  const saved=localStorage.getItem(recoveryKey);
-  if(!saved){showToast('No cleared profile to restore');return;}
-  const profileKey=storageKey('learnedProfile');
-  try {
-    const entries=new Map([...JSON.parse(saved),...JSON.parse(localStorage.getItem(profileKey)||'[]')].map(entry=>[entry.key,entry]));
-    localStorage.setItem(profileKey,JSON.stringify([...entries.values()].slice(-24)));
-    localStorage.setItem(storageKey('profileReset'),String(Date.now()));
+  try{
+    const recoveryKey=storageKey('clearedProfile');
+    const saved=JSON.parse(localStorage.getItem(recoveryKey)||'[]');
+    if(!saved.length){showToast('No cleared profile to restore.');return;}
+    lakeMemory().update('captain',current=>{
+      const known=new Set(current.records.map(record=>record.key));
+      return {records:[...current.records,...saved.filter(record=>!known.has(record.key))],
+        deleted:current.deleted.filter(key=>!saved.some(record=>record.key===key))};
+    });
     localStorage.removeItem(recoveryKey);
-    showToast('Learned profile restored');
-  } catch {showToast('Could not restore the learned profile');}
+    showToast('Captain’s Profile restored.');
+  }catch(error){showToast(error.message);}
 }
 
 // ============================================
@@ -4722,7 +4930,7 @@ function downloadSnapshot(message) {
 
 function portableLakeProfile(){
   let observations=[];
-  try{observations=JSON.parse(localStorage.getItem(storageKey('learnedProfile'))||'[]');}catch{}
+  observations=lakeMemory().read('captain').records;
   return {observations,preferences:localStorage.getItem(storageKey('personalNotes'))||'',
     crew:crewMembers.map(({name,nickname,codename,role,context,observations})=>({name,nickname,codename,role,context,observations}))};
 }
@@ -4824,7 +5032,9 @@ async function exportFullBackup(encrypted=false) {
       profilePic: currentProfilePic,
       settings: { mood: currentMood, responseLanguage: currentUser?.responseLanguage || 'auto', defaultPromptBatch: localStorage.getItem('defaultBatch'), requestInProgress: waveInFlight,dockSplit }
     });
-    backup.data.preferences=Object.fromEntries(['learnedProfile','learnProfile','personalNotes','speechVoice','moodTriggers','customPrompts'].map(name=>[name,localStorage.getItem(storageKey(name))]).filter(([,value])=>value!==null));
+    const memory=memoryBackupData();
+    if(Object.keys(memory.anchors).length)backup.data.memory=memory;
+    backup.data.preferences=Object.fromEntries(['learnProfile','personalNotes','speechVoice','moodTriggers','customPrompts'].map(name=>[name,localStorage.getItem(storageKey(name))]).filter(([,value])=>value!==null));
     let payload=backup;
     if(encrypted){
       const password=prompt('Choose a backup password (at least 12 characters). You will need it to restore the file.');
@@ -4917,9 +5127,10 @@ async function restoreLakeBackup(file){
     if(key!==storageKey('sessions'))return;
     allSessions=merged;
     tideFolders=folders;
+    if(data.memory)restoreMemoryBackup(data.memory);
     const knownCrew=new Set(crewMembers.map(item=>String(item.name||'').toLowerCase()));
-    if(Array.isArray(data.crew))crewMembers.push(...data.crew.filter(item=>typeof item?.name==='string' && !knownCrew.has(item.name.toLowerCase())));
-    saveCrew();
+    if(!data.memory?.anchors?.crew && Array.isArray(data.crew))crewMembers.push(...data.crew.filter(item=>typeof item?.name==='string' && !knownCrew.has(item.name.toLowerCase())));
+    if(!data.memory?.anchors?.crew)saveCrew();
     for(const name of ['learnedProfile','learnProfile','personalNotes','speechVoice','moodTriggers','customPrompts']){
       const value=data.preferences?.[name];
       if(typeof value==='string' && localStorage.getItem(storageKey(name))===null)localStorage.setItem(storageKey(name),value);
@@ -5442,11 +5653,15 @@ async function sendWave(options = {}) {
   const welcome = document.getElementById('welcomeScreen');
   if (welcome){welcome.dispatchEvent?.(new Event('lake-home-removed'));welcome.remove();}
   if (!currentSessionId) currentSessionId = 'session_' + Date.now();
+  const crewQuery=[text,...chatHistory.filter(message=>message.role==='user' && !message.mirror).slice(-2).map(message=>message.content)].join(' ');
+  const relevantCrew=options.action==='tag-players' || options.action==='meeting-currents' || options.visibleText==='Tag players'
+    ? crewMembers : LakeMemoryAnchors.relevantCrew(crewMembers,crewQuery);
   origin = {
     id: currentSessionId, history: chatHistory, key: storageKey('sessions'), mood: currentMood, responseLanguage: currentUser?.responseLanguage || 'auto',
     userName: currentUser?.name || '', userAliases: currentUser?.aliases || '',
     userCrew:JSON.stringify(crewMembers.filter(member=>member.isSelf===true).slice(0,1).map(({name,nickname,codename,role})=>({name,aliases:nickname,codename,role}))),
-    crew: JSON.stringify(crewMembers.map(({ name, nickname, codename, role, context, observations }) => ({ name, nickname, codename, role, context, observations: (observations || []).slice(-10) })))
+    crew: JSON.stringify(relevantCrew.map(({ id, name, nickname, codename, role, relationship, context, observations }) =>
+      ({ id, name, nickname, codename, role, relationship, context, observations: (observations || []).slice(-10) })))
   };
   if(['tsummarize','rename-tide'].includes(options.action))origin.showAdaptiveSuggestions=false;
   origin.firstResponseSuggestions=!options.mirror && !['tsummarize','rename-tide'].includes(options.action) && !options.snapshot && !origin.history.some(message=>message.role==='assistant') && !/\b(?:no follow[- ]?up|no suggestions?|just answer|one word)\b/i.test(text);
@@ -5555,13 +5770,17 @@ async function sendWave(options = {}) {
     formData.append('suggestionProfile',JSON.stringify(suggestionPreferencePayload()));
     if(!options.snapshot)formData.append('personalNotes',(globalThis.localStorage?.getItem(origin.key.replace(/sessions$/,'personalNotes'))||'').slice(0,2000));
     const profileStorage=globalThis.localStorage;
-    const profileKey=origin.key.replace(/sessions$/,'learnedProfile');
+    const anchorStore=profileStorage && lakeMemory(profileStorage,name=>origin.key.replace(/sessions$/,name));
+    const captain=anchorStore?.read('captain');
     const learningKey=origin.key.replace(/sessions$/,'learnProfile');
     const resetKey=origin.key.replace(/sessions$/,'profileReset');
     const resetVersion=profileStorage?.getItem(resetKey);
     const learning=Boolean(profileStorage && profileStorage.getItem(learningKey)!=='false' && !options.snapshot && !['tsummarize','rename-tide'].includes(options.action) && !options.mirror);
     if(learning){
-      formData.append('learnedProfile',profileStorage.getItem(profileKey)||'[]');
+      const active=(captain?.records||[]).filter(record=>!record.key.startsWith('person_')).slice(-24);
+      formData.append('learnedProfile',JSON.stringify(active.map(({key,value,evidence,classification,source})=>({key,value,evidence,classification,source}))));
+      formData.append('memoryCoverage',JSON.stringify({captain:captain?.status,captainStored:captain?.records.length,
+        captainIncluded:active.length,crew:anchorStore.read('crew').status,crewStored:crewMembers.length,crewIncluded:relevantCrew.length}));
       if(!options.action?.startsWith('debate-') && (options.requestText==null || options.action==='save-skill'))formData.append('learnFromMessage','true');
     }
     if(!options.snapshot && profileStorage?.getItem(learningKey)!=='false' && globalThis.LakeSessionStore){
@@ -5613,15 +5832,15 @@ async function sendWave(options = {}) {
     if (data.reflection) {
       if(learning && Array.isArray(data.profileUpdates) && data.profileUpdates.length && !origin.discarded &&
           profileStorage.getItem(learningKey)!=='false' && profileStorage.getItem(resetKey)===resetVersion){
+        const source={sessionId:origin.id, recordedAt:new Date().toISOString()};
+        const personal=data.profileUpdates.filter(entry=>!entry.person && !entry.key.startsWith('person_'));
         try {
-          const entries=new Map(JSON.parse(profileStorage.getItem(profileKey)||'[]').map(entry=>[entry.key,entry]));
-          for(const entry of data.profileUpdates){
-            entries.delete(entry.key);
-            if(entry.value)entries.set(entry.key,entry);
-          }
-          profileStorage.setItem(profileKey,JSON.stringify([...entries.values()].slice(-24)));
-          if(options.action==='save-skill')showToast('Skill saved to Personal memory.');
-        } catch(error){console.warn('Could not update the learned profile:',error);}
+          anchorStore.update('captain',current=>LakeMemoryAnchors.captainUpdate(current,personal,source));
+          if(options.action==='save-skill' && personal.length)showToast('Skill saved to Captain’s Profile.');
+        } catch(error){showToast('Could not update Captain’s Profile. '+error.message);}
+        try{
+          if(origin.key===storageKey('sessions'))rememberCrewCandidates(data.profileUpdates,source);
+        }catch(error){showToast('Could not save the Crew review. '+error.message);}
       }
       const suggestionResult=options.snapshot?{text:JSON.stringify(data.handoff || JSON.parse(data.reflection), null, 2),suggestions:[]}:extractAdaptiveSuggestions(data.reflection,origin.firstResponseSuggestions,origin.showAdaptiveSuggestions);
       const renameSaved=options.action==='rename-tide' && data.tideTitle && origin.key===storageKey('sessions')
