@@ -2568,7 +2568,7 @@ function parsePlayerTags(responseText) {
       .filter(player => player && typeof player === 'object')
       .map(player => {
         const name=String(player.name || player.label || '').trim();
-        const profile=profiles.find(item=>key(item.name)===key(name) || key(item.name).split(' ')[0]===key(name).split(' ')[0])||{};
+        const profile=profiles.find(item=>key(item.name)===key(name))||{};
         return {
         name,
         nickname: String(player.nickname || '').trim(),
@@ -2580,6 +2580,7 @@ function parsePlayerTags(responseText) {
         confidence: String(player.confidence || 'uncertain').trim(),
         evidence: String(player.evidence || '').trim(),
         relationshipNote: String(player.relationship_note || '').trim(),
+        fieldEvidence: player.field_evidence && typeof player.field_evidence==='object' ? player.field_evidence : {},
         needsConfirmation: Boolean(player.needs_confirmation),
         source: 'tag-players'
       };})
@@ -2676,12 +2677,17 @@ function addSuggestedCrewMember(suggestion, existingNames) {
   if (existingNames.has(key)) {
     const pending = suggestedCrew.find(member => normalizePersonKey(member.name) === key);
     if (pending && suggestion.observation) {
+      let filled=false;
+      for(const field of ['organization','role','relationship','communicationStyle']){
+        if(!pending[field] && suggestion[field]){pending[field]=suggestion[field];filled=true;}
+      }
       pending.observations = pending.observations || [];
       const observations = [pending.observation,...pending.observations].filter(Boolean);
       if (!observations.some(item => item.sessionId === suggestion.observation.sessionId && item.evidence === suggestion.observation.evidence && JSON.stringify(item.sources) === JSON.stringify(suggestion.observation.sources) && JSON.stringify(item.meetingDates) === JSON.stringify(suggestion.observation.meetingDates))) {
         pending.observations.push(suggestion.observation);
         return true;
       }
+      return filled;
     }
     return false;
   }
@@ -2708,6 +2714,9 @@ function processNamesFromResponse(responseText, source = { id: currentSessionId,
     ])
   ]);
   let changed = false;
+  const fromUser = quote => typeof quote==='string' && quote.length<=500 &&
+    (source.tagContext?.includes(quote) || source.history.some(message=>message.role==='user' && !message.mirror &&
+      !message.removedSourceRecord && (!message.action || message.action==='tag-players') && message.content?.includes(quote)));
 
   parsePlayerTags(responseText).forEach(player => {
     const personKey=normalizePersonKey(player.name);
@@ -2718,40 +2727,45 @@ function processNamesFromResponse(responseText, source = { id: currentSessionId,
     const evidence=player.evidence.trim();
     const exactMatch=matches.length===1 && getCrewAliases(matches[0]).includes(personKey);
     const confirmedSelf=exactMatch && matches[0].isSelf===true;
-    if(confirmedSelf){
-      const member=matches[0];member.observations ||= [];
-      if(!member.observations.some(item=>item.sessionId===source.id && item.evidence===evidence)){
-        member.observations.push({date:new Date().toISOString(),sessionId:source.id,evidence,
-          note:player.relationshipNote || 'Matched automatically to your confirmed self Crew identity.',
-          sources:[...new Set(dates.map(item=>item.filename))],meetingDates:dates,reviewed:true});
-        if(player.organization && !member.organization)member.organization=player.organization;
-        if(player.role && !member.role)member.role=player.role;
-        if(player.communicationStyle && !member.communicationStyle)member.communicationStyle=player.communicationStyle;
-        saveCrew();changed=true;
-      }
-      return;
-    }
-    const verified=evidence.length>=12 && (' '+normalizePersonKey(evidence)+' ').includes(' '+personKey+' ') &&
-      (source.tagContext?.includes(evidence) || source.history.some(message=>message.role==='user' && !message.mirror &&
-        !message.removedSourceRecord && (!message.action || message.action==='tag-players') && message.content?.includes(evidence)));
+    const verified=evidence.length>=12 && (' '+normalizePersonKey(evidence)+' ').includes(' '+personKey+' ') && fromUser(evidence);
     const conflicting=exactMatch && ['organization','role','relationship'].some(field=>
       player[field] && matches[0][field] && normalizePersonKey(player[field])!==normalizePersonKey(matches[0][field]));
-    if(highConfidence && exactMatch && verified && !player.needsConfirmation && !conflicting){
+    if(highConfidence && exactMatch && (verified || confirmedSelf) && !player.needsConfirmation && !conflicting){
       const member=matches[0];
       member.observations ||= [];
+      const fills={};
+      const fieldQuotes={};
+      const patterns={
+        organization:['works at','works for','is from','is with','joined','organization'],
+        role:['works as','is a','is an','is the','role']
+      };
+      for(const [field,phrases] of Object.entries(patterns)){
+        const value=player[field];
+        if(!value || member[field])continue;
+        const quote=player.fieldEvidence[field] || evidence;
+        if(!fromUser(quote))continue;
+        const normalized=normalizePersonKey(quote);
+        if(phrases.some(phrase=>normalized===personKey+' '+phrase+' '+normalizePersonKey(value))){
+          fills[field]=value;
+          fieldQuotes[field]=quote;
+        }
+      }
+      let memberChanged=false;
       if(!member.observations.some(item=>item.sessionId===source.id && item.evidence===evidence)){
         member.observations.push({date:new Date().toISOString(),sessionId:source.id,evidence,
-          note:'Source excerpt matched to a known Crew member.',reviewed:false,classification:'user reported'});
-        for(const field of ['organization','role']){
-          const value=player[field];
-          const separator=evidence.indexOf(':');
-          if(!member[field] && value && separator>=0 &&
-            normalizePersonKey(evidence.slice(0,separator))===personKey+' '+field &&
-            normalizePersonKey(evidence.slice(separator+1))===normalizePersonKey(value))member[field]=value;
-        }
-        changed=saveCrew()!==false || changed;
+          note:verified?'Source excerpt matched to a known Crew member.':'Matched to your confirmed Crew identity.',
+          reviewed:false,classification:verified?'user reported':'identity match'});
+        memberChanged=true;
       }
-      return;
+      if(Object.keys(fills).length){
+        Object.assign(member,fills);
+        member.observations.push({date:new Date().toISOString(),sessionId:source.id,
+          evidence:Object.values(fieldQuotes).join(' · '),note:'Filled missing Crew fields from your message.',
+          fieldEvidence:fieldQuotes,reviewed:false,classification:'user reported'});
+        memberChanged=true;
+      }
+      if(memberChanged)changed=saveCrew()!==false || changed;
+      if(!['organization','role','relationship','communicationStyle'].some(field=>player[field] && !member[field]))return;
     }
     const contextBits = [
       player.confidence ? `Confidence: ${player.confidence}` : '',
@@ -5469,6 +5483,7 @@ Identify every person who appears in the current chat, screenshot, transcript, e
 - If no interaction material is available, ask for it and do not produce a player block.
 - Treat supplied Crew names and aliases as possible matches, not proof. Ask when more than one person could match. Never infer identity from a face alone.
 - Use a codename only if supplied by the user; do not invent a nickname from someone's role.
+- Prefill organization, role, relationship and communication style when supported by the source. Leave unknown fields blank. In field_evidence, quote the shortest exact clause for each supported field, including the name or confirmed alias. Do not infer an employer from a meeting invitation or a role from a job title mentioned about someone else.
 
 For each person, give:
 - likely name or temporary label
@@ -5481,7 +5496,7 @@ At the end, include this machine-readable block. Use exact excerpts and verified
 Do not announce or explain the block in your prose. Put only JSON between the markers, without a code fence.
 
 PLAYER_TAGS_JSON
-{"players":[{"name":"Name or Unknown 1","nickname":"","codename":"Optional memorable codename","organization":"Supported organisation","role":"Supported role","relationship":"Supported relationship to the user","communication_style":"Supported observed style","confidence":"high|medium|low|needs confirmation","needs_confirmation":false,"evidence":"Visible evidence used","relationship_note":"What to track"}]}
+{"players":[{"name":"Name or Unknown 1","nickname":"","codename":"","organization":"","role":"","relationship":"","communication_style":"","field_evidence":{},"confidence":"high|medium|low|needs confirmation","needs_confirmation":false,"evidence":"Exact excerpt identifying the person","relationship_note":"What to track"}]}
 END_PLAYER_TAGS_JSON
 ${context ? `\nAdditional interaction or correction supplied by the user:\n${context}` : ''}` });
 }

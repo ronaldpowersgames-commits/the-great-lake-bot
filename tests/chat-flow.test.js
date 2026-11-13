@@ -104,6 +104,23 @@ test('exact Crew alias associations are deduplicated while a conflicting role re
   assert.match(vm.runInContext('suggestedCrew[0].context', context), /conflicts/);
 });
 
+test('Crew tagging fills missing organization and role from exact user clauses and prefills a new player', () => {
+  const context = browserContext();
+  vm.runInContext(`crewMembers=[{name:'Sally Lee',codename:'Bags'}];
+    const evidence='Bags works at Northstar.';
+    const role='Bags is a lead advisor.';
+    const source={id:'meeting',history:[{role:'user',content:evidence+' '+role+' Jamie works at Southport.'}]};
+    const players=[
+      {name:'Bags',organization:'Northstar',role:'Lead advisor',confidence:'high',needs_confirmation:false,evidence,field_evidence:{role}},
+      {name:'Jamie',organization:'Southport',confidence:'high',needs_confirmation:true,evidence:'Jamie works at Southport.'}
+    ];
+    processNamesFromResponse('PLAYER_TAGS_JSON '+JSON.stringify({players})+' END_PLAYER_TAGS_JSON',source);`, context);
+  assert.equal(vm.runInContext('crewMembers[0].organization', context), 'Northstar');
+  assert.equal(vm.runInContext('crewMembers[0].role', context), 'Lead advisor');
+  assert.equal(vm.runInContext('crewMembers[0].observations.at(-1).fieldEvidence.role', context), 'Bags is a lead advisor.');
+  assert.equal(vm.runInContext('suggestedCrew[0].organization', context), 'Southport');
+});
+
 test('visible player details prefill review and a confirmed self identity tags automatically',()=>{
   const context=browserContext();
   vm.runInContext('crewMembers=[{name:"Ronald Powers",nickname:"Ronnie Powers, Ronnie",isSelf:true}];',context);
@@ -400,7 +417,9 @@ test('a completed objective suppresses suggestions without making a follow-up mo
   await handler({ body: { message: 'Finish the draft', showSuggestions: 'true' }, files: [] },
     { json(value) { result = value; }, status() { return this; } });
   assert.equal(requests.length, 1);
-  assert.match(requests[0].messages[0].content, /When useful progress is already underway/);
+  for(const objective of ['GAIN MOMENTUM','MAINTAIN MOMENTUM','STOP NEGATIVE MOMENTUM']){
+    assert.ok(requests[0].messages[0].content.includes(objective));
+  }
   assert.equal(result.reflection, 'The draft is ready.');
   assert.equal(result.stopNextWaves, true);
 });
