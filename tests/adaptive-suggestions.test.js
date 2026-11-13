@@ -82,6 +82,8 @@ test('transcript export opens a normal screenshot-friendly page',()=>{
   assert.doesNotMatch(html,/visualViewport\.addEventListener\('resize'/);
   assert.match(printPage,/@media print/);
   assert.match(printPage,/Share PDF/);
+  assert.match(printPage,/Copy PDF/);
+  assert.doesNotMatch(printPage,/id="copy-text"/);
   assert.match(printPage,/window\.print\(\)/);
 });
 

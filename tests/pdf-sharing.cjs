@@ -18,7 +18,18 @@ const base = process.env.LAKE_TEST_URL || 'http://localhost:3012';
         window.sharedPdf = { name: files[0].name, type: files[0].type,
           signature: await files[0].slice(0, 5).text(), url };
       } });
-      Object.defineProperty(navigator, 'clipboard', { value: { writeText: async value => { window.copied = value; } } });
+      class TestClipboardItem {
+        constructor(items) { this.items = items; }
+        static supports(type) { return type === 'application/pdf'; }
+      }
+      Object.defineProperty(window, 'ClipboardItem', { value: TestClipboardItem });
+      Object.defineProperty(navigator, 'clipboard', { value: {
+        writeText: async value => { window.copied = value; },
+        write: async items => {
+          const pdf = items[0].items['application/pdf'];
+          window.copiedPdf = { type: pdf.type, signature: await pdf.slice(0, 5).text() };
+        }
+      } });
       if (!localStorage.getItem('lakeUser')) {
         localStorage.setItem('lakeUser', JSON.stringify({ name: 'PDF Tester', email: 'pdf@example.test' }));
         localStorage.setItem('lake_pdf@example.test_sessions', JSON.stringify([{
@@ -65,8 +76,9 @@ const base = process.env.LAKE_TEST_URL || 'http://localhost:3012';
       return meetingPdfText('data:application/pdf;base64,' + encoded);
     }, bytes.toString('base64'));
     assert.match(extracted, /Budget notes for the October meeting/);
-    await popup.getByRole('button', { name: 'Copy text' }).click();
-    assert.match(await popup.evaluate(() => window.copied), /Budget notes for the October meeting/);
+    await popup.getByRole('button', { name: 'Copy PDF', exact: true }).click();
+    await popup.waitForFunction(() => window.copiedPdf);
+    assert.deepEqual(await popup.evaluate(() => window.copiedPdf), {type:'application/pdf',signature:'%PDF-'});
     await popup.route('**/share', async route => {
       const { session } = route.request().postDataJSON();
       assert.equal(session.history.length, 1);
@@ -75,7 +87,8 @@ const base = process.env.LAKE_TEST_URL || 'http://localhost:3012';
     });
     popup.once('dialog', dialog => dialog.accept());
     await popup.getByRole('button', { name: 'Copy transcript link' }).click();
-    await popup.waitForFunction(() => window.copied.endsWith('/shared.html?id=test-transcript'));
+    await popup.waitForFunction(() => typeof window.copied === 'string' &&
+      window.copied.endsWith('/shared.html?id=test-transcript'));
     await popup.close();
     let evidence;
     await page.route('**/chat', async route => {
@@ -89,6 +102,8 @@ const base = process.env.LAKE_TEST_URL || 'http://localhost:3012';
       await route.fulfill({ json: { reflection: 'A source-grounded meeting read.' } });
     });
     await page.evaluate(() => readMeetingCurrents('Who will send the action plan?'));
+    for (let attempt = 0; !evidence && attempt < 40; attempt++) await page.waitForTimeout(50);
+    assert.ok(evidence, 'Meeting Currents should upload its source evidence');
     assert.equal(evidence.coverage.indexed_meetings, 1);
     assert.match(evidence.passages[0].text, /Robert will send the PDF action plan/);
     console.log('PDF sharing and Meeting Currents passed in Chrome.');

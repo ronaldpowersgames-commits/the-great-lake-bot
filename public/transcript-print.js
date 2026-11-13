@@ -46,8 +46,6 @@
       status('Select and copy the ' + label.toLowerCase() + ' from the field.');
     }
   }
-  element('copy-text').onclick = () => copy(transcript, 'Transcript text');
-
   const history = data.messages.filter(message => !message.privateSnapshot).map(message => ({
     role: message.role === 'user' ? 'user' : 'assistant', content: message.text, time: message.time
   }));
@@ -117,7 +115,7 @@
       const pdf = new File([doc.output('blob')], filename, { type: 'application/pdf' });
       element('meta').textContent += ' · ' + pages + (pages === 1 ? ' page' : ' pages') +
         ' · ' + Math.max(1, Math.round(pdf.size / 1024)) + ' KB';
-      const fontNotice = unsupportedText ? 'Use Print or Copy text to preserve characters outside the PDF font.' : '';
+      const fontNotice = unsupportedText ? 'Use Print to preserve characters outside the PDF font.' : '';
       download.disabled = false;
       download.onclick = () => {
         const url = URL.createObjectURL(pdf);
@@ -144,22 +142,28 @@
         };
         status(fontNotice);
       } else {
-        status('This browser cannot share PDF attachments directly. You can download, copy, or print. ' + fontNotice);
+        status('This browser cannot share PDF attachments directly. You can copy, download, or print the PDF. ' + fontNotice);
       }
       const copyPdf = element('copy-pdf');
-      if (navigator.clipboard?.write && window.ClipboardItem?.supports?.('application/pdf')) {
-        copyPdf.hidden = false;
-        copyPdf.onclick = async () => {
+      copyPdf.disabled = false;
+      copyPdf.onclick = async () => {
+        if (!navigator.clipboard?.write || !window.ClipboardItem) {
+          status('This browser cannot copy PDF files. Use Download PDF to attach it manually.');
+          return;
+        }
+        const supported = type => typeof ClipboardItem.supports !== 'function' || ClipboardItem.supports(type);
+        const types = ['application/pdf', 'web application/pdf'].filter(supported);
+        for (const type of types) {
           try {
-            await navigator.clipboard.write([new ClipboardItem({ 'application/pdf': pdf })]);
-            status('PDF file copied.');
-          } catch {
-            status('PDF clipboard access is unavailable. You can still copy text or download the PDF.');
-          }
-        };
-      }
+            await navigator.clipboard.write([new ClipboardItem({ [type]: pdf })]);
+            status('PDF copied. Paste it into a compatible app.');
+            return;
+          } catch {}
+        }
+        status('This browser blocked PDF clipboard access. Use Download PDF to attach it manually.');
+      };
     } catch {
-      status('Could not prepare a PDF file. You can still print this preview or copy the transcript text.');
+      status('Could not prepare a PDF file. You can still print this preview.');
     }
   }, 0);
 })();
