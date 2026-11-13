@@ -72,6 +72,7 @@ function loadSystemPrompt() {
   // silently cut off the newer modular rules that followed it.
   const files = [
     'cognitive_architecture_v3.txt',
+    'momentum.txt',
     'identity.txt','tone.txt','governance.txt','safety.txt',
     'behavior_rules.txt','clarity_engine.txt','influence_engine.txt',
     'output_format.txt','file_handling.txt','group_mode.txt','metaphors.txt',
@@ -648,7 +649,9 @@ router.post('/', receiveUploads, async function(req, res) {
           role: String(member.role || '').slice(0, 150),
           relationship: String(member.relationship || '').slice(0, 200),
           userReviewedNotes: String(member.context || '').slice(0, 1500),
-          reviewedObservations: Array.isArray(member.observations) ? member.observations.filter(item => item?.reviewed).slice(-10).map(item => ({
+          reviewedObservations: Array.isArray(member.observations) ? member.observations.filter(item =>
+            item?.reviewed || item?.classification === 'user reported').slice(-10).map(item => ({
+            classification: item.reviewed ? 'reviewed observation' : 'user reported excerpt',
             recordedAt: String(item.date || ''), sessionId: String(item.sessionId || ''),
             meetingDates: Array.isArray(item.meetingDates) ? item.meetingDates.slice(0,20) : [],
             evidence: String(item.evidence || '').slice(0, 500), note: String(item.note || '').slice(0, 500),
@@ -924,10 +927,13 @@ Current action: ${req.body.action}.\n`
       } catch { /* Ignore malformed optional metadata. */ }
     }
     let reflection=snapshotScope?reply:reply.replace(/LAKE_PROFILE_JSON[\s\S]*?(?:END_LAKE_PROFILE_JSON|$)/gi,'').trim();
+    const stopNextWaves=!snapshotScope && /^LAKE_STOP_NEXT_WAVES[ \t]*$/im.test(reflection);
+    if(stopNextWaves)reflection=reflection.replace(/^LAKE_STOP_NEXT_WAVES[ \t]*$/gim,'').trim();
     const tideTitleMatch=!snapshotScope && reflection.match(/^TIDE_TITLE:[ \t]*(.+)$/im);
     const tideTitle=titleDirective && tideTitleMatch ? tideTitleMatch[1].trim().slice(0,64) : '';
     if(tideTitleMatch)reflection=reflection.replace(/^TIDE_TITLE:[^\r\n]*$/gim,'').trim();
-    if(!mirror && !snapshotScope && req.body.showSuggestions==='true'){
+    if(stopNextWaves)reflection=reflection.replace(/LAKE_PROMPTS_JSON[\s\S]*?(?:END_LAKE_PROMPTS_JSON|$)/gi,'').trim();
+    if(!stopNextWaves && !mirror && !snapshotScope && req.body.showSuggestions==='true'){
       const parsed=adaptiveSuggestions.extract(reflection);
       let recentIntents=[];
       try {
@@ -965,6 +971,7 @@ Current action: ${req.body.action}.\n`
     res.json({
       reflection,
       ...(tideTitle ? {tideTitle} : {}),
+      ...(stopNextWaves ? { stopNextWaves: true } : {}),
       ...(profileUpdates.length ? {profileUpdates} : {}),
       ...(handoff ? { handoff } : {}),
       model: response.model || CHAT_MODEL,

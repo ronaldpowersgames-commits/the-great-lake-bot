@@ -2714,7 +2714,7 @@ function processNamesFromResponse(responseText, source = { id: currentSessionId,
     if(!personKey || /^(unknown|speaker|participant)( \d+)?$/.test(personKey))return;
     if(!player.evidence)return;
     const highConfidence=player.confidence.toLowerCase()==='high';
-    const matches=confidentCrewMatches(personKey);
+    const matches=crewMembers.filter(member=>getCrewAliases(member).includes(personKey));
     const evidence=player.evidence.trim();
     const exactMatch=matches.length===1 && getCrewAliases(matches[0]).includes(personKey);
     const confirmedSelf=exactMatch && matches[0].isSelf===true;
@@ -2732,21 +2732,31 @@ function processNamesFromResponse(responseText, source = { id: currentSessionId,
       return;
     }
     const verified=evidence.length>=12 && (' '+normalizePersonKey(evidence)+' ').includes(' '+personKey+' ') &&
-      source.history.some(message=>message.role==='user' && message.content?.includes(evidence));
-    const fullNameMatch=exactMatch && personKey.includes(' ') && normalizePersonKey(matches[0].name)===personKey;
-    if(highConfidence && matches.length===1 && verified && (fullNameMatch || !player.needsConfirmation)){
+      (source.tagContext?.includes(evidence) || source.history.some(message=>message.role==='user' && !message.mirror &&
+        !message.removedSourceRecord && (!message.action || message.action==='tag-players') && message.content?.includes(evidence)));
+    const conflicting=exactMatch && ['organization','role','relationship'].some(field=>
+      player[field] && matches[0][field] && normalizePersonKey(player[field])!==normalizePersonKey(matches[0][field]));
+    if(highConfidence && exactMatch && verified && !player.needsConfirmation && !conflicting){
       const member=matches[0];
       member.observations ||= [];
       if(!member.observations.some(item=>item.sessionId===source.id && item.evidence===evidence)){
-        member.observations.push({date:new Date().toISOString(),sessionId:source.id,evidence,note:'Source excerpt matched to a known Crew member.'});
-        saveCrew();
-        changed=true;
+        member.observations.push({date:new Date().toISOString(),sessionId:source.id,evidence,
+          note:'Source excerpt matched to a known Crew member.',reviewed:false,classification:'user reported'});
+        for(const field of ['organization','role']){
+          const value=player[field];
+          const separator=evidence.indexOf(':');
+          if(!member[field] && value && separator>=0 &&
+            normalizePersonKey(evidence.slice(0,separator))===personKey+' '+field &&
+            normalizePersonKey(evidence.slice(separator+1))===normalizePersonKey(value))member[field]=value;
+        }
+        changed=saveCrew()!==false || changed;
       }
       return;
     }
     const contextBits = [
       player.confidence ? `Confidence: ${player.confidence}` : '',
-      player.needsConfirmation ? 'Needs your confirmation before treating identity as certain.' : '',
+      player.needsConfirmation || matches.length>1 ? 'Needs your confirmation before treating identity as certain.' : '',
+      conflicting ? 'New information conflicts with this Crew profile. Review it before applying changes.' : '',
       player.evidence ? `Evidence: ${player.evidence}` : '',
       player.relationshipNote ? `Track: ${player.relationshipNote}` : ''
     ].filter(Boolean);
@@ -2798,11 +2808,12 @@ function guideNextWaves(){
 }
 const LAKE_MOOD_CODES={calm:'calm',reg:'calm',default:'calm',shallow:'shallow',splash:'shallow',splashy:'shallow',deep:'analytical',deepdive:'analytical',full:'analytical',stormy:'stormy',storm:'stormy',choppy:'stormy',drip:'drip',drippy:'drip',drop:'drip'};
 function reservedComposerCommand(code){
-  return Object.hasOwn(LAKE_MOOD_CODES,code) || /^(?:w\d*|mood|trigger|untrigger|rename|pdf|post|share)$/.test(code);
+  return Object.hasOwn(LAKE_MOOD_CODES,code) || /^(?:w\d*|mood|trigger|untrigger|rename|pdf|post|share|tag)$/.test(code);
 }
 function composerCommands(){
   const commands=new Map();
   commands.set('rename',{label:'Rename this Tide automatically or add a title',command:true});
+  commands.set('tag',{label:'Reconcile players with Crew Memory',command:true});
   commands.set('pdf',{label:'Export this Tide as PDF',command:true});
   commands.set('post',{label:'Create a Post Card from the latest Wave',command:true});
   commands.set('share',{label:'Share the latest Wave',command:true});
@@ -4090,6 +4101,11 @@ function renderMemoryCabin(){
     for(const previous of member.revisions||[]){
       const history=document.createElement('p');
       history.textContent=['Earlier version',previous.updatedAt,previous.name,previous.role,previous.relationship,previous.context].filter(Boolean).join(' · ');
+      history.append(memoryButton('Restore Crew version',()=>{
+        if(!confirm('Restore this Crew profile version? The current version will remain in its history.'))return;
+        crewMembers[index]={...previous,id:member.id,revisions:member.revisions};
+        if(saveCrew()){renderCrew();renderMemoryCabin();}
+      }));
       details.append(history);
     }
     crewList.append(details);
@@ -5441,9 +5457,8 @@ function toggleLakeHotkeys(){
   button.setAttribute('aria-expanded',String(menu.classList.toggle('open')));
 }
 
-function tagPlayers() {
-  const context = document.getElementById('lakeInput').value.trim();
-  sendWave({ visibleText: 'Tag players', reuseAttachments: true, requestText: `Tag the key players in this interaction.
+function tagPlayers(context = document.getElementById('lakeInput').value.trim()) {
+  return sendWave({ action:'tag-players', tagContext:context, visibleText: 'Tag players', reuseAttachments: true, requestText: `Tag the key players in this interaction.
 
 Identify every person who appears in the current chat, screenshot, transcript, email, or uploaded file. Be careful about identity:
 - Use visible evidence only: names, handles, avatars, profile photos, bubble colors, left/right alignment, timestamps, quoted/replied-to text, and app layout.
@@ -5462,7 +5477,7 @@ For each person, give:
 - confidence: high, medium, low, or needs confirmation
 - what I should track about my relationship with them
 
-At the very end, include this exact machine-readable block so the app can suggest Crew entries:
+At the end, include this machine-readable block. Use exact excerpts and verified aliases. The app validates matches and writes, so do not claim anything has been saved.
 Do not announce or explain the block in your prose. Put only JSON between the markers, without a code fence.
 
 PLAYER_TAGS_JSON
@@ -5527,6 +5542,13 @@ async function sendWave(options = {}) {
   const commandKey=typeof storageKey==='function' ? storageKey('moodTriggers') : '';
   let triggers={};
   try { triggers=JSON.parse(globalThis.localStorage?.getItem(commandKey)||'{}') || {}; } catch {}
+  if(options.requestText==null){
+    const tag=text.match(/^(?:\/tag(?:\s+([\s\S]+))?|tag (?:the )?(?:key )?players[.!]?)$/i);
+    if(tag){
+      input.value='';scheduleInputResize(input);updateComposerCommands(input);
+      return tagPlayers(tag[1]?.trim()||'');
+    }
+  }
   if(options.requestText==null && /^\/(?:post|share)$/i.test(text)){
     const wave = [...document.querySelectorAll('#wavesContainer .wave')].findLast(item =>
       !item._lakeMessageRef?.snapshot && canonicalMessageText(item));
@@ -5658,6 +5680,7 @@ async function sendWave(options = {}) {
     ? crewMembers : LakeMemoryAnchors.relevantCrew(crewMembers,crewQuery);
   origin = {
     id: currentSessionId, history: chatHistory, key: storageKey('sessions'), mood: currentMood, responseLanguage: currentUser?.responseLanguage || 'auto',
+    tagContext:options.tagContext,
     userName: currentUser?.name || '', userAliases: currentUser?.aliases || '',
     userCrew:JSON.stringify(crewMembers.filter(member=>member.isSelf===true).slice(0,1).map(({name,nickname,codename,role})=>({name,aliases:nickname,codename,role}))),
     crew: JSON.stringify(relevantCrew.map(({ id, name, nickname, codename, role, relationship, context, observations }) =>
@@ -5842,7 +5865,8 @@ async function sendWave(options = {}) {
           if(origin.key===storageKey('sessions'))rememberCrewCandidates(data.profileUpdates,source);
         }catch(error){showToast('Could not save the Crew review. '+error.message);}
       }
-      const suggestionResult=options.snapshot?{text:JSON.stringify(data.handoff || JSON.parse(data.reflection), null, 2),suggestions:[]}:extractAdaptiveSuggestions(data.reflection,origin.firstResponseSuggestions,origin.showAdaptiveSuggestions);
+      if(data.stopNextWaves===true)origin.showAdaptiveSuggestions=false;
+      const suggestionResult=options.snapshot?{text:JSON.stringify(data.handoff || JSON.parse(data.reflection), null, 2),suggestions:[]}:extractAdaptiveSuggestions(data.reflection,origin.firstResponseSuggestions && !data.stopNextWaves,origin.showAdaptiveSuggestions);
       const renameSaved=options.action==='rename-tide' && data.tideTitle && origin.key===storageKey('sessions')
         ? await applyTideName(origin.id,data.tideTitle) : false;
       const cleanReflection = options.action==='rename-tide'
@@ -5860,6 +5884,7 @@ async function sendWave(options = {}) {
         ...(options.mirror?{mirror:options.mirror}:{}),
         ...(origin.showAdaptiveSuggestions ? {evenWaveSet:true} : {}),
         ...(options.guide ? {guide:true} : {}),
+        ...(data.stopNextWaves===true ? {promptSuggestionsDismissed:true} : {}),
         ...(suggestionResult.suggestions.length ? {promptSuggestions:suggestionResult.suggestions} : {}),
         ...(data.transcriptMemory && options.action==='transcript-memory' && filesToSend.length===1 ? {transcriptMemory:{...data.transcriptMemory,sourceId:filesToSend[0].sourceId}} : {}),
         ...(useWholeMemory ? {transcriptContext:{parts:transcriptWorkingMemory.total}} : {}),
@@ -6079,7 +6104,7 @@ function hideRipple() {
 // ============================================
 function handleKey(e) {
   if((e.key==='Tab' || e.key==='Enter') && !e.shiftKey && !e.isComposing && !e.repeat && e.keyCode!==229 && e.target?.dataset?.composing!=='true'){
-    if(e.key==='Enter' && /^\/(?:pdf|post|share)\s*$/i.test(e.target?.value || '')){
+    if(e.key==='Enter' && /^\/(?:pdf|post|share|tag)\s*$/i.test(e.target?.value || '')){
       e.preventDefault();
       sendWave();
       return;

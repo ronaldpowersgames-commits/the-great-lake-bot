@@ -24,6 +24,7 @@ function browserContext() {
       return elements.get(id);
     } },
     closeInlineSpeech() {}, showNewTideMoodReminder() {},
+    scheduleInputResize() {},
     saveCrew() {}, saveSuggestedCrew() {}, renderCrew() {}, hideRipple() {}, showRipple() {},
     renderFilePreviews() {}, renderTranscriptStatus() {}, renderAdaptiveSuggestions() {}, retireAdaptiveSuggestions() {}, suggestionPreferencePayload() { return {chosen:{},dismissed:{},recent_chosen_kinds:[]}; }, saveSession() {}, updateCurrents() {}, showToast() {},
     storageKey(key) { return 'lake_test_' + key; },
@@ -75,6 +76,32 @@ test('Tag Players shows a short message and resends the latest interaction attac
 test('machine player data is removed from visible replies', () => {
   const context = browserContext();
   assert.equal(vm.runInContext('stripPlayerTagsJson(`Sam needs confirmation.\nPLAYER_TAGS_JSON {"players":[]} END_PLAYER_TAGS_JSON`)', context), 'Sam needs confirmation.');
+});
+
+test('/tag and the Tag Players button use the same reconciliation request', async () => {
+  const button = browserContext();
+  await vm.runInContext('tagPlayers("Sally")', button);
+  const command = browserContext();
+  command.document.getElementById('lakeInput').value = '/tag Sally';
+  await vm.runInContext('sendWave()', command);
+  assert.equal(command.sent.get('action'), 'tag-players');
+  assert.equal(command.sent.get('message'), button.sent.get('message'));
+  assert.match(command.sent.get('message'), /Sally/);
+});
+
+test('exact Crew alias associations are deduplicated while a conflicting role requires review', () => {
+  const context = browserContext();
+  vm.runInContext(`crewMembers=[{name:'Sally Lee',codename:'Bags',role:'Advisor'}];
+    const evidence='Bags spoke about the upcoming meeting.';
+    const source={id:'meeting',history:[{role:'user',content:evidence}]};
+    const tag=player=>'PLAYER_TAGS_JSON '+JSON.stringify({players:[player]})+' END_PLAYER_TAGS_JSON';
+    const player={name:'Bags',confidence:'high',needs_confirmation:false,evidence};
+    processNamesFromResponse(tag(player),source);
+    processNamesFromResponse(tag(player),source);
+    processNamesFromResponse(tag({...player,role:'Director'}),source);`, context);
+  assert.equal(vm.runInContext('crewMembers[0].observations.length', context), 1);
+  assert.equal(vm.runInContext('crewMembers[0].role', context), 'Advisor');
+  assert.match(vm.runInContext('suggestedCrew[0].context', context), /conflicts/);
 });
 
 test('visible player details prefill review and a confirmed self identity tags automatically',()=>{
@@ -365,6 +392,17 @@ test('ordinary replies validate Captain evidence and route explicit introduction
   assert.equal(result.profileUpdates[1].person, 'Jamie Vale');
   assert.doesNotMatch(result.reflection, /LAKE_PROFILE_JSON/);
   assert.match(requests[0].messages[0].content, /"captain":"unavailable","crew":"stored"/);
+});
+
+test('a completed objective suppresses suggestions without making a follow-up model request', async () => {
+  const { handler, requests } = routeContext(() => 'The draft is ready.\nLAKE_STOP_NEXT_WAVES');
+  let result;
+  await handler({ body: { message: 'Finish the draft', showSuggestions: 'true' }, files: [] },
+    { json(value) { result = value; }, status() { return this; } });
+  assert.equal(requests.length, 1);
+  assert.match(requests[0].messages[0].content, /When useful progress is already underway/);
+  assert.equal(result.reflection, 'The draft is ready.');
+  assert.equal(result.stopNextWaves, true);
 });
 
 test('Post Cards use a separate structured request and reject duplicated or malformed card copy', async () => {
