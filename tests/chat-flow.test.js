@@ -411,10 +411,10 @@ test('ordinary replies validate Captain evidence and route explicit introduction
   assert.match(requests[0].messages[0].content, /"captain":"unavailable","crew":"stored"/);
 });
 
-test('a completed objective suppresses suggestions without making a follow-up model request', async () => {
+test('an explicit end to the Tide suppresses suggestions without making a follow-up model request', async () => {
   const { handler, requests } = routeContext(() => 'The draft is ready.\nLAKE_STOP_NEXT_WAVES');
   let result;
-  await handler({ body: { message: 'Finish the draft', showSuggestions: 'true' }, files: [] },
+  await handler({ body: { message: "Finish the draft, then let's stop here", showSuggestions: 'true' }, files: [] },
     { json(value) { result = value; }, status() { return this; } });
   assert.equal(requests.length, 1);
   for(const objective of ['GAIN MOMENTUM','MAINTAIN MOMENTUM','STOP NEGATIVE MOMENTUM']){
@@ -422,6 +422,16 @@ test('a completed objective suppresses suggestions without making a follow-up mo
   }
   assert.equal(result.reflection, 'The draft is ready.');
   assert.equal(result.stopNextWaves, true);
+});
+
+test('a model stop marker cannot suppress Next Waves on a normal completed request', async () => {
+  const { handler, requests } = routeContext(() => 'The draft is ready.\nLAKE_STOP_NEXT_WAVES');
+  let result;
+  await handler({ body: { message: 'Finish the draft', showSuggestions: 'true' }, files: [] },
+    { json(value) { result = value; }, status() { return this; } });
+  assert.equal(requests.length, 2);
+  assert.equal(result.stopNextWaves, undefined);
+  assert.doesNotMatch(result.reflection, /LAKE_STOP_NEXT_WAVES/);
 });
 
 test('Post Cards use a separate structured request and reject duplicated or malformed card copy', async () => {

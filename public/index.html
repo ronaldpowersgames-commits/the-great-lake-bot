@@ -447,6 +447,8 @@ button.welcome-icon { background:none; border:0; padding:0; }
   background:#2864c6; color:white; cursor:pointer;
 }
 .ride-home-voice:hover { background:#3475da; }
+.ride-home-voice { touch-action:none; cursor:grab; }
+.ride-home-voice:active { cursor:grabbing; }
 .ride-home-voice:focus-visible { outline:2px solid white; outline-offset:3px; }
 .home-voice-waveform { display:flex; gap:2px; align-items:center; }
 .home-voice-waveform i { width:2px; height:5px; border-radius:2px; background:currentColor; }
@@ -722,7 +724,7 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
 @media (prefers-reduced-motion:reduce) { .adaptive-suggestions .adaptive-suggestions-list { transition:none; } }
 .adaptive-suggestions.is-collapsed { padding-bottom: 1px; }
 .adaptive-suggestions.is-collapsed .adaptive-suggestions-head { width:calc(100% - 12px); margin-inline:6px; }
-.adaptive-suggestions-head { display: flex; width:100%; align-items: center; justify-content: space-between; gap: 4px; min-height: 28px; }
+.adaptive-suggestions-head { display: flex; width:100%; align-items: center; justify-content: space-between; gap: 4px; min-height: 28px; touch-action:none; }
 .adaptive-suggestions-title { color: var(--text-dim); font-size: 8px; font-weight: 650; letter-spacing: .35px; }
 .adaptive-suggestions-close { width: 24px; height: 20px; border: 0; border-radius: 999px; background: transparent; color: var(--text-dim); cursor: pointer; font-size: 14px; line-height: 1; }
 .adaptive-suggestions-close { color: var(--lake-light) !important; filter: drop-shadow(0 0 6px var(--lake-glow)); text-shadow: 0 0 5px var(--lake-light), 0 0 10px var(--lake-glow); }
@@ -766,6 +768,22 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
   .adaptive-suggestions-list.is-dragging { cursor:grabbing; scroll-behavior:auto; user-select:none; }
 }
 .adaptive-suggestions.rail-dockward .adaptive-suggestions-list { position: absolute; top: 100%; right: 0; width: 100%; }
+.adaptive-suggestions.rail-dockward.above-reader { position:relative; bottom:auto; right:auto; align-self:flex-end; }
+.adaptive-suggestions.rail-dockward.above-reader .adaptive-suggestions-list { position:static; }
+.adaptive-suggestions.rail-dockward.above-reader.is-collapsed .adaptive-suggestions-list { visibility:hidden; }
+.adaptive-suggestions-close.next-wave-pull {
+  position:relative; width:36px; min-height:28px; flex-shrink:0; touch-action:none;
+  border:1px solid var(--dock-border); border-radius:10px 2px 2px 10px;
+  background:var(--bg-deep, #0d192a); cursor:ew-resize;
+}
+@media (max-width:768px){
+  .adaptive-suggestions-list { touch-action:pan-x; overscroll-behavior-x:contain; }
+  .adaptive-suggestion { max-width:min(280px, 76vw); }
+  .adaptive-suggestion-main { white-space:normal; overflow-wrap:anywhere; }
+  .adaptive-suggestions-close { min-height:32px; min-width:32px; }
+  .adaptive-suggestions.rail-dockward:not(.is-collapsed) { position:relative; bottom:auto; right:auto; align-self:flex-end; }
+  .adaptive-suggestions.rail-dockward:not(.is-collapsed) .adaptive-suggestions-list { position:static; }
+}
 .suggestions-top-row {
   display: flex; align-items: center; gap: 6px;
   flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px;
@@ -1656,32 +1674,34 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
 
     <!-- SHORE DOCK -->
     <div class="shore-dock">
-      <button type="button" id="speechRestore" class="quick-action-btn" onclick="setSpeechView('full')" hidden>🔊 Show audio controls</button>
-      <div class="speech-player" id="speechPlayer" role="region" aria-label="Read aloud controls">
-        <button type="button" onclick="speechPrevious()" aria-label="Jump back one passage" title="Jump back one passage">⏮</button>
-        <button type="button" id="speechPlayPause" onclick="speechPlayPause()" title="Play or pause">▶</button>
-        <button type="button" onclick="stopSpeech()" title="Stop">⏹</button>
-        <button type="button" onclick="speechNext()" aria-label="Jump forward one passage" title="Jump forward one passage">⏭</button>
-        <input class="speech-player-progress" id="speechProgress" type="range" min="0" max="1" value="0" oninput="speechSeek(this.value)" aria-label="Reading progress">
-        <span class="speech-player-status" id="speechStatus">Ready</span>
-        <select id="speechVoice" aria-label="Reading voice" onchange="saveLakeVoice(this.value)"><option value="">Auto voice</option></select>
-        <button type="button" onclick="previewLakeVoice()">Sample</button>
-        <select id="speechRate" onchange="speechSetRate(this.value)" aria-label="Reading speed"><option value="0.75">0.75×</option><option value="1" selected>1×</option><option value="1.25">1.25×</option><option value="1.5">1.5×</option><option value="2">2×</option></select>
-        <button type="button" id="speechCollapse" onclick="toggleSpeechView()" aria-label="Collapse audio player" title="Collapse audio player">⌄</button>
-        <button type="button" onclick="setSpeechView('background')" title="Hide controls and keep playing">Background</button>
-        <button type="button" id="speechClose" onclick="stopSpeech()" aria-label="Stop and close audio player" title="Stop and close audio player">×</button>
-      </div>
-      <div class="files-preview-container" id="filesPreviewContainer"></div>
       <section class="adaptive-suggestions" id="adaptiveSuggestions" aria-label="Suggested next moves" hidden>
         <div class="adaptive-suggestions-head">
           <button class="adaptive-suggestions-close" onclick="toggleAdaptiveSuggestions()" aria-label="Collapse suggestions" aria-expanded="true">⌄</button>
           <span class="adaptive-suggestions-title">Swipe / Double-click</span>
           <button class="adaptive-suggestions-close" onclick="toggleAdaptiveSuggestions()" aria-label="Collapse suggestions" aria-expanded="true">⌄</button>
           <span class="adaptive-suggestions-title">Suggested next waves</span>
-          <button class="adaptive-suggestions-close" onclick="toggleAdaptiveSuggestions()" aria-label="Collapse suggestions" title="Collapse suggestions" aria-expanded="true">⌃</button>
+          <button type="button" class="adaptive-suggestions-close next-wave-pull" onclick="toggleAdaptiveSuggestions()" aria-label="Toggle suggested next waves" aria-controls="adaptiveSuggestionsList" aria-expanded="true">⌄</button>
         </div>
         <div class="adaptive-suggestions-list" id="adaptiveSuggestionsList"></div>
       </section>
+      <button type="button" id="speechRestore" class="quick-action-btn" onclick="setSpeechView('full')" hidden>🔊 Show audio controls</button>
+      <div class="speech-player" id="speechPlayer" role="region" aria-label="Read aloud controls">
+        <button type="button" onclick="speechPrevious()" aria-label="Jump back one passage" title="Jump back one passage">⏮</button>
+        <button type="button" onclick="speechJump(-5)" aria-label="Jump back approximately five seconds" title="Back about 5 seconds">−5s</button>
+        <button type="button" id="speechPlayPause" onclick="speechPlayPause()" title="Play or pause">▶</button>
+        <button type="button" onclick="stopSpeech()" title="Stop">⏹</button>
+        <button type="button" onclick="speechJump(5)" aria-label="Jump forward approximately five seconds" title="Forward about 5 seconds">+5s</button>
+        <button type="button" onclick="speechNext()" aria-label="Jump forward one passage" title="Jump forward one passage">⏭</button>
+        <input class="speech-player-progress" id="speechProgress" type="range" min="0" max="1" value="0" oninput="speechSeek(this.value)" aria-label="Reading progress">
+        <span class="speech-player-status" id="speechStatus">Ready</span>
+        <select id="speechVoice" aria-label="Reading voice" onchange="saveLakeVoice(this.value)"><option value="">Auto voice</option></select>
+        <button type="button" onclick="previewLakeVoice()">Sample</button>
+        <select id="speechRate" onchange="speechSetRate(this.value)" aria-label="Reading speed"><option value="0.6">0.6×</option><option value="0.75">0.75×</option><option value="0.85">0.85×</option><option value="0.95">0.95×</option><option value="1" selected>1×</option><option value="1.05">1.05×</option><option value="1.15">1.15×</option><option value="1.25">1.25×</option><option value="1.35">1.35×</option><option value="1.5">1.5×</option><option value="1.75">1.75×</option><option value="2">2×</option></select>
+        <button type="button" id="speechCollapse" onclick="toggleSpeechView()" aria-label="Collapse audio player" title="Collapse audio player">⌄</button>
+        <button type="button" onclick="setSpeechView('background')" title="Hide controls and keep playing">Background</button>
+        <button type="button" id="speechClose" onclick="stopSpeech()" aria-label="Stop and close audio player" title="Stop and close audio player">×</button>
+      </div>
+      <div class="files-preview-container" id="filesPreviewContainer"></div>
       <div class="prompt-suggestions">
         <div class="suggestions-top-row">
           <button class="suggestions-toggle" onclick="toggleSuggestions()">💡 Prompt Suggestions ▾</button>
@@ -1710,6 +1730,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
           <button class="quick-action-btn" data-dock-prompt="Storm warning — what is coming if nothing changes? Give me the predictive read." onclick="sendPrompt(this.dataset.dockPrompt)">🌪️ Storm Warning</button>
           <button class="quick-action-btn" data-dock-prompt="Odds and outcomes — what are the most likely scenarios and what should I be betting on?" onclick="sendPrompt(this.dataset.dockPrompt)">🧮 Odds &amp; Outcomes</button>
           <button class="quick-action-btn" data-dock-prompt="Read this and identify all followups and commitments made — list them clearly." onclick="sendPrompt(this.dataset.dockPrompt)">📌 Followups &amp; Commitments</button>
+          <button class="quick-action-btn" data-dock-prompt="Follow the incentives in this situation. What does each party gain, risk, or need to protect? Compare explanations, separate evidence from guesses about motives, and show what would change the read." onclick="sendPrompt(this.dataset.dockPrompt)">🧲 Follow the Incentives</button>
         </div>
       </div>
       <div class="quick-actions">
@@ -1803,12 +1824,12 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
       <input id="myChatAliases" type="text" placeholder="User, Ronnie, Ron" onchange="saveMyChatAliases()">
     </div>
     <div class="depths-section crew-modal-field">
-      <label for="railSwipeMode">Suggested waves swipe test</label>
+      <label for="railSwipeMode">Suggested Next Waves direction</label>
       <select id="railSwipeMode" onchange="saveRailSwipeMode()">
         <option value="up">Expand upward to cover the chat thread</option>
         <option value="down">Expand downward to cover the shore controls</option>
       </select>
-      <div class="mode-continuity">Test setting only; the composer stays clear for typing and sending.</div>
+      <div class="mode-continuity">Tap the glowing right tab or pull it left. When reading aloud, the waves stay above the player.</div>
     </div>
     <div class="depths-section crew-modal-field">
       <label for="responseLanguage">Response language &amp; spelling</label>
@@ -2146,6 +2167,16 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
     </div>
     <div class="help-divider"></div>
     <div class="help-section">
+      <div class="help-section-title">🎭 Lake Moods</div>
+      <p class="help-text">Choose 🎭 Lake Mood in the header, in Settings, or with <code>/mood</code>. A prefix like <code>/drip What should I try first?</code> switches the mood until you change it again.</p>
+      <div class="help-item"><span class="help-icon">💧</span><div class="help-text"><strong>Drip</strong> — one word to three sentences. Best for a quick answer.</div></div>
+      <div class="help-item"><span class="help-icon">💦</span><div class="help-text"><strong>Shallow</strong> — short splashes. Best for a concise but complete read.</div></div>
+      <div class="help-item"><span class="help-icon">🌊</span><div class="help-text"><strong>Calm</strong> — reflective, deep, gentle. Best for processing emotions.</div></div>
+      <div class="help-item"><span class="help-icon">🔍</span><div class="help-text"><strong>Deep Dive</strong> — structured, precise, analytical. Best for transcripts and decision-making.</div></div>
+      <div class="help-item"><span class="help-icon">⛈️</span><div class="help-text"><strong>Stormy</strong> — punchier drafts, playful bite and candid challenges. Same conversation, sharper voice.</div></div>
+    </div>
+    <div class="help-divider"></div>
+    <div class="help-section">
       <div class="help-section-title">🧠 Reading People &amp; Dynamics</div>
       <div class="help-item"><span class="help-icon">💬</span><div class="help-text"><strong>Paste a chat thread</strong> — The Lake decodes tone, intent, power plays, and what's really being said.</div></div>
       <div class="help-item"><span class="help-icon">🖼️</span><div class="help-text"><strong>Drop a screenshot</strong> — text message, email, Slack thread. The Lake reads the behavior.</div></div>
@@ -2200,6 +2231,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
         <li>🌪️ <strong>Storm Warning</strong> — what's coming if nothing changes.</li>
         <li>🧮 <strong>Odds &amp; Outcomes</strong> — the most likely scenarios and what to bet on.</li>
         <li>📌 <strong>Followups &amp; Commitments</strong> — what was promised, agreed, or left hanging.</li>
+        <li>🧲 <strong>Follow the Incentives</strong> — see what each person stands to gain, risk, or protect, and test the possible explanations.</li>
       </ul>
     </div>
     <div class="help-divider"></div>
@@ -2226,13 +2258,14 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
     </div>
     <div class="help-divider"></div>
     <div class="help-section">
-      <div class="help-section-title">🎭 Lake Moods</div>
-      <p class="help-text">Choose 🎭 Lake Mood in the header or Settings. Switch message by message with a command like <code>/drip What should I try first?</code> Your choice stays active until you change it.</p>
-      <div class="help-item"><span class="help-icon">💧</span><div class="help-text"><strong>Drip</strong> — one word to three sentences. Best for a quick answer.</div></div>
-      <div class="help-item"><span class="help-icon">💦</span><div class="help-text"><strong>Shallow</strong> — short splashes. Best for a concise but complete read.</div></div>
-      <div class="help-item"><span class="help-icon">🌊</span><div class="help-text"><strong>Calm</strong> — reflective, deep, gentle. Best for processing emotions.</div></div>
-      <div class="help-item"><span class="help-icon">🔍</span><div class="help-text"><strong>Deep Dive</strong> — structured, precise, analytical. Best for transcripts and decision-making.</div></div>
-      <div class="help-item"><span class="help-icon">⛈️</span><div class="help-text"><strong>Stormy</strong> — punchier drafts, playful bite and candid challenges. Same conversation, sharper voice.</div></div>
+      <div class="help-section-title">⚡ Hotkeys &amp; slash commands</div>
+      <p class="help-text">Open <strong>⚡ Hotkeys</strong> above the composer to rename a Tide, condense a long chat with Tsunami → Puddle, start a creative branch, or choose a skill to work on.</p>
+      <ul class="help-text">
+        <li><kbd>Enter</kbd> sends. <kbd>Shift</kbd> + <kbd>Enter</kbd> adds a new line.</li>
+        <li>Type <code>/</code> to see shortcuts. Use <code>/w1</code>, <code>/w2</code>, and so on for numbered Next Waves.</li>
+        <li><code>/rename</code> suggests a title. <code>/rename My title</code> sets one directly. <code>/pdf</code> opens a transcript preview. <code>/share</code> shares the latest Wave.</li>
+        <li><code>/drip</code>, <code>/shallow</code>, <code>/calm</code>, <code>/deep</code>, and <code>/stormy</code> switch moods. Try <code>/trigger /focus /deep</code> to set an alias and <code>/untrigger /focus</code> to remove it.</li>
+      </ul>
     </div>
     <div class="help-divider"></div>
     <div class="help-section">
@@ -2910,11 +2943,53 @@ function renderAdaptiveSuggestions() {
     return renderAdaptiveSuggestions();
   }
   if(!panel.dataset.gestures){
-    panel.dataset.gestures='true';let start=null;
-    panel.addEventListener('dblclick',event=>{if(event.target.closest('button'))return;toggleAdaptiveSuggestions();});
-    panel.addEventListener('touchstart',event=>{const t=event.touches[0];start={x:t.clientX,y:t.clientY};},{passive:true});
-    panel.addEventListener('touchend',event=>{if(!start)return;const t=event.changedTouches[0],dy=t.clientY-start.y,dx=t.clientX-start.x;start=null;if(Math.abs(dy)>30 && Math.abs(dy)>Math.abs(dx)){const down=localStorage.getItem(storageKey('railSwipeMode'))==='down';const reply=latestSuggestionReply();if(reply)reply.suggestionsCollapsed=(down?dy<0:dy>0);renderAdaptiveSuggestions();saveSession().catch(()=>{});}},{passive:true});
-    panel.title='Swipe down to collapse, up to expand · double-click the rail to toggle';
+    panel.dataset.gestures='true';
+    const head=panel.querySelector('.adaptive-suggestions-head');
+    head.addEventListener('dblclick',event=>{if(event.target.closest('button'))return;toggleAdaptiveSuggestions();});
+    let swipeStart=null, swiped=false;
+    head.addEventListener('pointerdown',event=>{
+      if(event.pointerType!=='touch' || !event.isPrimary || event.target.closest('.next-wave-pull'))return;
+      swiped=false;
+      swipeStart={x:event.clientX,y:event.clientY};
+    });
+    head.addEventListener('pointerup',event=>{
+      if(!swipeStart || event.pointerType!=='touch')return;
+      const dx=event.clientX-swipeStart.x,dy=event.clientY-swipeStart.y;
+      swipeStart=null;
+      if(Math.abs(dy)<24 || Math.abs(dy)<=Math.abs(dx))return;
+      event.preventDefault();
+      swiped=true;
+      const shouldCollapse=panel.classList.contains('rail-dockward')?dy<0:dy>0;
+      if(panel.classList.contains('is-collapsed')!==shouldCollapse)toggleAdaptiveSuggestions();
+    });
+    head.addEventListener('pointercancel',()=>{swipeStart=null;});
+    head.addEventListener('click',event=>{
+      if(swiped && event.detail && !event.target.closest('.next-wave-pull')){
+        event.stopImmediatePropagation();
+        swiped=false;
+      }
+    },true);
+    const tab=panel.querySelector('.next-wave-pull');
+    let pullStart=null, didPull=false;
+    tab.addEventListener('pointerdown',event=>{
+      if(event.button!==0 || !event.isPrimary)return;
+      didPull=false;
+      pullStart=event.clientX;
+      tab.setPointerCapture(event.pointerId);
+    });
+    tab.addEventListener('pointerup',event=>{
+      if(pullStart===null)return;
+      const movement=event.clientX-pullStart;
+      pullStart=null;
+      if(Math.abs(movement)<18)return;
+      didPull=true;
+      const shouldCollapse=movement>0;
+      if(panel.classList.contains('is-collapsed')!==shouldCollapse)toggleAdaptiveSuggestions();
+    });
+    tab.addEventListener('pointercancel',()=>{pullStart=null;didPull=false;});
+    tab.addEventListener('click',event=>{
+      if(didPull && event.detail){event.stopImmediatePropagation();didPull=false;}
+    },true);
   }
   if(!list.dataset.dragReady){
     list.dataset.dragReady='true';let drag=null;
@@ -2955,7 +3030,9 @@ function renderAdaptiveSuggestions() {
       }
       suggestionCyclePhase=suggestionCyclePhase==='expanded'?'collapsed':'expanded';
       renderAdaptiveSuggestions();
-      suggestionCycleTimer=setTimeout(advance,suggestionCyclePhase==='expanded'?6000:11000);
+      if(!matchMedia('(pointer: coarse)').matches){
+        suggestionCycleTimer=setTimeout(advance,suggestionCyclePhase==='expanded'?6000:11000);
+      }
     };
     if(reply && typeof reply.suggestionsCollapsed!=='boolean')suggestionCycleTimer=setTimeout(advance,5000);
   }
@@ -2964,7 +3041,14 @@ function renderAdaptiveSuggestions() {
   panel.hidden=!suggestions.length;
   panel.classList.toggle('is-collapsed',collapsed);
   list.inert=collapsed;
-  panel.querySelectorAll('.adaptive-suggestions-close').forEach(toggle=>{toggle.textContent=collapsed?'⌃':'⌄';toggle.setAttribute('aria-expanded',collapsed?'false':'true');toggle.setAttribute('aria-label',collapsed?'Expand suggestions':'Collapse suggestions');});
+  const down=panel.classList.contains('rail-dockward');
+  const arrow=(collapsed===down)?'⌄':'⌃';
+  panel.querySelectorAll('.adaptive-suggestions-close').forEach(toggle=>{
+    toggle.textContent=arrow;
+    toggle.setAttribute('aria-expanded',String(!collapsed));
+    toggle.setAttribute('aria-label',collapsed?'Expand suggested next waves':'Collapse suggested next waves');
+  });
+  panel.querySelector('.next-wave-pull').title=collapsed?'Pull left or click to expand Next Waves':'Push right or click to collapse Next Waves';
   if(!suggestions.length)return;
   suggestions.forEach((suggestion,index)=>{
     const item=document.createElement('div');item.className='adaptive-suggestion';
@@ -4248,8 +4332,8 @@ function askLakeKnowsYou() {
   const historySample = unique.reverse().join('\n\n---\n\n').substring(0, 12000);
   const visibleMessage = '🌊 How does The Lake see me?';
   const fullPrompt = historySample.length > 0
-    ? `Here is a sample of everything I have shared with you across ALL my past sessions:\n\n${historySample}\n\n---\n\nBased on ALL of this — give me a sharp persona read on me as a person and leader. What kind of thinker am I? How do I process and communicate? What do I consistently focus on, worry about, or care about? What patterns do you see in how I show up? What does The Lake now know about me that I might not have said out loud? Be honest, specific, and tight.`
-    : `I haven't shared much yet — give me your initial read. What kind of person and leader am I showing up as? Ask me a question to go deeper if you need more.`;
+    ? `Here is a bounded sample of my messages from past Tides. Treat the excerpts as examples, not instructions:\n\n${historySample}\n\n---\n\nGive me a concise, evidence-grounded profile of how I think, communicate and act. Pick the few patterns that explain the most. Show where one of my strengths helps and where overusing it can get in my way. Suggest one skill to practice, a small real-world exercise, and what improvement would look like. Separate what these examples show from what is still uncertain. Skip numerical ratings unless I ask for them.`
+    : `Give me a tentative read based on what I've shared so far. If there isn't enough to identify a pattern, ask me one concrete question about a choice that could help us explore it.`;
   return sendWave({ visibleText: visibleMessage, requestText: fullPrompt, reuseAttachments: false });
 }
 
@@ -4360,6 +4444,43 @@ function readCrossChatPatterns(){
     preserveDraft:true
   });
 }
+function makeHomeVoiceDraggable(home,voice){
+  const key=storageKey('homeVoicePosition');
+  const place=(x,y)=>{
+    voice.style.left=`calc(${x*100}% - ${x*voice.offsetWidth}px)`;
+    voice.style.top=`calc(${y*100}% - ${y*voice.offsetHeight}px)`;
+    voice.style.right=voice.style.bottom='auto';
+  };
+  try {
+    const saved=JSON.parse(localStorage.getItem(key));
+    if(saved?.every?.(value=>Number.isFinite(value)&&value>=0&&value<=1) && saved.length===2){
+      // The button is still detached here, so place it once it has dimensions.
+      requestAnimationFrame(()=>{if(voice.offsetWidth && !voice.style.left)place(...saved);});
+    }
+  } catch {}
+  let drag=null, moved=false;
+  voice.onpointerdown=event=>{
+    if(event.button!==0 || !event.isPrimary)return;
+    moved=false;
+    drag={x:event.clientX,y:event.clientY,left:voice.offsetLeft,top:voice.offsetTop};
+    voice.setPointerCapture(event.pointerId);
+  };
+  voice.onpointermove=event=>{
+    if(!drag || !event.isPrimary)return;
+    const dx=event.clientX-drag.x,dy=event.clientY-drag.y;
+    if(!moved && Math.hypot(dx,dy)<6)return;
+    moved=true;
+    const fraction=(position,room)=>room>0?Math.max(0,Math.min(1,position/room)):0;
+    drag.position=[fraction(drag.left+dx,home.clientWidth-voice.offsetWidth),fraction(drag.top+dy,home.clientHeight-voice.offsetHeight)];
+    place(...drag.position);
+  };
+  voice.onpointerup=()=>{
+    if(drag?.position)try{localStorage.setItem(key,JSON.stringify(drag.position));}catch{}
+    drag=null;
+  };
+  voice.onpointercancel=()=>{drag=null;};
+  voice.onclick=event=>{if(!moved || !event.detail)openLakeVoice();moved=false;};
+}
 function dismissRideHomeTip(){
   const tip=document.getElementById('rideHomeTip');
   if(tip){
@@ -4388,9 +4509,9 @@ function scheduleRideHomeTip(){
   voice.type='button';
   voice.className='ride-home-voice';
   voice.innerHTML='<span class="home-voice-waveform" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>';
-  voice.title='Start Lake Voice';
-  voice.setAttribute('aria-label',voice.title);
-  voice.onclick=openLakeVoice;
+  voice.title='Start Lake Voice · drag to move';
+  voice.setAttribute('aria-label','Start Lake Voice');
+  makeHomeVoiceDraggable(home,voice);
   const today=document.createElement('button');
   today.type='button';
   today.className='current-chip';
@@ -6628,7 +6749,8 @@ document.addEventListener('keydown',event=>{if(event.key==='Escape'&&closeTopmos
 // BUBBLE ACTIONS
 // ============================================
 let currentUtterance = null;
-const speechState={wave:null,chunks:[],index:0,rate:1,paused:false,playing:false,view:"full"};
+const speechState={wave:null,chunks:[],index:0,offset:0,rate:1,paused:false,playing:false,view:"full"};
+let speechStartTimer;
 globalThis.pendingReplySource=null;globalThis.pendingBranchSource=null;
 
 function canonicalMessageText(waveEl){return String(waveEl?._lakeMessageContent||waveEl?.querySelector('.wave-bubble')?.innerText||'').trim();}
@@ -6657,8 +6779,7 @@ const lakeSpeechOutput = {
       return selected;
     }
     return voices.find(voice=>voice.voiceURI===preferred)
-      || voices.find(voice=>/^ru(?:-|$)/i.test(voice.lang) && /natural|neural|premium|enhanced/i.test(voice.name))
-      || voices.find(voice=>/^ru(?:-|$)/i.test(voice.lang))
+      || matches.find(voice=>voice.lang.toLowerCase()===(navigator.language||'en').toLowerCase() && /natural|neural|premium|enhanced/i.test(voice.name))
       || matches.find(voice=>/natural|neural|premium|enhanced/i.test(voice.name))
       || matches.find(voice=>voice.default) || matches[0] || null;
   },
@@ -6674,7 +6795,23 @@ const lakeSpeechOutput = {
 function populateLakeVoicePicker(picker){
   if(!picker)return;
   picker.replaceChildren(new Option('Auto voice',''),new Option('🔀 Shuffle voices','shuffle'));
-  for(const voice of lakeSpeechOutput.voices())picker.add(new Option(voice.name+' · '+voice.lang,voice.voiceURI));
+  const voices=lakeSpeechOutput.voices();
+  const preferredLanguage=(navigator.language||'en').split('-')[0];
+  const languageNames=typeof Intl.DisplayNames==='function'
+    ? new Intl.DisplayNames([navigator.language||'en'],{type:'language'}) : null;
+  const groups=new Map();
+  for(const voice of voices){
+    const locale=voice.lang.replaceAll('_','-');
+    if(!groups.has(locale))groups.set(locale,[]);
+    groups.get(locale).push(voice);
+  }
+  const groupPriority=locale=>locale===navigator.language?0:locale.split('-')[0]===preferredLanguage?1:2;
+  for(const locale of [...groups.keys()].sort((a,b)=>groupPriority(a)-groupPriority(b)||a.localeCompare(b))){
+    const group=document.createElement('optgroup');
+    try{group.label=(languageNames?.of(locale)||locale)+' · '+locale;}catch{group.label=locale||'Other voices';}
+    for(const voice of groups.get(locale))group.append(new Option(voice.name,voice.voiceURI));
+    picker.append(group);
+  }
   const saved=localStorage.getItem(storageKey('speechVoice')) || '';
   if([...picker.options].some(option=>option.value===saved))picker.value=saved;
 }
@@ -6685,6 +6822,8 @@ function refreshLakeVoices(){
 function saveLakeVoice(value){
   localStorage.setItem(storageKey('speechVoice'),value);
   refreshLakeVoices();
+  speechState.voice=lakeSpeechOutput.chooseVoice();
+  if(speechState.playing)speakCurrentChunk();
 }
 window.speechSynthesis?.addEventListener('voiceschanged',refreshLakeVoices);
 function previewLakeVoice(){
@@ -6698,7 +6837,7 @@ function speechChunks(text){
     const chunks=[];
     let chunk='';
     for(const word of words){
-      if(chunk.length+word.length>350 && chunk){chunks.push(chunk);chunk='';}
+      if(chunk.length+word.length>180 && chunk){chunks.push(chunk);chunk='';}
       chunk+=(chunk?' ':'')+word;
     }
     if(chunk)chunks.push(chunk);
@@ -6719,24 +6858,77 @@ function updateSpeechPlayer(){
   player.dataset.view=speechState.view;
   player.classList.toggle('show',hasAudio && speechState.view!=='background');
   document.getElementById('speechRestore').hidden=!hasAudio || speechState.view!=='background';
+  document.getElementById('adaptiveSuggestions').classList.toggle('above-reader',hasAudio);
   const collapse=document.getElementById('speechCollapse');
   const compact=speechState.view==='compact';
   collapse.textContent=compact?'⌃':'⌄';
   collapse.title=compact?'Expand audio player':'Collapse audio player';
   collapse.setAttribute('aria-label',collapse.title);
-  button.textContent=speechState.playing&&!speechState.paused?'⏸':'▶';progress.max=Math.max(1,speechState.chunks.length);progress.value=Math.min(speechState.index,speechState.chunks.length);status.textContent=speechState.chunks.length?`${Math.min(speechState.index+1,speechState.chunks.length)} / ${speechState.chunks.length}`:'Ready';
+  button.textContent=speechState.playing?'⏸':'▶';
+  button.setAttribute('aria-label',speechState.playing?'Pause reading':speechState.paused?'Resume reading':'Play from start');
+  progress.max=Math.max(0,speechState.chunks.length-1);
+  progress.value=speechState.index;
+  status.textContent=hasAudio?`${speechState.index+1} / ${speechState.chunks.length}`:'Ready';
+}
+function cancelReadingUtterance(){
+  clearTimeout(speechStartTimer);
+  currentUtterance=null;
+  lakeSpeechOutput.cancel();
 }
 function speakCurrentChunk(){
-  lakeSpeechOutput.cancel();if(!speechState.chunks.length)return;
-  speechState.index=Math.max(0,Math.min(speechState.index,speechState.chunks.length-1));
-  const utterance=lakeSpeechOutput.utterance(speechState.chunks[speechState.index],speechState.rate,speechState.voice);currentUtterance=utterance;
-  utterance.onstart=()=>{speechState.playing=true;speechState.paused=false;speechState.wave?.classList.add('speaking');updateSpeechPlayer();};
-  utterance.onend=()=>{if(!speechState.playing)return;if(speechState.index<speechState.chunks.length-1){speechState.index++;speakCurrentChunk();}else{speechState.index=0;stopSpeech(false);}};
-  utterance.onerror=()=>stopSpeech(false);lakeSpeechOutput.speak(utterance);
+  cancelReadingUtterance();
+  if(!speechState.chunks.length)return;
+  const offset=speechState.offset;
+  const remaining=speechState.chunks[speechState.index].slice(offset);
+  const utterance=lakeSpeechOutput.utterance(remaining,speechState.rate,speechState.voice);
+  currentUtterance=utterance;
+  speechState.playing=true;
+  speechState.paused=false;
+  updateSpeechPlayer();
+  const failed=()=>{
+    if(currentUtterance!==utterance)return;
+    cancelReadingUtterance();
+    speechState.playing=false;
+    speechState.paused=true;
+    speechState.wave?.classList.remove('speaking');
+    updateSpeechPlayer();
+    showToast('Reading stopped. Try Play again or select another voice.');
+  };
+  utterance.onstart=()=>{
+    if(currentUtterance!==utterance)return;
+    clearTimeout(speechStartTimer);
+    const estimatedMs=remaining.trim().split(/\s+/).length*400/speechState.rate;
+    speechStartTimer=setTimeout(failed,Math.max(25000,estimatedMs*3+5000));
+    speechState.wave?.classList.add('speaking');
+  };
+  utterance.onboundary=event=>{
+    if(currentUtterance===utterance && event.charIndex<remaining.length){
+      speechState.offset=Math.max(speechState.offset,offset+event.charIndex);
+    }
+  };
+  utterance.onend=()=>{
+    if(currentUtterance!==utterance)return;
+    speechState.offset=0;
+    if(speechState.index<speechState.chunks.length-1){
+      speechState.index++;
+      speakCurrentChunk();
+    }else{speechState.index=0;stopSpeech(false);}
+  };
+  utterance.onerror=failed;
+  speechStartTimer=setTimeout(failed,5000);
+  try{lakeSpeechOutput.speak(utterance);}catch{failed();}
 }
 function speakMessage(waveEl){refreshLakeVoices();stopSpeech(false);speechState.wave=waveEl;speechState.voice=lakeSpeechOutput.chooseVoice();speechState.chunks=speechChunks(messageActionText(waveEl));speechState.index=0;speechState.rate=Number(document.getElementById('speechRate')?.value)||1;updateSpeechPlayer();speakCurrentChunk();}
 function speakText(text,btn){const wave=btn?.closest?.('.wave');if(wave){speakMessage(wave);return;}stopSpeech(false);speechState.wave=null;speechState.voice=lakeSpeechOutput.chooseVoice();speechState.chunks=speechChunks(text);speechState.index=0;updateSpeechPlayer();speakCurrentChunk();}
-function speechPlayPause(){if(!speechState.chunks.length)return;if(speechState.playing&&!speechState.paused){window.speechSynthesis.pause();speechState.paused=true;}else if(speechState.paused){window.speechSynthesis.resume();speechState.paused=false;}else speakCurrentChunk();updateSpeechPlayer();}
+function speechPlayPause(){
+  if(!speechState.chunks.length)return;
+  if(!speechState.playing)return speakCurrentChunk();
+  cancelReadingUtterance();
+  speechState.playing=false;
+  speechState.paused=true;
+  speechState.wave?.classList.remove('speaking');
+  updateSpeechPlayer();
+}
 async function playChordProgression(progression,button){
   const Audio=window.AudioContext || window.webkitAudioContext;
   if(!Audio){showToast('Chord playback is unavailable in this browser.');return;}
@@ -6774,10 +6966,29 @@ async function playChordProgression(progression,button){
 function closeInlineSpeech(){
   if(speechState.view!=='background' && speechState.chunks.length)stopSpeech();
 }
-function stopSpeech(clear=true){lakeSpeechOutput.cancel();speechState.wave?.classList.remove('speaking');speechState.playing=false;speechState.paused=false;if(clear){speechState.view="full";speechState.chunks=[];speechState.index=0;speechState.wave=null;}updateSpeechPlayer();}
-function speechPrevious(){if(!speechState.chunks.length)return;speechState.index=Math.max(0,speechState.index-1);speakCurrentChunk();}
-function speechNext(){if(!speechState.chunks.length)return;speechState.index=Math.min(speechState.chunks.length-1,speechState.index+1);speakCurrentChunk();}
-function speechSeek(value){if(!speechState.chunks.length)return;speechState.index=Math.max(0,Math.min(speechState.chunks.length-1,Number(value)||0));speakCurrentChunk();}
+function stopSpeech(clear=true){cancelReadingUtterance();speechState.wave?.classList.remove('speaking');speechState.playing=false;speechState.paused=false;speechState.offset=0;if(clear){speechState.view="full";speechState.chunks=[];speechState.index=0;speechState.wave=null;}updateSpeechPlayer();}
+function speechPrevious(){speechSeek(speechState.index-1);}
+function speechNext(){speechSeek(speechState.index+1);}
+function speechSeek(value,offset=0){
+  if(!speechState.chunks.length)return;
+  speechState.index=Math.max(0,Math.min(speechState.chunks.length-1,Number(value)||0));
+  speechState.offset=offset;
+  if(speechState.playing)return speakCurrentChunk();
+  speechState.paused=true;
+  updateSpeechPlayer();
+}
+function speechJump(seconds){
+  // Browser voices expose word boundaries but no seekable audio timeline.
+  const positions=speechState.chunks.flatMap((chunk,index)=>
+    [...chunk.matchAll(/\S+/g)].map(word=>({index,offset:word.index}))
+  );
+  if(!positions.length)return;
+  const current=positions.findLastIndex(position=>position.index<speechState.index ||
+    (position.index===speechState.index && position.offset<=speechState.offset));
+  const words=Math.sign(seconds)*Math.round(Math.abs(seconds)*2.5*speechState.rate);
+  const target=positions[Math.max(0,Math.min(current+words,positions.length-1))];
+  speechSeek(target.index,target.offset);
+}
 function speechSetRate(value){speechState.rate=Number(value)||1;if(speechState.playing)speakCurrentChunk();}
 
 let originalShareWave;
