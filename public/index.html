@@ -772,10 +772,21 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
 .adaptive-suggestions.rail-dockward.above-reader .adaptive-suggestions-list { position:static; }
 .adaptive-suggestions.rail-dockward.above-reader.is-collapsed .adaptive-suggestions-list { visibility:hidden; }
 .adaptive-suggestions-close.next-wave-pull {
-  position:relative; width:36px; min-height:28px; flex-shrink:0; touch-action:none;
-  border:1px solid var(--dock-border); border-radius:10px 2px 2px 10px;
-  background:var(--bg-deep, #0d192a); cursor:ew-resize;
+  display:inline-flex; align-items:center; justify-content:center; gap:7px;
+  width:auto; min-height:32px; padding:0 11px; flex-shrink:0; touch-action:none;
+  margin-inline-end:-5px;
+  border:1px solid var(--lake-light); border-radius:12px 4px 4px 12px;
+  background:linear-gradient(115deg,#1b4166,#142743);
+  box-shadow:0 0 14px color-mix(in srgb,var(--lake-light) 52%,transparent);
+  color:#fff !important; text-shadow:none; cursor:ew-resize; animation:none;
 }
+.adaptive-suggestions-close.next-wave-pull:hover { background:#254e74; }
+.next-wave-pull[hidden], .next-wave-side-title[hidden] { display:none; }
+.next-wave-pull-label { font-size:10px; font-weight:800; letter-spacing:.065em; text-transform:uppercase; white-space:nowrap; }
+.next-wave-pull-arrow { color:var(--lake-light); font-size:18px; text-shadow:0 0 6px var(--lake-light); }
+.next-wave-settings { border-inline-start:2px solid var(--lake-light); padding-inline-start:10px; }
+.next-wave-settings .next-wave-options { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+.next-wave-settings .next-wave-options label { white-space:normal; }
 @media (max-width:768px){
   .adaptive-suggestions-list { touch-action:pan-x; overscroll-behavior-x:contain; }
   .adaptive-suggestion { max-width:min(280px, 76vw); }
@@ -1679,8 +1690,8 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
           <button class="adaptive-suggestions-close" onclick="toggleAdaptiveSuggestions()" aria-label="Collapse suggestions" aria-expanded="true">⌄</button>
           <span class="adaptive-suggestions-title">Swipe / Double-click</span>
           <button class="adaptive-suggestions-close" onclick="toggleAdaptiveSuggestions()" aria-label="Collapse suggestions" aria-expanded="true">⌄</button>
-          <span class="adaptive-suggestions-title">Suggested next waves</span>
-          <button type="button" class="adaptive-suggestions-close next-wave-pull" onclick="toggleAdaptiveSuggestions()" aria-label="Toggle suggested next waves" aria-controls="adaptiveSuggestionsList" aria-expanded="true">⌄</button>
+          <span class="adaptive-suggestions-title next-wave-side-title" hidden>Suggested next waves</span>
+          <button type="button" class="adaptive-suggestions-close next-wave-pull" onclick="toggleAdaptiveSuggestions()" aria-label="Toggle suggested next waves" aria-controls="adaptiveSuggestionsList" aria-expanded="true"><span class="next-wave-pull-label">Next Waves</span><span class="next-wave-pull-arrow" aria-hidden="true">⌄</span></button>
         </div>
         <div class="adaptive-suggestions-list" id="adaptiveSuggestionsList"></div>
       </section>
@@ -1809,6 +1820,26 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
   </div>
   <div class="depths-content">
     <div id="depthsSettingsView">
+    <div class="depths-section crew-modal-field next-wave-settings">
+      <h4>✨ Next Waves</h4>
+      <div class="next-wave-options">
+        <div>
+          <label for="railSwipeMode">Opening direction</label>
+          <select id="railSwipeMode" onchange="saveRailSwipeMode()">
+            <option value="up">Upward</option>
+            <option value="down">Downward</option>
+          </select>
+        </div>
+        <div>
+          <label for="nextWavePullTab">Glowing side tab</label>
+          <select id="nextWavePullTab" onchange="saveRailSwipeMode()">
+            <option value="on">On</option>
+            <option value="off">Off</option>
+          </select>
+        </div>
+      </div>
+      <div class="mode-continuity">Tap the tab or pull left to open. Next Waves stay above the voice reader.</div>
+    </div>
     <div class="depths-profile" onclick="document.getElementById('profilePicInput').click()">
       <div class="depths-profile-pic" id="depthsProfilePic">🪶</div>
       <div class="depths-profile-name" id="depthsProfileName">Guest</div>
@@ -1822,14 +1853,6 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
     <div class="depths-section crew-modal-field">
       <label for="myChatAliases">My Chat Names / Handles</label>
       <input id="myChatAliases" type="text" placeholder="User, Ronnie, Ron" onchange="saveMyChatAliases()">
-    </div>
-    <div class="depths-section crew-modal-field">
-      <label for="railSwipeMode">Suggested Next Waves direction</label>
-      <select id="railSwipeMode" onchange="saveRailSwipeMode()">
-        <option value="up">Expand upward to cover the chat thread</option>
-        <option value="down">Expand downward to cover the shore controls</option>
-      </select>
-      <div class="mode-continuity">Tap the glowing right tab or pull it left. When reading aloud, the waves stay above the player.</div>
     </div>
     <div class="depths-section crew-modal-field">
       <label for="responseLanguage">Response language &amp; spelling</label>
@@ -3044,11 +3067,15 @@ function renderAdaptiveSuggestions() {
   const down=panel.classList.contains('rail-dockward');
   const arrow=(collapsed===down)?'⌄':'⌃';
   panel.querySelectorAll('.adaptive-suggestions-close').forEach(toggle=>{
-    toggle.textContent=arrow;
+    const icon=toggle.querySelector('.next-wave-pull-arrow') || toggle;
+    icon.textContent=arrow;
     toggle.setAttribute('aria-expanded',String(!collapsed));
     toggle.setAttribute('aria-label',collapsed?'Expand suggested next waves':'Collapse suggested next waves');
   });
-  panel.querySelector('.next-wave-pull').title=collapsed?'Pull left or click to expand Next Waves':'Push right or click to collapse Next Waves';
+  const tab=panel.querySelector('.next-wave-pull');
+  tab.hidden=localStorage.getItem(storageKey('nextWavePullTab'))==='off';
+  panel.querySelector('.next-wave-side-title').hidden=!tab.hidden;
+  tab.title=collapsed?'Pull left or tap to expand Next Waves':'Push right or tap to collapse Next Waves';
   if(!suggestions.length)return;
   suggestions.forEach((suggestion,index)=>{
     const item=document.createElement('div');item.className='adaptive-suggestion';
@@ -3383,8 +3410,20 @@ function saveResponseLanguage() {
   catch { showToast('Language updated for this visit, but could not be saved on this device.'); }
   showToast(currentUser.responseLanguage==='auto'?'Language set to Auto.':'Response language updated.');
 }
-function saveRailSwipeMode(){localStorage.setItem(storageKey('railSwipeMode'),document.getElementById('railSwipeMode').value);renderAdaptiveSuggestions();}
-function loadRailSwipeMode(){const el=document.getElementById('railSwipeMode');if(!el)return;let mode=localStorage.getItem(storageKey('railSwipeMode'));if(mode==='normal')mode='up';if(mode==='reverse')mode='down';if(!['up','down'].includes(mode))mode=window.innerWidth>768?'down':'up';el.value=mode;localStorage.setItem(storageKey('railSwipeMode'),mode);}
+function saveRailSwipeMode(){
+  localStorage.setItem(storageKey('railSwipeMode'),document.getElementById('railSwipeMode').value);
+  localStorage.setItem(storageKey('nextWavePullTab'),document.getElementById('nextWavePullTab').value);
+  renderAdaptiveSuggestions();
+}
+function loadRailSwipeMode(){
+  let mode=localStorage.getItem(storageKey('railSwipeMode'));
+  if(mode==='normal')mode='up';
+  if(mode==='reverse')mode='down';
+  if(!['up','down'].includes(mode))mode=window.innerWidth>768?'down':'up';
+  document.getElementById('railSwipeMode').value=mode;
+  document.getElementById('nextWavePullTab').value=localStorage.getItem(storageKey('nextWavePullTab'))==='off'?'off':'on';
+  localStorage.setItem(storageKey('railSwipeMode'),mode);
+}
 
 async function loadBackendStatus() {
   const modelInfo = document.getElementById('backendModelInfo');
