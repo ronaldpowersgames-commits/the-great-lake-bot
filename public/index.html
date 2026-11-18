@@ -784,16 +784,26 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
 .next-wave-pull[hidden], .next-wave-side-title[hidden] { display:none; }
 .next-wave-pull-label { font-size:10px; font-weight:800; letter-spacing:.065em; text-transform:uppercase; white-space:nowrap; }
 .next-wave-pull-arrow { color:var(--lake-light); font-size:18px; text-shadow:0 0 6px var(--lake-light); }
+.adaptive-suggestions.is-collapsed .next-wave-pull-label { display:none; }
+.adaptive-suggestions.is-collapsed .next-wave-pull { min-width:36px; }
 .next-wave-settings { border-inline-start:2px solid var(--lake-light); padding-inline-start:10px; }
 .next-wave-settings .next-wave-options { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
 .next-wave-settings .next-wave-options label { white-space:normal; }
 @media (max-width:768px){
-  .adaptive-suggestions-list { touch-action:pan-x; overscroll-behavior-x:contain; }
+  .adaptive-suggestions, .adaptive-suggestions.rail-dockward.above-reader,
+  .adaptive-suggestions.rail-dockward:not(.is-collapsed) {
+    position:relative; bottom:auto; right:auto; width:100%; max-width:100%; align-self:stretch;
+  }
+  .adaptive-suggestions:not(.rail-dockward):not(.is-collapsed) { flex-direction:column-reverse; }
+  .adaptive-suggestions.is-collapsed .adaptive-suggestions-head { width:100%; margin-inline:0; }
+  .adaptive-suggestions-head:has(.next-wave-pull:not([hidden])) { justify-content:flex-end; }
+  .adaptive-suggestions-head:has(.next-wave-pull:not([hidden])) > :not(.next-wave-pull) { display:none; }
+  .adaptive-suggestions-list { justify-content:start; touch-action:pan-x; overscroll-behavior-x:contain; }
+  .adaptive-suggestions.is-collapsed .adaptive-suggestions-list { display:none; }
+  .adaptive-suggestions.rail-dockward .adaptive-suggestions-list { position:static; }
   .adaptive-suggestion { max-width:min(280px, 76vw); }
   .adaptive-suggestion-main { white-space:normal; overflow-wrap:anywhere; }
   .adaptive-suggestions-close { min-height:32px; min-width:32px; }
-  .adaptive-suggestions.rail-dockward:not(.is-collapsed) { position:relative; bottom:auto; right:auto; align-self:flex-end; }
-  .adaptive-suggestions.rail-dockward:not(.is-collapsed) .adaptive-suggestions-list { position:static; }
 }
 .suggestions-top-row {
   display: flex; align-items: center; gap: 6px;
@@ -2125,6 +2135,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
     <pre id="shareWaveText" tabindex="0"></pre>
     <menu>
       <button type="button" onclick="shareOriginalWave()" data-primary>Share text</button>
+      <button type="button" onclick="openWaveShareImage()">Share as image</button>
       <button type="button" onclick="copyOriginalWave()">Copy text</button>
       <button type="button" onclick="exportOriginalWaveText()">Export .txt</button>
       <button>Close</button>
@@ -3068,7 +3079,7 @@ function renderAdaptiveSuggestions() {
   const arrow=(collapsed===down)?'⌄':'⌃';
   panel.querySelectorAll('.adaptive-suggestions-close').forEach(toggle=>{
     const icon=toggle.querySelector('.next-wave-pull-arrow') || toggle;
-    icon.textContent=arrow;
+    icon.textContent=collapsed && icon!==toggle?'<':arrow;
     toggle.setAttribute('aria-expanded',String(!collapsed));
     toggle.setAttribute('aria-label',collapsed?'Expand suggested next waves':'Collapse suggested next waves');
   });
@@ -7030,10 +7041,9 @@ function speechJump(seconds){
 }
 function speechSetRate(value){speechState.rate=Number(value)||1;if(speechState.playing)speakCurrentChunk();}
 
-let originalShareWave;
+let originalShareMessage='';
 function originalWaveShareText(){
-  const message=formatSharedWaveText(messageActionText(originalShareWave));
-  return `🌊 A Wave from The Great Lake\n\n${message}\n\nCreate your own Tide:\n${LAKE_PUBLIC_URL}`;
+  return `🌊 A Wave from The Great Lake\n\n${originalShareMessage}\n\nCreate your own Tide:\n${LAKE_PUBLIC_URL}`;
 }
 function formatSharedWaveText(value){
   return String(value||'').replace(/\r\n?/g,'\n')
@@ -7049,7 +7059,7 @@ function formatSharedWaveText(value){
     .replace(/\n{3,}/g,'\n\n').trim();
 }
 function shareMessage(waveEl){
-  originalShareWave=waveEl;
+  originalShareMessage=formatSharedWaveText(messageActionText(waveEl));
   document.getElementById('shareWaveText').textContent=originalWaveShareText();
   document.getElementById('shareWaveDialog').showModal();
 }
@@ -7064,9 +7074,80 @@ function exportOriginalWaveText(){
   link.href=URL.createObjectURL(new Blob([text],{type:'text/plain'}));link.download=LakeExportNames.artifact('shared-wave-'+currentExportTitle(),'txt');link.click();
   setTimeout(()=>URL.revokeObjectURL(link.href),1000);
 }
-function openWaveShareImage(){
-  document.getElementById('shareWaveDialog').close();
-  postFromWave(originalShareWave);
+function drawWaveShareImage(message){
+  const canvas=document.createElement('canvas');
+  canvas.width=1080;
+  const ctx=canvas.getContext('2d');
+  const width=canvas.width, margin=88, inset=36, leading=57;
+  const textWidth=width-2*(margin+inset);
+  const bodyFont='500 40px system-ui, sans-serif';
+  ctx.font=bodyFont;
+  const excerpt=message.slice(0,12000);
+  const lines=excerpt.split('\n').flatMap(line=>line.trim()?wrapCanvasText(ctx,line,textWidth,Infinity):['']);
+  const visible=lines.slice(0,29);
+  const clipped=excerpt.length<message.length || visible.length<lines.length;
+  if(clipped){
+    while(visible[visible.length-1]==='')visible.pop();
+    visible.push('…');
+  }
+  canvas.height=Math.max(1350, 496+visible.length*leading);
+  const height=canvas.height;
+  const background=ctx.createLinearGradient(0,0,width,height);
+  background.addColorStop(0,'#071626');
+  background.addColorStop(.58,'#102e49');
+  background.addColorStop(1,'#0c7399');
+  ctx.fillStyle=background;
+  ctx.fillRect(0,0,width,height);
+  ctx.strokeStyle='rgba(134,219,255,.16)';
+  ctx.lineWidth=2;
+  for(let ring=0;ring<7;ring++){
+    ctx.beginPath();
+    ctx.ellipse(width*.79,height*.69,140+ring*108,44+ring*35,-.15,0,Math.PI*2);
+    ctx.stroke();
+  }
+  drawLakeCardMark(ctx,margin,80,68);
+  ctx.fillStyle='#f0faff';
+  ctx.font='800 38px system-ui, sans-serif';
+  ctx.fillText('THE GREAT LAKE',margin+90,115);
+  ctx.fillStyle='#9edcf5';
+  ctx.font='600 20px system-ui, sans-serif';
+  ctx.fillText('CALM SURFACE · DEEP INTELLIGENCE',margin+90,143);
+  const blockHeight=visible.length*leading+72;
+  const top=Math.max(225,(height-170-blockHeight+178)/2);
+  drawLakeRoundRect(ctx,margin,top,width-margin*2,blockHeight,25,'rgba(6,24,42,.78)','rgba(145,219,255,.25)');
+  ctx.fillStyle='#edf8ff';
+  ctx.font=bodyFont;
+  visible.forEach((line,index)=>ctx.fillText(line,margin+inset,top+66+index*leading,textWidth));
+  ctx.fillStyle='#9edcf5';
+  ctx.font='700 22px system-ui, sans-serif';
+  ctx.fillText(clipped?'MESSAGE EXCERPT · JUMP INTO THE LAKE':'JUMP INTO THE LAKE',margin,height-120);
+  ctx.fillStyle='#f0faff';
+  ctx.font='700 29px system-ui, sans-serif';
+  ctx.fillText('🔗 '+new URL(LAKE_PUBLIC_URL).host,margin,height-75);
+  return canvas.toDataURL('image/png');
+}
+async function openWaveShareImage(){
+  if(!originalShareMessage){showToast('This Wave has no text to share as an image.');return;}
+  try {
+    const imageUrl=drawWaveShareImage(originalShareMessage);
+    const filename=LakeExportNames.artifact('shared-wave','png');
+    if(navigator.share && navigator.canShare){
+      const bytes=Uint8Array.from(atob(imageUrl.split(',')[1]),character=>character.charCodeAt(0));
+      const file=new File([bytes],filename,{type:'image/png'});
+      const share={title:'A Wave from The Great Lake',files:[file],url:LAKE_PUBLIC_URL};
+      if(navigator.canShare(share)){
+        try{await navigator.share(share);return;}
+        catch(error){if(error.name==='AbortError')return;}
+      }
+    }
+    const link=document.createElement('a');
+    link.href=imageUrl;
+    link.download=filename;
+    link.click();
+    showToast('Lake image downloaded.');
+  } catch {
+    showToast('Could not create a Lake image. You can still share the text.');
+  }
 }
 function messageSource(waveEl){return {sessionId:currentSessionId,role:waveEl.classList.contains('lake-wave')?'assistant':'user',time:waveEl.querySelector('.wave-time')?.textContent||'',content:canonicalMessageText(waveEl)};}
 function jumpToMessageTop(waveEl){waveEl?.scrollIntoView({behavior:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});}

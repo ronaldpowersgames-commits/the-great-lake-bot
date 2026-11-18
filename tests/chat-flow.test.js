@@ -215,7 +215,10 @@ Not every resistance is a warning.
   assert.match(html,/🧰 Tools ▾/);
   assert.match(html,/Post Imagery · prototype/);
   assert.doesNotMatch(html,/postCardsTab'\)\.hidden=false/);
-  assert.doesNotMatch(html,/onclick="openWaveShareImage\(\)"/);
+  assert.match(html,/onclick="openWaveShareImage\(\)">Share as image/);
+  const waveImageShare=html.slice(html.indexOf('async function openWaveShareImage()'),html.indexOf('function messageSource('));
+  assert.match(waveImageShare,/drawWaveShareImage\(originalShareMessage\)/);
+  assert.doesNotMatch(waveImageShare,/postFromWave|postCardEditor/);
 });
 
 test('rename is a real reserved command with Hotkey and persistent title execution',()=>{
