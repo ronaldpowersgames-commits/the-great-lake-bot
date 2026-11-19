@@ -1300,6 +1300,8 @@ button.depths-option { width:100%; text-align:start; font-family:inherit; backgr
 #shareExcerptList input[type="checkbox"] { width:auto; flex:none; margin-top:3px; }
 #shareExcerptList textarea { width:100%; min-height:5em; margin-top:8px; padding:8px; resize:vertical; color:var(--text-primary); background:var(--lake-deep); border:1px solid var(--dock-border); border-radius:8px; font:inherit; }
 #shareExcerptResult a { color:var(--lake-light); overflow-wrap:anywhere; }
+.excerpt-actions { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+.excerpt-actions button:disabled { opacity:.48; cursor:default; }
 .lake-share-dialog menu { position:sticky; bottom:-22px; z-index:2; display:grid; grid-template-columns:minmax(0,1fr) auto; gap:9px; padding:16px 0 22px; margin:12px 0 -22px; background:linear-gradient(180deg,transparent 0,#07131f 28%); }
 .lake-share-dialog #shareSaveCard { grid-column:1/-1; }
 .lake-share-platforms { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; padding:0; margin:12px 0 0; }
@@ -2168,6 +2170,11 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
     <div id="shareExcerptPicker" hidden>
       <div id="shareExcerptList" aria-label="Messages to share"></div>
       <p id="shareExcerptCount" role="status"></p>
+      <div class="excerpt-actions" aria-label="Selected excerpt actions" role="group">
+        <button type="button" data-excerpt-action onclick="startTideFromExcerpts()">Start new Tide</button>
+        <button type="button" data-excerpt-action onclick="copySelectedExcerpts()">Copy text</button>
+        <button type="button" data-excerpt-action onclick="downloadSelectedExcerpts()">Download .txt</button>
+      </div>
     </div>
     <div id="sharePassphraseRow" hidden>
       <label for="sharePassphrase">Optional passphrase</label>
@@ -2179,6 +2186,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
       <p><a id="shareExcerptLink" target="_blank" rel="noopener noreferrer"></a></p>
       <button type="button" onclick="copyExcerptLink()">Copy link</button>
       <button type="button" id="sendExcerptLink" onclick="sendExcerptLink()">Share link</button>
+      <button type="button" onclick="editExcerptSelection()">Back to selection</button>
     </div>
     <div class="lake-share-platforms" id="sharePlatforms" hidden>
       <button type="button" onclick="shareLakeCard('instagram')">📸 Instagram</button>
@@ -6575,7 +6583,7 @@ function configureShareDialog(mode,wave=null,card=null){
   const isMessage=mode==='message',isSession=mode==='session',isExcerpt=mode==='excerpt';
   document.getElementById('lakeShareTitle').textContent=isExcerpt?'✂️ Share Tide excerpts':isMessage?'🌊 Share this wave':isSession?'🔗 Share this Tide':'🌊 Invite someone into The Lake';
   document.getElementById('lakeShareDescription').textContent=isExcerpt
-    ? 'Select messages and trim them to the passages you want. Only the checked text goes into the read-only link.'
+    ? 'Select messages, then keep them whole or trim them to the passages you want. Start a new Tide, copy or download the text, or create a read-only link.'
     : isMessage?'Turn this message into a Lake-styled post or story, with an invitation back to The Lake.':isSession?'Create a read-only link for this conversation. Add a passphrase if you want one more layer of privacy.':'Share a general invitation to jump into The Lake and start a new Tide.';
   const picker=document.getElementById('shareExcerptPicker');
   picker.hidden=!isExcerpt;
@@ -6631,13 +6639,83 @@ function shareableTideMessage(message){
     !['total','both'].includes(message.snapshot?.scope) &&
     !['snapshot-total','snapshot-both'].includes(message.action);
 }
-function selectedTideExcerpts(){
+function selectedTideExcerpts({local=false}={}){
   return (lakeShareState.excerpts || []).filter(row=>row.check.checked && row.editor.value.trim())
-    .map(({message,editor})=>({
-      role:message.role, time:message.time, mood:message.mood,
-      ...(message.mirror?{mirror:{mode:message.mirror.mode}}:{}),
-      content:editor.value.trim()
-    }));
+    .map(({message,editor,original})=>{
+      const unchanged=editor.value===original;
+      return {
+        role:message.role, time:message.time, mood:message.mood,
+        ...(message.mirror?{mirror:{mode:message.mirror.mode,simulated:message.role==='assistant'}}:{}),
+        content:unchanged?message.content:editor.value,
+        ...(local && unchanged && message.attachments?.length?{attachments:structuredClone(message.attachments)}:{})
+      };
+    });
+}
+function updateExcerptActions(busy=false){
+  const count=(lakeShareState.excerpts || []).filter(row=>row.check.checked && row.editor.value.trim()).length;
+  const disabled=busy || count===0;
+  document.getElementById('sharePrimary').disabled=disabled;
+  document.querySelectorAll('[data-excerpt-action]').forEach(button=>{button.disabled=disabled;});
+  document.getElementById('shareExcerptCount').textContent=count
+    ? count+' selected. Links share text only. A new Tide keeps attachments on whole messages.'
+    : 'Select at least one excerpt.';
+}
+function excerptText(){
+  return selectedTideExcerpts().map(message=>[
+    [message.role==='user'?'You':'The Lake',message.time].filter(Boolean).join(' · '),message.content
+  ].join('\n')).join('\n\n');
+}
+async function copySelectedExcerpts(){
+  const text=excerptText();
+  if(!text)return;
+  try{await navigator.clipboard.writeText(text);showToast('Selected excerpts copied.');}
+  catch{showToast('Could not copy the excerpts. Use Download .txt.');}
+}
+function downloadSelectedExcerpts(){
+  const text=excerptText();
+  if(!text)return;
+  const url=URL.createObjectURL(new Blob([text],{type:'text/plain;charset=utf-8'}));
+  const link=document.createElement('a');
+  link.href=url;
+  link.download=LakeExportNames.artifact('tide-excerpts','txt');
+  link.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+async function startTideFromExcerpts(){
+  const history=selectedTideExcerpts({local:true});
+  if(!history.length)return;
+  const source=lakeShareState.excerpts;
+  const originId=currentSessionId;
+  const key=storageKey('sessions');
+  const title=currentExportTitle().trim().slice(0,53);
+  const session={
+    id:'session_'+crypto.randomUUID(),
+    name:title?title+' · excerpts':'Tide excerpts', nameSource:'manual',
+    preview:history[0].content.slice(0,60), time:new Date().toISOString(),
+    mood:currentMood, history
+  };
+  const dialog=document.getElementById('lakeShareDialog');
+  const picker=document.getElementById('shareExcerptPicker');
+  updateExcerptActions(true);
+  picker.inert=true;
+  try{
+    await sessionLoadPromise;
+    await LakeSessionStore.upsert(key,session);
+    if(key!==storageKey('sessions'))return;
+    allSessions.unshift(session);
+    if(dialog.open && lakeShareState.excerpts===source && currentSessionId===originId){
+      dialog.close();
+      loadTide(session.id);
+      showToast('New Tide started from your selected excerpts.');
+    }else renderTides();
+  }catch{
+    if(dialog.open && lakeShareState.excerpts===source)document.getElementById('shareExcerptCount').textContent='Could not save the new Tide. Your selection is still here.';
+  }finally{
+    if(dialog.open && lakeShareState.excerpts===source){
+      picker.inert=false;
+      document.querySelectorAll('[data-excerpt-action], #sharePrimary').forEach(button=>{button.disabled=false;});
+    }
+  }
 }
 function openExcerptShare(){
   const messages=currentSessionId ? chatHistory.filter(message=>shareableTideMessage(message) && message.content?.trim()) : [];
@@ -6645,13 +6723,6 @@ function openExcerptShare(){
   openSessionShare('excerpt');
   if(lakeShareState.mode!=='excerpt')return;
   const list=document.getElementById('shareExcerptList');
-  const primary=document.getElementById('sharePrimary');
-  const count=document.getElementById('shareExcerptCount');
-  const update=()=>{
-    const selected=selectedTideExcerpts().length;
-    primary.disabled=selected===0;
-    count.textContent=selected?selected+' selected. Attachments stay private.':'Select at least one excerpt. Attachments stay private.';
-  };
   list.replaceChildren();
   lakeShareState.excerpts=messages.map(message=>{
     const row=document.createElement('article');
@@ -6665,13 +6736,23 @@ function openExcerptShare(){
     editor.hidden=true;
     editor.value=message.content;
     editor.setAttribute('aria-label','Text to share from '+speaker+(message.time?' at '+message.time:''));
-    editor.addEventListener('input',update);
-    check.addEventListener('change',()=>{editor.hidden=!check.checked;update();});
+    editor.addEventListener('input',()=>updateExcerptActions());
+    check.addEventListener('change',()=>{editor.hidden=!check.checked;updateExcerptActions();});
     row.append(label,editor);
     list.append(row);
-    return {message,editor,check};
+    return {message,editor,check,original:editor.value};
   });
-  update();
+  updateExcerptActions();
+}
+function editExcerptSelection(){
+  document.getElementById('shareExcerptLink').removeAttribute('href');
+  document.getElementById('shareExcerptLink').textContent='';
+  document.getElementById('shareExcerptResult').hidden=true;
+  document.getElementById('shareExcerptPicker').hidden=false;
+  document.getElementById('sharePassphraseRow').hidden=false;
+  document.getElementById('sharePrimary').hidden=false;
+  updateExcerptActions();
+  document.querySelector('#shareExcerptList input:checked')?.focus();
 }
 async function createTideShareLink(session,passphrase){
   const res=await fetch('/share',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session,passphrase})});
@@ -6685,7 +6766,7 @@ async function createExcerptShare(){
   const dialog=document.getElementById('lakeShareDialog');
   const primary=document.getElementById('sharePrimary');
   if(!history.length || primary.disabled)return;
-  primary.disabled=true;
+  updateExcerptActions(true);
   const picker=document.getElementById('shareExcerptPicker');
   const passphrase=sharePassphraseInput.value;
   picker.inert=true;
@@ -6707,7 +6788,11 @@ async function createExcerptShare(){
   }catch(error){
     if(dialog.open && lakeShareState.excerpts===source)document.getElementById('shareExcerptCount').textContent=error.message;
   }finally{
-    if(lakeShareState.excerpts===source){picker.inert=false;sharePassphraseInput.disabled=false;primary.disabled=false;}
+    if(lakeShareState.excerpts===source){
+      picker.inert=false;
+      sharePassphraseInput.disabled=false;
+      document.querySelectorAll('[data-excerpt-action], #sharePrimary').forEach(button=>{button.disabled=false;});
+    }
   }
 }
 async function copyExcerptLink(){
