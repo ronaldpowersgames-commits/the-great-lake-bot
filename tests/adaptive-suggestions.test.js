@@ -64,7 +64,7 @@ test('adaptive UI uses compact mood-colored chips and remains dismissible',()=>{
   assert.match(html,/id="adaptiveSuggestions"/);
   assert.match(html,/dismissAdaptiveSuggestions\(\)/);
   assert.match(html,/toggleAdaptiveSuggestions\(\)/);
-  assert.match(html,/align-items: flex-end/);
+  assert.match(html,/grid-template-columns:minmax\(0,1fr\) auto; align-items:center/);
   assert.match(html,/border-radius: 999px/);
   assert.match(html,/color-mix\(in srgb, var\(--lake-glow\) 28%, #102137\)/);
   assert.match(html,/grid-template-rows: repeat\(2/);
@@ -97,7 +97,8 @@ test('mobile message controls stay compact, discoverable and replay from the sta
   assert.match(html,/add\('↗ Share'/);
   assert.doesNotMatch(html,/add\('🖼 Post'/);
   assert.doesNotMatch(html,/const more=add\('•••'/);
-  assert.match(html,/adaptive-suggestions\.is-collapsed \.adaptive-suggestions-head \{ width:calc\(100% - 12px\); margin-inline:6px; \}/);
+  assert.match(html,/adaptive-suggestions\.is-collapsed:not\(\.is-pulling\) \{\s*position:absolute/);
+  assert.match(html,/adaptive-suggestions\.is-collapsed:not\(\.is-pulling\) \.adaptive-suggestions-list \{ display:none; \}/);
   assert.match(html,/const sectionAt=line=>\/\^#\{2,4\}\\s\+\.\+\//);
   assert.doesNotMatch(html,/sectionAt=line=>[^\n]+\\d\+/);
 });
