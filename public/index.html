@@ -1742,10 +1742,10 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
       <button type="button" id="speechRestore" class="quick-action-btn" onclick="setSpeechView('full')" hidden>🔊 Show audio controls</button>
       <div class="speech-player" id="speechPlayer" role="region" aria-label="Read aloud controls">
         <button type="button" id="speechPrevious" onclick="speechSkipMessage(-1)" aria-label="Previous Wave message" title="Previous Wave message">⏮</button>
-        <button type="button" data-speech-jump="-5" aria-label="Back about five seconds. Hold to slow down." title="Tap: back ≈5s · Hold: −0.25× · Tap then hold: −0.50×">−5s</button>
+        <button type="button" data-speech-jump="-5" aria-label="Back about five seconds. Hold to temporarily slow down." title="Tap: back ≈5s · While held: −0.25× · Tap then hold: −0.50×">−5s</button>
         <button type="button" id="speechPlayPause" onclick="speechPlayPause()" title="Play or pause">▶</button>
         <button type="button" onclick="stopSpeech()" title="Stop">⏹</button>
-        <button type="button" data-speech-jump="5" aria-label="Forward about five seconds. Hold to speed up." title="Tap: forward ≈5s · Hold: +0.25× · Tap then hold: +0.50×">+5s</button>
+        <button type="button" data-speech-jump="5" aria-label="Forward about five seconds. Hold to temporarily speed up." title="Tap: forward ≈5s · While held: +0.25× · Tap then hold: +0.50×">+5s</button>
         <button type="button" id="speechNext" onclick="speechSkipMessage(1)" aria-label="Next Wave message" title="Next Wave message">⏭</button>
         <input class="speech-player-progress" id="speechProgress" type="range" min="0" max="1" value="0" oninput="speechSeek(this.value)" aria-label="Reading progress">
         <span class="speech-player-status" id="speechStatus">Ready</span>
@@ -7297,7 +7297,7 @@ document.addEventListener('keydown',event=>{if(event.key==='Escape'&&closeTopmos
 // BUBBLE ACTIONS
 // ============================================
 let currentUtterance = null;
-const speechState={wave:null,waves:[],chunks:[],index:0,offset:0,rate:1,paused:false,playing:false,view:"full"};
+const speechState={wave:null,waves:[],chunks:[],index:0,offset:0,rate:1,holdRateDelta:0,paused:false,playing:false,view:"full"};
 let speechStartTimer;
 let speechOwnsMediaSession=false;
 globalThis.pendingReplySource=null;globalThis.pendingBranchSource=null;
@@ -7458,7 +7458,8 @@ function speakCurrentChunk(){
   if(!speechState.chunks.length)return;
   const offset=speechState.offset;
   const remaining=speechState.chunks[speechState.index].slice(offset);
-  const utterance=lakeSpeechOutput.utterance(remaining,speechState.rate,speechState.voice);
+  const rate=effectiveSpeechRate();
+  const utterance=lakeSpeechOutput.utterance(remaining,rate,speechState.voice);
   currentUtterance=utterance;
   speechState.playing=true;
   speechState.paused=false;
@@ -7483,7 +7484,7 @@ function speakCurrentChunk(){
   utterance.onstart=()=>{
     if(currentUtterance!==utterance)return;
     clearTimeout(speechStartTimer);
-    const estimatedMs=remaining.trim().split(/\s+/).length*400/speechState.rate;
+    const estimatedMs=remaining.trim().split(/\s+/).length*400/rate;
     speechStartTimer=setTimeout(checkStall,Math.max(25000,estimatedMs*3+5000));
     speechState.wave?.classList.add('speaking');
   };
@@ -7597,7 +7598,7 @@ function speechJump(seconds){
   if(!positions.length)return;
   const current=positions.findLastIndex(position=>position.index<speechState.index ||
     (position.index===speechState.index && position.offset<=speechState.offset));
-  const words=Math.sign(seconds)*Math.round(Math.abs(seconds)*2.5*speechState.rate);
+  const words=Math.sign(seconds)*Math.round(Math.abs(seconds)*2.5*effectiveSpeechRate());
   const target=positions[Math.max(0,Math.min(current+words,positions.length-1))];
   speechSeek(target.index,target.offset);
 }
@@ -7627,11 +7628,30 @@ function speechSetRate(value){
   try{localStorage.setItem(storageKey('speechRate'),String(rate));}catch{}
   if(speechState.playing)speakCurrentChunk();
 }
+function effectiveSpeechRate(){
+  return Math.max(.25,Math.min(3,Math.round((speechState.rate+speechState.holdRateDelta)*100)/100));
+}
+function setSpeechHoldRate(delta){
+  const before=effectiveSpeechRate();
+  speechState.holdRateDelta=delta;
+  if(speechState.playing && effectiveSpeechRate()!==before)speakCurrentChunk();
+}
 function bindSpeechJumpButton(button){
   const seconds=Number(button.dataset.speechJump);
   const doubleTapMs=280,holdMs=420;
-  let tapTimer,holdTimer,pointer=null,taps=0,suppressClick=false;
+  let tapTimer,holdTimer,pointer=null,taps=0,suppressClick=false,holding=false;
   const clear=()=>{clearTimeout(tapTimer);clearTimeout(holdTimer);tapTimer=holdTimer=null;taps=0;};
+  const releaseSpeed=()=>{
+    if(!holding)return;
+    holding=false;
+    setSpeechHoldRate(0);
+  };
+  const cancelGesture=()=>{
+    if(pointer===null)return;
+    pointer=null;
+    clear();
+    releaseSpeed();
+  };
   button.addEventListener('pointerdown',event=>{
     if(event.button!==0 || !event.isPrimary)return;
     suppressClick=true;
@@ -7643,14 +7663,14 @@ function bindSpeechJumpButton(button){
       holdTimer=null;
       const delta=Math.sign(seconds)*(taps>0?.5:.25);
       taps=0;
-      speechSetRate(speechState.rate+delta);
-      showToast('Reading speed: '+speechState.rate+'×');
+      holding=true;
+      setSpeechHoldRate(delta);
     },holdMs);
   });
   button.addEventListener('pointerup',event=>{
     if(event.pointerId!==pointer)return;
     pointer=null;
-    if(holdTimer===null)return;
+    if(holding){releaseSpeed();return;}
     clearTimeout(holdTimer);
     holdTimer=null;
     taps++;
@@ -7660,7 +7680,9 @@ function bindSpeechJumpButton(button){
       if(count)speechJump(seconds*count);
     },doubleTapMs);
   });
-  button.addEventListener('pointercancel',()=>{pointer=null;clear();});
+  button.addEventListener('pointercancel',cancelGesture);
+  button.addEventListener('lostpointercapture',cancelGesture);
+  window.addEventListener('blur',cancelGesture);
   button.addEventListener('contextmenu',event=>event.preventDefault());
   button.addEventListener('click',event=>{
     if(event.detail && suppressClick){suppressClick=false;return;}
