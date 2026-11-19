@@ -803,6 +803,11 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
   .adaptive-suggestions:not(.is-collapsed) .next-wave-pull-label { display:none; }
   .adaptive-suggestions .next-wave-pull { min-width:36px; margin-inline-end:0; }
   .adaptive-suggestions.is-collapsed .adaptive-suggestions-head { width:100%; margin-inline:0; }
+  .adaptive-suggestions.is-collapsed,
+  .adaptive-suggestions.rail-dockward.above-reader.is-collapsed {
+    position:absolute; bottom:100%; right:10px; width:auto; padding:0; background:none;
+  }
+  .adaptive-suggestions.is-collapsed .adaptive-suggestions-head:not(:has(.next-wave-pull:not([hidden]))) > :not(:first-child) { display:none; }
   .adaptive-suggestions-head:has(.next-wave-pull:not([hidden])) { justify-content:flex-end; }
   .adaptive-suggestions-head:has(.next-wave-pull:not([hidden])) > :not(.next-wave-pull) { display:none; }
   .adaptive-suggestions-list { justify-content:start; touch-action:pan-x; overscroll-behavior-x:contain; }
@@ -2180,6 +2185,10 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
       <label for="sharePassphrase">Optional passphrase</label>
       <input id="sharePassphrase" type="text" maxlength="200" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="Leave blank for anyone with the link">
       <button type="button" id="sharePassphraseVisibility" aria-controls="sharePassphrase" onclick="toggleSharePassphrase()">Hide passphrase</button>
+      <label id="sharePromptRow" hidden>Optional unlock question or note
+        <input id="shareUnlockPrompt" type="text" maxlength="180" autocomplete="off" placeholder="For example, Who’s the man?" aria-describedby="sharePromptHint">
+      </label>
+      <p id="sharePromptHint" hidden>Anyone with the link can see this before unlocking. Keep the passphrase separate.</p>
     </div>
     <div id="shareExcerptResult" hidden>
       <p id="shareExcerptResultNote"></p>
@@ -6589,6 +6598,8 @@ function configureShareDialog(mode,wave=null,card=null){
   picker.hidden=!isExcerpt;
   picker.inert=false;
   document.getElementById('sharePassphrase').disabled=false;
+  document.getElementById('shareUnlockPrompt').disabled=false;
+  document.getElementById('shareUnlockPrompt').value='';
   document.getElementById('shareExcerptResult').hidden=true;
   document.getElementById('sharePassphraseRow').hidden=!isSession&&!isExcerpt;
   document.getElementById('shareFormatRow').hidden=!isMessage;
@@ -6607,6 +6618,13 @@ function configureShareDialog(mode,wave=null,card=null){
 function shareLakeInvite(){configureShareDialog('invite');}
 const sharePassphraseInput = document.getElementById('sharePassphrase');
 const sharePassphraseVisibility = document.getElementById('sharePassphraseVisibility');
+const shareUnlockPrompt = document.getElementById('shareUnlockPrompt');
+function updateSharePromptVisibility(){
+  const hidden=!sharePassphraseInput.value.trim();
+  document.getElementById('sharePromptRow').hidden=hidden;
+  document.getElementById('sharePromptHint').hidden=hidden;
+}
+sharePassphraseInput.addEventListener('input',updateSharePromptVisibility);
 
 function setSharePassphraseHidden(hidden) {
   sharePassphraseInput.type = hidden ? 'password' : 'text';
@@ -6621,6 +6639,8 @@ function toggleSharePassphrase() {
 
 document.getElementById('lakeShareDialog').addEventListener('close', () => {
   sharePassphraseInput.value = '';
+  shareUnlockPrompt.value='';
+  updateSharePromptVisibility();
   lakeShareState.excerpts=null;
   document.getElementById('shareExcerptList').replaceChildren();
   document.getElementById('shareExcerptLink').removeAttribute('href');
@@ -6632,6 +6652,7 @@ function openSessionShare(mode='session'){
   try { hidden = localStorage.getItem(storageKey('sharePassphraseHidden')) === 'true'; } catch {}
   setSharePassphraseHidden(hidden);
   sharePassphraseInput.value = '';
+  updateSharePromptVisibility();
   configureShareDialog(mode);
 }
 function shareableTideMessage(message){
@@ -6755,7 +6776,8 @@ function editExcerptSelection(){
   document.querySelector('#shareExcerptList input:checked')?.focus();
 }
 async function createTideShareLink(session,passphrase){
-  const res=await fetch('/share',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session,passphrase})});
+  const unlockPrompt=passphrase.trim()?shareUnlockPrompt.value.trim():'';
+  const res=await fetch('/share',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session,passphrase,unlockPrompt})});
   const data=await res.json();
   if(!res.ok || !data.id)throw new Error(data.error || 'Could not create a Tide link.');
   return {url:window.location.origin+'/shared.html?id='+encodeURIComponent(data.id),protected:data.protected};
@@ -6771,6 +6793,7 @@ async function createExcerptShare(){
   const passphrase=sharePassphraseInput.value;
   picker.inert=true;
   sharePassphraseInput.disabled=true;
+  shareUnlockPrompt.disabled=true;
   try{
     const link=await createTideShareLink({name:'Shared Tide excerpts',history},passphrase);
     if(!dialog.open || lakeShareState.excerpts!==source)return;
@@ -6783,6 +6806,8 @@ async function createExcerptShare(){
     document.getElementById('sharePassphraseRow').hidden=true;
     document.getElementById('shareExcerptResult').hidden=false;
     sharePassphraseInput.value='';
+    shareUnlockPrompt.value='';
+    updateSharePromptVisibility();
     primary.hidden=true;
     anchor.focus();
   }catch(error){
@@ -6791,6 +6816,7 @@ async function createExcerptShare(){
     if(lakeShareState.excerpts===source){
       picker.inert=false;
       sharePassphraseInput.disabled=false;
+      shareUnlockPrompt.disabled=false;
       document.querySelectorAll('[data-excerpt-action], #sharePrimary').forEach(button=>{button.disabled=false;});
     }
   }

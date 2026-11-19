@@ -72,6 +72,7 @@ router.post('/', express.json(), (req, res) => {
     sharedSessions.set(id, {
       session,
       protection,
+      unlockPrompt: protection && typeof req.body.unlockPrompt==='string' ? req.body.unlockPrompt.trim().slice(0,180) : '',
       expires,
       createdAt: new Date().toISOString()
     });
@@ -107,7 +108,10 @@ router.get('/:id', (req, res) => {
   }
 
   if (entry.protection && !passphraseMatches(req.get('x-lake-passphrase'), entry.protection)) {
-    return res.status(401).json({ error: 'Passphrase required', protected: true });
+    return res.status(401).json({
+      error: 'Passphrase required', protected: true,
+      ...(entry.unlockPrompt?{unlockPrompt:entry.unlockPrompt}:{})
+    });
   }
 
   res.json({ session: entry.session });

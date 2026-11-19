@@ -36,11 +36,30 @@
     .attachment, time { color: #a3b5c4; font-size: 12px; }
     time { display: block; margin-top: 3px; }
     a { color: #7fc7fa; }
+    #unlockDialog { width:min(420px,calc(100% - 32px)); padding:22px; border:1px solid #35546e; border-radius:16px; background:#102337; color:#e5eef6; }
+    #unlockDialog::backdrop { background:rgba(5,13,24,.75); }
+    #unlockDialog h2 { margin:0 0 12px; color:#7fc7fa; font-size:20px; }
+    #unlockPrompt { margin:0 0 14px; overflow-wrap:anywhere; white-space:pre-wrap; }
+    #unlockDialog label { display:grid; gap:6px; }
+    #unlockDialog input, #unlockDialog button { min-height:42px; padding:8px 12px; border:1px solid #35546e; border-radius:8px; font:inherit; color:inherit; background:#142e49; }
+    #unlockDialog button { cursor:pointer; }
+    #unlockDialog button[type="submit"] { background:#176096; }
+    #unlockError { display:block; color:#ffd1bb; margin:8px 0; }
   </style>
 </head>
 <body>
   <header><div><strong>The Great Lake</strong><span>Shared conversation · Read only</span></div></header>
   <main><h1 id="title">Loading conversation...</h1><div id="messages" aria-live="polite"></div></main>
+  <dialog id="unlockDialog" aria-labelledby="unlockTitle" aria-describedby="unlockPrompt">
+    <form id="unlockForm">
+      <h2 id="unlockTitle">Unlock this Lake share</h2>
+      <p id="unlockPrompt">Enter the passphrase from the sender.</p>
+      <label>Passphrase <input id="unlockPassphrase" type="password" maxlength="200" required autocomplete="off" autofocus></label>
+      <span id="unlockError" role="status"></span>
+      <button type="submit">Unlock</button>
+      <button type="button" id="cancelUnlock">Cancel</button>
+    </form>
+  </dialog>
   <script src="/export-names.js"></script>
   <script src="/shared-view.js"></script>
 </body>

@@ -2,17 +2,56 @@
 (async function () {
   const title = document.getElementById('title');
   const messages = document.getElementById('messages');
+  function unlockShare(url, prompt) {
+    const dialog = document.getElementById('unlockDialog');
+    const form = document.getElementById('unlockForm');
+    const input = document.getElementById('unlockPassphrase');
+    const error = document.getElementById('unlockError');
+    const submit = form.querySelector('button[type="submit"]');
+    document.getElementById('unlockPrompt').textContent = prompt || 'Enter the passphrase from the sender.';
+    title.textContent = 'Passphrase-protected conversation';
+    return new Promise((resolve, reject) => {
+      dialog.addEventListener('close', () => {
+        input.value = '';
+        reject(new Error('A passphrase is required to open this shared conversation.'));
+      }, { once: true });
+      document.getElementById('cancelUnlock').onclick = () => dialog.close();
+      form.onsubmit = async event => {
+        event.preventDefault();
+        const passphrase = input.value.trim();
+        if (!passphrase || submit.disabled) return;
+        submit.disabled = true;
+        error.textContent = '';
+        try {
+          const response = await fetch(url, {
+            cache: 'no-store', credentials: 'omit', headers: { 'x-lake-passphrase': passphrase }
+          });
+          if (!dialog.open) return;
+          if (response.status === 401) {
+            error.textContent = 'That passphrase didn’t unlock this share. Try again.';
+            input.select();
+            input.focus();
+            return;
+          }
+          resolve(response);
+          dialog.close();
+        } catch {
+          if (dialog.open) error.textContent = 'Could not check the passphrase. Please try again.';
+        } finally {
+          submit.disabled = false;
+        }
+      };
+      dialog.showModal();
+    });
+  }
   try {
     const id = new URLSearchParams(location.search).get('id');
     if (!id) throw new Error('This share link is missing its conversation ID.');
-    let response = await fetch('/share/' + encodeURIComponent(id), { cache: 'no-store', credentials: 'omit' });
+    const url = '/share/' + encodeURIComponent(id);
+    let response = await fetch(url, { cache: 'no-store', credentials: 'omit' });
     if (response.status === 401) {
-      const passphrase = prompt('This Lake share is protected. Enter its passphrase:');
-      if (passphrase === null) throw new Error('A passphrase is required to open this shared conversation.');
-      response = await fetch('/share/' + encodeURIComponent(id), {
-        cache: 'no-store', credentials: 'omit', headers: { 'x-lake-passphrase': passphrase }
-      });
-      if (response.status === 401) throw new Error('That passphrase did not unlock this shared conversation.');
+      const locked = await response.json().catch(() => ({}));
+      response = await unlockShare(url, locked.unlockPrompt);
     }
     if (!response.ok) throw new Error('This shared conversation is unavailable or has expired.');
     const { session } = await response.json();
