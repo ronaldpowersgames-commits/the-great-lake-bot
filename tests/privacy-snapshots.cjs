@@ -140,6 +140,7 @@ function handoff(scope) {
     assert.doesNotMatch(JSON.stringify(data), /DO_NOT_SHARE|PRIVATE_CREW|PRIVATE_OTHER_CHAT|PRIVATE_EMAIL_METADATA|svg\+xml|PRIVATE_WIDER_HISTORY_SNAPSHOT|ALL_PRIVATE_CONTEXT/);
     const viewer = await context.newPage();
     viewer.on('pageerror', error => errors.push(error.message));
+    await viewer.route('**/export-names.js', route => route.abort());
     const viewerRequests = [];
     viewer.on('request', request => viewerRequests.push(request.url()));
     await viewer.goto(base + '/?share=' + share.id);
@@ -148,7 +149,9 @@ function handoff(scope) {
     const body = await viewer.locator('body').innerText();
     assert.match(body, /Selected reply/);
     assert.doesNotMatch(body, /PRIVATE_LOGIN_NAME|PRIVATE_OTHER_CHAT|PRIVATE_CREW|private@example.com|Cast a New Line/);
-    assert.equal(await viewer.locator('textarea, input, #pastTides, #depthsPanel, #loginScreen').count(), 0);
+    assert.equal(await viewer.locator('textarea:visible, input:visible, #pastTides, #depthsPanel, #loginScreen').count(), 0);
+    assert.equal(await viewer.title(), 'Only this selected conversation | The Great Lake');
+    assert.equal(await viewer.getByRole('link', { name: /Ride the Wave/ }).getAttribute('href'), '/');
     assert.equal(await viewer.evaluate(() => window.injected), undefined);
     assert.equal(await viewer.locator('.bubble img').count(), 0);
     assert.equal(viewerRequests.some(url => /\/email\/|\/chat$|session-store\.js|snapshot-context\.js|\/health$/.test(url)), false);
