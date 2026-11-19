@@ -22,9 +22,9 @@
   function aiHandoff(scope,value,title){return artifact('ai-handoff-'+slug(scope,'chat')+(title?'-'+title:''),'json',value);}
   function fullBackup(value){return artifact('full-backup','json',value);}
   function sourceStem(source){return slug(String(source||'').replace(/^the-great-lake-transcript-/i,''),'transcript');}
-  function transcriptPart(source,index,total){
+  function transcriptPart(source,index,total,extension='txt'){
     const digits=Math.max(3,String(total).length);
-    return `${PREFIX}-transcript-${sourceStem(source)}-part-${String(index).padStart(digits,'0')}-of-${String(total).padStart(digits,'0')}.txt`;
+    return `${PREFIX}-transcript-${sourceStem(source)}-part-${String(index).padStart(digits,'0')}-of-${String(total).padStart(digits,'0')}.${slug(extension,'txt')}`;
   }
   function transcriptIndex(source){return `${PREFIX}-transcript-${sourceStem(source)}-part-index.json`;}
   function transcriptZip(source){return `${PREFIX}-transcript-${sourceStem(source)}-parts.zip`;}

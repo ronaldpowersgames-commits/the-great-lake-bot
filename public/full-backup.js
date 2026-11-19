@@ -57,14 +57,19 @@
     }catch{throw new Error('Incorrect password or damaged backup.');}
   }
   function snapshotPdf(text){
-    const ascii=String(text).normalize('NFKD').replace(/[\u0300-\u036f]/g,'')
-      .replace(/[‘’]/g,"'").replace(/[“”]/g,'"').replace(/[–—]/g,'-').replace(/[^\x20-\x7e\n]/g,'?');
-    const lines=ascii.split('\n').flatMap(line=>line.match(/.{1,88}(?:\s|$)|.{1,88}/g)||['']);
-    const objects=['<< /Type /Catalog /Pages 2 0 R >>','', '<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>'];
+    const printable=String(text).normalize('NFC').replace(/\r\n?/g,'\n').replace(/\t/g,'    ')
+      .replace(/[‘’]/g,"'").replace(/[“”]/g,'"').replace(/[–—]/g,'-')
+      .replace(/[^\x20-\x7e\xa0-\xff\n]/gu,'?');
+    const lines=printable.split('\n').flatMap(line=>line.match(/.{1,88}(?:\s|$)|.{1,88}/g)||['']);
+    const objects=['<< /Type /Catalog /Pages 2 0 R >>','', '<< /Type /Font /Subtype /Type1 /BaseFont /Courier /Encoding /WinAnsiEncoding >>'];
     const pages=[];
-    const escape=value=>value.replace(/[\\()]/g,'\\$&');
+    // Use ASCII PDF escapes so string offsets remain byte offsets in the ZIP.
+    const escape=value=>value.replace(/[\\()\xa0-\xff]/g,character=>
+      character.charCodeAt(0)>=160?'\\'+character.charCodeAt(0).toString(8).padStart(3,'0'):'\\'+character);
     for(let index=0;index<lines.length;index+=49){
-      const stream=['BT /F1 10 Tf 13 TL 36 750 Td',...lines.slice(index,index+49).map(line=>'('+escape(line)+') Tj T*'),'ET'].join('\n');
+      const pageLabel='Page '+(pages.length+1)+' of '+Math.ceil(lines.length/49);
+      const stream=['BT /F1 10 Tf 13 TL 36 750 Td',...lines.slice(index,index+49).map(line=>'('+escape(line)+') Tj T*'),'ET',
+        'BT /F1 9 Tf 36 42 Td ('+pageLabel+') Tj ET'].join('\n');
       const page=objects.length+1;
       pages.push(page+' 0 R');
       objects.push('<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents '+(page+1)+' 0 R >>');

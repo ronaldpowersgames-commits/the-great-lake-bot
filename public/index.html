@@ -1947,11 +1947,12 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
         <button type="button" class="depths-option" onclick="undoPortableLake()">Undo last Lake import</button>
       </details>
       <button type="button" class="depths-option" onclick="exportFullBackup(true)">🔒 Export password-protected backup</button>
-      <button type="button" class="depths-option backup-drop-target" onclick="document.getElementById('lakeBackupInput').click()" ondragover="allowBackupDrop(event)" ondragleave="this.classList.remove('drop-ready')" ondrop="dropBackupFile(event, restoreLakeBackup)">⬆ Restore backup or add transcript<small>Choose or drop a ZIP, JSON, PDF, TXT, or LOG file</small></button>
-      <div class="mode-continuity">For transcript analysis, try a searchable PDF when layout or speaker labels matter. For exact text in numbered parts, use Transcript Splitter.</div>
+      <button type="button" id="restoreBackupButton" class="depths-option backup-drop-target" onclick="document.getElementById('lakeBackupInput').click()" ondragover="allowBackupDrop(event)" ondragleave="this.classList.remove('drop-ready')" ondrop="dropBackupFile(event, restoreLakeBackup)">⬆ Restore Lake backup<small>Choose the whole backup ZIP. No need to unzip.</small></button>
+      <p class="mode-continuity">Already unzipped? Choose <strong>lake-backup.json</strong>. For a password-protected backup, choose the encrypted JSON. To analyze a transcript PDF, attach it to a chat with <strong>Drop a Chat-Log</strong>.</p>
+      <p class="mode-continuity" id="backupRestoreStatus" role="status"></p>
       <button type="button" class="depths-option" onclick="protectLakeStorage()">🛡 Protect browser storage</button>
-      <input type="file" id="lakeBackupInput" accept=".json,.zip,.pdf,.txt,.log,application/json,application/zip,application/pdf,text/plain" hidden onchange="restoreLakeBackup(this.files[0]);this.value=''">
-      <button class="depths-option backup-export" onclick="exportFullBackup()" title="Private backup ZIP with original stored attachments, split transcripts and the latest Total Snapshot">⬇ Export Backup ZIP</button>
+      <input type="file" id="lakeBackupInput" accept=".json,.zip,application/json,application/zip" hidden onchange="restoreLakeBackup(this.files[0]);this.value=''">
+      <button class="depths-option backup-export" onclick="exportFullBackup()" title="Private backup ZIP with original stored attachments, PDF transcripts and the latest Total Snapshot">⬇ Export Backup ZIP</button>
       <a class="depths-option" href="/transcript-splitter.html" target="_blank" rel="noopener" style="display:block;text-decoration:none">📄 Transcript Splitter</a>
       <a class="depths-option" href="/meeting-studio/" target="_blank" rel="noopener" style="display:block;text-decoration:none">🎙️ Meeting Studio</a>
     </div>
@@ -5252,12 +5253,28 @@ async function exportFullBackup(encrypted=false) {
     }else{
       const zip=new JSZip();
       zip.file('lake-backup.json',JSON.stringify(backup));
+      zip.file('START-HERE.txt',[
+        'RESTORE YOUR GREAT LAKE BACKUP',
+        '',
+        'Open The Lake and go to Settings > Backup & Data > Restore Lake backup.',
+        'Choose the entire backup ZIP. If you already extracted it, choose lake-backup.json.',
+        'Review the restore prompt. Tides with matching IDs are kept as they already exist on this device.',
+        '',
+        'PDFs in transcripts/ are for reading or attaching to a chat with Drop a Chat-Log.',
+        'The PDF font may substitute characters. The JSON backup keeps the original text and stored attachments.',
+        'This ZIP contains private data. Keep it somewhere safe.'
+      ].join('\n'));
       const size=LakeTranscriptSplitter.validSize(localStorage.getItem('lakeTranscriptPartSize'));
       backup.data.conversations.forEach((session,index)=>{
         const folder='transcripts/'+String(index+1).padStart(3,'0')+'-'+LakeExportNames.slug(session.name,'tide');
         const transcript=session.history.map(message=>(message.role==='user'?'You':'The Lake')+' · '+(message.time||'')+'\n'+message.content).join('\n\n');
         const parts=LakeTranscriptSplitter.split(transcript,size);
-        parts.forEach((part,number)=>zip.file(folder+'/'+LakeExportNames.transcriptPart(session.name,number+1,parts.length),part.text));
+        parts.forEach((part,number)=>{
+          const filename=LakeExportNames.transcriptPart(session.name,number+1,parts.length,'pdf');
+          const heading=session.name || 'Untitled Tide';
+          const title=parts.length>1?heading+' - Part '+(number+1)+' of '+parts.length:heading;
+          zip.file(folder+'/'+filename,LakeFullBackup.snapshotPdf(title+'\n\n'+part.text));
+        });
       });
       const latest=backup.data.conversations.flatMap(session=>session.history)
         .filter(message=>['total','both'].includes(message.snapshot?.scope) && message.content)
@@ -5291,37 +5308,46 @@ async function protectLakeStorage(){
 }
 
 async function restoreLakeBackup(file){
-  if(!file || waveInFlight)return;
-  const addTranscript=async()=>{
-    await addSelectedFiles([file]);
-    document.getElementById('depthsPanel').classList.remove('show');
-  };
-  if(/\.(pdf|txt|log)$/i.test(file.name)){
-    await addTranscript();
+  if(!file)return;
+  const button=document.getElementById('restoreBackupButton');
+  const status=document.getElementById('backupRestoreStatus');
+  if(button.disabled)return;
+  if(waveInFlight){status.textContent='Wait for the current reply, then restore the backup.';return;}
+  if(!/\.(zip|json)$/i.test(file.name)){
+    status.textContent='Choose a Lake backup ZIP or JSON. To analyze a transcript, attach it to a chat.';
     return;
   }
   const key=storageKey('sessions');
+  button.disabled=true;
+  status.textContent='Reading your backup… Large files may take a moment.';
   try{
     let raw;
     if(/\.zip$/i.test(file.name)){
       const zip=await JSZip.loadAsync(await file.arrayBuffer());
       const entry=zip.file('lake-backup.json');
-      if(!entry){await addTranscript();return;}
+      if(!entry)throw new Error('This ZIP has no lake-backup.json. Choose the original Lake backup ZIP or its extracted JSON.');
       raw=await entry.async('string');
     }else raw=await file.text();
     let backup=JSON.parse(raw);
     if(backup?.format_version==='lake-encrypted-backup/1'){
       const password=prompt('Enter your backup password');
-      if(password===null)return;
+      if(password===null){status.textContent='Restore canceled.';return;}
       backup=await LakeFullBackup.decrypt(backup,password);
     }
     const data=LakeFullBackup.validate(backup);
     await sessionLoadPromise;
-    if(key!==storageKey('sessions') || waveInFlight)return;
-    if(!confirm('Restore '+data.conversations.length+' Tides? Existing chats and preferences will be kept.'))return;
+    if(key!==storageKey('sessions') || waveInFlight)throw new Error('The active chat or profile changed. Try restoring again once it is ready.');
     const existing=await LakeSessionStore.read(key);
     const ids=new Set(existing.map(item=>item.id));
-    const merged=[...existing,...data.conversations.filter(item=>!ids.has(item.id))];
+    const incoming=data.conversations.filter(item=>!ids.has(item.id));
+    const skipped=data.conversations.length-incoming.length;
+    if(!confirm('Restore this Lake backup?\n'+incoming.length+' Tides to add. '+skipped+' already on this device and will be kept.')){
+      status.textContent='Restore canceled.';
+      return;
+    }
+    if(key!==storageKey('sessions') || waveInFlight)throw new Error('The active chat or profile changed. Try restoring again once it is ready.');
+    status.textContent='Restoring your backup on this device…';
+    const merged=[...existing,...incoming];
     const folders=LakeOrganization.cleanFolders([...tideFolders,...(Array.isArray(data.folders)?data.folders:[])]);
     await LakeSessionStore.write(storageKey('folders'),folders);
     await LakeSessionStore.write(key,merged);
@@ -5338,8 +5364,12 @@ async function restoreLakeBackup(file){
     }
     renderCrew();
     renderTides();
-    showToast('Backup restored. Existing Tides were kept.');
-  }catch(error){showToast('Backup restore failed: '+error.message);}
+    status.textContent='Backup restored. '+incoming.length+' Tides added. '+skipped+' existing Tides kept.';
+    showToast(status.textContent);
+  }catch(error){
+    status.textContent='Backup restore failed. '+(error instanceof SyntaxError?'Choose the original Lake backup ZIP or its lake-backup.json.':error.message);
+    showToast(status.textContent);
+  }finally{button.disabled=false;}
 }
 
 function downloadLatestSnapshot() {

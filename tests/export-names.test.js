@@ -20,6 +20,7 @@ test('Lake exports share one clear sortable naming convention',()=>{
 
 test('transcript split files preserve a safe source label under the Lake prefix',()=>{
   assert.equal(names.transcriptPart('Weekly UA Sync.txt',1,3),'the-great-lake-transcript-weekly-ua-sync-part-001-of-003.txt');
+  assert.equal(names.transcriptPart('Weekly UA Sync.txt',1,3,'pdf'),'the-great-lake-transcript-weekly-ua-sync-part-001-of-003.pdf');
   assert.equal(names.transcriptIndex('Weekly UA Sync.txt'),'the-great-lake-transcript-weekly-ua-sync-part-index.json');
   assert.equal(names.transcriptZip('Weekly UA Sync.txt'),'the-great-lake-transcript-weekly-ua-sync-parts.zip');
   assert.equal(names.transcriptPart('../../🔥.txt',2,12),'the-great-lake-transcript-transcript-part-002-of-012.txt');
