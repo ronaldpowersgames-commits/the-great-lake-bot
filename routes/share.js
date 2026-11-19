@@ -47,7 +47,36 @@ router.use((_req, res, next) => {
   next();
 });
 
-// In-memory store — shared sessions live for 7 days
+const DAY_MS = 86400000;
+const DURATION_MS = { seconds:1000, minutes:60000, hours:3600000, days:DAY_MS, weeks:7*DAY_MS };
+function shareExpiration(expiration, now) {
+  if (expiration == null) return null;
+  let timestamp;
+  if (expiration.mode === 'date') {
+    timestamp = expiration.timestamp;
+  } else if (expiration.mode === 'duration') {
+    const { amount, unit } = expiration;
+    if (!Number.isSafeInteger(amount) || amount < 1) throw new Error('Enter a positive whole number for expiration.');
+    if (Object.hasOwn(DURATION_MS, unit)) {
+      timestamp = now + amount * DURATION_MS[unit];
+    } else if (unit === 'months' || unit === 'years') {
+      const date = new Date(now);
+      const day = date.getUTCDate();
+      date.setUTCDate(1);
+      date.setUTCMonth(date.getUTCMonth() + amount * (unit === 'years' ? 12 : 1));
+      const last = new Date(date);
+      last.setUTCMonth(last.getUTCMonth() + 1, 0);
+      date.setUTCDate(Math.min(day, last.getUTCDate()));
+      timestamp = date.getTime();
+    }
+  }
+  if (!Number.isSafeInteger(timestamp) || timestamp <= now || timestamp > 8640000000000000) {
+    throw new Error('Choose a valid expiration in the future.');
+  }
+  return timestamp;
+}
+
+// Shared sessions are stored in memory and also disappear on restart.
 const sharedSessions = new Map();
 
 // ============================================
@@ -63,7 +92,9 @@ router.post('/', express.json(), (req, res) => {
     // Generate unique ID
     const id = randomBytes(24).toString('hex');
 
-    const expires = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7 days
+    let expires;
+    try { expires = shareExpiration(req.body.expiration, Date.now()); }
+    catch (error) { return res.status(400).json({ error: error.message }); }
 
     let protection;
     try { protection = protectPassphrase(req.body.passphrase); }
@@ -79,11 +110,11 @@ router.post('/', express.json(), (req, res) => {
 
     // Clean up expired sessions
     for (const [key, val] of sharedSessions.entries()) {
-      if (val.expires < Date.now()) sharedSessions.delete(key);
+      if (val.expires !== null && val.expires <= Date.now()) sharedSessions.delete(key);
     }
 
     console.log(`🔗 Session shared: ${id}`);
-    res.json({ id, url: `/shared.html?id=${id}`, protected: Boolean(protection) });
+    res.json({ id, url: `/shared.html?id=${id}`, protected: Boolean(protection), expiresAt:expires });
 
   } catch (err) {
     console.error('Share save error:', err);
@@ -102,7 +133,7 @@ router.get('/:id', (req, res) => {
     return res.status(404).json({ error: 'Session not found or expired' });
   }
 
-  if (entry.expires < Date.now()) {
+  if (entry.expires !== null && entry.expires <= Date.now()) {
     sharedSessions.delete(req.params.id);
     return res.status(404).json({ error: 'Session has expired' });
   }

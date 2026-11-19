@@ -36,6 +36,9 @@
     .attachment, time { color: #a3b5c4; font-size: 12px; }
     time { display: block; margin-top: 3px; }
     a { color: #7fc7fa; }
+    .ride-wave-footer { margin-top:28px; padding-top:20px; border-top:1px solid #294154; }
+    .ride-wave-footer a { display:inline-block; padding:11px 18px; border-radius:10px; background:#1975ad; border:1px solid #4aaeea; color:white; font-weight:750; text-decoration:none; }
+    .ride-wave-footer a:hover { background:#205e92; }
     #unlockDialog { width:min(420px,calc(100% - 32px)); padding:22px; border:1px solid #35546e; border-radius:16px; background:#102337; color:#e5eef6; }
     #unlockDialog::backdrop { background:rgba(5,13,24,.75); }
     #unlockDialog h2 { margin:0 0 12px; color:#7fc7fa; font-size:20px; }
@@ -49,7 +52,11 @@
 </head>
 <body>
   <header><div><strong>The Great Lake</strong><span>Shared conversation · Read only</span></div></header>
-  <main><h1 id="title">Loading conversation...</h1><div id="messages" aria-live="polite"></div></main>
+  <main>
+    <h1 id="title">Loading conversation...</h1>
+    <div id="messages" aria-live="polite"></div>
+    <footer id="rideWaveFooter" class="ride-wave-footer" hidden><a href="/">🌊 Ride the Wave</a></footer>
+  </main>
   <dialog id="unlockDialog" aria-labelledby="unlockTitle" aria-describedby="unlockPrompt">
     <form id="unlockForm">
       <h2 id="unlockTitle">Unlock this Lake share</h2>

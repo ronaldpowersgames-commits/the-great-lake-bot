@@ -101,6 +101,7 @@
       }
       messages.appendChild(article);
     }
+    document.getElementById('rideWaveFooter').hidden = false;
   } catch (error) {
     title.textContent = 'Conversation unavailable';
     messages.textContent = error.message;

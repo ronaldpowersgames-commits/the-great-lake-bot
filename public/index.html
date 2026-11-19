@@ -1284,6 +1284,10 @@ button.depths-option { width:100%; text-align:start; font-family:inherit; backgr
 .lake-share-preview::before { content:'LIVE PREVIEW'; position:absolute; top:10px; left:12px; z-index:1; color:rgba(185,232,255,.62); font-size:8px; font-weight:800; letter-spacing:1.4px; }
 .lake-share-dialog label { display:grid; gap:6px; margin:13px 0; color:var(--text-secondary); font-size:11px; font-weight:700; letter-spacing:.35px; }
 .lake-share-dialog input,.lake-share-dialog select { width:100%; padding:10px 12px; border:1px solid var(--dock-border); border-radius:11px; background:#10263e; color:var(--text-primary); font:inherit; }
+#shareExpiration { margin-top:14px; color:var(--text-secondary); }
+#shareExpiration summary { width:fit-content; cursor:pointer; font-size:12px; }
+#shareExpiration input[type="checkbox"] { width:auto; }
+.share-expiry-duration { display:grid; grid-template-columns:1fr 2fr; gap:8px; }
 #shareExcerptList { max-height:36dvh; overflow-y:auto; overscroll-behavior:contain; }
 #shareExcerptList article { padding:8px 10px; border-bottom:1px solid var(--dock-border); }
 #shareExcerptList label { display:flex; align-items:flex-start; gap:8px; margin:0; font-size:13px; letter-spacing:0; overflow-wrap:anywhere; }
@@ -2175,6 +2179,28 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
       </label>
       <p id="sharePromptHint" hidden>Anyone with the link can see this before unlocking. Keep the passphrase separate.</p>
     </div>
+    <details id="shareExpiration" hidden>
+      <summary>Expiration · optional</summary>
+      <label><span><input type="checkbox" id="shareExpiryEnabled" onchange="updateShareExpiration()"> Set a custom expiration</span></label>
+      <div id="shareExpiryFields" hidden>
+        <label>Expire by
+          <select id="shareExpiryMode" onchange="updateShareExpiration()">
+            <option value="duration">Time after creating the link</option>
+            <option value="date">Calendar date</option>
+          </select>
+        </label>
+        <div class="share-expiry-duration" id="shareExpiryDuration">
+          <label>Amount <input type="number" id="shareExpiryAmount" min="1" step="1" inputmode="numeric" value="7"></label>
+          <label>Unit <select id="shareExpiryUnit">
+            <option>seconds</option><option>minutes</option><option>hours</option>
+            <option selected>days</option><option>weeks</option><option>months</option><option>years</option>
+          </select></label>
+        </div>
+        <label id="shareExpiryDateRow" hidden>Expires at the end of this day in your time zone
+          <input type="date" id="shareExpiryDate">
+        </label>
+      </div>
+    </details>
     <div id="shareExcerptResult" hidden>
       <p id="shareExcerptResultNote"></p>
       <p><a id="shareExcerptLink" target="_blank" rel="noopener noreferrer"></a></p>
@@ -6607,6 +6633,15 @@ function configureShareDialog(mode,wave=null,card=null){
   document.getElementById('shareUnlockPrompt').value='';
   document.getElementById('shareExcerptResult').hidden=true;
   document.getElementById('sharePassphraseRow').hidden=!isSession&&!isExcerpt;
+  const expiration=document.getElementById('shareExpiration');
+  expiration.hidden=!isSession&&!isExcerpt;
+  expiration.open=false;
+  document.getElementById('shareExpiryEnabled').checked=false;
+  document.getElementById('shareExpiryMode').value='duration';
+  document.getElementById('shareExpiryAmount').value='7';
+  document.getElementById('shareExpiryUnit').value='days';
+  document.getElementById('shareExpiryDate').value='';
+  updateShareExpiration();
   document.getElementById('shareFormatRow').hidden=!isMessage;
   document.getElementById('sharePlatforms').hidden=!isMessage;
   document.getElementById('shareCardPreview').hidden=!isMessage;
@@ -6776,16 +6811,42 @@ function editExcerptSelection(){
   document.getElementById('shareExcerptResult').hidden=true;
   document.getElementById('shareExcerptPicker').hidden=false;
   document.getElementById('sharePassphraseRow').hidden=false;
+  document.getElementById('shareExpiration').hidden=false;
   document.getElementById('sharePrimary').hidden=false;
   updateExcerptActions();
   document.querySelector('#shareExcerptList input:checked')?.focus();
 }
+function updateShareExpiration(){
+  const enabled=document.getElementById('shareExpiryEnabled').checked;
+  const byDate=document.getElementById('shareExpiryMode').value==='date';
+  document.getElementById('shareExpiryFields').hidden=!enabled;
+  document.getElementById('shareExpiryDuration').hidden=byDate;
+  document.getElementById('shareExpiryDateRow').hidden=!byDate;
+}
+function selectedShareExpiration(){
+  if(!document.getElementById('shareExpiryEnabled').checked)return;
+  if(document.getElementById('shareExpiryMode').value==='date'){
+    const day=document.getElementById('shareExpiryDate').value;
+    const timestamp=new Date(day+'T23:59:59.999').getTime();
+    if(!Number.isFinite(timestamp)||timestamp<=Date.now())throw new Error('Choose an expiration date in the future.');
+    return {mode:'date',timestamp};
+  }
+  const amount=document.getElementById('shareExpiryAmount').valueAsNumber;
+  if(!Number.isSafeInteger(amount)||amount<1)throw new Error('Enter a positive whole number for expiration.');
+  return {mode:'duration',amount,unit:document.getElementById('shareExpiryUnit').value};
+}
+function shareLinkLifetime(link){
+  return link.expiresAt
+    ? 'Link expires '+new Date(link.expiresAt).toLocaleString()+' or sooner if the server restarts.'
+    : 'No expiration date. The link stays active until the server restarts.';
+}
 async function createTideShareLink(session,passphrase){
   const unlockPrompt=passphrase.trim()?shareUnlockPrompt.value.trim():'';
-  const res=await fetch('/share',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session,passphrase,unlockPrompt})});
+  const expiration=selectedShareExpiration();
+  const res=await fetch('/share',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session,passphrase,unlockPrompt,expiration})});
   const data=await res.json();
   if(!res.ok || !data.id)throw new Error(data.error || 'Could not create a Tide link.');
-  return {url:window.location.origin+'/shared.html?id='+encodeURIComponent(data.id),protected:data.protected};
+  return {url:window.location.origin+'/shared.html?id='+encodeURIComponent(data.id),protected:data.protected,expiresAt:data.expiresAt};
 }
 async function createExcerptShare(){
   const history=selectedTideExcerpts();
@@ -6805,10 +6866,11 @@ async function createExcerptShare(){
     const anchor=document.getElementById('shareExcerptLink');
     anchor.href=link.url;
     anchor.textContent=link.url;
-    document.getElementById('shareExcerptResultNote').textContent=(link.protected?'Send the passphrase separately. ':'Anyone with the link can read these excerpts. ')+'Links last up to 7 days or until the server restarts.';
+    document.getElementById('shareExcerptResultNote').textContent=(link.protected?'Send the passphrase separately. ':'Anyone with the link can read these excerpts. ')+shareLinkLifetime(link);
     document.getElementById('sendExcerptLink').hidden=!navigator.share;
     picker.hidden=true;
     document.getElementById('sharePassphraseRow').hidden=true;
+    document.getElementById('shareExpiration').hidden=true;
     document.getElementById('shareExcerptResult').hidden=false;
     sharePassphraseInput.value='';
     shareUnlockPrompt.value='';
@@ -6849,8 +6911,11 @@ async function shareAsGroupSession(passphrase='') {
   if (!session) { alert('Session not found!'); return; }
   if (!confirm(`Share only this conversation? ${passphrase.trim()?'Recipients will need the passphrase.':'Anyone with the link can read it.'} Your profile, Crew, other chats and total-context snapshots are not included.`)) return;
   try {
+    const firstUserMessage=session.history.find(message=>message.role==='user' && shareableTideMessage(message))?.content || '';
+    const autoShortTitle=firstUserMessage.length>40 && session.name===firstUserMessage.slice(0,40)+'...';
     const shareSession = {
-      name: session.name, time: session.time,
+      name: autoShortTitle?firstUserMessage.split(/\r?\n/).find(line=>line.trim())?.trim() || session.name:session.name,
+      time: session.time,
       history: session.history.filter(shareableTideMessage).map(message => ({
         role: message.role, content: message.content, time: message.time, mood:message.mood,
         ...(message.mirror?{mirror:message.mirror}:{}),
@@ -6860,13 +6925,13 @@ async function shareAsGroupSession(passphrase='') {
     const data=await createTideShareLink(shareSession,passphrase);
     const shareUrl=data.url;
     if (navigator.share) {
-      await navigator.share({ title: '🌊 ' + (session.name || 'Lake Session'), text: `Read my Lake session${data.protected?' (passphrase protected)':''}:`, url: shareUrl });
+      await navigator.share({ title: '🌊 ' + (shareSession.name || 'Lake Session'), text: `Read my Lake session${data.protected?' (passphrase protected)':''}:`, url: shareUrl });
     } else {
       await navigator.clipboard.writeText(shareUrl);
-      alert(`🔗 Share link copied!\n\n${data.protected?'Send the passphrase separately.':'Anyone with this link can read only this conversation.'} Links last up to 7 days, or until the server restarts.`);
+      alert(`🔗 Share link copied!\n\n${data.protected?'Send the passphrase separately.':'Anyone with this link can read only this conversation.'} ${shareLinkLifetime(data)}`);
     }
     document.getElementById('lakeShareDialog').close();
-  } catch(err) { console.error('Share error:', err); alert('Could not create share link. Try again.'); }
+  } catch(err) { console.error('Share error:', err); alert(err.message || 'Could not create share link. Try again.'); }
   document.getElementById('shareMenu').style.display = 'none';
 }
 

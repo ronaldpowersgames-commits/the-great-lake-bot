@@ -55,7 +55,7 @@
   let shareUrl;
   copyLink.onclick = async () => {
     if (shareUrl) return copy(shareUrl, 'Transcript link');
-    if (!confirm('Create a read-only transcript link? Anyone with the link can read the shared text. Private account snapshots and attachments are excluded. The link lasts up to seven days or until the server restarts.')) return;
+    if (!confirm('Create a read-only transcript link? Anyone with the link can read the shared text. Private account snapshots and attachments are excluded. The link stays active until the server restarts.')) return;
     copyLink.disabled = true;
     try {
       const response = await fetch('/share', {
