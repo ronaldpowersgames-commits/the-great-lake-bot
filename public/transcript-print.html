@@ -11,7 +11,8 @@
     body{margin:0;background:var(--deep);color:var(--text);font-family:"Segoe UI",system-ui,sans-serif;line-height:1.55}
     main{width:min(980px,100%);margin:0 auto;padding:34px 28px 64px}
     .tools{position:sticky;top:0;z-index:2;display:flex;flex-wrap:wrap;gap:8px;padding:10px 0;background:linear-gradient(var(--deep) 72%,transparent)}
-    button{border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--text);padding:8px 14px;cursor:pointer;font:inherit}
+    button,.tools a{border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--text);padding:8px 14px;cursor:pointer;font:inherit;text-decoration:none}
+    .tools .ride-wave{background:#17679e;color:#fff;font-weight:700}
     [hidden]{display:none!important}
     button:disabled{opacity:.55;cursor:default}
     #share-pdf:not(:disabled){background:var(--glow);color:var(--deep);font-weight:700}
@@ -23,7 +24,16 @@
     .msg{margin:0 0 18px;break-inside:avoid-page}
     .sender{font-weight:750;font-size:12px;margin-bottom:5px;color:var(--glow)}
     .sender.user{color:var(--user)}
-    .text{margin:0;background:var(--surface);border:1px solid rgba(30,58,95,.65);padding:12px 16px;border-radius:10px;font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere}
+    .text{margin:0;background:var(--surface);border:1px solid rgba(30,58,95,.65);padding:12px 16px;border-radius:10px;font-size:14px;overflow-wrap:anywhere}
+    .text p,.text h2,.text h3,.text h4,.text ul,.text ol,.text pre,.text blockquote{margin:0 0 .6em}
+    .text :last-child{margin-bottom:0}
+    .text p,.text li,.text blockquote,.text pre{white-space:pre-wrap}
+    .text h2,.text h3,.text h4{color:var(--glow);line-height:1.25;break-after:avoid}
+    .text h2{font-size:1.36em}.text h3{font-size:1.2em}.text h4{font-size:1.07em}
+    .text ul,.text ol{padding-inline-start:1.5em}
+    .text .check-item{list-style:none}
+    .text hr{border:0;border-top:1px solid var(--line);margin:.8em 0}
+    .text blockquote,.text pre{border-inline-start:2px solid var(--line);padding-inline-start:.8em}
     .empty{padding:40px;text-align:center;color:var(--dim)}
     @media(max-width:600px){main{padding:18px 14px 42px}.text{font-size:13px;padding:10px 12px}h1{font-size:21px}}
     @media print{
@@ -34,6 +44,9 @@
       h1{color:#075985;border-color:#bae6fd}
       .meta{color:#526477}
       .sender{color:#075985}.sender.user{color:#1d4ed8}
+      .msg{break-inside:auto}
+      .sender{break-after:avoid}
+      .text h2,.text h3,.text h4{color:#075985}
       .text{background:#f5f9ff;border-color:#dbeafe;color:#172033}
     }
   </style>
@@ -48,6 +61,7 @@
       <button type="button" id="copy-link" hidden>Copy transcript link</button>
       <button type="button" id="download-pdf" disabled>Download PDF</button>
       <button type="button" onclick="window.print()">Print</button>
+      <a class="ride-wave" href="/" target="_blank" rel="noopener">🌊 Ride the Wave</a>
       <button type="button" onclick="window.close();if(history.length>1)history.back()">Close</button>
     </div>
     <p id="export-status" role="status"></p>

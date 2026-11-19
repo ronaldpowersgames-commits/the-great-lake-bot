@@ -920,6 +920,26 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
 }
 .lake-input:focus        { border-color: var(--lake-glow); box-shadow: 0 0 0 3px rgba(45,140,240,0.1); }
 .lake-input::placeholder { color: var(--text-dim); }
+.composer-emoji-toggle { display:none; }
+@media (min-width:769px) and (pointer:fine) {
+  .input-wrap .lake-input { padding-inline-end:44px; }
+  .composer-emoji-toggle {
+    display:grid; place-items:center; position:absolute; top:7px; right:8px;
+    width:30px; height:30px; border:0; border-radius:50%; background:transparent;
+    color:#a6b1be; font:20px system-ui,sans-serif; cursor:pointer;
+  }
+  .composer-emoji-toggle:hover,.composer-emoji-toggle[aria-expanded="true"] { background:#20364d; color:#eef5fa; }
+}
+#composerEmojiPicker {
+  inset:auto; margin:0; width:min(290px,calc(100vw - 24px)); padding:12px;
+  color:var(--text-primary); background:#10233a; border:1px solid var(--dock-border);
+  border-radius:12px; box-shadow:0 8px 24px #0008; overflow:auto;
+}
+#composerEmojiSearch { width:100%; padding:7px 9px; border:1px solid var(--dock-border); border-radius:8px; background:#0c192b; color:inherit; }
+#composerEmojiChoices { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; margin-top:8px; }
+#composerEmojiChoices button { min-height:32px; font-size:18px; color:inherit; background:none; border:0; border-radius:6px; cursor:pointer; }
+#composerEmojiChoices button:hover { background:#20364d; }
+#composerEmojiChoices p { grid-column:1/-1; padding:6px; font-size:12px; }
 
 /* ── SIDE BUTTONS (attach + mic stacked) ── */
 .side-buttons {
@@ -1803,6 +1823,11 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
             autocomplete="on" autocorrect="on" autocapitalize="sentences" spellcheck="true" inputmode="text"
             onkeydown="handleKey(event)"
             oninput="autoResize(this); updateComposerCommands(this)"></textarea>
+          <button type="button" class="composer-emoji-toggle" id="composerEmojiToggle" aria-label="Insert emoji" aria-expanded="false" aria-controls="composerEmojiPicker" title="Insert emoji">☺︎</button>
+          <div id="composerEmojiPicker" popover="auto" role="group" aria-label="Emoji picker">
+            <input type="search" id="composerEmojiSearch" aria-label="Search emojis" placeholder="Search emojis" autocomplete="off">
+            <div id="composerEmojiChoices"></div>
+          </div>
           <div id="composerCommands" class="composer-commands" hidden></div>
           <!-- Attach menu anchored to input-wrap -->
           <div style="position:relative">
@@ -6415,6 +6440,70 @@ function handleKey(e) {
 }
 let inputResizeFrame=0;
 function scheduleInputResize(el){cancelAnimationFrame(inputResizeFrame);inputResizeFrame=requestAnimationFrame(()=>autoResize(el));}
+function setupComposerEmojiPicker(){
+  const input=document.getElementById('lakeInput');
+  const toggle=document.getElementById('composerEmojiToggle');
+  const picker=document.getElementById('composerEmojiPicker');
+  const search=document.getElementById('composerEmojiSearch');
+  const choices=document.getElementById('composerEmojiChoices');
+  const emojis=[
+    ['😀','smile'],['😂','laugh tears'],['🤣','rofl'],['😊','blush'],['😉','wink'],['🤔','thinking'],['😎','cool sunglasses'],
+    ['❤️','heart love'],['💙','blue heart'],['👍','thumbsup yes'],['👀','eyes'],['🙏','thanks pray'],['👏','clap'],['🙌','celebrate'],
+    ['🔒','lock locked'],['🔓','unlock'],['🔥','fire'],['✨','sparkles'],['🌊','wave lake'],['💧','drop water'],['⚡','lightning'],
+    ['🎉','party tada'],['✅','check done'],['🎯','target'],['💡','idea bulb'],['🚀','rocket'],['💪','strong flex'],['📌','pin']
+  ];
+  if(typeof picker.showPopover!=='function'){toggle.hidden=true;return;}
+  let start=0,end=0,shortcode='';
+  function insert(symbol,names){
+    const from=shortcode && names.split(' ').includes(shortcode)
+      ? start-input.value.slice(0,start).match(/:[a-z0-9_+-]+:?$/i)?.[0].length : start;
+    input.setRangeText(symbol,Number.isFinite(from)?from:start,end,'end');
+    picker.hidePopover();
+    input.focus();
+    input.dispatchEvent(new Event('input',{bubbles:true}));
+  }
+  function render(){
+    const query=search.value.trim().toLowerCase().replace(/^:|:$/g,'');
+    choices.replaceChildren();
+    for(const [symbol,names] of emojis){
+      if(query && !names.includes(query) && symbol!==query)continue;
+      const option=document.createElement('button');
+      option.type='button';
+      option.textContent=symbol;
+      option.title=names;
+      option.setAttribute('aria-label',names);
+      option.onclick=()=>insert(symbol,names);
+      choices.append(option);
+    }
+    if(!choices.childElementCount){
+      const empty=document.createElement('p');
+      empty.textContent='No matching emojis.';
+      choices.append(empty);
+    }
+  }
+  toggle.onclick=()=>{
+    if(picker.matches(':popover-open')){picker.hidePopover();return;}
+    start=input.selectionStart;
+    end=input.selectionEnd;
+    shortcode=start===end?(input.value.slice(0,start).match(/:([a-z0-9_+-]+):?$/i)?.[1] || '').toLowerCase():'';
+    search.value=shortcode;
+    render();
+    const rect=toggle.getBoundingClientRect();
+    picker.style.right=Math.max(12,window.innerWidth-rect.right)+'px';
+    picker.style.bottom=Math.max(12,window.innerHeight-rect.top+6)+'px';
+    picker.style.maxHeight=Math.max(80,rect.top-18)+'px';
+    picker.showPopover();
+    search.focus();
+    search.select();
+  };
+  picker.addEventListener('toggle',()=>toggle.setAttribute('aria-expanded',String(picker.matches(':popover-open'))));
+  search.addEventListener('input',render);
+  search.addEventListener('keydown',event=>{
+    if(event.key==='Enter' && !event.isComposing){event.preventDefault();choices.querySelector('button')?.click();}
+  });
+  window.addEventListener('resize',()=>{if(picker.matches(':popover-open'))picker.hidePopover();});
+}
+setupComposerEmojiPicker();
 function autoResize(el) {
   if(el.dataset.composing==='true')return;
   el.style.height = 'auto';

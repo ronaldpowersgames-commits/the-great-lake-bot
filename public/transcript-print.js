@@ -13,13 +13,71 @@
 
   const title = data.title || 'Session Transcript';
   const filename = LakeExportNames.sessionTranscript('pdf', data.created, title);
-  const transcript = [title, 'Exported ' + data.exported, ...data.messages.map(message =>
-    [message.sender, message.time].filter(Boolean).join(' · ') + '\n' + message.text
-  )].join('\n\n');
+  function inlineRuns(text) {
+    const pattern = /(`[^`\n]+`|\*\*[^\n]+?\*\*|__[^\n]+?__|\*[^*\n]+\*|(?<!\w)_[^_\n]+_(?!\w))/g;
+    return text.split(pattern).map((value,index) => {
+      if (index % 2 === 0) return { text:value };
+      const tag = value.startsWith('`') ? 'code' : /^\*\*|^__/.test(value) ? 'strong' : 'em';
+      const edge = tag === 'strong' ? 2 : 1;
+      return { text:value.slice(edge,-edge), tag };
+    });
+  }
+  function transcriptBlocks(text) {
+    const blocks = [];
+    let code = null;
+    for (const line of String(text || '').split(/\r?\n/)) {
+      if (/^\s*```/.test(line)) {
+        if (code) code = null;
+        else { code = { kind:'code', lines:[] }; blocks.push(code); }
+        continue;
+      }
+      if (code) { code.lines.push(line); continue; }
+      const heading = line.match(/^\s*(#{1,6})\s+(.+)$/);
+      const item = line.match(/^\s*(\d+[.)]|[-*•])\s+(.+)$/);
+      const check = (item?.[2] || line).match(/^\s*(\[[ xX]\]|[☐☑✅])\s+(.+)$/);
+      const quote = line.match(/^\s*>\s?(.*)$/);
+      if (heading) blocks.push({ kind:'heading', level:Math.min(4,heading[1].length+1), text:heading[2] });
+      else if (/^\s*(?:-{3,}|_{3,}|\*{3,})\s*$/.test(line)) blocks.push({ kind:'rule' });
+      else if (check) blocks.push({ kind:'check', checked:/[xX☑✅]/.test(check[1]), text:check[2] });
+      else if (item) blocks.push({ kind:/^\d/.test(item[1])?'ordered':'bullet', marker:item[1], text:item[2] });
+      else if (quote) blocks.push({ kind:'quote', text:quote[1] });
+      else if (!line.trim()) { if (blocks.at(-1)?.kind !== 'gap') blocks.push({ kind:'gap' }); }
+      else if (blocks.at(-1)?.kind === 'paragraph') blocks.at(-1).text += '\n' + line;
+      else blocks.push({ kind:'paragraph', text:line });
+    }
+    return blocks;
+  }
+  function appendFormatted(target, blocks) {
+    let list;
+    for (const block of blocks) {
+      const { kind } = block;
+      if (kind === 'gap') { list = null; continue; }
+      if (kind === 'rule') { list = null; target.append(document.createElement('hr')); continue; }
+      const listTag = kind === 'ordered' ? 'ol' : ['bullet','check'].includes(kind) ? 'ul' : '';
+      if (listTag && list?.localName !== listTag) {
+        list = document.createElement(listTag);
+        target.append(list);
+      }
+      if (!listTag) list = null;
+      const node = document.createElement(listTag?'li':kind==='heading'?'h'+block.level:kind==='code'?'pre':kind==='quote'?'blockquote':'p');
+      if (kind === 'ordered') node.value = parseInt(block.marker,10);
+      if (kind === 'check') { node.className = 'check-item'; node.append(block.checked?'☑ ':'☐ '); }
+      if (kind === 'code') node.textContent = block.lines.join('\n');
+      else for (const run of inlineRuns(block.text)) {
+        if (run.tag) {
+          const span = document.createElement(run.tag);
+          span.textContent = run.text;
+          node.append(span);
+        } else node.append(run.text);
+      }
+      (list || target).append(node);
+    }
+  }
+  const formatted = data.messages.map(message => transcriptBlocks(message.text));
   document.title = title + ' · The Great Lake';
   element('title').textContent = title;
   element('meta').textContent = data.exported + ' · PDF transcript';
-  for (const message of data.messages) {
+  for (const [index,message] of data.messages.entries()) {
     const article = document.createElement('article');
     article.className = 'msg';
     const sender = document.createElement('div');
@@ -27,7 +85,7 @@
     sender.textContent = [message.sender, message.time].filter(Boolean).join(' · ');
     const text = document.createElement('div');
     text.className = 'text';
-    text.textContent = message.text;
+    appendFormatted(text, formatted[index]);
     article.append(sender, text);
     element('messages').append(article);
   }
@@ -83,27 +141,79 @@
       const { width, height } = doc.internal.pageSize;
       let y = margin;
       let unsupportedText = false;
-      function write(text, size, bold, color) {
-        doc.setFont('helvetica', bold ? 'bold' : 'normal');
-        doc.setFontSize(size);
-        doc.setTextColor(color);
+      function printableText(text) {
         // Helvetica in PDF supports WinAnsi. The print preview keeps the original text.
-        const printable = text.replace(/[^\x20-\x7e\xa0-\xff\r\n\t€‘’“”–—…•™ŒœŠšŽžŸ]/gu, () => {
+        return text.replace(/[^\x20-\x7e\xa0-\xff\r\n\t€‘’“”–—…•™ŒœŠšŽžŸ]/gu, () => {
           unsupportedText = true;
           return '?';
         }).replace(/\t/g, '    ');
-        for (const line of doc.splitTextToSize(printable, width - 2 * margin)) {
-          if (y > height - margin) { doc.addPage(); y = margin; }
-          doc.text(line, margin, y);
-          y += size * 1.45;
-        }
       }
-      write(title, 21, true, '#123650');
-      write(data.exported, 10, false, '#536880');
-      for (const message of data.messages) {
+      function room(extra=0) {
+        if (y+extra > height-margin) { doc.addPage(); y=margin; }
+      }
+      function writeRuns(runs, {size=11, color='#172033', indent=0, bold=false}={}) {
+        doc.setFontSize(size);
+        doc.setTextColor(color);
+        const maxWidth=width-2*margin-indent;
+        let line=[], used=0, space='';
+        const font=(family,style)=>doc.setFont(family,style);
+        const flush=()=>{
+          room();
+          let x=margin+indent;
+          for (const part of line) {
+            font(part.family,part.style);
+            doc.text(part.text,x,y);
+            x+=doc.getTextWidth(part.text);
+          }
+          y+=size*1.45;
+          line=[];used=0;space='';
+        };
+        for (const run of runs) {
+          const family=run.tag==='code'?'courier':'helvetica';
+          const style=run.tag==='em'?(bold?'bolditalic':'italic'):bold || run.tag==='strong'?'bold':'normal';
+          for (const word of printableText(run.text).match(/\n|[^\S\n]+|\S+/g) || []) {
+            if (word==='\n') { flush(); continue; }
+            if (!word.trim()) { space+=word; continue; }
+            font(family,style);
+            const tokenWidth=doc.getTextWidth(word);
+            if (used && used+doc.getTextWidth(space)+tokenWidth>maxWidth) { flush(); font(family,style); }
+            const parts=tokenWidth>maxWidth?doc.splitTextToSize(word,maxWidth):[word];
+            for (const [i,part] of parts.entries()) {
+              const text=(used || family==='courier'?space:'')+part;
+              const previous=line.at(-1);
+              if (previous?.family===family && previous.style===style) previous.text+=text;
+              else line.push({family,style,text});
+              used+=doc.getTextWidth(text);
+              space='';
+              if (i<parts.length-1) { flush(); font(family,style); }
+            }
+          }
+        }
+        flush();
+      }
+      writeRuns([{text:title}], {size:21,bold:true,color:'#123650'});
+      writeRuns([{text:data.exported}], {size:10,color:'#536880'});
+      for (const [index,message] of data.messages.entries()) {
         y += 14;
-        write([message.sender, message.time].filter(Boolean).join(' · '), 10, true, '#075985');
-        write(message.text, 11, false, '#172033');
+        room(36);
+        writeRuns([{text:[message.sender, message.time].filter(Boolean).join(' · ')}], {size:10,bold:true,color:'#075985'});
+        for (const block of formatted[index]) {
+          const {kind}=block;
+          if (kind==='gap') { y+=6; continue; }
+          if (kind==='rule') { room(12); doc.setDrawColor('#cbd8e5'); doc.line(margin,y-2,width-margin,y-2); y+=8; continue; }
+          if (kind==='heading') {
+            y+=5;
+            room(30);
+            writeRuns(inlineRuns(block.text), {size:17-block.level,bold:true,color:'#123650'});
+            continue;
+          }
+          if (kind==='code') {
+            writeRuns([{text:block.lines.join('\n'),tag:'code'}], {size:10,indent:12});
+            continue;
+          }
+          const marker=kind==='ordered'?block.marker+' ':kind==='bullet'?'• ':kind==='check'?(block.checked?'[x] ':'[ ] '):'';
+          writeRuns([{text:marker},...inlineRuns(block.text)], {indent:marker || kind==='quote'?12:0});
+        }
       }
       const pages = doc.getNumberOfPages();
       doc.setFontSize(9);
