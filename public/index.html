@@ -794,7 +794,14 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
   .adaptive-suggestions.rail-dockward:not(.is-collapsed) {
     position:relative; bottom:auto; right:auto; width:100%; max-width:100%; align-self:stretch;
   }
-  .adaptive-suggestions:not(.rail-dockward):not(.is-collapsed) { flex-direction:column-reverse; }
+  .adaptive-suggestions:not(.rail-dockward):not(.is-collapsed):not(:has(.next-wave-pull:not([hidden]))) { flex-direction:column-reverse; }
+  .adaptive-suggestions:not([hidden]):not(.is-collapsed):has(.next-wave-pull:not([hidden])) {
+    display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center;
+  }
+  .adaptive-suggestions:not(.is-collapsed):has(.next-wave-pull:not([hidden])) .adaptive-suggestions-head { grid-column:2; grid-row:1; }
+  .adaptive-suggestions:not(.is-collapsed):has(.next-wave-pull:not([hidden])) .adaptive-suggestions-list { grid-column:1; grid-row:1; }
+  .adaptive-suggestions:not(.is-collapsed) .next-wave-pull-label { display:none; }
+  .adaptive-suggestions .next-wave-pull { min-width:36px; margin-inline-end:0; }
   .adaptive-suggestions.is-collapsed .adaptive-suggestions-head { width:100%; margin-inline:0; }
   .adaptive-suggestions-head:has(.next-wave-pull:not([hidden])) { justify-content:flex-end; }
   .adaptive-suggestions-head:has(.next-wave-pull:not([hidden])) > :not(.next-wave-pull) { display:none; }
@@ -1287,6 +1294,12 @@ button.depths-option { width:100%; text-align:start; font-family:inherit; backgr
 .lake-share-preview::before { content:'LIVE PREVIEW'; position:absolute; top:10px; left:12px; z-index:1; color:rgba(185,232,255,.62); font-size:8px; font-weight:800; letter-spacing:1.4px; }
 .lake-share-dialog label { display:grid; gap:6px; margin:13px 0; color:var(--text-secondary); font-size:11px; font-weight:700; letter-spacing:.35px; }
 .lake-share-dialog input,.lake-share-dialog select { width:100%; padding:10px 12px; border:1px solid var(--dock-border); border-radius:11px; background:#10263e; color:var(--text-primary); font:inherit; }
+#shareExcerptList { max-height:36dvh; overflow-y:auto; overscroll-behavior:contain; }
+#shareExcerptList article { padding:8px 10px; border-bottom:1px solid var(--dock-border); }
+#shareExcerptList label { display:flex; align-items:flex-start; gap:8px; margin:0; font-size:13px; letter-spacing:0; overflow-wrap:anywhere; }
+#shareExcerptList input[type="checkbox"] { width:auto; flex:none; margin-top:3px; }
+#shareExcerptList textarea { width:100%; min-height:5em; margin-top:8px; padding:8px; resize:vertical; color:var(--text-primary); background:var(--lake-deep); border:1px solid var(--dock-border); border-radius:8px; font:inherit; }
+#shareExcerptResult a { color:var(--lake-light); overflow-wrap:anywhere; }
 .lake-share-dialog menu { position:sticky; bottom:-22px; z-index:2; display:grid; grid-template-columns:minmax(0,1fr) auto; gap:9px; padding:16px 0 22px; margin:12px 0 -22px; background:linear-gradient(180deg,transparent 0,#07131f 28%); }
 .lake-share-dialog #shareSaveCard { grid-column:1/-1; }
 .lake-share-platforms { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; padding:0; margin:12px 0 0; }
@@ -1585,6 +1598,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
       <div class="share-menu" id="shareMenu">
         <div onclick="shareLakeInvite()">🌊 Invite someone to jump in</div>
         <div onclick="openSessionShare()">🔗 Share this Tide</div>
+        <div onclick="openExcerptShare()">✂️ Share Tide excerpts</div>
         <div onclick="exportAsTxt()">📄 Export as .txt</div>
         <div onclick="exportAsPDF()">📊 Printable transcript / PDF</div>
       </div>
@@ -2151,10 +2165,20 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
     <label id="shareFormatRow" hidden>Card format
       <select id="shareCardFormat" onchange="renderLakeShareCard()"><option value="post">Square post</option><option value="story">Story</option></select>
     </label>
+    <div id="shareExcerptPicker" hidden>
+      <div id="shareExcerptList" aria-label="Messages to share"></div>
+      <p id="shareExcerptCount" role="status"></p>
+    </div>
     <div id="sharePassphraseRow" hidden>
       <label for="sharePassphrase">Optional passphrase</label>
       <input id="sharePassphrase" type="text" maxlength="200" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="Leave blank for anyone with the link">
       <button type="button" id="sharePassphraseVisibility" aria-controls="sharePassphrase" onclick="toggleSharePassphrase()">Hide passphrase</button>
+    </div>
+    <div id="shareExcerptResult" hidden>
+      <p id="shareExcerptResultNote"></p>
+      <p><a id="shareExcerptLink" target="_blank" rel="noopener noreferrer"></a></p>
+      <button type="button" onclick="copyExcerptLink()">Copy link</button>
+      <button type="button" id="sendExcerptLink" onclick="sendExcerptLink()">Share link</button>
     </div>
     <div class="lake-share-platforms" id="sharePlatforms" hidden>
       <button type="button" onclick="shareLakeCard('instagram')">📸 Instagram</button>
@@ -2240,6 +2264,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
       <div class="help-section-title">🔗 Sharing &amp; privacy</div>
       <div class="help-item"><span class="help-icon">🌊</span><div class="help-text"><strong>Invite someone</strong> shares the public Lake homepage so they can start their own Tide.</div></div>
       <div class="help-item"><span class="help-icon">🔐</span><div class="help-text"><strong>Share this Tide</strong> creates a read-only link for this conversation. Add an optional passphrase when the contents need another layer of privacy.</div></div>
+      <div class="help-item"><span class="help-icon">✂️</span><div class="help-text"><strong>Share Tide excerpts</strong> lets you select messages and trim each to the passage you want. The resulting link includes only those excerpts, with an optional passphrase.</div></div>
       <div class="help-item"><span class="help-icon">↗️</span><div class="help-text">A message’s <strong>Share</strong> action opens a simple preview where you can share, copy, or export that Wave as text.</div></div>
       <div class="help-item"><span class="help-icon">🧰</span><div class="help-text"><strong>Tools</strong> keeps advanced utilities out of the main chat. Transcript Splitter lives there, along with an aspirational Post Imagery prototype retained for future Studio work.</div></div>
     </div>
@@ -6547,16 +6572,26 @@ function lakeShareSourceText(){return lakeShareState.card?postCardMarkdown(lakeS
 function configureShareDialog(mode,wave=null,card=null){
   lakeShareState.mode=mode;lakeShareState.wave=wave;lakeShareState.card=card;
   const dialog=document.getElementById('lakeShareDialog');
-  const isMessage=mode==='message',isSession=mode==='session';
-  document.getElementById('lakeShareTitle').textContent=isMessage?'🌊 Share this wave':isSession?'🔗 Share this Tide':'🌊 Invite someone into The Lake';
-  document.getElementById('lakeShareDescription').textContent=isMessage?'Turn this message into a Lake-styled post or story, with an invitation back to The Lake.':isSession?'Create a read-only link for this conversation. Add a passphrase if you want one more layer of privacy.':'Share a general invitation to jump into The Lake and start a new Tide.';
-  document.getElementById('sharePassphraseRow').hidden=!isSession;
+  const isMessage=mode==='message',isSession=mode==='session',isExcerpt=mode==='excerpt';
+  document.getElementById('lakeShareTitle').textContent=isExcerpt?'✂️ Share Tide excerpts':isMessage?'🌊 Share this wave':isSession?'🔗 Share this Tide':'🌊 Invite someone into The Lake';
+  document.getElementById('lakeShareDescription').textContent=isExcerpt
+    ? 'Select messages and trim them to the passages you want. Only the checked text goes into the read-only link.'
+    : isMessage?'Turn this message into a Lake-styled post or story, with an invitation back to The Lake.':isSession?'Create a read-only link for this conversation. Add a passphrase if you want one more layer of privacy.':'Share a general invitation to jump into The Lake and start a new Tide.';
+  const picker=document.getElementById('shareExcerptPicker');
+  picker.hidden=!isExcerpt;
+  picker.inert=false;
+  document.getElementById('sharePassphrase').disabled=false;
+  document.getElementById('shareExcerptResult').hidden=true;
+  document.getElementById('sharePassphraseRow').hidden=!isSession&&!isExcerpt;
   document.getElementById('shareFormatRow').hidden=!isMessage;
   document.getElementById('sharePlatforms').hidden=!isMessage;
   document.getElementById('shareCardPreview').hidden=!isMessage;
   document.getElementById('sharePlatformNote').hidden=!isMessage;
   document.getElementById('shareSaveCard').hidden=!isMessage;
-  document.getElementById('sharePrimary').textContent=isMessage?'🌊 Share Lake card':isSession?'Create Tide link':'Share invite';
+  const primary=document.getElementById('sharePrimary');
+  primary.hidden=false;
+  primary.disabled=isExcerpt;
+  primary.textContent=isExcerpt?'Create excerpt link':isMessage?'🌊 Share Lake card':isSession?'Create Tide link':'Share invite';
   if(isMessage)renderLakeShareCard();
   document.getElementById('shareMenu').style.display='none';
   if(!dialog.open)dialog.showModal();
@@ -6578,18 +6613,116 @@ function toggleSharePassphrase() {
 
 document.getElementById('lakeShareDialog').addEventListener('close', () => {
   sharePassphraseInput.value = '';
+  lakeShareState.excerpts=null;
+  document.getElementById('shareExcerptList').replaceChildren();
+  document.getElementById('shareExcerptLink').removeAttribute('href');
+  document.getElementById('shareExcerptLink').textContent='';
 });
-function openSessionShare(){
-  if(!currentSessionId || !allSessions.some(session=>session.id===currentSessionId)){showToast('Start a conversation first.');return;}
+function openSessionShare(mode='session'){
+  if(!currentSessionId || (mode==='session' && !allSessions.some(session=>session.id===currentSessionId))){showToast('Start a conversation first.');return;}
   let hidden = false;
   try { hidden = localStorage.getItem(storageKey('sharePassphraseHidden')) === 'true'; } catch {}
   setSharePassphraseHidden(hidden);
   sharePassphraseInput.value = '';
-  configureShareDialog('session');
+  configureShareDialog(mode);
+}
+function shareableTideMessage(message){
+  return ['user','assistant'].includes(message.role) &&
+    !['total','both'].includes(message.snapshot?.scope) &&
+    !['snapshot-total','snapshot-both'].includes(message.action);
+}
+function selectedTideExcerpts(){
+  return (lakeShareState.excerpts || []).filter(row=>row.check.checked && row.editor.value.trim())
+    .map(({message,editor})=>({
+      role:message.role, time:message.time, mood:message.mood,
+      ...(message.mirror?{mirror:{mode:message.mirror.mode}}:{}),
+      content:editor.value.trim()
+    }));
+}
+function openExcerptShare(){
+  const messages=currentSessionId ? chatHistory.filter(message=>shareableTideMessage(message) && message.content?.trim()) : [];
+  if(!messages.length){showToast('Start a conversation with some text first.');return;}
+  openSessionShare('excerpt');
+  if(lakeShareState.mode!=='excerpt')return;
+  const list=document.getElementById('shareExcerptList');
+  const primary=document.getElementById('sharePrimary');
+  const count=document.getElementById('shareExcerptCount');
+  const update=()=>{
+    const selected=selectedTideExcerpts().length;
+    primary.disabled=selected===0;
+    count.textContent=selected?selected+' selected. Attachments stay private.':'Select at least one excerpt. Attachments stay private.';
+  };
+  list.replaceChildren();
+  lakeShareState.excerpts=messages.map(message=>{
+    const row=document.createElement('article');
+    const label=document.createElement('label');
+    const check=document.createElement('input');
+    check.type='checkbox';
+    const speaker=message.role==='user'?'You':'The Lake';
+    const preview=formatSharedWaveText(message.content).replace(/\s+/g,' ');
+    label.append(check,[speaker,message.time,preview.slice(0,135)+(preview.length>135?'…':'')].filter(Boolean).join(' · '));
+    const editor=document.createElement('textarea');
+    editor.hidden=true;
+    editor.value=message.content;
+    editor.setAttribute('aria-label','Text to share from '+speaker+(message.time?' at '+message.time:''));
+    editor.addEventListener('input',update);
+    check.addEventListener('change',()=>{editor.hidden=!check.checked;update();});
+    row.append(label,editor);
+    list.append(row);
+    return {message,editor,check};
+  });
+  update();
+}
+async function createTideShareLink(session,passphrase){
+  const res=await fetch('/share',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session,passphrase})});
+  const data=await res.json();
+  if(!res.ok || !data.id)throw new Error(data.error || 'Could not create a Tide link.');
+  return {url:window.location.origin+'/shared.html?id='+encodeURIComponent(data.id),protected:data.protected};
+}
+async function createExcerptShare(){
+  const history=selectedTideExcerpts();
+  const source=lakeShareState.excerpts;
+  const dialog=document.getElementById('lakeShareDialog');
+  const primary=document.getElementById('sharePrimary');
+  if(!history.length || primary.disabled)return;
+  primary.disabled=true;
+  const picker=document.getElementById('shareExcerptPicker');
+  const passphrase=sharePassphraseInput.value;
+  picker.inert=true;
+  sharePassphraseInput.disabled=true;
+  try{
+    const link=await createTideShareLink({name:'Shared Tide excerpts',history},passphrase);
+    if(!dialog.open || lakeShareState.excerpts!==source)return;
+    const anchor=document.getElementById('shareExcerptLink');
+    anchor.href=link.url;
+    anchor.textContent=link.url;
+    document.getElementById('shareExcerptResultNote').textContent=(link.protected?'Send the passphrase separately. ':'Anyone with the link can read these excerpts. ')+'Links last up to 7 days or until the server restarts.';
+    document.getElementById('sendExcerptLink').hidden=!navigator.share;
+    picker.hidden=true;
+    document.getElementById('sharePassphraseRow').hidden=true;
+    document.getElementById('shareExcerptResult').hidden=false;
+    sharePassphraseInput.value='';
+    primary.hidden=true;
+    anchor.focus();
+  }catch(error){
+    if(dialog.open && lakeShareState.excerpts===source)document.getElementById('shareExcerptCount').textContent=error.message;
+  }finally{
+    if(lakeShareState.excerpts===source){picker.inert=false;sharePassphraseInput.disabled=false;primary.disabled=false;}
+  }
+}
+async function copyExcerptLink(){
+  const anchor=document.getElementById('shareExcerptLink');
+  try{await navigator.clipboard.writeText(anchor.href);showToast('Excerpt link copied.');}
+  catch{getSelection()?.selectAllChildren(anchor);showToast('Copy the selected excerpt link.');}
+}
+async function sendExcerptLink(){
+  try{await navigator.share({title:'Shared Tide excerpts',url:document.getElementById('shareExcerptLink').href});}
+  catch(error){if(error.name!=='AbortError')showToast('Use Copy link to share these excerpts.');}
 }
 async function runPrimaryShare(){
   if(lakeShareState.mode==='message')return shareLakeCard('native');
   if(lakeShareState.mode==='session')return shareAsGroupSession(document.getElementById('sharePassphrase').value);
+  if(lakeShareState.mode==='excerpt')return createExcerptShare();
   const data={title:'🌊 Jump into The Great Lake',text:'A calmer place to think clearly, read the currents, and decide what to do next.',url:LAKE_PUBLIC_URL};
   try{if(navigator.share)await navigator.share(data);else{await navigator.clipboard.writeText(`${data.text}\n${data.url}`);showToast('Lake invite copied');document.getElementById('lakeShareDialog').close();}}catch(error){if(error?.name!=='AbortError')showToast('Could not share the invite.');}
 }
@@ -6602,18 +6735,14 @@ async function shareAsGroupSession(passphrase='') {
   try {
     const shareSession = {
       name: session.name, time: session.time,
-      history: session.history.filter(message => !['total', 'both'].includes(message.snapshot?.scope) &&
-        !['snapshot-total', 'snapshot-both'].includes(message.action)).map(message => ({
+      history: session.history.filter(shareableTideMessage).map(message => ({
         role: message.role, content: message.content, time: message.time, mood:message.mood,
         ...(message.mirror?{mirror:message.mirror}:{}),
         attachments: (message.attachments || []).map(file => ({name:file.name,data:file.data}))
       }))
     };
-    const res  = await fetch('/share', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ session: shareSession, passphrase }) });
-    const data = await res.json();
-    if (!data.id) throw new Error('No ID');
-    if (!res.ok) throw new Error(data.error || 'Could not share conversation');
-    const shareUrl = window.location.origin + '/shared.html?id=' + encodeURIComponent(data.id);
+    const data=await createTideShareLink(shareSession,passphrase);
+    const shareUrl=data.url;
     if (navigator.share) {
       await navigator.share({ title: '🌊 ' + (session.name || 'Lake Session'), text: `Read my Lake session${data.protected?' (passphrase protected)':''}:`, url: shareUrl });
     } else {
