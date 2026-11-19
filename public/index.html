@@ -651,6 +651,8 @@ button.welcome-prompt-half { font-family: inherit; width: 100%; }
 .speech-player select { padding-inline:8px; max-width:min(15rem,100%); }
 .speech-player button,.speech-player select { border:1px solid var(--dock-border); border-radius:999px; background:rgba(45,140,240,.10); color:var(--text-primary); min-height:28px; }
 .speech-player button { min-width:30px; cursor:pointer; }
+.speech-player button:disabled { opacity:.45; cursor:default; }
+.speech-player [data-speech-jump] { touch-action:manipulation; user-select:none; -webkit-touch-callout:none; }
 .speech-player-progress { flex:1; min-width:50px; accent-color:var(--lake-glow); }
 .speech-player-status { color:var(--text-secondary); font-size:9px; white-space:nowrap; }
 
@@ -1737,12 +1739,12 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
       </section>
       <button type="button" id="speechRestore" class="quick-action-btn" onclick="setSpeechView('full')" hidden>🔊 Show audio controls</button>
       <div class="speech-player" id="speechPlayer" role="region" aria-label="Read aloud controls">
-        <button type="button" onclick="speechPrevious()" aria-label="Jump back one passage" title="Jump back one passage">⏮</button>
-        <button type="button" onclick="speechJump(-5)" aria-label="Jump back approximately five seconds" title="Back about 5 seconds">−5s</button>
+        <button type="button" id="speechPrevious" onclick="speechSkipMessage(-1)" aria-label="Previous Wave message" title="Previous Wave message">⏮</button>
+        <button type="button" data-speech-jump="-5" aria-label="Back about five seconds. Hold to slow down." title="Tap: back ≈5s · Hold: −0.25× · Tap then hold: −0.50×">−5s</button>
         <button type="button" id="speechPlayPause" onclick="speechPlayPause()" title="Play or pause">▶</button>
         <button type="button" onclick="stopSpeech()" title="Stop">⏹</button>
-        <button type="button" onclick="speechJump(5)" aria-label="Jump forward approximately five seconds" title="Forward about 5 seconds">+5s</button>
-        <button type="button" onclick="speechNext()" aria-label="Jump forward one passage" title="Jump forward one passage">⏭</button>
+        <button type="button" data-speech-jump="5" aria-label="Forward about five seconds. Hold to speed up." title="Tap: forward ≈5s · Hold: +0.25× · Tap then hold: +0.50×">+5s</button>
+        <button type="button" id="speechNext" onclick="speechSkipMessage(1)" aria-label="Next Wave message" title="Next Wave message">⏭</button>
         <input class="speech-player-progress" id="speechProgress" type="range" min="0" max="1" value="0" oninput="speechSeek(this.value)" aria-label="Reading progress">
         <span class="speech-player-status" id="speechStatus">Ready</span>
         <select id="speechVoice" aria-label="Reading voice" onchange="saveLakeVoice(this.value)"><option value="">Auto voice</option></select>
@@ -3495,6 +3497,7 @@ async function enterLake() {
   document.getElementById('myChatAliases').value = currentUser.aliases || '';
   document.getElementById('responseLanguage').value = currentUser.responseLanguage || 'auto';
   loadRailSwipeMode();
+  restoreSpeechRate();
   const savedPic = localStorage.getItem(storageKey('profilePic'));
   currentProfilePic=savedPic;
   updateAllProfilePics(savedPic);
@@ -5356,7 +5359,7 @@ async function exportFullBackup(encrypted=false) {
     });
     const memory=memoryBackupData();
     if(Object.keys(memory.anchors).length)backup.data.memory=memory;
-    backup.data.preferences=Object.fromEntries(['learnProfile','personalNotes','speechVoice','moodTriggers','customPrompts','emojiCommands'].map(name=>[name,localStorage.getItem(storageKey(name))]).filter(([,value])=>value!==null));
+    backup.data.preferences=Object.fromEntries(['learnProfile','personalNotes','speechVoice','speechRate','moodTriggers','customPrompts','emojiCommands'].map(name=>[name,localStorage.getItem(storageKey(name))]).filter(([,value])=>value!==null));
     let payload=backup;
     if(encrypted){
       const password=prompt('Choose a backup password (at least 12 characters). You will need it to restore the file.');
@@ -5478,10 +5481,11 @@ async function restoreLakeBackup(file){
     const knownCrew=new Set(crewMembers.map(item=>String(item.name||'').toLowerCase()));
     if(!data.memory?.anchors?.crew && Array.isArray(data.crew))crewMembers.push(...data.crew.filter(item=>typeof item?.name==='string' && !knownCrew.has(item.name.toLowerCase())));
     if(!data.memory?.anchors?.crew)saveCrew();
-    for(const name of ['learnedProfile','learnProfile','personalNotes','speechVoice','moodTriggers','customPrompts','emojiCommands']){
+    for(const name of ['learnedProfile','learnProfile','personalNotes','speechVoice','speechRate','moodTriggers','customPrompts','emojiCommands']){
       const value=data.preferences?.[name];
       if(typeof value==='string' && localStorage.getItem(storageKey(name))===null)localStorage.setItem(storageKey(name),value);
     }
+    restoreSpeechRate();
     renderCrew();
     renderTides();
     status.textContent='Backup restored. '+incoming.length+' Tides added. '+skipped+' existing Tides kept.';
@@ -7253,8 +7257,9 @@ document.addEventListener('keydown',event=>{if(event.key==='Escape'&&closeTopmos
 // BUBBLE ACTIONS
 // ============================================
 let currentUtterance = null;
-const speechState={wave:null,chunks:[],index:0,offset:0,rate:1,paused:false,playing:false,view:"full"};
+const speechState={wave:null,waves:[],chunks:[],index:0,offset:0,rate:1,paused:false,playing:false,view:"full"};
 let speechStartTimer;
+let speechOwnsMediaSession=false;
 globalThis.pendingReplySource=null;globalThis.pendingBranchSource=null;
 
 function canonicalMessageText(waveEl){return String(waveEl?._lakeMessageContent||waveEl?.querySelector('.wave-bubble')?.innerText||'').trim();}
@@ -7332,7 +7337,7 @@ function saveLakeVoice(value){
 window.speechSynthesis?.addEventListener('voiceschanged',refreshLakeVoices);
 function previewLakeVoice(){
   stopSpeech(false);
-  lakeSpeechOutput.speak(lakeSpeechOutput.utterance('Take a breath. What is on your mind today?',1));
+  lakeSpeechOutput.speak(lakeSpeechOutput.utterance('Take a breath. What is on your mind today?',speechState.rate));
 }
 function speechChunks(text){
   const cleaned=String(text||'').replace(/^[#>]+[ \t]*/gm,'').replace(/[*_`]/g,'').replace(/\p{Extended_Pictographic}\uFE0F?/gu,'');
@@ -7355,6 +7360,29 @@ function setSpeechView(view){
 function toggleSpeechView(){
   setSpeechView(speechState.view==='compact'?'full':'compact');
 }
+const speechMediaActions={
+  play:()=>{if(!speechState.playing)speechPlayPause();},
+  pause:()=>{if(speechState.playing)speechPlayPause();},
+  stop:()=>stopSpeech(),
+  previoustrack:()=>speechSkipMessage(-1),
+  nexttrack:()=>speechSkipMessage(1),
+  seekbackward:event=>speechJump(-(event.seekOffset || 5)),
+  seekforward:event=>speechJump(event.seekOffset || 5)
+};
+function syncSpeechMediaSession(){
+  const media=navigator.mediaSession;
+  if(!media)return;
+  const active=speechState.view==='background' && speechState.chunks.length>0;
+  if(!active && !speechOwnsMediaSession)return;
+  if(active!==speechOwnsMediaSession){
+    for(const [action,handler] of Object.entries(speechMediaActions)){
+      try{media.setActionHandler(action,active?handler:null);}catch{}
+    }
+    if(typeof MediaMetadata==='function')media.metadata=active?new MediaMetadata({title:'The Great Lake',artist:'Reading a Tide'}):null;
+    speechOwnsMediaSession=active;
+  }
+  media.playbackState=active?(speechState.playing?'playing':'paused'):'none';
+}
 function updateSpeechPlayer(){
   const player=document.getElementById('speechPlayer'),button=document.getElementById('speechPlayPause'),progress=document.getElementById('speechProgress'),status=document.getElementById('speechStatus');
   if(!player)return;
@@ -7372,6 +7400,10 @@ function updateSpeechPlayer(){
   progress.max=Math.max(0,speechState.chunks.length-1);
   progress.value=speechState.index;
   status.textContent=hasAudio?`${speechState.index+1} / ${speechState.chunks.length}`:'Ready';
+  const messageIndex=speechState.waves.indexOf(speechState.wave);
+  document.getElementById('speechPrevious').disabled=messageIndex<1;
+  document.getElementById('speechNext').disabled=messageIndex<0 || messageIndex>=speechState.waves.length-1;
+  syncSpeechMediaSession();
 }
 function cancelReadingUtterance(){
   clearTimeout(speechStartTimer);
@@ -7397,11 +7429,19 @@ function speakCurrentChunk(){
     updateSpeechPlayer();
     showToast('Reading stopped. Try Play again or select another voice.');
   };
+  const checkStall=()=>{
+    // Device suspension can delay both timer and speech callbacks.
+    if(document.hidden && speechState.view==='background'){
+      speechStartTimer=setTimeout(checkStall,5000);
+      return;
+    }
+    failed();
+  };
   utterance.onstart=()=>{
     if(currentUtterance!==utterance)return;
     clearTimeout(speechStartTimer);
     const estimatedMs=remaining.trim().split(/\s+/).length*400/speechState.rate;
-    speechStartTimer=setTimeout(failed,Math.max(25000,estimatedMs*3+5000));
+    speechStartTimer=setTimeout(checkStall,Math.max(25000,estimatedMs*3+5000));
     speechState.wave?.classList.add('speaking');
   };
   utterance.onboundary=event=>{
@@ -7418,11 +7458,31 @@ function speakCurrentChunk(){
     }else{speechState.index=0;stopSpeech(false);}
   };
   utterance.onerror=failed;
-  speechStartTimer=setTimeout(failed,5000);
+  speechStartTimer=setTimeout(checkStall,5000);
   try{lakeSpeechOutput.speak(utterance);}catch{failed();}
 }
-function speakMessage(waveEl){refreshLakeVoices();stopSpeech(false);speechState.wave=waveEl;speechState.voice=lakeSpeechOutput.chooseVoice();speechState.chunks=speechChunks(messageActionText(waveEl));speechState.index=0;speechState.rate=Number(document.getElementById('speechRate')?.value)||1;updateSpeechPlayer();speakCurrentChunk();}
-function speakText(text,btn){const wave=btn?.closest?.('.wave');if(wave){speakMessage(wave);return;}stopSpeech(false);speechState.wave=null;speechState.voice=lakeSpeechOutput.chooseVoice();speechState.chunks=speechChunks(text);speechState.index=0;updateSpeechPlayer();speakCurrentChunk();}
+function speakMessage(waveEl){
+  refreshLakeVoices();
+  const waves=[...document.querySelectorAll('#wavesContainer .wave')].filter(wave=>canonicalMessageText(wave));
+  speechState.waves=waves.includes(waveEl)?waves:[waveEl];
+  speechState.voice=lakeSpeechOutput.chooseVoice();
+  startReadingMessage(waveEl,messageActionText(waveEl));
+}
+function startReadingMessage(wave,text){
+  stopSpeech(false);
+  speechState.wave=wave;
+  speechState.chunks=speechChunks(text);
+  speechState.index=0;
+  updateSpeechPlayer();
+  speakCurrentChunk();
+}
+function speakText(text,btn){
+  const wave=btn?.closest?.('.wave');
+  if(wave)return speakMessage(wave);
+  speechState.waves=[];
+  speechState.voice=lakeSpeechOutput.chooseVoice();
+  startReadingMessage(null,text);
+}
 function speechPlayPause(){
   if(!speechState.chunks.length)return;
   if(!speechState.playing)return speakCurrentChunk();
@@ -7469,9 +7529,13 @@ async function playChordProgression(progression,button){
 function closeInlineSpeech(){
   if(speechState.view!=='background' && speechState.chunks.length)stopSpeech();
 }
-function stopSpeech(clear=true){cancelReadingUtterance();speechState.wave?.classList.remove('speaking');speechState.playing=false;speechState.paused=false;speechState.offset=0;if(clear){speechState.view="full";speechState.chunks=[];speechState.index=0;speechState.wave=null;}updateSpeechPlayer();}
-function speechPrevious(){speechSeek(speechState.index-1);}
-function speechNext(){speechSeek(speechState.index+1);}
+function stopSpeech(clear=true){cancelReadingUtterance();speechState.wave?.classList.remove('speaking');speechState.playing=false;speechState.paused=false;speechState.offset=0;if(clear){speechState.view="full";speechState.chunks=[];speechState.index=0;speechState.wave=null;speechState.waves=[];}updateSpeechPlayer();}
+function speechSkipMessage(direction){
+  const index=speechState.waves.indexOf(speechState.wave);
+  if(index<0)return;
+  const wave=speechState.waves[index+direction];
+  if(wave)startReadingMessage(wave,canonicalMessageText(wave));
+}
 function speechSeek(value,offset=0){
   if(!speechState.chunks.length)return;
   speechState.index=Math.max(0,Math.min(speechState.chunks.length-1,Number(value)||0));
@@ -7492,7 +7556,73 @@ function speechJump(seconds){
   const target=positions[Math.max(0,Math.min(current+words,positions.length-1))];
   speechSeek(target.index,target.offset);
 }
-function speechSetRate(value){speechState.rate=Number(value)||1;if(speechState.playing)speakCurrentChunk();}
+function showSpeechRate(value){
+  const select=document.getElementById('speechRate');
+  select.querySelector('[data-adjusted-rate]')?.remove();
+  if(![...select.options].some(option=>Number(option.value)===value)){
+    const option=new Option(value+'×',String(value));
+    option.dataset.adjustedRate='true';
+    const next=[...select.options].find(item=>Number(item.value)>value);
+    select.add(option,next || null);
+  }
+  select.value=String(value);
+}
+function restoreSpeechRate(){
+  let saved;
+  try{saved=localStorage.getItem(storageKey('speechRate'));}catch{}
+  const value=Number(saved);
+  speechState.rate=value>=.25 && value<=3?value:1;
+  showSpeechRate(speechState.rate);
+}
+function speechSetRate(value){
+  const rate=Math.max(.25,Math.min(3,Math.round((Number(value)||1)*100)/100));
+  if(rate===speechState.rate)return;
+  speechState.rate=rate;
+  showSpeechRate(rate);
+  try{localStorage.setItem(storageKey('speechRate'),String(rate));}catch{}
+  if(speechState.playing)speakCurrentChunk();
+}
+function bindSpeechJumpButton(button){
+  const seconds=Number(button.dataset.speechJump);
+  const doubleTapMs=280,holdMs=420;
+  let tapTimer,holdTimer,pointer=null,taps=0,suppressClick=false;
+  const clear=()=>{clearTimeout(tapTimer);clearTimeout(holdTimer);tapTimer=holdTimer=null;taps=0;};
+  button.addEventListener('pointerdown',event=>{
+    if(event.button!==0 || !event.isPrimary)return;
+    suppressClick=true;
+    pointer=event.pointerId;
+    clearTimeout(tapTimer);
+    tapTimer=null;
+    button.setPointerCapture(pointer);
+    holdTimer=setTimeout(()=>{
+      holdTimer=null;
+      const delta=Math.sign(seconds)*(taps>0?.5:.25);
+      taps=0;
+      speechSetRate(speechState.rate+delta);
+      showToast('Reading speed: '+speechState.rate+'×');
+    },holdMs);
+  });
+  button.addEventListener('pointerup',event=>{
+    if(event.pointerId!==pointer)return;
+    pointer=null;
+    if(holdTimer===null)return;
+    clearTimeout(holdTimer);
+    holdTimer=null;
+    taps++;
+    tapTimer=setTimeout(()=>{
+      const count=taps;
+      clear();
+      if(count)speechJump(seconds*count);
+    },doubleTapMs);
+  });
+  button.addEventListener('pointercancel',()=>{pointer=null;clear();});
+  button.addEventListener('contextmenu',event=>event.preventDefault());
+  button.addEventListener('click',event=>{
+    if(event.detail && suppressClick){suppressClick=false;return;}
+    speechJump(seconds);
+  });
+}
+document.querySelectorAll('[data-speech-jump]').forEach(bindSpeechJumpButton);
 
 let originalShareMessage='';
 function originalWaveShareText(){
