@@ -26,6 +26,7 @@ const chatRoutes = require('./routes/chat');
 const crewRoutes = require('./routes/crew');
 const emailRoutes = require('./routes/email');
 const shareRoutes = require('./routes/share'); // ✅ NEW
+const audioRoutes = require('./routes/audio');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -120,6 +121,7 @@ app.use('/api/email', emailRoutes);
 
 // ✅ Shared sessions - PUBLIC - anyone with link can view
 app.use('/share', shareRoutes);
+app.use('/audio', audioRoutes);
 
 // Health check - includes OpenAI model info
 app.get('/health', (req, res) => {

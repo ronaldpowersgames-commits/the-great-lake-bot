@@ -1619,6 +1619,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
         <div onclick="openExcerptShare()">✂️ Share Tide excerpts</div>
         <div onclick="exportAsTxt()">📄 Export as .txt</div>
         <div onclick="exportAsPDF()">📊 Printable transcript / PDF</div>
+        <div onclick="openTideAudio()">♫ Export Tide audio</div>
       </div>
       <!-- Mood selector -->
       <div class="mood-selector" id="moodSelector">
@@ -1727,6 +1728,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
 
     <!-- SHORE DOCK -->
     <div class="shore-dock">
+      <button type="button" id="fileAudioRestore" class="quick-action-btn" hidden>♫ Show exported audio</button>
       <section class="adaptive-suggestions" id="adaptiveSuggestions" aria-label="Suggested next moves" hidden>
         <div class="adaptive-suggestions-head">
           <button class="adaptive-suggestions-close" onclick="toggleAdaptiveSuggestions()" aria-label="Collapse suggestions" aria-expanded="true">⌄</button>
@@ -2177,6 +2179,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
     <menu>
       <button type="button" onclick="shareOriginalWave()" data-primary>Share text</button>
       <button type="button" onclick="openWaveShareImage()">Share as image</button>
+      <button type="button" onclick="openWaveAudio()">Export audio</button>
       <button type="button" onclick="copyOriginalWave()">Copy text</button>
       <button type="button" onclick="exportOriginalWaveText()">Export .txt</button>
       <button>Close</button>
@@ -2198,6 +2201,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
         <button type="button" data-excerpt-action onclick="startTideFromExcerpts()">Start new Tide</button>
         <button type="button" data-excerpt-action onclick="copySelectedExcerpts()">Copy text</button>
         <button type="button" data-excerpt-action onclick="downloadSelectedExcerpts()">Download .txt</button>
+        <button type="button" data-excerpt-action onclick="openExcerptAudio()">Export audio</button>
       </div>
     </div>
     <div id="sharePassphraseRow" hidden>
@@ -2254,6 +2258,33 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
 </dialog>
 
 <button type="button" class="post-cards-tab" id="postCardsTab" onclick="openPostCards()" aria-label="Open Post Cards" title="Post Imagery prototype" aria-controls="postCardsDrawer" aria-expanded="false" hidden><span>📮</span></button>
+<dialog class="lake-share-dialog" id="lakeAudioDialog" aria-labelledby="lakeAudioTitle">
+  <form method="dialog">
+    <h2 id="lakeAudioTitle">♫ Export Lake audio</h2>
+    <p id="lakeAudioScope"></p>
+    <p>Generate AI audio with a Lake voice. The selected text is sent to OpenAI when you choose Generate. Browser voices are available in the read-aloud player.</p>
+    <label>Voice
+      <select id="lakeAudioVoice">
+        <option value="marin">Marin</option><option value="cedar">Cedar</option><option value="alloy">Alloy</option>
+        <option value="ash">Ash</option><option value="ballad">Ballad</option><option value="coral">Coral</option>
+        <option value="echo">Echo</option><option value="fable">Fable</option><option value="onyx">Onyx</option>
+        <option value="nova">Nova</option><option value="sage">Sage</option><option value="shimmer">Shimmer</option><option value="verse">Verse</option>
+      </select>
+    </label>
+    <label>Playback speed <input type="number" id="lakeAudioSpeed" min="0.25" max="3" step="0.01" required value="1"></label>
+    <p id="lakeAudioStatus" role="status"></p>
+    <audio id="lakeExportPlayer" controls preload="metadata" aria-label="Lake audio preview" style="width:100%" hidden></audio>
+    <div id="lakeAudioActions" class="excerpt-actions" hidden>
+      <button type="button" id="downloadLakeAudio">Download audio</button>
+      <button type="button" id="shareLakeAudio" hidden>Share audio</button>
+      <button type="button" id="backgroundLakeAudio">Play in background</button>
+    </div>
+    <menu>
+      <button type="button" id="generateLakeAudio" data-primary>Generate audio</button>
+      <button formnovalidate>Close</button>
+    </menu>
+  </form>
+</dialog>
 <div class="post-cards-overlay" id="postCardsOverlay" onclick="closePostCards()"></div>
 <aside class="post-cards-drawer" id="postCardsDrawer" aria-label="Post Imagery library" aria-hidden="true">
   <header class="post-cards-head">
@@ -6844,6 +6875,15 @@ function excerptText(){
     [message.role==='user'?'You':'The Lake',message.time].filter(Boolean).join(' · '),message.content
   ].join('\n')).join('\n\n');
 }
+function openTideAudio(){
+  document.getElementById('shareMenu').style.display='none';
+  const text=chatHistory.filter(shareableTideMessage).map(message=>readingText(message.content)).filter(value=>value.trim()).join('\n\n');
+  window.LakeAudioExport.open({title:currentExportTitle() || 'Tide',text,speed:speechState.rate});
+}
+function openExcerptAudio(){
+  const text=selectedTideExcerpts().map(message=>readingText(message.content)).filter(value=>value.trim()).join('\n\n');
+  window.LakeAudioExport.open({title:'Tide excerpts',text,speed:speechState.rate,parent:document.getElementById('lakeShareDialog')});
+}
 async function copySelectedExcerpts(){
   const text=excerptText();
   if(!text)return;
@@ -7339,8 +7379,11 @@ function previewLakeVoice(){
   stopSpeech(false);
   lakeSpeechOutput.speak(lakeSpeechOutput.utterance('Take a breath. What is on your mind today?',speechState.rate));
 }
+function readingText(text){
+  return String(text||'').replace(/^[#>]+[ \t]*/gm,'').replace(/[*_`]/g,'').replace(/\p{Extended_Pictographic}\uFE0F?/gu,'');
+}
 function speechChunks(text){
-  const cleaned=String(text||'').replace(/^[#>]+[ \t]*/gm,'').replace(/[*_`]/g,'').replace(/\p{Extended_Pictographic}\uFE0F?/gu,'');
+  const cleaned=readingText(text);
   return cleaned.split(/\n\s*\n/).flatMap(paragraph=>{
     const words=paragraph.trim().split(/\s+/).filter(Boolean);
     const chunks=[];
@@ -7462,6 +7505,7 @@ function speakCurrentChunk(){
   try{lakeSpeechOutput.speak(utterance);}catch{failed();}
 }
 function speakMessage(waveEl){
+  window.LakeAudioExport?.pause();
   refreshLakeVoices();
   const waves=[...document.querySelectorAll('#wavesContainer .wave')].filter(wave=>canonicalMessageText(wave));
   speechState.waves=waves.includes(waveEl)?waves:[waveEl];
@@ -7479,6 +7523,7 @@ function startReadingMessage(wave,text){
 function speakText(text,btn){
   const wave=btn?.closest?.('.wave');
   if(wave)return speakMessage(wave);
+  window.LakeAudioExport?.pause();
   speechState.waves=[];
   speechState.voice=lakeSpeechOutput.chooseVoice();
   startReadingMessage(null,text);
@@ -7625,6 +7670,7 @@ function bindSpeechJumpButton(button){
 document.querySelectorAll('[data-speech-jump]').forEach(bindSpeechJumpButton);
 
 let originalShareMessage='';
+let originalShareAudioText='';
 function originalWaveShareText(){
   return `🌊 A Wave from The Great Lake\n\n${originalShareMessage}\n\nCreate your own Tide:\n${LAKE_PUBLIC_URL}`;
 }
@@ -7642,9 +7688,14 @@ function formatSharedWaveText(value){
     .replace(/\n{3,}/g,'\n\n').trim();
 }
 function shareMessage(waveEl){
-  originalShareMessage=formatSharedWaveText(messageActionText(waveEl));
+  const text=messageActionText(waveEl);
+  originalShareMessage=formatSharedWaveText(text);
+  originalShareAudioText=readingText(text);
   document.getElementById('shareWaveText').textContent=originalWaveShareText();
   document.getElementById('shareWaveDialog').showModal();
+}
+function openWaveAudio(){
+  window.LakeAudioExport.open({title:'Shared Wave',text:originalShareAudioText,speed:speechState.rate,parent:document.getElementById('shareWaveDialog')});
 }
 function copyOriginalWave(){return copyText(document.getElementById('shareWaveText').textContent);}
 async function shareOriginalWave(){
@@ -7908,6 +7959,7 @@ function openLakeVoice({keepTide=false}={}){
     showToast('Voice conversation is unavailable in this browser.');
     return;
   }
+  window.LakeAudioExport?.pause();
   stopSpeech();
   if(!keepTide)newSession();
   else if(!currentSessionId)currentSessionId='session_'+Date.now();
@@ -8296,5 +8348,6 @@ function setupSwipe() {
 }
 </script>
 <script src="/library-ui.js"></script>
+<script src="/audio-export.js"></script>
 </body>
 </html>
