@@ -1927,9 +1927,12 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
     </div>
     <div class="depths-section crew-modal-field">
       <details class="depths-section">
-        <summary>Slash Commands</summary>
+        <summary>Slash &amp; Emoji Shortcuts</summary>
         <p>Use /mood to open the mood picker and /w# to insert a Next Wave. Add one custom prompt per line, like /brief = Give me the bottom line. Edit or remove a line to change it, or prefix it with # to disable it.</p>
         <textarea id="lakeCustomCommands" aria-label="My slash commands" rows="4" maxlength="4000" onchange="localStorage.setItem(storageKey('customPrompts'),this.value)"></textarea>
+        <label for="lakeEmojiCommands">My emoji shortcuts</label>
+        <textarea id="lakeEmojiCommands" rows="3" maxlength="4000" placeholder="⚡ = /deep&#10;🔒 = /brief" onchange="localStorage.setItem(storageKey('emojiCommands'),this.value)"></textarea>
+        <p class="mode-continuity">Map one emoji to an existing slash command per line. Send the emoji on its own, or put it first followed by a space. Emojis elsewhere in a message stay as text.</p>
       </details>
       <label for="lakeVoicePreference">Default speaking voice</label>
       <select id="lakeVoicePreference" onchange="saveLakeVoice(this.value)"><option value="">Auto voice</option></select>
@@ -2376,6 +2379,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
       <ul class="help-text">
         <li><kbd>Enter</kbd> sends. <kbd>Shift</kbd> + <kbd>Enter</kbd> adds a new line.</li>
         <li>Type <code>/</code> to see shortcuts. Use <code>/w1</code>, <code>/w2</code>, and so on for numbered Next Waves.</li>
+        <li>In <strong>Settings → Slash &amp; Emoji Shortcuts</strong>, add a mapping like <code>⚡ = /deep</code>. Send ⚡ by itself to switch moods, or start a message with ⚡ and a space to use that mood for the message.</li>
         <li><code>/rename</code> suggests a title. <code>/rename My title</code> sets one directly. <code>/pdf</code> opens a transcript preview. <code>/share</code> shares the latest Wave.</li>
         <li><code>/drip</code>, <code>/shallow</code>, <code>/calm</code>, <code>/deep</code>, and <code>/stormy</code> switch moods. Try <code>/trigger /focus /deep</code> to set an alias and <code>/untrigger /focus</code> to remove it.</li>
       </ul>
@@ -2991,6 +2995,23 @@ function composerCommands(){
     commands.set('w'+number,{label:item.label,prompt:'W'+number+'- '+item.prompt});
   });
   return commands;
+}
+function expandComposerEmojiShortcut(text,triggers){
+  const token=text.match(/^\S+/u)?.[0];
+  if(!token)return text;
+  const normalize=emoji=>emoji.replace(/[\uFE0E\uFE0F]/g,'');
+  const key=normalize(token);
+  if(!/^(?:\p{Regional_Indicator}{2}|[#*0-9]\u20e3|\p{Extended_Pictographic}\p{Emoji_Modifier}?(?:\u200d\p{Extended_Pictographic}\p{Emoji_Modifier}?)*)$/u.test(key))return text;
+  for(const line of (localStorage.getItem(storageKey('emojiCommands'))||'').split(/\r?\n/)){
+    const entry=line.match(/^\s*(\S+)\s*=\s*\/([a-z][a-z0-9-]{0,23})\s*$/i);
+    if(!entry || normalize(entry[1])!==key)continue;
+    const code=entry[2].toLowerCase();
+    if(Object.hasOwn(LAKE_MOOD_CODES,code) || Object.hasOwn(triggers,code) ||
+        /^(?:mood|w[1-9]|w10)$/.test(code) || composerCommands().has(code)){
+      return '/'+code+text.slice(token.length);
+    }
+  }
+  return text;
 }
 function insertComposerPrompt(input,prompt,start=input.value.length,end=start){
   const before=input.value.slice(0,start).replace(/[ \t\r\n]+$/,'');
@@ -4270,6 +4291,7 @@ function toggleDepths() {
   if(opened){
     refreshLakeVoices();
     document.getElementById('lakeCustomCommands').value=localStorage.getItem(storageKey('customPrompts'))||'';
+    document.getElementById('lakeEmojiCommands').value=localStorage.getItem(storageKey('emojiCommands'))||'';
     document.getElementById('lakePersonalNotes').value=localStorage.getItem(storageKey('personalNotes'))||'';
     document.getElementById('lakeLearnProfile').checked=localStorage.getItem(storageKey('learnProfile'))!=='false';
   }
@@ -5334,7 +5356,7 @@ async function exportFullBackup(encrypted=false) {
     });
     const memory=memoryBackupData();
     if(Object.keys(memory.anchors).length)backup.data.memory=memory;
-    backup.data.preferences=Object.fromEntries(['learnProfile','personalNotes','speechVoice','moodTriggers','customPrompts'].map(name=>[name,localStorage.getItem(storageKey(name))]).filter(([,value])=>value!==null));
+    backup.data.preferences=Object.fromEntries(['learnProfile','personalNotes','speechVoice','moodTriggers','customPrompts','emojiCommands'].map(name=>[name,localStorage.getItem(storageKey(name))]).filter(([,value])=>value!==null));
     let payload=backup;
     if(encrypted){
       const password=prompt('Choose a backup password (at least 12 characters). You will need it to restore the file.');
@@ -5456,7 +5478,7 @@ async function restoreLakeBackup(file){
     const knownCrew=new Set(crewMembers.map(item=>String(item.name||'').toLowerCase()));
     if(!data.memory?.anchors?.crew && Array.isArray(data.crew))crewMembers.push(...data.crew.filter(item=>typeof item?.name==='string' && !knownCrew.has(item.name.toLowerCase())));
     if(!data.memory?.anchors?.crew)saveCrew();
-    for(const name of ['learnedProfile','learnProfile','personalNotes','speechVoice','moodTriggers','customPrompts']){
+    for(const name of ['learnedProfile','learnProfile','personalNotes','speechVoice','moodTriggers','customPrompts','emojiCommands']){
       const value=data.preferences?.[name];
       if(typeof value==='string' && localStorage.getItem(storageKey(name))===null)localStorage.setItem(storageKey(name),value);
     }
@@ -5700,7 +5722,7 @@ function enablePromptDrag(button,getPrompt,onStationaryHold) {
 
 function sendPrompt(text) {
   document.getElementById('lakeInput').value = text;
-  sendWave();
+  sendWave({skipEmojiShortcut:true});
 }
 
 function toggleLakeHotkeys(){
@@ -5856,6 +5878,9 @@ async function sendWave(options = {}) {
   const commandKey=typeof storageKey==='function' ? storageKey('moodTriggers') : '';
   let triggers={};
   try { triggers=JSON.parse(globalThis.localStorage?.getItem(commandKey)||'{}') || {}; } catch {}
+  if(options.requestText==null && !options.skipEmojiShortcut && typeof expandComposerEmojiShortcut==='function'){
+    text=expandComposerEmojiShortcut(text,triggers);
+  }
   if(options.requestText==null){
     const tag=text.match(/^(?:\/tag(?:\s+([\s\S]+))?|tag (?:the )?(?:key )?players[.!]?)$/i);
     if(tag){

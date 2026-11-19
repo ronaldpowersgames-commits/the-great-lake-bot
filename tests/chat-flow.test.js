@@ -221,6 +221,24 @@ Not every resistance is a warning.
   assert.doesNotMatch(waveImageShare,/postFromWave|postCardEditor/);
 });
 
+test('emoji aliases expand only a configured leading emoji to an existing slash shortcut',()=>{
+  const start=script.indexOf('function expandComposerEmojiShortcut(');
+  const end=script.indexOf('function insertComposerPrompt(', start);
+  const context=vm.createContext({
+    LAKE_MOOD_CODES:{deep:'analytical'},
+    storageKey:key=>key,
+    localStorage:{getItem:()=> '⚡ = /deep\n🔒 = /brief\n🎉 = /missing\n👍🏽 = /pdf\n# 🌊 = /deep'},
+    composerCommands:()=>new Map([['brief',{}],['pdf',{}]])
+  });
+  const expand=vm.runInContext(script.slice(start,end)+'\nexpandComposerEmojiShortcut',context);
+  assert.equal(expand('⚡️ Help me think',{}),'/deep Help me think');
+  assert.equal(expand('🔒',{}),'/brief');
+  assert.equal(expand('👍🏽',{}),'/pdf');
+  assert.equal(expand('Thanks ⚡',{}),'Thanks ⚡');
+  assert.equal(expand('🎉 Keep this',{}),'🎉 Keep this');
+  assert.equal(expand('🌊',{}),'🌊');
+});
+
 test('rename is a real reserved command with Hotkey and persistent title execution',()=>{
   assert.match(html,/commands\.set\('rename'/);
   assert.match(html,/actionType==='rename-command'/);
