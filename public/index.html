@@ -2262,16 +2262,42 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
   <form method="dialog">
     <h2 id="lakeAudioTitle">♫ Export Lake audio</h2>
     <p id="lakeAudioScope"></p>
-    <p>Generate AI audio with a Lake voice. The selected text is sent to OpenAI when you choose Generate. Browser voices are available in the read-aloud player.</p>
+    <p>Preview plays a sample. Generate sends your selected text to OpenAI and reads it as written.</p>
     <label>Voice
       <select id="lakeAudioVoice">
-        <option value="marin">Marin</option><option value="cedar">Cedar</option><option value="alloy">Alloy</option>
-        <option value="ash">Ash</option><option value="ballad">Ballad</option><option value="coral">Coral</option>
-        <option value="echo">Echo</option><option value="fable">Fable</option><option value="onyx">Onyx</option>
-        <option value="nova">Nova</option><option value="sage">Sage</option><option value="shimmer">Shimmer</option><option value="verse">Verse</option>
+        <option value="marin">Marin · natural, polished, conversational</option>
+        <option value="cedar">Cedar · natural, grounded, confident</option>
+        <option value="alloy">Alloy · neutral, balanced, clean</option>
+        <option value="ash">Ash · conversational, direct, modern</option>
+        <option value="ballad">Ballad · expressive, soft, story-like</option>
+        <option value="coral">Coral · bright, warm, animated</option>
+        <option value="echo">Echo · smooth, measured</option>
+        <option value="fable">Fable · expressive narrator</option>
+        <option value="onyx">Onyx · deep, weighty, authoritative</option>
+        <option value="nova">Nova · energetic, crisp</option>
+        <option value="sage">Sage · calm, restrained, thoughtful</option>
+        <option value="shimmer">Shimmer · light, bright, lively</option>
+        <option value="verse">Verse · expressive, conversational</option>
+      </select>
+    </label>
+    <label>Language or accent <select id="lakeAudioLocale"></select></label>
+    <label>Delivery
+      <select id="lakeAudioDelivery">
+        <option value="lake">The Lake · warm, understated spy-thriller</option>
+        <option value="natural">Natural delivery</option>
+      </select>
+    </label>
+    <label>Voice character
+      <select id="lakeAudioCharacter">
+        <option value="feminine">Feminine</option>
+        <option value="masculine">Masculine</option>
+        <option value="default">Use voice default</option>
       </select>
     </label>
     <label>Playback speed <input type="number" id="lakeAudioSpeed" min="0.25" max="3" step="0.01" required value="1"></label>
+    <button type="button" id="previewLakeAudio">Preview voice</button>
+    <p id="lakeVoicePreviewStatus" role="status"></p>
+    <audio id="lakeVoicePreviewPlayer" controls preload="metadata" aria-label="Voice sample" style="width:100%" hidden></audio>
     <p id="lakeAudioStatus" role="status"></p>
     <audio id="lakeExportPlayer" controls preload="metadata" aria-label="Lake audio preview" style="width:100%" hidden></audio>
     <div id="lakeAudioActions" class="excerpt-actions" hidden>
@@ -8370,6 +8396,7 @@ function setupSwipe() {
 }
 </script>
 <script src="/library-ui.js"></script>
+<script src="/audio-pronunciation.js"></script>
 <script src="/audio-export.js"></script>
 </body>
 </html>

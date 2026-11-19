@@ -3,7 +3,13 @@
   const dialog = get('lakeAudioDialog');
   const player = get('lakeExportPlayer');
   const voice = get('lakeAudioVoice');
+  const locale = get('lakeAudioLocale');
+  const delivery = get('lakeAudioDelivery');
+  const character = get('lakeAudioCharacter');
   const speedInput = get('lakeAudioSpeed');
+  const preview = get('previewLakeAudio');
+  const samplePlayer = get('lakeVoicePreviewPlayer');
+  const sampleStatus = get('lakeVoicePreviewStatus');
   const make = get('generateLakeAudio');
   const status = get('lakeAudioStatus');
   const actions = get('lakeAudioActions');
@@ -11,7 +17,71 @@
   const restore = get('fileAudioRestore');
   const limit = 4000;
   const maxLength = 40000;
-  let source, request, file, fileUrl, keepPlaying = false;
+  let source, request, file, fileUrl, sampleRequest, sampleUrl, keepPlaying = false;
+
+  for (const [value,[label]] of Object.entries(LakeAudioPronunciation)) locale.add(new Option(label,value));
+
+  async function fetchAudio(text, settings, format, signal) {
+    const response = await fetch('/audio', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ text, ...settings, format }), signal
+    });
+    if (!response.ok) throw new Error((await response.json().catch(() => ({}))).error || 'Could not generate audio.');
+    const bytes = await response.arrayBuffer();
+    if (!bytes.byteLength || (format==='pcm' && bytes.byteLength % 2)) throw new Error('The voice service returned incomplete audio.');
+    return bytes;
+  }
+
+  function audioSettings() {
+    return { voice:voice.value, speed:Number(speedInput.value), locale:locale.value, delivery:delivery.value, character:character.value };
+  }
+
+  function clearSample() {
+    sampleRequest?.abort();
+    sampleRequest = null;
+    samplePlayer.pause();
+    samplePlayer.removeAttribute('src');
+    samplePlayer.load();
+    samplePlayer.hidden = true;
+    sampleStatus.textContent = '';
+    preview.disabled = false;
+    if (sampleUrl) URL.revokeObjectURL(sampleUrl);
+    sampleUrl = null;
+  }
+
+  preview.onclick = async () => {
+    if (request || sampleRequest || !speedInput.reportValidity()) return;
+    if (sampleUrl) {
+      samplePlayer.currentTime = 0;
+      try { await samplePlayer.play(); } catch {}
+      return;
+    }
+    const task = new AbortController();
+    sampleRequest = task;
+    preview.disabled = true;
+    sampleStatus.textContent = 'Preparing a voice sample…';
+    try {
+      const sampleText=LakeAudioPronunciation[locale.value][1];
+      const bytes=await fetchAudio(sampleText,audioSettings(),'mp3',task.signal);
+      if (sampleRequest !== task) return;
+      sampleUrl = URL.createObjectURL(new Blob([bytes], { type:'audio/mpeg' }));
+      samplePlayer.src = sampleUrl;
+      samplePlayer.hidden = false;
+      sampleStatus.textContent = '';
+      try { await samplePlayer.play(); }
+      catch { if (sampleRequest === task) sampleStatus.textContent = 'Press Play to hear the sample.'; }
+    } catch (error) {
+      if (sampleRequest === task && error.name !== 'AbortError') sampleStatus.textContent = error.message;
+    } finally {
+      if (sampleRequest === task) { sampleRequest = null; preview.disabled = false; }
+    }
+  };
+  samplePlayer.addEventListener('play', () => { player.pause(); stopSpeech(); });
+  voice.addEventListener('change',clearSample);
+  locale.addEventListener('change',clearSample);
+  delivery.addEventListener('change',clearSample);
+  character.addEventListener('change',clearSample);
+  speedInput.addEventListener('input',clearSample);
 
   function split(text) {
     const parts = [];
@@ -56,13 +126,22 @@
     request?.abort();
     request = null;
     clearFile();
+    clearSample();
     source = { title, text, parent };
     get('lakeAudioScope').textContent = title;
     speedInput.value = speed;
-    try { voice.value = localStorage.getItem(storageKey('exportAudioVoice')) || 'marin'; } catch {}
+    try {
+      voice.value = localStorage.getItem(storageKey('exportAudioVoice')) || 'marin';
+      locale.value = localStorage.getItem(storageKey('exportAudioLocale')) || 'auto';
+      delivery.value = localStorage.getItem(storageKey('exportAudioDelivery')) || 'lake';
+      character.value = localStorage.getItem(storageKey('exportAudioCharacter')) || 'feminine';
+    } catch {}
     if (!voice.value) voice.value = 'marin';
+    if (!locale.value) locale.value = 'auto';
+    if (!delivery.value) delivery.value = 'lake';
+    if (!character.value) character.value = 'feminine';
     make.disabled = text.length > maxLength;
-    voice.disabled = speedInput.disabled = false;
+    voice.disabled = speedInput.disabled = locale.disabled = delivery.disabled = character.disabled = false;
     status.textContent = make.disabled
       ? 'This selection is too long for one audio file. Choose up to 40,000 characters using Tide excerpts.'
       : '';
@@ -72,6 +151,7 @@
   make.onclick = async () => {
     if (!source || request || source.text.length > maxLength || !speedInput.reportValidity()) return;
     clearFile();
+    clearSample();
     const task = new AbortController();
     request = task;
     const parts = split(source.text);
@@ -79,22 +159,19 @@
     const format = multi ? 'pcm' : 'mp3';
     const extension = multi ? 'wav' : 'mp3';
     const type = multi ? 'audio/wav' : 'audio/mpeg';
-    const speed = Number(speedInput.value);
-    const selectedVoice = voice.value;
-    try { localStorage.setItem(storageKey('exportAudioVoice'), selectedVoice); } catch {}
-    make.disabled = voice.disabled = speedInput.disabled = true;
+    const settings = audioSettings();
+    try {
+      localStorage.setItem(storageKey('exportAudioVoice'), settings.voice);
+      localStorage.setItem(storageKey('exportAudioLocale'), settings.locale);
+      localStorage.setItem(storageKey('exportAudioDelivery'), settings.delivery);
+      localStorage.setItem(storageKey('exportAudioCharacter'), settings.character);
+    } catch {}
+    make.disabled = voice.disabled = speedInput.disabled = locale.disabled = delivery.disabled = character.disabled = preview.disabled = true;
     try {
       const audio = [];
       for (const [index,text] of parts.entries()) {
         status.textContent = multi ? 'Generating part ' + (index + 1) + ' of ' + parts.length + '…' : 'Generating audio…';
-        const response = await fetch('/audio', {
-          method:'POST', headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({ text, voice:selectedVoice, speed, format }), signal:task.signal
-        });
-        if (!response.ok) throw new Error((await response.json().catch(() => ({}))).error || 'Could not generate audio.');
-        const segment = await response.arrayBuffer();
-        if (!segment.byteLength || (multi && segment.byteLength % 2)) throw new Error('The voice service returned incomplete audio.');
-        audio.push(segment);
+        audio.push(await fetchAudio(text,settings,format,task.signal));
       }
       if (request !== task) return;
       file = new File(multi ? wav(audio) : audio, LakeExportNames.artifact(source.title + '-audio', extension), { type });
@@ -103,18 +180,19 @@
       player.hidden = actions.hidden = false;
       try { share.hidden = !(navigator.share && navigator.canShare?.({ files:[file] })); }
       catch { share.hidden = true; }
-      status.textContent = extension.toUpperCase() + ' ready · ' + selectedVoice + ' · ' + speed + '×';
+      status.textContent = extension.toUpperCase() + ' ready · ' + settings.voice + ' · ' + settings.speed + '×';
     } catch (error) {
       if (request === task && error.name !== 'AbortError') status.textContent = error.message;
     } finally {
       if (request === task) {
         request = null;
-        make.disabled = voice.disabled = speedInput.disabled = false;
+        make.disabled = voice.disabled = speedInput.disabled = locale.disabled = delivery.disabled = character.disabled = preview.disabled = false;
       }
     }
   };
 
   player.addEventListener('play', () => {
+    samplePlayer.pause();
     stopSpeech();
     if (navigator.mediaSession && typeof MediaMetadata === 'function') {
       navigator.mediaSession.metadata = new MediaMetadata({ title:'The Great Lake', artist:'Lake audio' });
@@ -149,6 +227,7 @@
     request?.abort();
     request = null;
     clearFile();
+    clearSample();
   });
-  window.LakeAudioExport = { open, pause:() => player.pause() };
+  window.LakeAudioExport = { open, pause:() => { player.pause(); samplePlayer.pause(); } };
 })();
