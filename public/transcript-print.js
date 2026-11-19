@@ -136,96 +136,11 @@
   status('Preparing PDF…');
   setTimeout(() => {
     try {
-      const doc = new window.jspdf.jsPDF({ unit: 'pt', format: 'a4', compress: true });
-      const margin = 52;
-      const { width, height } = doc.internal.pageSize;
-      let y = margin;
-      let unsupportedText = false;
-      function printableText(text) {
-        // Helvetica in PDF supports WinAnsi. The print preview keeps the original text.
-        return text.replace(/[^\x20-\x7e\xa0-\xff\r\n\t€‘’“”–—…•™ŒœŠšŽžŸ]/gu, () => {
-          unsupportedText = true;
-          return '?';
-        }).replace(/\t/g, '    ');
-      }
-      function room(extra=0) {
-        if (y+extra > height-margin) { doc.addPage(); y=margin; }
-      }
-      function writeRuns(runs, {size=11, color='#172033', indent=0, bold=false}={}) {
-        doc.setFontSize(size);
-        doc.setTextColor(color);
-        const maxWidth=width-2*margin-indent;
-        let line=[], used=0, space='';
-        const font=(family,style)=>doc.setFont(family,style);
-        const flush=()=>{
-          room();
-          let x=margin+indent;
-          for (const part of line) {
-            font(part.family,part.style);
-            doc.text(part.text,x,y);
-            x+=doc.getTextWidth(part.text);
-          }
-          y+=size*1.45;
-          line=[];used=0;space='';
-        };
-        for (const run of runs) {
-          const family=run.tag==='code'?'courier':'helvetica';
-          const style=run.tag==='em'?(bold?'bolditalic':'italic'):bold || run.tag==='strong'?'bold':'normal';
-          for (const word of printableText(run.text).match(/\n|[^\S\n]+|\S+/g) || []) {
-            if (word==='\n') { flush(); continue; }
-            if (!word.trim()) { space+=word; continue; }
-            font(family,style);
-            const tokenWidth=doc.getTextWidth(word);
-            if (used && used+doc.getTextWidth(space)+tokenWidth>maxWidth) { flush(); font(family,style); }
-            const parts=tokenWidth>maxWidth?doc.splitTextToSize(word,maxWidth):[word];
-            for (const [i,part] of parts.entries()) {
-              const text=(used || family==='courier'?space:'')+part;
-              const previous=line.at(-1);
-              if (previous?.family===family && previous.style===style) previous.text+=text;
-              else line.push({family,style,text});
-              used+=doc.getTextWidth(text);
-              space='';
-              if (i<parts.length-1) { flush(); font(family,style); }
-            }
-          }
-        }
-        flush();
-      }
-      writeRuns([{text:title}], {size:21,bold:true,color:'#123650'});
-      writeRuns([{text:data.exported}], {size:10,color:'#536880'});
-      for (const [index,message] of data.messages.entries()) {
-        y += 14;
-        room(36);
-        writeRuns([{text:[message.sender, message.time].filter(Boolean).join(' · ')}], {size:10,bold:true,color:'#075985'});
-        for (const block of formatted[index]) {
-          const {kind}=block;
-          if (kind==='gap') { y+=6; continue; }
-          if (kind==='rule') { room(12); doc.setDrawColor('#cbd8e5'); doc.line(margin,y-2,width-margin,y-2); y+=8; continue; }
-          if (kind==='heading') {
-            y+=5;
-            room(30);
-            writeRuns(inlineRuns(block.text), {size:17-block.level,bold:true,color:'#123650'});
-            continue;
-          }
-          if (kind==='code') {
-            writeRuns([{text:block.lines.join('\n'),tag:'code'}], {size:10,indent:12});
-            continue;
-          }
-          const marker=kind==='ordered'?block.marker+' ':kind==='bullet'?'• ':kind==='check'?(block.checked?'[x] ':'[ ] '):'';
-          writeRuns([{text:marker},...inlineRuns(block.text)], {indent:marker || kind==='quote'?12:0});
-        }
-      }
+      const doc = LakeTranscriptPdf.build({ title, exported:data.exported, messages:data.messages, blocks:formatted, inlineRuns });
       const pages = doc.getNumberOfPages();
-      doc.setFontSize(9);
-      doc.setTextColor('#536880');
-      for (let page = 1; page <= pages; page++) {
-        doc.setPage(page);
-        doc.text(page + ' / ' + pages, width - margin, height - 25, { align: 'right' });
-      }
       const pdf = new File([doc.output('blob')], filename, { type: 'application/pdf' });
       element('meta').textContent += ' · ' + pages + (pages === 1 ? ' page' : ' pages') +
         ' · ' + Math.max(1, Math.round(pdf.size / 1024)) + ' KB';
-      const fontNotice = unsupportedText ? 'Use Print to preserve characters outside the PDF font.' : '';
       download.disabled = false;
       download.onclick = () => {
         const url = URL.createObjectURL(pdf);
@@ -250,9 +165,9 @@
             share.disabled = false;
           }
         };
-        status(fontNotice);
+        status('');
       } else {
-        status('This browser cannot share PDF attachments directly. You can copy, download, or print the PDF. ' + fontNotice);
+        status('This browser cannot share PDF attachments directly. You can copy, download, or print the PDF.');
       }
       const copyPdf = element('copy-pdf');
       copyPdf.disabled = false;
