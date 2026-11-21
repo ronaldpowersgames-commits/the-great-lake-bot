@@ -2214,10 +2214,10 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
       <p id="sharePromptHint" hidden>Anyone with the link can see this before unlocking. Keep the passphrase separate.</p>
     </div>
     <details id="shareExpiration" hidden>
-      <summary>Expiration · optional</summary>
-      <label><span><input type="checkbox" id="shareExpiryEnabled" onchange="updateShareExpiration()"> Set a custom expiration</span></label>
+      <summary>Self-destruct · optional</summary>
+      <label><span><input type="checkbox" id="shareExpiryEnabled" onchange="updateShareExpiration()"> Set this link to self-destruct</span></label>
       <div id="shareExpiryFields" hidden>
-        <label>Expire by
+        <label>Self-destruct timing
           <select id="shareExpiryMode" onchange="updateShareExpiration()">
             <option value="duration">Time after creating the link</option>
             <option value="date">Calendar date</option>
@@ -2230,7 +2230,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
             <option selected>days</option><option>weeks</option><option>months</option><option>years</option>
           </select></label>
         </div>
-        <label id="shareExpiryDateRow" hidden>Expires at the end of this day in your time zone
+        <label id="shareExpiryDateRow" hidden>Link self-destructs at the end of this day in your time zone
           <input type="date" id="shareExpiryDate">
         </label>
       </div>
@@ -7012,17 +7012,17 @@ function selectedShareExpiration(){
   if(document.getElementById('shareExpiryMode').value==='date'){
     const day=document.getElementById('shareExpiryDate').value;
     const timestamp=new Date(day+'T23:59:59.999').getTime();
-    if(!Number.isFinite(timestamp)||timestamp<=Date.now())throw new Error('Choose an expiration date in the future.');
+    if(!Number.isFinite(timestamp)||timestamp<=Date.now())throw new Error('Choose a future self-destruct date.');
     return {mode:'date',timestamp};
   }
   const amount=document.getElementById('shareExpiryAmount').valueAsNumber;
-  if(!Number.isSafeInteger(amount)||amount<1)throw new Error('Enter a positive whole number for expiration.');
+  if(!Number.isSafeInteger(amount)||amount<1)throw new Error('Enter a positive whole number for the delay.');
   return {mode:'duration',amount,unit:document.getElementById('shareExpiryUnit').value};
 }
 function shareLinkLifetime(link){
   return link.expiresAt
-    ? 'Link expires '+new Date(link.expiresAt).toLocaleString()+' or sooner if the server restarts.'
-    : 'No expiration date. The link stays active until the server restarts.';
+    ? 'Link self-destructs on '+new Date(link.expiresAt).toLocaleString()+' or sooner if the server restarts.'
+    : 'Self-destruct is off. The link stays active until the server restarts.';
 }
 async function createTideShareLink(session,passphrase){
   const unlockPrompt=passphrase.trim()?shareUnlockPrompt.value.trim():'';
