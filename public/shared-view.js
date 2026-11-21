@@ -1,4 +1,4 @@
-/* This viewer deliberately has no account, storage or app dependencies. */
+/* This viewer does not read account storage. */
 (async function () {
   const title = document.getElementById('title');
   const messages = document.getElementById('messages');
@@ -56,6 +56,7 @@
     if (!response.ok) throw new Error('This shared conversation is unavailable or has expired.');
     const { session } = await response.json();
     if (!session || !Array.isArray(session.history)) throw new Error('This shared conversation could not be read.');
+    const { appendFormatted, transcriptBlocks } = LakeTranscriptFormat;
     title.textContent = session.name || 'Shared conversation';
     document.title = title.textContent + ' | The Great Lake';
     for (const message of session.history) {
@@ -67,19 +68,7 @@
       sender.textContent = message.role === 'user' ? (message.mirror?'You (Mirror exercise)':'You (conversation author)') : (message.mirror?'The Lake · Mirror exercise':'The Lake');
       const bubble = document.createElement('div');
       bubble.className = 'bubble';
-      // Construct formatting with text nodes, never untrusted HTML.
-      for (const paragraph of String(message.content || '').split(/\n\s*\n/)) {
-        const p = document.createElement('p');
-        const pieces = paragraph.split(/(\*\*[^*]+\*\*)/g);
-        for (const piece of pieces) {
-          if (piece.startsWith('**') && piece.endsWith('**')) {
-            const strong = document.createElement('strong');
-            strong.textContent = piece.slice(2, -2);
-            p.appendChild(strong);
-          } else p.appendChild(document.createTextNode(piece));
-        }
-        bubble.appendChild(p);
-      }
+      appendFormatted(bubble, transcriptBlocks(message.content));
       for (const file of message.attachments || []) {
         const label = document.createElement('div');
         label.className = 'attachment';

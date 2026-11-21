@@ -30,8 +30,18 @@
     .user[data-sent-mood="calm"] { --sent-mood:#4fc3f7; }
     .user[data-sent-mood="analytical"] { --sent-mood:#9b7aff; }
     .user[data-sent-mood="stormy"] { --sent-mood:#ff805c; }
-    .bubble p { margin: 0 0 8px; white-space: pre-wrap; }
-    .bubble p:last-child { margin-bottom: 0; }
+    .bubble :is(p,h2,h3,h4,ul,ol,blockquote,pre) { margin: 0 0 8px; }
+    .bubble :is(p,li,blockquote,pre) { white-space: pre-wrap; }
+    .bubble :is(h2,h3,h4) { color: #7fc7fa; line-height: 1.3; }
+    .bubble h2 { font-size: 1.35em; }
+    .bubble h3 { font-size: 1.2em; }
+    .bubble h4 { font-size: 1.08em; }
+    .bubble :is(ul,ol) { padding-inline-start: 1.5em; }
+    .bubble .check-item { list-style: none; }
+    .bubble blockquote { padding-inline-start: 12px; border-inline-start: 3px solid #4b86ae; color: #c7def0; }
+    .bubble pre { padding: 8px 10px; border-radius: 6px; background: #0b1d2d; }
+    .bubble hr { border: 0; border-top: 1px solid #39556d; margin: 12px 0; }
+    .bubble > :last-child { margin-bottom: 0; }
     .bubble img { display: block; max-width: 100%; max-height: 600px; height: auto; margin-top: 8px; }
     .attachment, time { color: #a3b5c4; font-size: 12px; }
     time { display: block; margin-top: 3px; }
@@ -67,6 +77,7 @@
       <button type="button" id="cancelUnlock">Cancel</button>
     </form>
   </dialog>
-  <script src="/shared-view.js?v=2"></script>
+  <script src="/transcript-format.js"></script>
+  <script src="/shared-view.js?v=3"></script>
 </body>
 </html>
