@@ -1165,6 +1165,21 @@ button.depths-option { width:100%; text-align:start; font-family:inherit; backgr
   box-shadow: 0 16px 48px rgba(0,0,0,0.6); animation: waveIn 0.3s ease-out;
 }
 .crew-modal h3 { font-size: 16px; color: var(--lake-light); margin-bottom: 20px; text-align: center; }
+#crewModalOverlay .crew-modal { max-width:460px; }
+#crewModalOverlay .crew-modal-actions { position:sticky; bottom:-24px; padding:10px 0 14px; background:var(--dock-bg); }
+.crew-editor-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; }
+.crew-editor-heading h3 { margin:0; text-align:start; }
+.crew-editor-info { padding:6px 10px; border:1px solid var(--dock-border); border-radius:50%; background:var(--lake-mid); color:var(--lake-light); cursor:pointer; }
+.crew-editor-help,.crew-editor-note { margin:0 0 12px; color:var(--text-secondary); font-size:12px; line-height:1.5; }
+.crew-editor-help { padding:12px; border:1px solid var(--dock-border); border-radius:10px; }
+.crew-editor-help p { margin:0 0 10px; }
+.crew-editor-note { margin:5px 0 0; }
+#crewModalContext { min-height:92px; resize:vertical; }
+#crewModalOverlay input[type="checkbox"] { appearance:auto; -webkit-appearance:auto; accent-color:var(--lake-light); vertical-align:middle; }
+.crew-note-list { margin:8px 0 12px; padding-inline-start:18px; }
+.crew-note-list li { margin:6px 0; overflow-wrap:anywhere; }
+.crew-note-confidence { display:block; color:var(--lake-light); font-size:11px; }
+.crew-note-list button,.crew-editor-help button,#crewUseCodename { margin:4px 0 0 6px; }
 .crew-modal-field { margin-bottom: 13px; }
 .crew-modal-field label { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 5px; }
 .crew-modal-field input,
@@ -1917,7 +1932,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
         <option value="it">Italian</option>
         <option value="pt-BR">Portuguese (Brazil)</option>
       </select>
-      <div class="mode-continuity"><strong>Auto follows your wording.</strong> A selection overrides inferred language and spelling.</div>
+      <div class="mode-continuity"><strong>Defaults to US English.</strong> Choose Auto to follow the conversation.</div>
     </div>
     <div class="depths-section">
       <h4>🌊 Lake Mood</h4>
@@ -2011,26 +2026,44 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
 </div>
 
 <!-- CREW MODAL -->
-<div class="crew-modal-overlay" id="crewModalOverlay" onclick="closeCrewModal(event)">
-  <div class="crew-modal">
-    <h3 id="crewModalTitle">🪶 Add to The Crew</h3>
-    <div class="crew-modal-field"><label>Real Name</label><input type="text" id="crewModalName" placeholder="How you know them..."></div>
-    <div class="crew-modal-field"><label for="crewModalRole">Role</label><input id="crewModalRole" type="text" placeholder="e.g. CRM Lead, teammate, client"></div>
-    <div class="crew-modal-field"><label for="crewModalOrganization">Organisation</label><input id="crewModalOrganization" type="text" placeholder="e.g. Penguin King"></div>
-    <div class="crew-modal-field"><label for="crewModalRelationship">Relationship</label><input id="crewModalRelationship" type="text" placeholder="e.g. Professional contact, friendly rapport"></div>
-    <div class="crew-modal-field"><label for="crewModalCommunicationStyle">Communication style</label><input id="crewModalCommunicationStyle" type="text" placeholder="e.g. Direct, playful, detail-oriented"></div>
-    <div class="crew-modal-field"><label for="crewModalContext">📝 Context Note</label><textarea id="crewModalContext" placeholder="e.g. She’s my go-to person when I need to think out loud."></textarea></div>
+<div class="crew-modal-overlay" id="crewModalOverlay">
+  <div class="crew-modal" role="dialog" aria-modal="true" aria-labelledby="crewModalTitle">
+    <div class="crew-editor-heading">
+      <h3 id="crewModalTitle">🪶 Add to The Crew</h3>
+      <button type="button" class="crew-editor-info" id="crewEditorInfo" aria-label="How to use the Crew editor" aria-expanded="false" aria-controls="crewEditorHelp" onclick="toggleCrewEditorHelp()">ⓘ</button>
+    </div>
+    <div class="crew-editor-help" id="crewEditorHelp" hidden>
+      <p>Aliases help the Lake recognize the same person across Tides. A codename is an optional display name that the Lake also recognizes as an alias. It doesn’t anonymize shared chats.</p>
+      <p>Write or edit your own context anywhere in Your notes. As the Lake learns, its observations appear below. Use Remove beside an observation, then Save. Link entries only when they refer to the same person.</p>
+      <button type="button" class="crew-modal-cancel" onclick="askAboutCrewEditor()">🌊 Ask the Lake about Crew</button>
+    </div>
+    <div class="crew-modal-field"><label for="crewModalName">Real name</label><input type="text" id="crewModalName" placeholder="How you know them..."></div>
+    <div class="crew-modal-field"><label for="crewModalNickname">Aliases / other names</label><input type="text" id="crewModalNickname" placeholder="e.g. User, Ronnie, Ron"></div>
+    <div class="crew-modal-field"><label><input id="crewModalSelf" type="checkbox"> ⭐ This is me</label></div>
+    <div class="crew-modal-field"><label for="crewModalCodename">🎭 Codename</label><input type="text" id="crewModalCodename" placeholder="Choose an optional display name">
+      <p class="crew-editor-note">Used as a display name and recognized as an alias.</p>
+      <button type="button" class="crew-modal-cancel" id="crewUseCodename" hidden onclick="useCrewCodenameSuggestion()"></button>
+    </div>
+    <div class="crew-editor-note" id="crewReviewInfo" hidden></div>
+    <div class="crew-modal-field"><label for="crewModalContext">📝 Your notes</label><textarea id="crewModalContext" placeholder="Add anything you want the Lake to know about this person."></textarea>
+      <p class="crew-editor-note">Add or edit notes anywhere in this box.</p>
+    </div>
+    <details class="crew-modal-preferences" id="crewLearnedNotes" hidden>
+      <summary>Lake observations</summary>
+      <ul class="crew-note-list crew-editor-note" id="crewLearnedList"></ul>
+    </details>
     <details class="crew-modal-preferences" id="crewModalPreferences">
-      <summary>Preferences &amp; extras</summary>
+      <summary>Role, organization &amp; linking</summary>
       <div class="crew-modal-preferences-body">
-        <div class="crew-modal-field"><label>Nicknames / Aliases <span style="color:var(--text-dim);font-weight:normal;font-size:10px">*optional</span></label><input type="text" id="crewModalNickname" placeholder="e.g. User, Ronnie, Ron"></div>
+        <div class="crew-modal-field" id="crewMatchField" hidden><label for="crewMatchSelect">Link to an existing Crew member</label><select id="crewMatchSelect"></select></div>
+        <div class="crew-modal-field"><label for="crewModalRole">Role</label><input id="crewModalRole" type="text" placeholder="e.g. CRM Lead, teammate, client"></div>
+        <div class="crew-modal-field"><label for="crewModalOrganization">Organization</label><input id="crewModalOrganization" type="text" placeholder="e.g. Penguin King"></div>
+        <div class="crew-modal-field"><label for="crewModalRelationship">Relationship</label><input id="crewModalRelationship" type="text" placeholder="e.g. Professional contact, friendly rapport"></div>
+        <div class="crew-modal-field"><label for="crewModalCommunicationStyle">Communication style</label><input id="crewModalCommunicationStyle" type="text" placeholder="e.g. Direct, playful, detail-oriented"></div>
         <div class="crew-modal-field"><label><input id="crewModalVisible" type="checkbox" checked> Show in sidebar</label></div>
-        <div class="crew-modal-field"><label><input id="crewModalSelf" type="checkbox"> ⭐ This is me</label></div>
-        <div class="crew-modal-field" id="crewMatchField" hidden><label for="crewMatchSelect">Link To Crew Member</label><select id="crewMatchSelect"></select></div>
-        <div class="crew-modal-field"><label>Avatar Emoji <span style="color:var(--text-dim);font-weight:normal;font-size:10px">*optional</span></label><input type="text" id="crewModalEmoji" placeholder="e.g. 🦈 🌊 🔥 🦊"></div>
-        <div class="crew-modal-field"><label>🎭 Codename</label><input type="text" id="crewModalCodename" placeholder="e.g. The Architect, Driftwood..."></div>
       </div>
     </details>
+    <div class="crew-modal-field"><label for="crewModalEmoji">Avatar emoji</label><input type="text" id="crewModalEmoji" placeholder="e.g. 🦈 🌊 🔥 🦊"></div>
     <div class="crew-modal-actions">
       <button class="crew-modal-cancel" onclick="closeCrewModal()">Cancel</button>
       <button class="crew-modal-delete" id="crewModalDelete" style="display:none" onclick="deleteCrewFromModal()">🗑</button>
@@ -2458,6 +2491,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
     </div>
     <div class="help-divider"></div>
     <div class="help-tip">💡 Pro tip — the more context you give The Lake, the deeper the read. Drop the full thread, not just the headline.</div>
+    <button type="button" class="crew-modal-cancel" onclick="askAboutLakeHelp()">🌊 Ask the Lake how it works</button>
   </div>
 </div>
 
@@ -2782,6 +2816,7 @@ function parsePlayerTags(responseText) {
         name,
         nickname: String(player.nickname || '').trim(),
         codename: String(player.codename || '').trim(),
+        suggestedCodename: String(player.suggested_codename || '').trim().slice(0,60),
         organization: String(player.organization || player.organisation || profile.organization || '').trim(),
         role: String(player.role || profile.role || '').trim(),
         relationship: String(player.relationship || profile.relationship || '').trim(),
@@ -2887,7 +2922,7 @@ function addSuggestedCrewMember(suggestion, existingNames) {
     const pending = suggestedCrew.find(member => normalizePersonKey(member.name) === key);
     if (pending && suggestion.observation) {
       let filled=false;
-      for(const field of ['organization','role','relationship','communicationStyle']){
+      for(const field of ['organization','role','relationship','communicationStyle','suggestedCodename']){
         if(!pending[field] && suggestion[field]){pending[field]=suggestion[field];filled=true;}
       }
       pending.observations = pending.observations || [];
@@ -2905,7 +2940,6 @@ function addSuggestedCrewMember(suggestion, existingNames) {
   suggestion.possibleMatches = matches.map(member => member.name);
   if (matches.length) {
     suggestion.confidence = 'needs confirmation';
-    suggestion.context = [suggestion.context, `Possible Crew match: ${matches.map(member => member.name).join(', ')}. Confirm before linking.`].filter(Boolean).join('\n');
   }
 
   suggestedCrew.push(suggestion);
@@ -2945,8 +2979,12 @@ function processNamesFromResponse(responseText, source = { id: currentSessionId,
       const fills={};
       const fieldQuotes={};
       const patterns={
-        organization:['works at','works for','is from','is with','joined','organization'],
+        organization:['works at','works for','is employed by','is from','is with','joined','organization'],
         role:['works as','is a','is an','is the','role']
+      };
+      const selfPhrases={
+        organization:['i work at','i work for','i am employed by','my employer is','my organization is','my organisation is'],
+        role:['i work as','i am a','i am an','my role is']
       };
       for(const [field,phrases] of Object.entries(patterns)){
         const value=player[field];
@@ -2954,7 +2992,10 @@ function processNamesFromResponse(responseText, source = { id: currentSessionId,
         const quote=player.fieldEvidence[field] || evidence;
         if(!fromUser(quote))continue;
         const normalized=normalizePersonKey(quote);
-        if(phrases.some(phrase=>normalized===personKey+' '+phrase+' '+normalizePersonKey(value))){
+        const detail=normalizePersonKey(value);
+        const named=getCrewAliases(member).some(alias=>phrases.some(phrase=>normalized===alias+' '+phrase+' '+detail));
+        const self=confirmedSelf && selfPhrases[field].some(phrase=>normalized===phrase+' '+detail);
+        if(named || self){
           fills[field]=value;
           fieldQuotes[field]=quote;
         }
@@ -2962,8 +3003,8 @@ function processNamesFromResponse(responseText, source = { id: currentSessionId,
       let memberChanged=false;
       if(!member.observations.some(item=>item.sessionId===source.id && item.evidence===evidence)){
         member.observations.push({date:new Date().toISOString(),sessionId:source.id,evidence,
-          note:verified?'Source excerpt matched to a known Crew member.':'Matched to your confirmed Crew identity.',
-          reviewed:false,classification:verified?'user reported':'identity match'});
+          note:verified?(player.relationshipNote || 'Source excerpt matched to a known Crew member.'):'Matched to your confirmed Crew identity.',
+          confidence:player.confidence,reviewed:false,classification:verified?'user reported':'identity match'});
         memberChanged=true;
       }
       if(Object.keys(fills).length){
@@ -2976,27 +3017,21 @@ function processNamesFromResponse(responseText, source = { id: currentSessionId,
       if(memberChanged)changed=saveCrew()!==false || changed;
       if(!['organization','role','relationship','communicationStyle'].some(field=>player[field] && !member[field]))return;
     }
-    const contextBits = [
-      player.confidence ? `Confidence: ${player.confidence}` : '',
-      player.needsConfirmation || matches.length>1 ? 'Needs your confirmation before treating identity as certain.' : '',
-      conflicting ? 'New information conflicts with this Crew profile. Review it before applying changes.' : '',
-      player.evidence ? `Evidence: ${player.evidence}` : '',
-      player.relationshipNote ? `Track: ${player.relationshipNote}` : ''
-    ].filter(Boolean);
-
     changed = addSuggestedCrewMember({
       name: player.name,
       nickname: player.nickname,
       codename: player.codename,
+      suggestedCodename:player.suggestedCodename,
       organization: player.organization,
       role: player.role,
       relationship: player.relationship,
       communicationStyle: player.communicationStyle,
-      context: contextBits.join('\n'),
+      reviewMessage:conflicting?'New details conflict with the existing profile.':
+        player.needsConfirmation || matches.length>1?'Confirm the identity before linking.':'',
       observation: {
         date: new Date().toISOString(), sessionId: source.id,
         meetingDates: dates,
-        evidence: player.evidence, note: player.relationshipNote,
+        evidence: player.evidence, note: player.relationshipNote, confidence:player.confidence,
         sources: [...new Set(dates.map(item => item.filename))]
       },
       confidence: player.confidence,
@@ -3536,14 +3571,14 @@ function doLogin() {
     i.focus(); i.style.borderColor = 'var(--danger)';
     setTimeout(() => i.style.borderColor = '', 1500); return;
   }
-  currentUser = { name, email, guest: false, responseLanguage: 'auto' };
+  currentUser = { name, email, guest: false, responseLanguage: 'en-US' };
   try { localStorage.setItem('lakeUser', JSON.stringify(currentUser)); }
   catch { showToast('Signed in for this visit. This device could not save the profile.'); }
   enterLake();
 }
 
 function doGuestLogin() {
-  currentUser = { name: 'Guest', email: 'guest_' + Date.now(), guest: true, responseLanguage: 'auto' };
+  currentUser = { name: 'Guest', email: 'guest_' + Date.now(), guest: true, responseLanguage: 'en-US' };
   enterLake();
 }
 
@@ -3552,7 +3587,7 @@ async function enterLake() {
   document.getElementById('dockUserName').textContent    = currentUser.name;
   document.getElementById('depthsProfileName').textContent = currentUser.name;
   document.getElementById('myChatAliases').value = currentUser.aliases || '';
-  document.getElementById('responseLanguage').value = currentUser.responseLanguage || 'auto';
+  document.getElementById('responseLanguage').value = currentUser.responseLanguage || 'en-US';
   loadRailSwipeMode();
   restoreSpeechRate();
   const savedPic = localStorage.getItem(storageKey('profilePic'));
@@ -3569,7 +3604,9 @@ async function enterLake() {
   }
   loadSuggestedCrew();
   if (deferredInstallPrompt) showInstallBanner();
-  setTimeout(() => { if (window.innerWidth > 768) document.getElementById('lakeInput').focus(); }, 300);
+  setTimeout(() => {
+    if(window.innerWidth>768 && !crewEditor.classList.contains('show'))document.getElementById('lakeInput').focus();
+  },300);
 }
 
 function doLogout() {
@@ -3596,7 +3633,7 @@ function saveResponseLanguage() {
   if (!currentUser) return;
   const allowed=['auto','en-US','en-GB','en-CA','en-AU','es','fr','de','it','pt-BR'];
   const selected=document.getElementById('responseLanguage').value;
-  currentUser.responseLanguage=allowed.includes(selected)?selected:'auto';
+  currentUser.responseLanguage=allowed.includes(selected)?selected:'en-US';
   try { if(!currentUser.guest)localStorage.setItem('lakeUser',JSON.stringify(currentUser)); }
   catch { showToast('Language updated for this visit, but could not be saved on this device.'); }
   showToast(currentUser.responseLanguage==='auto'?'Language set to Auto.':'Response language updated.');
@@ -4059,6 +4096,101 @@ function collapseComposerFolders(){
 // ============================================
 let crewModalMode  = null;
 let crewModalIndex = -1;
+let crewEditorDirty = false;
+let crewEditorSource;
+let crewEditorBaseline;
+let crewEditorReturnFocus;
+const crewRemovedNotes = new Set();
+const crewEditor = document.getElementById('crewModalOverlay');
+crewEditor.addEventListener('input',()=>{crewEditorDirty=true;});
+crewEditor.addEventListener('keydown',event=>{
+  if(event.key!=='Tab')return;
+  const controls=[...crewEditor.querySelectorAll('input,select,textarea,button,summary')].filter(el=>!el.disabled && el.getClientRects().length);
+  const first=controls[0];
+  const last=controls.at(-1);
+  if(event.shiftKey && document.activeElement===first){event.preventDefault();last.focus();}
+  if(!event.shiftKey && document.activeElement===last){event.preventDefault();first.focus();}
+});
+
+function toggleCrewEditorHelp(show=document.getElementById('crewEditorHelp').hidden){
+  document.getElementById('crewEditorHelp').hidden=!show;
+  document.getElementById('crewEditorInfo').setAttribute('aria-expanded',String(show));
+}
+
+function startHelpTide(title,requestText){
+  if(waveInFlight){showToast('Wait for the current reply before opening a help Tide.');return;}
+  document.getElementById('depthsPanel').classList.remove('show');
+  if(window.innerWidth<=768 && document.getElementById('dock').classList.contains('open'))toggleDock();
+  newSession();
+  return sendWave({visibleText:title,requestText,reuseAttachments:false,disableLearning:true});
+}
+
+function askAboutCrewEditor(){
+  if(waveInFlight){showToast('Wait for the current reply before opening a help Tide.');return;}
+  if(!closeCrewModal())return;
+  return startHelpTide('🌊 How does The Crew work?',
+    'Explain how The Crew editor works. Cover recognition by aliases, optional codenames, This is me, linking entries for the same person, editable notes and removable Lake observations. Explain that sourced fields may be prefilled for review and confidence is separate from notes. Invite me to ask a question. Keep the answer about using the tool.');
+}
+
+function askAboutLakeHelp(){
+  if(waveInFlight){showToast('Wait for the current reply before opening a help Tide.');return;}
+  closeHelp();
+  return startHelpTide('🌊 How do I use The Lake?',LAKE_MANUAL_PROMPT+' End by inviting me to ask about any feature.');
+}
+
+function updateCrewCodenameSuggestion(){
+  const button=document.getElementById('crewUseCodename');
+  const input=document.getElementById('crewModalCodename');
+  const name=document.getElementById('crewModalName').value.trim().split(/\s+/)[0];
+  const role=document.getElementById('crewModalRole').value.trim().split(/[,;\n]/)[0];
+  const alias=document.getElementById('crewModalNickname').value.split(/[,;/|]+/).map(value=>value.trim()).find(value=>
+    value && value.length<=26 && !['me','user',normalizePersonKey(name)].includes(normalizePersonKey(value)));
+  const suggestion=crewEditorSource?.suggestedCodename || (name && role && role.length<=26 ? name+' · '+role : alias || '');
+  button.dataset.suggestion=suggestion;
+  button.hidden=!suggestion || suggestion===input.value.trim();
+  button.textContent=suggestion?'Use “'+suggestion+'”':'';
+}
+
+function useCrewCodenameSuggestion(){
+  const input=document.getElementById('crewModalCodename');
+  input.value=document.getElementById('crewUseCodename').dataset.suggestion;
+  crewEditorDirty=true;
+  updateCrewCodenameSuggestion();
+  input.focus();
+}
+for(const id of ['crewModalName','crewModalNickname','crewModalRole','crewModalCodename']){
+  document.getElementById(id).addEventListener('input',updateCrewCodenameSuggestion);
+}
+
+function crewNoteKey(note){
+  return JSON.stringify([note.date,note.sessionId,note.evidence,note.note,note.sources,note.meetingDates]);
+}
+function renderCrewEditorNotes(source){
+  const list=document.getElementById('crewLearnedList');
+  const details=document.getElementById('crewLearnedNotes');
+  list.replaceChildren();
+  for(const note of [source.observation,...(source.observations||[])].filter(Boolean)){
+    const key=crewNoteKey(note);
+    if(crewRemovedNotes.has(key))continue;
+    const item=document.createElement('li');
+    if(note.confidence){
+      const confidence=document.createElement('span');
+      confidence.className='crew-note-confidence';
+      confidence.textContent='Confidence: '+note.confidence;
+      item.append(confidence);
+    }
+    item.append([note.note,note.evidence].filter(Boolean).join(' · '));
+    const remove=document.createElement('button');
+    remove.type='button';
+    remove.className='crew-modal-cancel';
+    remove.textContent='Remove';
+    remove.onclick=()=>{crewRemovedNotes.add(key);crewEditorDirty=true;renderCrewEditorNotes(source);};
+    item.append(remove);
+    list.append(item);
+  }
+  details.hidden=!list.childElementCount;
+  details.querySelector('summary').textContent='Lake observations · '+list.childElementCount;
+}
 
 function loadCrew() {
   const memory = lakeMemory().read('crew');
@@ -4155,63 +4287,81 @@ function approveSuggested(idx) { openCrewModal('approve', idx, suggestedCrew[idx
 function dismissSuggested(idx) { suggestedCrew.splice(idx, 1); saveSuggestedCrew(); renderCrew(); }
 
 function openCrewModal(mode, idx = -1, prefill = '') {
+  if(crewEditor.classList.contains('show'))return;
   crewModalMode = mode; crewModalIndex = idx;
   const matchField = document.getElementById('crewMatchField');
   const matchSelect = document.getElementById('crewMatchSelect');
   matchField.hidden = !['approve','edit'].includes(mode);
   matchSelect.innerHTML = mode==='edit' ? '<option value="">Keep as a separate person</option>' : '<option value="">Add as a new person</option>';
-  matchSelect.innerHTML += crewMembers.map((member,index)=>mode==='edit' && index===idx?'':
-    `<option value="${index}">${escapeHTML(member.name)}</option>`).join('');
+  for(const [index,member] of crewMembers.entries()){
+    if(mode==='edit' && index===idx)continue;
+    const option=new Option(member.name,String(index));
+    option.dataset.memberId=member.id;
+    matchSelect.add(option);
+  }
   matchSelect.value = '';
   const deleteBtn = document.getElementById('crewModalDelete');
   document.getElementById('crewModalTitle').textContent =
     mode === 'edit' ? '✏️ Edit Crew Member' : '🪶 Add to The Crew';
-  if (mode === 'edit' && idx >= 0) {
-    const m = crewMembers[idx];
-    document.getElementById('crewModalName').value     = m.name     || '';
-    document.getElementById('crewModalNickname').value = m.nickname || '';
-    document.getElementById('crewModalRole').value=m.role||'';document.getElementById('crewModalVisible').checked=!m.hidden;
-    document.getElementById('crewModalOrganization').value=m.organization||'';
-    document.getElementById('crewModalRelationship').value=m.relationship||'';
-    document.getElementById('crewModalCommunicationStyle').value=m.communicationStyle||'';
-    document.getElementById('crewModalSelf').checked=m.isSelf===true;
-    document.getElementById('crewModalCodename').value = m.codename || '';
-    document.getElementById('crewModalEmoji').value    = m.emoji    || '';
-    document.getElementById('crewModalContext').value  = m.context  || '';
-    deleteBtn.style.display = 'block';
-  } else {
-    const suggested = typeof prefill === 'object' && prefill ? prefill : { name: prefill };
-    document.getElementById('crewModalName').value     = suggested.name || '';
-    document.getElementById('crewModalNickname').value = suggested.nickname || '';
-    document.getElementById('crewModalRole').value=suggested.role||'';document.getElementById('crewModalVisible').checked=!suggested.hidden;
-    document.getElementById('crewModalOrganization').value=suggested.organization||'';
-    document.getElementById('crewModalRelationship').value=suggested.relationship||'';
-    document.getElementById('crewModalCommunicationStyle').value=suggested.communicationStyle||'';
-    document.getElementById('crewModalSelf').checked=false;
-    document.getElementById('crewModalCodename').value = suggested.codename || '';
-    document.getElementById('crewModalEmoji').value    = suggested.emoji || '';
-    document.getElementById('crewModalContext').value  = suggested.context || '';
-    deleteBtn.style.display = 'none';
+  const source=mode==='edit'?crewMembers[idx]:typeof prefill==='object' && prefill?prefill:{name:prefill};
+  if(!source)return;
+  crewEditorReturnFocus=document.activeElement;
+  crewEditorSource=source;
+  crewEditorDirty=false;
+  crewRemovedNotes.clear();
+  for(const [suffix,field] of Object.entries({
+    Name:'name',Nickname:'nickname',Role:'role',Organization:'organization',Relationship:'relationship',
+    CommunicationStyle:'communicationStyle',Codename:'codename',Emoji:'emoji',Context:'context'
+  })){
+    document.getElementById('crewModal'+suffix).value=source[field]||'';
   }
-  document.getElementById('crewModalOverlay').classList.add('show');
-  setTimeout(() => document.getElementById('crewModalName').focus(), 100);
+  if(mode==='approve'){
+    const notes=document.getElementById('crewModalContext');
+    notes.value=notes.value.split('\n').filter(line=>!/^(Confidence:|Evidence:|Track:|Possible Crew match:|Needs your confirmation before|New information conflicts with this Crew profile)/.test(line)).join('\n').trim();
+  }
+  document.getElementById('crewModalVisible').checked=!source.hidden;
+  const nameKey=normalizePersonKey(source.name);
+  const selfMatches=crewMembers.filter(member=>getCrewAliases(member).includes(nameKey));
+  const isSelf=source.isSelf===true || (mode!=='edit' && nameKey &&
+    ((selfMatches.length===1 && selfMatches[0].isSelf===true) || nameKey===normalizePersonKey(currentUser?.guest?'':currentUser?.name)));
+  const selfInput=document.getElementById('crewModalSelf');
+  selfInput.checked=Boolean(isSelf);
+  let selfChanged=false;
+  selfInput.onchange=()=>{selfChanged=true;};
+  matchSelect.onchange=()=>{
+    if(!selfChanged)selfInput.checked=Boolean(isSelf || selectedCrewLink()?.isSelf);
+  };
+  const review=document.getElementById('crewReviewInfo');
+  review.textContent=[
+    source.confidence && 'Recognition confidence: '+source.confidence,
+    source.possibleMatches?.length && 'Possible match: '+source.possibleMatches.join(', '),
+    source.reviewMessage
+  ].filter(Boolean).join(' · ');
+  review.hidden=!review.textContent;
+  document.getElementById('crewModalPreferences').open=mode==='approve' &&
+    Boolean(source.possibleMatches?.length || source.organization || source.role);
+  document.getElementById('crewLearnedNotes').open=false;
+  renderCrewEditorNotes(source);
+  toggleCrewEditorHelp(false);
+  updateCrewCodenameSuggestion();
+  crewEditorBaseline=readCrewEditor();
+  deleteBtn.style.display=mode==='edit'?'block':'none';
+  crewEditor.classList.add('show');
+  crewEditor.querySelector('.crew-modal').scrollTop=0;
+  document.getElementById(window.innerWidth<=768?'crewEditorInfo':'crewModalName').focus({preventScroll:true});
 }
 
-function closeCrewModal(e) {
-  if (e && e.target !== document.getElementById('crewModalOverlay')) return;
-  document.getElementById('crewModalOverlay').classList.remove('show');
+function closeCrewModal(){
+  if(crewEditorDirty && !confirm('Discard unsaved changes to this Crew member?'))return false;
+  crewEditorDirty=false;
+  crewEditor.classList.remove('show');
+  if(crewEditorReturnFocus?.isConnected)crewEditorReturnFocus.focus({preventScroll:true});
+  return true;
 }
 
-function saveCrewFromModal() {
-  const name = document.getElementById('crewModalName').value.trim();
-  if (!name) {
-    const i = document.getElementById('crewModalName');
-    i.style.borderColor = 'var(--danger)';
-    setTimeout(() => i.style.borderColor = '', 1500); return;
-  }
-  const member = {
-    name,
-    updatedAt:new Date().toISOString(),
+function readCrewEditor(){
+  return {
+    name:document.getElementById('crewModalName').value.trim(),
     nickname: document.getElementById('crewModalNickname').value.trim(),
     role:document.getElementById('crewModalRole').value.trim(),hidden:!document.getElementById('crewModalVisible').checked,
     organization:document.getElementById('crewModalOrganization').value.trim(),
@@ -4222,17 +4372,34 @@ function saveCrewFromModal() {
     emoji:    document.getElementById('crewModalEmoji').value.trim(),
     context:  document.getElementById('crewModalContext').value.trim()
   };
+}
+
+function selectedCrewLink(){
+  const id=document.getElementById('crewMatchSelect').selectedOptions[0]?.dataset.memberId;
+  return id?crewMembers.find(person=>person.id===id):null;
+}
+
+function saveCrewFromModal() {
+  if(crewModalMode==='edit')crewModalIndex=crewMembers.findIndex(person=>person.id===crewEditorSource.id);
+  if(crewModalMode==='approve')crewModalIndex=suggestedCrew.indexOf(crewEditorSource);
+  if(crewModalMode!=='add' && crewModalIndex<0){showToast('This Crew entry changed. Reopen the latest version to edit it.');return;}
+  const member=readCrewEditor();
+  if(!member.name){document.getElementById('crewModalName').focus();showToast('Enter a name before saving.');return;}
+  const target=selectedCrewLink();
+  if(!target && document.getElementById('crewMatchSelect').value!==''){showToast('The Crew member you selected is no longer available.');return;}
+  member.updatedAt=new Date().toISOString();
   let savedMember;
   if (crewModalMode === 'edit' && crewModalIndex >= 0) {
-    const source={...crewMembers[crewModalIndex],...member};
-    const match=document.getElementById('crewMatchSelect').value;
-    if(match===''){
+    const current=crewMembers[crewModalIndex];
+    const changes=Object.fromEntries(Object.entries(member).filter(([field,value])=>value!==crewEditorBaseline[field]));
+    const source={...current,...changes,
+      observations:(current.observations||[]).filter(note=>!crewRemovedNotes.has(crewNoteKey(note)))};
+    if(!target){
       crewMembers[crewModalIndex]=source;
       savedMember=source;
     } else {
-      const targetIndex=Number(match);
-      const target=crewMembers[targetIndex];
-      if(!target || targetIndex===crewModalIndex)return;
+      const targetIndex=crewMembers.indexOf(target);
+      if(targetIndex===crewModalIndex)return;
       if(!confirm(`Link ${source.name} into ${target.name}? The profile named ${target.name} will be kept, with both entries’ aliases, notes and evidence.`))return;
       savedMember=LakeOrganization.mergeCrew(target,source);
       crewMembers[targetIndex]=savedMember;
@@ -4240,10 +4407,10 @@ function saveCrewFromModal() {
     }
   } else if (crewModalMode === 'approve' && crewModalIndex >= 0) {
     const suggestion = suggestedCrew[crewModalIndex];
-    const observations = [suggestion.observation,...(suggestion.observations || [])].filter(Boolean);
-    const matchIndex = document.getElementById('crewMatchSelect').value;
-    if (matchIndex !== '') {
-      const existing = crewMembers[Number(matchIndex)];
+    if(suggestion.suggestedCodename && !member.codename)member.suggestedCodename=suggestion.suggestedCodename;
+    const observations = [suggestion.observation,...(suggestion.observations || [])].filter(note=>note && !crewRemovedNotes.has(crewNoteKey(note)));
+    if (target) {
+      const existing = target;
       if(member.isSelf)existing.isSelf=true;
       savedMember=existing;
       const aliases = [existing.nickname, member.name !== existing.name ? member.name : '', member.nickname].filter(Boolean).join(', ');
@@ -4252,6 +4419,9 @@ function saveCrewFromModal() {
       if(member.organization)existing.organization=member.organization;
       if(member.relationship)existing.relationship=member.relationship;
       if(member.communicationStyle)existing.communicationStyle=member.communicationStyle;
+      if(member.codename)existing.codename=member.codename;
+      else if(member.suggestedCodename && !existing.codename)existing.suggestedCodename=member.suggestedCodename;
+      if(member.emoji)existing.emoji=member.emoji;
       existing.context = [existing.context, member.context].filter(Boolean).join('\n\n');
       for (const observation of observations) {
         existing.observations = existing.observations || [];
@@ -4264,20 +4434,26 @@ function saveCrewFromModal() {
       crewMembers.push(member);
       savedMember=member;
     }
-    suggestedCrew.splice(crewModalIndex, 1); saveSuggestedCrew();
   } else {
     crewMembers.push(member);
     savedMember=member;
   }
-  if(member.isSelf)crewMembers.forEach(person=>{person.isSelf=person===savedMember;});
-  saveCrew(); renderCrew();
-  document.getElementById('crewModalOverlay').classList.remove('show');
+  if(savedMember.isSelf)crewMembers.forEach(person=>{person.isSelf=person===savedMember;});
+  if(!saveCrew())return;
+  if(crewModalMode==='approve'){suggestedCrew.splice(crewModalIndex,1);saveSuggestedCrew();}
+  renderCrew();
+  crewEditorDirty=false;
+  closeCrewModal();
 }
 
 function deleteCrewFromModal() {
-  if (crewModalIndex >= 0 && confirm(`Remove ${crewMembers[crewModalIndex].name} from The Crew?`)) {
-    crewMembers.splice(crewModalIndex, 1); saveCrew(); renderCrew();
-    document.getElementById('crewModalOverlay').classList.remove('show');
+  const index=crewMembers.findIndex(person=>person.id===crewEditorSource?.id);
+  if (crewModalMode==='edit' && index>=0 && confirm(`Remove ${crewMembers[index].name} from The Crew?`)) {
+    crewMembers.splice(index,1);
+    if(!saveCrew())return;
+    renderCrew();
+    crewEditorDirty=false;
+    closeCrewModal();
   }
 }
 
@@ -5412,7 +5588,7 @@ async function exportFullBackup(encrypted=false) {
     const backup = LakeFullBackup.build({
       user: currentUser, sessions: await LakeSessionStore.read(storageKey('sessions')), current, crew: crewMembers, suggestedCrew,folders:tideFolders,
       profilePic: currentProfilePic,
-      settings: { mood: currentMood, responseLanguage: currentUser?.responseLanguage || 'auto', defaultPromptBatch: localStorage.getItem('defaultBatch'), requestInProgress: waveInFlight,dockSplit }
+      settings: { mood: currentMood, responseLanguage: currentUser?.responseLanguage || 'en-US', defaultPromptBatch: localStorage.getItem('defaultBatch'), requestInProgress: waveInFlight,dockSplit }
     });
     const memory=memoryBackupData();
     if(Object.keys(memory.anchors).length)backup.data.memory=memory;
@@ -5620,7 +5796,7 @@ async function runBlindMirror(){
   data.append('action','mirror-blind');
   data.append('mirror',JSON.stringify({...state,control:'talk',evidence}));
   data.append('mood',currentMood);
-  data.append('responseLanguage',currentUser?.responseLanguage || 'auto');
+  data.append('responseLanguage',currentUser?.responseLanguage || 'en-US');
   data.append('showSuggestions','false');
   try{
     const response=await fetch('/chat',{method:'POST',body:data,signal:request.signal});
@@ -5865,7 +6041,8 @@ Identify every person who appears in the current chat, screenshot, transcript, e
 - If no interaction material is available, ask for it and do not produce a player block.
 - Treat supplied Crew names and aliases as possible matches, not proof. Ask when more than one person could match. Never infer identity from a face alone.
 - Use a codename only if supplied by the user; do not invent a nickname from someone's role.
-- Prefill organization, role, relationship and communication style when supported by the source. Leave unknown fields blank. In field_evidence, quote the shortest exact clause for each supported field, including the name or confirmed alias. Do not infer an employer from a meeting invitation or a role from a job title mentioned about someone else.
+- Prefill organization, role, relationship and communication style when supported by the source. For the confirmed user, look for first-person evidence such as “I work at…” or “My organization is…”. Leave unknown fields blank. In field_evidence, quote the shortest exact clause for each field using the name, a confirmed alias, or the confirmed user's direct first-person statement. A meeting invitation alone does not establish employment.
+- If a role, skill or repeated behavior supports it, give one short, respectful suggested_codename. Reserve codename for an existing name or a name the user explicitly chose.
 
 For each person, give:
 - likely name or temporary label
@@ -5878,7 +6055,7 @@ At the end, include this machine-readable block. Use exact excerpts and verified
 Do not announce or explain the block in your prose. Put only JSON between the markers, without a code fence.
 
 PLAYER_TAGS_JSON
-{"players":[{"name":"Name or Unknown 1","nickname":"","codename":"","organization":"","role":"","relationship":"","communication_style":"","field_evidence":{},"confidence":"high|medium|low|needs confirmation","needs_confirmation":false,"evidence":"Exact excerpt identifying the person","relationship_note":"What to track"}]}
+{"players":[{"name":"Name or Unknown 1","nickname":"","codename":"","suggested_codename":"","organization":"","role":"","relationship":"","communication_style":"","field_evidence":{},"confidence":"high|medium|low|needs confirmation","needs_confirmation":false,"evidence":"Exact excerpt identifying the person","relationship_note":"What to track"}]}
 END_PLAYER_TAGS_JSON
 ${context ? `\nAdditional interaction or correction supplied by the user:\n${context}` : ''}` });
 }
@@ -6079,7 +6256,7 @@ async function sendWave(options = {}) {
   const relevantCrew=options.action==='tag-players' || options.action==='meeting-currents' || options.visibleText==='Tag players'
     ? crewMembers : LakeMemoryAnchors.relevantCrew(crewMembers,crewQuery);
   origin = {
-    id: currentSessionId, history: chatHistory, key: storageKey('sessions'), mood: currentMood, responseLanguage: currentUser?.responseLanguage || 'auto',
+    id: currentSessionId, history: chatHistory, key: storageKey('sessions'), mood: currentMood, responseLanguage: currentUser?.responseLanguage || 'en-US',
     tagContext:options.tagContext,
     userName: currentUser?.name || '', userAliases: currentUser?.aliases || '',
     userCrew:JSON.stringify(crewMembers.filter(member=>member.isSelf===true).slice(0,1).map(({name,nickname,codename,role})=>({name,aliases:nickname,codename,role}))),
@@ -6198,7 +6375,7 @@ async function sendWave(options = {}) {
     const learningKey=origin.key.replace(/sessions$/,'learnProfile');
     const resetKey=origin.key.replace(/sessions$/,'profileReset');
     const resetVersion=profileStorage?.getItem(resetKey);
-    const learning=Boolean(profileStorage && profileStorage.getItem(learningKey)!=='false' && !options.snapshot && !['tsummarize','rename-tide'].includes(options.action) && !options.mirror);
+    const learning=Boolean(profileStorage && profileStorage.getItem(learningKey)!=='false' && !options.disableLearning && !options.snapshot && !['tsummarize','rename-tide'].includes(options.action) && !options.mirror);
     if(learning){
       const active=(captain?.records||[]).filter(record=>!record.key.startsWith('person_')).slice(-24);
       formData.append('learnedProfile',JSON.stringify(active.map(({key,value,evidence,classification,source})=>({key,value,evidence,classification,source}))));
@@ -6302,7 +6479,7 @@ async function sendWave(options = {}) {
         renderAdaptiveSuggestions();
         if (!options.snapshot) updateCurrents(text);
       } else showReplyNotice(origin, reply);
-      try { if (!options.mirror && !options.snapshot && !origin.discarded && origin.key === storageKey('sessions')) processNamesFromResponse(data.reflection, origin); }
+      try { if (!options.disableLearning && !options.mirror && !options.snapshot && !origin.discarded && origin.key === storageKey('sessions')) processNamesFromResponse(data.reflection, origin); }
       catch { showToast('Reply received. Crew suggestions could not be saved on this device.'); }
     } else {
       if (isRequestVisible(origin)) appendLakeWave('🌊 The Lake is still reading the water — sometimes deep currents take a moment.', timeStr, true);
@@ -7295,7 +7472,7 @@ function closeTopmostLayer(){
   if(document.getElementById('postCardsDrawer')?.classList.contains('open')){closePostCards();return true;}
   if(shown('attachmentLightbox')){document.getElementById('attachmentLightbox').classList.remove('show');return true;}
   if(shown('crewCardOverlay')){closeCrewCard();return true;}
-  if(shown('crewModalOverlay')){document.getElementById('crewModalOverlay').classList.remove('show');return true;}
+  if(shown('crewModalOverlay')){closeCrewModal();return true;}
   if(shown('folderModalOverlay')){closeFolderDialog();return true;}
   if(shown('helpOverlay')){closeHelp();return true;}
   if(shown('depthsPanel')){document.getElementById('depthsPanel').classList.remove('show');return true;}
@@ -7325,6 +7502,8 @@ document.addEventListener('keydown',event=>{if(event.key==='Escape'&&closeTopmos
 let currentUtterance = null;
 const speechState={wave:null,waves:[],chunks:[],index:0,offset:0,rate:1,holdRateDelta:0,paused:false,playing:false,view:"full"};
 let speechStartTimer;
+let speechVoiceRequest=0;
+let readingProgress=null;
 let speechOwnsMediaSession=false;
 globalThis.pendingReplySource=null;globalThis.pendingBranchSource=null;
 
@@ -7340,9 +7519,12 @@ function copyText(text) { navigator.clipboard.writeText(text).then(() => showToa
 
 const lakeSpeechOutput = {
   voices(){return window.speechSynthesis?.getVoices() || [];},
+  preferred(){return localStorage.getItem(storageKey('speechVoice')) || '';},
+  needsSelectedVoice(){const value=this.preferred();return value!=='' && value!=='shuffle';},
   chooseVoice(){
-    const preferred=localStorage.getItem(storageKey('speechVoice'));
+    const preferred=this.preferred();
     const voices=this.voices();
+    if(this.needsSelectedVoice())return voices.find(voice=>voice.voiceURI===preferred)||null;
     const language=(navigator.language || 'en').split('-')[0];
     const matches=voices.filter(voice=>voice.lang.split('-')[0]===language);
     if(preferred==='shuffle' && voices.length){
@@ -7353,10 +7535,17 @@ const lakeSpeechOutput = {
       this.lastShuffledVoice=selected.voiceURI;
       return selected;
     }
-    return voices.find(voice=>voice.voiceURI===preferred)
-      || matches.find(voice=>voice.lang.toLowerCase()===(navigator.language||'en').toLowerCase() && /natural|neural|premium|enhanced/i.test(voice.name))
+    return matches.find(voice=>voice.lang.toLowerCase()===(navigator.language||'en').toLowerCase() && /natural|neural|premium|enhanced/i.test(voice.name))
       || matches.find(voice=>/natural|neural|premium|enhanced/i.test(voice.name))
       || matches.find(voice=>voice.default) || matches[0] || null;
+  },
+  async waitForSelectedVoice(active){
+    for(let attempt=0;attempt<20 && active();attempt++){
+      const voice=this.chooseVoice();
+      if(voice || !this.needsSelectedVoice())return voice;
+      await new Promise(resolve=>setTimeout(resolve,100));
+    }
+    return null;
   },
   utterance(text,rate,voice=this.chooseVoice()){
     const utterance=new SpeechSynthesisUtterance(text);
@@ -7364,7 +7553,10 @@ const lakeSpeechOutput = {
     utterance.rate=rate;
     return utterance;
   },
-  speak(utterance){window.speechSynthesis.speak(utterance);},
+  speak(utterance){
+    if(window.speechSynthesis.paused)window.speechSynthesis.resume();
+    window.speechSynthesis.speak(utterance);
+  },
   cancel(){window.speechSynthesis.cancel();}
 };
 function populateLakeVoicePicker(picker){
@@ -7388,7 +7580,8 @@ function populateLakeVoicePicker(picker){
     picker.append(group);
   }
   const saved=localStorage.getItem(storageKey('speechVoice')) || '';
-  if([...picker.options].some(option=>option.value===saved))picker.value=saved;
+  if(saved && ![...picker.options].some(option=>option.value===saved))picker.add(new Option('Selected voice (loading or unavailable)',saved));
+  picker.value=saved;
 }
 function refreshLakeVoices(){
   populateLakeVoicePicker(document.getElementById('speechVoice'));
@@ -7398,12 +7591,18 @@ function saveLakeVoice(value){
   localStorage.setItem(storageKey('speechVoice'),value);
   refreshLakeVoices();
   speechState.voice=lakeSpeechOutput.chooseVoice();
-  if(speechState.playing)speakCurrentChunk();
+  if(speechState.playing){checkpointReading();speakCurrentChunk();}
 }
 window.speechSynthesis?.addEventListener('voiceschanged',refreshLakeVoices);
-function previewLakeVoice(){
+async function previewLakeVoice(){
   stopSpeech(false);
-  lakeSpeechOutput.speak(lakeSpeechOutput.utterance('Take a breath. What is on your mind today?',speechState.rate));
+  const request=speechVoiceRequest;
+  const active=()=>request===speechVoiceRequest;
+  let voice=lakeSpeechOutput.chooseVoice();
+  if(!voice && lakeSpeechOutput.needsSelectedVoice())voice=await lakeSpeechOutput.waitForSelectedVoice(active);
+  if(!active())return;
+  if(!voice && lakeSpeechOutput.needsSelectedVoice()){showToast('The selected voice is unavailable. Choose another voice or retry.');return;}
+  lakeSpeechOutput.speak(lakeSpeechOutput.utterance('Take a breath. What is on your mind today?',speechState.rate,voice));
 }
 function readingText(text){
   return String(text||'').replace(/^[#>]+[ \t]*/gm,'').replace(/[*_`]/g,'').replace(/\p{Extended_Pictographic}\uFE0F?/gu,'');
@@ -7476,28 +7675,56 @@ function updateSpeechPlayer(){
 }
 function cancelReadingUtterance(){
   clearTimeout(speechStartTimer);
+  speechVoiceRequest++;
   currentUtterance=null;
+  readingProgress=null;
   lakeSpeechOutput.cancel();
 }
-function speakCurrentChunk(){
+function checkpointReading(){
+  const progress=readingProgress;
+  if(!progress || progress.started===null || progress.hasBoundary || document.hidden)return;
+  // Some mobile voices never emit word events. Estimate conservatively and replay the current word.
+  const seconds=(performance.now()-progress.started)/1000;
+  const words=Math.max(0,Math.floor(seconds*1.7*progress.rate)-1);
+  const boundaries=[...progress.text.matchAll(/\S+/g)];
+  const boundary=boundaries[Math.min(words,Math.max(0,boundaries.length-2))];
+  if(boundary)speechState.offset=progress.offset+boundary.index;
+}
+async function speakCurrentChunk(){
   cancelReadingUtterance();
   if(!speechState.chunks.length)return;
+  const request=speechVoiceRequest;
+  speechState.playing=true;
+  speechState.paused=false;
+  updateSpeechPlayer();
+  if(!speechState.voice && lakeSpeechOutput.needsSelectedVoice()){
+    const voice=await lakeSpeechOutput.waitForSelectedVoice(()=>request===speechVoiceRequest);
+    if(request!==speechVoiceRequest)return;
+    speechState.voice=voice;
+    if(!voice && lakeSpeechOutput.needsSelectedVoice()){
+      speechState.playing=false;
+      speechState.paused=true;
+      updateSpeechPlayer();
+      showToast('The selected voice is unavailable. Choose another voice or retry.');
+      return;
+    }
+  }
   const offset=speechState.offset;
   const remaining=speechState.chunks[speechState.index].slice(offset);
   const rate=effectiveSpeechRate();
   const utterance=lakeSpeechOutput.utterance(remaining,rate,speechState.voice);
   currentUtterance=utterance;
-  speechState.playing=true;
-  speechState.paused=false;
-  updateSpeechPlayer();
-  const failed=()=>{
+  const progress={text:remaining,offset,rate,started:null,hasBoundary:false};
+  readingProgress=progress;
+  const suspend=(message)=>{
     if(currentUtterance!==utterance)return;
+    checkpointReading();
     cancelReadingUtterance();
     speechState.playing=false;
     speechState.paused=true;
     speechState.wave?.classList.remove('speaking');
     updateSpeechPlayer();
-    showToast('Reading stopped. Try Play again or select another voice.');
+    if(message)showToast(message);
   };
   const checkStall=()=>{
     // Device suspension can delay both timer and speech callbacks.
@@ -7505,10 +7732,11 @@ function speakCurrentChunk(){
       speechStartTimer=setTimeout(checkStall,5000);
       return;
     }
-    failed();
+    suspend('Reading stopped. Try Play again or select another voice.');
   };
   utterance.onstart=()=>{
     if(currentUtterance!==utterance)return;
+    progress.started=performance.now();
     clearTimeout(speechStartTimer);
     const estimatedMs=remaining.trim().split(/\s+/).length*400/rate;
     speechStartTimer=setTimeout(checkStall,Math.max(25000,estimatedMs*3+5000));
@@ -7516,6 +7744,7 @@ function speakCurrentChunk(){
   };
   utterance.onboundary=event=>{
     if(currentUtterance===utterance && event.charIndex<remaining.length){
+      progress.hasBoundary ||= event.charIndex>0;
       speechState.offset=Math.max(speechState.offset,offset+event.charIndex);
     }
   };
@@ -7527,9 +7756,10 @@ function speakCurrentChunk(){
       speakCurrentChunk();
     }else{speechState.index=0;stopSpeech(false);}
   };
-  utterance.onerror=failed;
+  utterance.onpause=()=>suspend();
+  utterance.onerror=event=>suspend(['interrupted','canceled'].includes(event?.error)?'':'Reading stopped. Try Play again or select another voice.');
   speechStartTimer=setTimeout(checkStall,5000);
-  try{lakeSpeechOutput.speak(utterance);}catch{failed();}
+  try{lakeSpeechOutput.speak(utterance);}catch{suspend('Reading stopped. Try Play again or select another voice.');}
 }
 function speakMessage(waveEl){
   window.LakeAudioExport?.pause();
@@ -7558,6 +7788,7 @@ function speakText(text,btn){
 function speechPlayPause(){
   if(!speechState.chunks.length)return;
   if(!speechState.playing)return speakCurrentChunk();
+  checkpointReading();
   cancelReadingUtterance();
   speechState.playing=false;
   speechState.paused=true;
@@ -7652,7 +7883,7 @@ function speechSetRate(value){
   speechState.rate=rate;
   showSpeechRate(rate);
   try{localStorage.setItem(storageKey('speechRate'),String(rate));}catch{}
-  if(speechState.playing)speakCurrentChunk();
+  if(speechState.playing){checkpointReading();speakCurrentChunk();}
 }
 function effectiveSpeechRate(){
   return Math.max(.25,Math.min(3,Math.round((speechState.rate+speechState.holdRateDelta)*100)/100));
@@ -7660,7 +7891,7 @@ function effectiveSpeechRate(){
 function setSpeechHoldRate(delta){
   const before=effectiveSpeechRate();
   speechState.holdRateDelta=delta;
-  if(speechState.playing && effectiveSpeechRate()!==before)speakCurrentChunk();
+  if(speechState.playing && effectiveSpeechRate()!==before){checkpointReading();speakCurrentChunk();}
 }
 function bindSpeechJumpButton(button){
   const seconds=Number(button.dataset.speechJump);
@@ -8087,7 +8318,16 @@ function openLakeVoice({keepTide=false}={}){
     const reply=chatHistory.slice(start).find(message=>message.role==='assistant');
     if(!reply){setPhase('ready','The reply did not come through.','Try again');return;}
     const chunks=speechChunks(reply.content);
-    const spokenVoice=lakeSpeechOutput.chooseVoice();
+    let spokenVoice=lakeSpeechOutput.chooseVoice();
+    if(!spokenVoice && lakeSpeechOutput.needsSelectedVoice()){
+      status.textContent='Loading your selected voice…';
+      spokenVoice=await lakeSpeechOutput.waitForSelectedVoice(active);
+      if(!active())return;
+      if(!spokenVoice && lakeSpeechOutput.needsSelectedVoice()){
+        setPhase('ready','The selected voice is unavailable. Choose another voice or use Speak on the reply.','Start talking');
+        return;
+      }
+    }
     const turn=++playback;
     setPhase('speaking','The Lake is speaking…','Tap to interrupt');
     function speakNext(index){

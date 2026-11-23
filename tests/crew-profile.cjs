@@ -9,10 +9,10 @@ const {chromium}=require(process.env.LAKE_PLAYWRIGHT_PATH || 'playwright');
       localStorage.setItem('lakeUser',JSON.stringify({name:'Ron',email:'profile@example.test'}));
       const observation=index=>({sessionId:'call-'+index,date:'2026-10-19T12:00:00Z',note:'Tentative observation '+index+': asks for a clear owner and next step.',sources:['2026-10-19_'+('long-filename-'.repeat(20))+index+'.txt'],meetingDates:[{date:'2026-10-19',status:'filename-candidate'}],evidence:'[00:01] Sally: Who owns this?\n[00:02] Ron: I will follow up.',reviewed:true});
       const observations=Array.from({length:30},(_,index)=>observation(index));observations.push(observation(0));
-      localStorage.setItem('lake_profile@example.test_crew',JSON.stringify([{name:'Sally',nickname:'Sally, Sal',role:'CRM Lead',context:'<img src=x onerror=alert(1)>\n'+('Long saved note. Confirm before linking.\n\n'.repeat(400)),observations}]));
+      localStorage.setItem('lake_profile@example.test_crew',JSON.stringify([{name:'Sally',nickname:'Sally, Sal',role:'CRM Lead',context:'<img src=x onerror=alert(1)>\n'+('Long saved note. Confirm before linking.\n\n'.repeat(400)),observations},{name:'Ron',isSelf:true}]));
     });
     const page=await context.newPage();const errors=[];const prompts=[];page.on('pageerror',error=>errors.push(error.message));
-    await page.goto(process.env.LAKE_TEST_URL || 'http://localhost:3013');await page.waitForFunction(()=>crewMembers.length===1);
+    await page.goto(process.env.LAKE_TEST_URL || 'http://localhost:3013');await page.waitForFunction(()=>crewMembers.length===2);
     await page.evaluate(()=>{window.originalMember=JSON.stringify(crewMembers[0]);sendPrompt=prompt=>window.profilePrompt=prompt;});
     for(const viewport of [{width:1365,height:900},{width:390,height:844},{width:320,height:568}]) {
       await page.setViewportSize(viewport);await page.evaluate(()=>openCrewProfile(0));

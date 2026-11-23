@@ -6,7 +6,7 @@ const {chromium}=require(process.env.LAKE_PLAYWRIGHT_PATH || 'playwright');
   try {
     const context=await browser.newContext({viewport:{width:390,height:844}});
     await context.addInitScript(()=>{
-      localStorage.setItem('lakeUser',JSON.stringify({name:'User',email:'self@example.test'}));
+      localStorage.setItem('lakeUser',JSON.stringify({name:'Ronald Powers',email:'self@example.test'}));
       if(!localStorage.getItem('lake_self@example.test_crew'))localStorage.setItem('lake_self@example.test_crew',JSON.stringify([{name:'Ronald Powers',nickname:'Ron, Ronnie'},{name:'Sally'}]));
     });
     const page=await context.newPage();const errors=[];const sent=[];
@@ -23,7 +23,7 @@ const {chromium}=require(process.env.LAKE_PLAYWRIGHT_PATH || 'playwright');
     await page.screenshot({path:path.join(process.env.TEMP,'lake-self-crew-mobile.png'),animations:'disabled'});
     await mark(1,true);assert.equal(await page.evaluate(()=>crewMembers[0].isSelf),false);
     await mark(1,false);assert.equal(await page.evaluate(()=>crewMembers.some(m=>m.isSelf)),false);
-    await mark(0,true);await page.evaluate(()=>toggleDepths());await page.locator('#lakeInput').fill('What did I say?');await page.locator('#lakeInput').press('Control+Enter');await page.waitForFunction(()=>!waveInFlight);
+    await mark(0,true);await page.evaluate(()=>sendWave({requestText:'What did I say?'}));
     assert.equal(sent.at(-1)[0].name,'Ronald Powers');assert.equal(sent.at(-1)[0].aliases,'Ron, Ronnie');
     await page.evaluate(async()=>{currentUser={name:'Other',email:'other@example.test'};await loadSessionHistory();loadCrew();});assert.equal(await page.evaluate(()=>crewMembers.some(m=>m.isSelf)),false);
     assert.deepEqual(errors,[]);console.log('Self Crew passed: star, single selection, clear/change, reload, outgoing identity, mobile layout and profile isolation.');

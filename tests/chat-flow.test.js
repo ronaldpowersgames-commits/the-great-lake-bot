@@ -101,7 +101,8 @@ test('exact Crew alias associations are deduplicated while a conflicting role re
     processNamesFromResponse(tag({...player,role:'Director'}),source);`, context);
   assert.equal(vm.runInContext('crewMembers[0].observations.length', context), 1);
   assert.equal(vm.runInContext('crewMembers[0].role', context), 'Advisor');
-  assert.match(vm.runInContext('suggestedCrew[0].context', context), /conflicts/);
+  assert.match(vm.runInContext('suggestedCrew[0].reviewMessage', context), /conflict/);
+  assert.equal(vm.runInContext('suggestedCrew[0].context', context), undefined);
 });
 
 test('Crew tagging fills missing organization and role from exact user clauses and prefills a new player', () => {
@@ -110,15 +111,22 @@ test('Crew tagging fills missing organization and role from exact user clauses a
     const evidence='Bags works at Northstar.';
     const role='Bags is a lead advisor.';
     const source={id:'meeting',history:[{role:'user',content:evidence+' '+role+' Jamie works at Southport.'}]};
+    const selfEvidence='I work at Eastport.';
+    source.history[0].content+=' '+selfEvidence;
+    crewMembers.push({name:'Ronald Powers',nickname:'Ronnie',isSelf:true});
     const players=[
       {name:'Bags',organization:'Northstar',role:'Lead advisor',confidence:'high',needs_confirmation:false,evidence,field_evidence:{role}},
-      {name:'Jamie',organization:'Southport',confidence:'high',needs_confirmation:true,evidence:'Jamie works at Southport.'}
+      {name:'Jamie',organization:'Southport',confidence:'high',needs_confirmation:true,evidence:'Jamie works at Southport.',suggested_codename:'The Harbor Lead'},
+      {name:'Ronnie',organization:'Eastport',confidence:'high',needs_confirmation:false,evidence:selfEvidence,field_evidence:{organization:selfEvidence}}
     ];
     processNamesFromResponse('PLAYER_TAGS_JSON '+JSON.stringify({players})+' END_PLAYER_TAGS_JSON',source);`, context);
   assert.equal(vm.runInContext('crewMembers[0].organization', context), 'Northstar');
   assert.equal(vm.runInContext('crewMembers[0].role', context), 'Lead advisor');
   assert.equal(vm.runInContext('crewMembers[0].observations.at(-1).fieldEvidence.role', context), 'Bags is a lead advisor.');
   assert.equal(vm.runInContext('suggestedCrew[0].organization', context), 'Southport');
+  assert.equal(vm.runInContext('suggestedCrew[0].suggestedCodename', context), 'The Harbor Lead');
+  assert.equal(vm.runInContext('suggestedCrew[0].codename', context), '');
+  assert.equal(vm.runInContext('crewMembers[1].organization', context), 'Eastport');
 });
 
 test('visible player details prefill review and a confirmed self identity tags automatically',()=>{
@@ -151,7 +159,7 @@ test('adaptive prompt metadata is hidden from chat and stored as tappable next m
   assert.equal(vm.runInContext('chatHistory.at(-1).promptSuggestions[0].kind',context),'test');
   assert.doesNotMatch(vm.runInContext('chatHistory.at(-1).content',context),/LAKE_PROMPTS_JSON/);
   assert.equal(context.sent.get('firstResponse'),'true');
-  assert.equal(context.sent.get('responseLanguage'),'auto');
+  assert.equal(context.sent.get('responseLanguage'),'en-US');
   assert.deepEqual(JSON.parse(context.sent.get('suggestionProfile')),{chosen:{},dismissed:{},recent_chosen_kinds:[]});
 });
 
@@ -335,6 +343,7 @@ test('modes have distinct conversational behaviors and Stormy keeps the edge off
 
 test('response language settings override slang-based inference',()=>{
   const {context}=routeContext();
+  assert.match(context.getLanguageContext(),/US spelling and usage/);
   assert.match(context.getLanguageContext('en-US'),/US spelling and usage/);
   assert.match(context.getLanguageContext('en-US'),/overrides language or spelling inferred from the user's slang/);
   assert.match(context.getLanguageContext('en-GB'),/UK spelling and usage/);
