@@ -2039,6 +2039,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
     </div>
     <div class="crew-modal-field"><label for="crewModalName">Real name</label><input type="text" id="crewModalName" placeholder="How you know them..."></div>
     <div class="crew-modal-field"><label for="crewModalNickname">Aliases / other names</label><input type="text" id="crewModalNickname" placeholder="e.g. User, Ronnie, Ron"></div>
+    <div class="crew-modal-field" id="crewMatchField" hidden><label for="crewMatchSelect">Link to an existing Crew member</label><select id="crewMatchSelect"></select></div>
     <div class="crew-modal-field"><label><input id="crewModalSelf" type="checkbox"> ⭐ This is me</label></div>
     <div class="crew-modal-field"><label for="crewModalCodename">🎭 Codename</label><input type="text" id="crewModalCodename" placeholder="Choose an optional display name">
       <p class="crew-editor-note">Used as a display name and recognized as an alias.</p>
@@ -2053,9 +2054,8 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
       <ul class="crew-note-list crew-editor-note" id="crewLearnedList"></ul>
     </details>
     <details class="crew-modal-preferences" id="crewModalPreferences">
-      <summary>Role, organization &amp; linking</summary>
+      <summary>Role, organization &amp; other details</summary>
       <div class="crew-modal-preferences-body">
-        <div class="crew-modal-field" id="crewMatchField" hidden><label for="crewMatchSelect">Link to an existing Crew member</label><select id="crewMatchSelect"></select></div>
         <div class="crew-modal-field"><label for="crewModalRole">Role</label><input id="crewModalRole" type="text" placeholder="e.g. CRM Lead, teammate, client"></div>
         <div class="crew-modal-field"><label for="crewModalOrganization">Organization</label><input id="crewModalOrganization" type="text" placeholder="e.g. Penguin King"></div>
         <div class="crew-modal-field"><label for="crewModalRelationship">Relationship</label><input id="crewModalRelationship" type="text" placeholder="e.g. Professional contact, friendly rapport"></div>
@@ -4339,7 +4339,7 @@ function openCrewModal(mode, idx = -1, prefill = '') {
   ].filter(Boolean).join(' · ');
   review.hidden=!review.textContent;
   document.getElementById('crewModalPreferences').open=mode==='approve' &&
-    Boolean(source.possibleMatches?.length || source.organization || source.role);
+    Boolean(source.organization || source.role);
   document.getElementById('crewLearnedNotes').open=false;
   renderCrewEditorNotes(source);
   toggleCrewEditorHelp(false);
