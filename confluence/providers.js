@@ -1,4 +1,5 @@
 const { createHash, randomBytes } = require('node:crypto');
+const { createMetaProviders } = require('./meta');
 
 const gmailScope = 'https://www.googleapis.com/auth/gmail.readonly';
 const gmailRoot = 'https://gmail.googleapis.com/gmail/v1/users/me';
@@ -14,12 +15,12 @@ class ConnectionError extends Error {
   }
 }
 
-async function request(fetchImpl, url, { token, form, method, slack = false, allowEmpty = false } = {}) {
+async function request(fetchImpl, url, { token, form, method, slack = false, meta = false, allowEmpty = false } = {}) {
   let response;
   try {
     response = await fetchImpl(url, {
       method: method || (form ? 'POST' : 'GET'),
-      ...(form && { body: new URLSearchParams(form) }),
+      ...(form && { body: form instanceof FormData ? form : new URLSearchParams(form) }),
       ...(token && { headers: { Authorization: 'Bearer ' + token } }),
       redirect: 'error',
       signal: AbortSignal.timeout(12000)
@@ -28,18 +29,19 @@ async function request(fetchImpl, url, { token, form, method, slack = false, all
     throw new ConnectionError('provider_unreachable');
   }
   const data = await response.json().catch(() => null);
-  if (response.status === 429 || data?.error === 'ratelimited') {
+  const metaCode = meta ? Number(data?.error?.code ?? data?.code) : null;
+  if (response.status === 429 || data?.error === 'ratelimited' || [4, 17, 32, 613, 80001].includes(metaCode)) {
     const retryAfter = Number(response.headers.get('retry-after'));
     throw new ConnectionError('provider_rate_limited', 429, retryAfter > 0 ? retryAfter : undefined);
   }
-  if (response.status === 401 || ['invalid_grant', 'invalid_auth', 'token_expired', 'token_revoked', 'not_authed', 'account_inactive'].includes(data?.error)) {
+  if (response.status === 401 || metaCode === 190 || ['invalid_grant', 'invalid_auth', 'token_expired', 'token_revoked', 'not_authed', 'account_inactive'].includes(data?.error)) {
     throw new ConnectionError('reauthorization_required', 401);
   }
-  if (response.status === 403 || ['missing_scope', 'not_in_channel', 'channel_not_found', 'no_permission'].includes(data?.error)) {
+  if (response.status === 403 || [10, 200, 283, 294].includes(metaCode) || ['missing_scope', 'not_in_channel', 'channel_not_found', 'no_permission'].includes(data?.error)) {
     throw new ConnectionError('provider_access_limited', 403);
   }
   if (response.status === 404 || data?.error === 'thread_not_found') throw new ConnectionError('record_unavailable', 404);
-  if (!response.ok || (!data && !allowEmpty) || (slack && data?.ok !== true)) throw new ConnectionError('provider_request_failed');
+  if (!response.ok || (!data && !allowEmpty) || (slack && data?.ok !== true) || (meta && data?.error)) throw new ConnectionError('provider_request_failed');
   return data || {};
 }
 
@@ -240,7 +242,9 @@ function createProviders(env = process.env, fetchImpl = fetch) {
       if (result.revoked !== true) throw new ConnectionError('revocation_unconfirmed');
     }
   };
-  return { gmail, slack };
+  return { gmail, slack, ...createMetaProviders(env, {
+    request: (url, options) => request(fetchImpl, url, options), endpoint, timestamp, ConnectionError
+  }) };
 }
 
 function oauthProof() {

@@ -46,10 +46,13 @@ function createConfluenceRouter({ authenticate, env = process.env, fetchImpl = f
     const connection = row?.value;
     const status = connection?.status || (provider.configured && ready ? 'authorization_required' : 'setup_required');
     return { id: provider.id, label: provider.label, status, account: connection?.display || connection?.account, scopes: provider.scopes,
-      workspace: connection?.workspace, checkedAt: connection?.checkedAt,
+      workspace: connection?.workspace, checkedAt: connection?.checkedAt, detail: provider.detail,
       capabilities: Object.fromEntries(provider.capabilities.map(name => {
+        const inboxNeedsPermission = provider.capabilities.includes('inbox') &&
+          ['inbox', 'threads'].includes(name) && connection?.inboxGranted !== true;
         const capabilityStatus = status === 'connected'
-          ? (name === 'threads' && provider.id === 'slack' ? 'supported_with_limitations' : 'authenticated')
+          ? (inboxNeedsPermission ? 'authorization_required' :
+            (provider.limitedCapabilities?.includes(name) || (name === 'threads' && provider.id === 'slack') ? 'supported_with_limitations' : 'authenticated'))
           : status;
         return [name, capabilityStatus];
       })) };
@@ -65,12 +68,12 @@ function createConfluenceRouter({ authenticate, env = process.env, fetchImpl = f
   async function active(owner, provider) {
     let row = await vault.get(owner, 'connections', provider.id);
     if (!row || row.value.status !== 'connected') failure(row?.value.status || 'authorization_required', 409);
-    if (!row.value.expiresAt || row.value.expiresAt > Date.now() + 30000) return row;
+    if (!row.value.expiresAt || row.value.expiresAt > Date.now() + (provider.refreshWindow || 30000)) return row;
     const key = owner + ':' + provider.id;
     if (!refreshes.has(key)) {
       const refresh = (async () => {
         try {
-          if (!row.value.refreshToken) failure('reauthorization_required', 401);
+          if (!row.value.refreshToken || !provider.refresh) failure('reauthorization_required', 401);
           const updated = await provider.refresh(row.value.refreshToken);
           if (!updated.access_token) failure('reauthorization_required', 401);
           return await vault.save(owner, 'connections', provider.id, {
@@ -152,6 +155,8 @@ function createConfluenceRouter({ authenticate, env = process.env, fetchImpl = f
         }
         await vault.save(state.owner, 'connections', id, {
           ...identity, token: token.access_token, refreshToken: token.refresh_token || previous?.value.refreshToken || null,
+          ...(token.revocationToken && { revocationToken: token.revocationToken }),
+          ...(typeof token.inboxGranted === 'boolean' && { inboxGranted: token.inboxGranted }),
           expiresAt: token.expires_in > 0 ? Date.now() + token.expires_in * 1000 : null, checkedAt: new Date().toISOString(),
           status: 'connected'
         }, previous?.version);
@@ -237,8 +242,13 @@ function createConfluenceRouter({ authenticate, env = process.env, fetchImpl = f
     const row = await vault.get(req.owner, 'connections', provider.id);
     if (!row) return res.json({ ok: true, revocation: 'already_disconnected' });
     await vault.remove(req.owner, 'connections', provider.id, row.version);
-    let revocation = 'confirmed';
-    try { await provider.revoke(row.value); } catch { revocation = 'unconfirmed'; }
+    let revocation = 'unconfirmed';
+    if (provider.revoke) {
+      try {
+        await provider.revoke(row.value);
+        revocation = 'confirmed';
+      } catch {}
+    }
     await audit(req.owner, 'disconnect', { connection: provider.id, externalAction: true, outcome: revocation });
     res.json({ ok: true, revocation });
   }));
@@ -253,11 +263,22 @@ function createConfluenceRouter({ authenticate, env = process.env, fetchImpl = f
   }));
   router.post('/connections/provider/:provider/thread', handle(async (req, res) => {
     const provider = providerFor(req.params.provider);
+    if (!provider.thread) failure('provider_access_limited', 403);
     const id = text(req.body.threadId, 200);
     const cursor = text(req.body.cursor, 2048);
     if (!id || (req.body.cursor && !cursor)) failure('invalid_thread', 400);
     const result = await withConnection(req.owner, provider, 'thread', async connection =>
       wrapEvidence(provider, connection, await provider.thread(connection, id, cursor)));
+    res.json(result);
+  }));
+  router.post('/connections/provider/:provider/:collection(posts|inbox)', handle(async (req, res) => {
+    const provider = providerFor(req.params.provider);
+    const collection = req.params.collection;
+    if (!provider[collection]) failure('provider_access_limited', 403);
+    const cursor = text(req.body.cursor, 2048);
+    if (req.body.cursor && !cursor) failure('invalid_cursor', 400);
+    const result = await withConnection(req.owner, provider, collection, async connection =>
+      wrapEvidence(provider, connection, await provider[collection](connection, cursor)));
     res.json(result);
   }));
   router.get('/connections/gmail/labels', handle(async (req, res) => {
@@ -278,7 +299,7 @@ function createConfluenceRouter({ authenticate, env = process.env, fetchImpl = f
   router.post('/connections/investigate', handle(async (req, res) => {
     const question = text(req.body.question, 2500);
     const queries = req.body.queries;
-    if (!question || !Array.isArray(queries) || !queries.length || queries.length > 2) failure('invalid_investigation', 400);
+    if (!question || !Array.isArray(queries) || !queries.length || queries.length > Object.keys(providers).length) failure('invalid_investigation', 400);
     const plans = queries.map(item => {
       const query = text(item?.query, 500);
       if (!query) failure('invalid_search', 400);
@@ -297,7 +318,7 @@ function createConfluenceRouter({ authenticate, env = process.env, fetchImpl = f
             cursor = result.cursor;
             if (!cursor) break;
           }
-          const threadId = req.body.includeThreads === true && pages.flatMap(page => page.records).find(record => record.threadId)?.threadId;
+          const threadId = provider.thread && req.body.includeThreads === true && pages.flatMap(page => page.records).find(record => record.threadId)?.threadId;
           let thread = null;
           if (threadId) {
             try {

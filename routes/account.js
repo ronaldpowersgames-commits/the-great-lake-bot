@@ -26,7 +26,7 @@ function createAccountRouter({ url = process.env.SUPABASE_URL, key = process.env
   }
   function clear(res) { Object.values(names).forEach(name => res.clearCookie(name, cookieOptions)); res.clearCookie(pendingName, pendingOptions); }
   function clearConnectorProof(res) {
-    for (const provider of ['gmail', 'slack']) {
+    for (const provider of ['gmail', 'slack', 'instagram', 'facebook']) {
       res.clearCookie((secure ? '__Host-' : '') + 'confluence-' + provider, pendingOptions);
     }
   }
@@ -104,9 +104,14 @@ function createAccountRouter({ url = process.env.SUPABASE_URL, key = process.env
     let pending;
     try { pending = JSON.parse(cookies(req)[pendingName] || 'null'); } catch {}
     const age = Date.now() - pending?.created;
-    if (req.query.error || !code || code.length > 1024 || !/^[A-Za-z0-9_-]{43}$/.test(pending?.verifier || '') || !Number.isFinite(age) || age < 0 || age > 60 * 60 * 1000) {
-      console.info('Account callback: link rejected (missing/expired browser proof or provider error).');
+    const validProof = /^[A-Za-z0-9_-]{43}$/.test(pending?.verifier || '') && Number.isFinite(age) && age >= 0 && age <= 60 * 60 * 1000;
+    if (!validProof) {
+      console.info('Account callback: missing or expired browser proof.');
       res.clearCookie(pendingName, pendingOptions);
+      return res.redirect(303, '/connections.html?status=sign-in-browser-required');
+    }
+    if (req.query.error || !code || code.length > 1024) {
+      console.info('Account callback: missing code or provider rejected the link.');
       return res.redirect(303, '/connections.html?status=sign-in-failed');
     }
     try {
@@ -120,7 +125,6 @@ function createAccountRouter({ url = process.env.SUPABASE_URL, key = process.env
     } catch (error) {
       // Categories only: never log callback codes, tokens, emails or response bodies.
       console.info('Account callback failed:', error.status || 'local-validation', error.providerCode || error.message);
-      res.clearCookie(pendingName, pendingOptions);
       return res.redirect(303, '/connections.html?status=sign-in-failed');
     }
   });

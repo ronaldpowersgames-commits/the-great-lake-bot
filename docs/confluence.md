@@ -9,6 +9,15 @@ Open **Depths → Settings → Connection Hub** in The Great Lake. Existing Wave
 3. Register the Slack and Google apps using the instructions below, then set their client IDs and secrets. Start with a private test workspace and mailbox. Open Connection Hub, sign in through the email link in the same browser, and authorize one account per provider. Run **Test connection** and then a known historical query for each.
 4. Keep the account and connector secrets separate for each deployment. Preview callback URLs must correspond to that preview’s APP_ORIGIN.
 
+### Lake-branded sign-in email
+
+In Supabase Authentication → Emails, configure custom SMTP using your mail provider’s SMTP host, port, login and password. Set the sender name to **The Great Lake Bot** and the sender address to an address your provider has verified. Verify the sending domain in the provider’s DNS settings if required. Update the **Confirm sign up** and **Magic link or OTP** templates to say The Great Lake Bot and preserve the existing confirmation URL. Disable link tracking for authentication messages.
+
+The browser proof lives in the profile where you requested the email. If your inbox is in another Chrome profile, copy the newest sign-in link into the profile that requested it. Supabase's default sender has two deliveries per project per hour and only sends to authorized team addresses.
+
+- [Custom SMTP](https://supabase.com/docs/guides/auth/auth-smtp)
+- [Email templates](https://supabase.com/docs/guides/auth/auth-email-templates)
+
 Generate a 32-byte token or key with:
 
     node -e "console.log(require('node:crypto').randomBytes(32).toString('base64url'))"
@@ -37,7 +46,19 @@ Complete the applicable Google verification and review the Limited Use, hosting 
 - [Google API Services User Data Policy](https://developers.google.com/terms/api-services-user-data-policy)
 - [Gmail MCP setup](https://developers.google.com/workspace/gmail/api/guides/configure-mcp-server)
 
-### Other platforms
+### Instagram and Facebook
+
+- **Instagram Professional.** Configure Business Login for Instagram in a Meta app, register APP_ORIGIN + /connections/oauth/instagram/callback, and set INSTAGRAM_CLIENT_ID and INSTAGRAM_CLIENT_SECRET to the Instagram app credentials. Grant instagram_business_basic to browse and search available media captions. To also browse available conversations and read threads, enable the applicable Meta messaging setup and grant instagram_business_manage_messages, then set INSTAGRAM_ENABLE_INBOX=true.
+- **Facebook Page.** Register APP_ORIGIN + /connections/oauth/facebook/callback on a dedicated Facebook Login for Business app, create a configuration that returns a User token with pages_show_list and pages_read_engagement, and set FACEBOOK_CLIENT_ID, FACEBOOK_CLIENT_SECRET, FACEBOOK_LOGIN_CONFIG_ID and FACEBOOK_PAGE_ID. The authorizing user must manage the configured Page. For Page inbox access, add pages_manage_metadata and pages_messaging to the configuration, set FACEBOOK_ENABLE_INBOX=true, and authorize with the Page’s messaging permission. Disconnect attempts to revoke authorization for the dedicated Facebook app.
+
+Meta controls eligibility and App Review. Both connectors read only available data from the authorized asset. Search matches captions or post text on the retrieved pages. Inbox reads are on demand and can have provider history limits. The app never sends or publishes on Meta, and Meta content is excluded from model synthesis. Disconnect Instagram in the Hub to delete local credentials and remove the app authorization in Instagram if provider revocation is still needed. Personal Instagram accounts and personal Facebook Messenger inboxes are outside these direct APIs. The Lake does not currently import personal Meta archives.
+
+- [Instagram login](https://developers.facebook.com/documentation/instagram-platform/instagram-api-with-instagram-login/business-login)
+- [Instagram conversations](https://developers.facebook.com/documentation/instagram-platform/instagram-api-with-instagram-login/conversations-api)
+- [Facebook Page posts](https://developers.facebook.com/docs/graph-api/reference/page/published_posts/)
+- [Facebook Page conversations](https://developers.facebook.com/docs/graph-api/reference/page/conversations)
+
+### Additional candidates
 
 Microsoft Graph and Google Workspace APIs are candidates for separate delegated adapters with their own consent scopes. Personal WhatsApp has a browser-local text-export workflow. Meta’s WhatsApp Business Platform is a distinct business messaging integration. Android SMS/MMS permissions are subject to the device and Google Play requirements, and RCS access depends on the device and messaging platform. Apple Messages extensions run in the supported Messages app context.
 
@@ -56,6 +77,8 @@ Enter terms and applicable date operators for each participating provider, then 
 Optional synthesis sends the question and up to 24 bounded, numbered excerpts from the selected sources to the configured OpenAI API. The retrieval UI works independently of model analysis. Source content enters the model as quoted data and the synthesis request has no tools or outbound action permissions. Imported WhatsApp exports are parsed and searched in memory in the current browser tab.
 
 The Lake retains encrypted OAuth credentials while connected. Disconnect deletes local credentials and attempts provider revocation. Check the reported result to confirm provider revocation. Activity history records operation, scope, time, outcome and whether information was shared or retained. It omits queries, excerpts and tokens. The current deployment retains activity records until the owning Lake account is deleted or the deployment operator removes records. SOURCE records are retained separately and support review and removal. Confluence does not migrate existing browser storage to cloud accounts.
+
+The Connection Hub’s **Import a Lake package** picker transfers the selected file into the same browser profile’s existing restore flow. It supports unified ZIPs, full backup JSON and portable .lake files. The selected package is held temporarily in browser storage until the local Lake opens it for review. It is not sent to the server or synced to other devices.
 
 ## SOURCE protocol version 1
 

@@ -8,6 +8,7 @@
   <title>Connections · The Great Lake</title>
   <link rel="icon" href="/icon.svg">
   <link rel="stylesheet" href="/connections.css">
+  <script defer src="/session-store.js"></script>
   <script defer src="/whatsapp-export.js"></script>
   <script defer src="/connections.js"></script>
 </head>
@@ -31,9 +32,18 @@
     </form>
     <button id="sign-out" type="button" hidden>Sign out</button>
   </section>
+  <section aria-labelledby="lake-package-title">
+    <h2 id="lake-package-title">Import a Lake package</h2>
+    <p>Open a unified Lake ZIP, full backup, or portable package. You’ll review the import in your local Lake profile.</p>
+    <form id="lake-package-import">
+      <label for="lake-package-file">Lake package</label>
+      <input id="lake-package-file" type="file" accept=".zip,.lake,.json,application/zip,application/json" required>
+      <button>Continue in The Lake</button>
+    </form>
+  </section>
   <section aria-labelledby="providers-title">
     <h2 id="providers-title">Direct connections</h2>
-    <p>Slack and Gmail access is read-only. Searches run on demand. Message excerpts are displayed for this session, and activity records omit search terms and message content.</p>
+    <p>Direct connections are read-only. Retrieved content is displayed for this session. Activity records omit search terms and message content.</p>
     <div id="providers" class="cards"></div>
   </section>
   <section id="investigations" hidden aria-labelledby="investigation-title">

@@ -1,6 +1,7 @@
 (function () {
   let databasePromise;
   const writes = new Map();
+  const transferKey = ['connection-hub', 'lake-package'];
 
   function readRecovery(key){
     try{
@@ -80,6 +81,36 @@
       transaction.oncomplete = () => resolve(result);
       transaction.onerror = () => reject(transaction.error);
       transaction.onabort = () => reject(transaction.error || new Error('Storage was interrupted.'));
+    });
+  }
+
+  async function stagePackage(file) {
+    const id = crypto.randomUUID();
+    const database = await openDatabase();
+    await new Promise((resolve, reject) => {
+      const transaction = database.transaction('accounts', 'readwrite');
+      transaction.objectStore('accounts').put({ id, file, expires: Date.now() + 15 * 60 * 1000 }, transferKey);
+      transaction.oncomplete = resolve;
+      transaction.onabort = () => reject(transaction.error || new Error('Could not stage the Lake package on this device.'));
+    });
+    return id;
+  }
+
+  async function takePackage(id) {
+    const database = await openDatabase();
+    return new Promise((resolve, reject) => {
+      const transaction = database.transaction('accounts', 'readwrite');
+      const store = transaction.objectStore('accounts');
+      const request = store.get(transferKey);
+      let file;
+      request.onsuccess = () => {
+        const pending = request.result;
+        if (!pending) return;
+        if (pending.id === id && pending.expires > Date.now()) file = pending.file;
+        if (pending.id === id || pending.expires <= Date.now()) store.delete(transferKey);
+      };
+      transaction.oncomplete = () => resolve(file);
+      transaction.onabort = () => reject(transaction.error || new Error('Could not open the staged Lake package.'));
     });
   }
 
@@ -232,5 +263,5 @@
     });
   }
 
-  window.LakeSessionStore = { read, write, upsert, portableImport, mergeBackup };
+  window.LakeSessionStore = { read, write, upsert, portableImport, mergeBackup, stagePackage, takePackage };
 })();

@@ -11,7 +11,8 @@ const messages = {
   'connection-failed': 'Connection failed or was cancelled. Check the OAuth registration and try again.',
   'disconnect-first': 'A different account is already connected for this provider. Disconnect it first to switch accounts.',
   'signed-in': 'Lake account verified.',
-  'sign-in-failed': 'The sign-in link could not be used. Request a new link in this browser.',
+  'sign-in-failed': 'That link could not be used. Try the newest Lake email in the browser profile that requested it before sending another.',
+  'sign-in-browser-required': 'This browser profile has no active Lake sign-in request. Open the newest link in the profile that requested it.',
   connection_changed: 'The connection changed while data was being retrieved. Try again.',
   provider_rate_limited: 'The provider has rate-limited this request. Try again after the indicated wait.',
   source_paused: 'Enable the SOURCE pairing first.',
@@ -94,9 +95,11 @@ function renderProviders(list, signedIn) {
     const { id, status, account, capabilities, workspace } = provider;
     const card = node('article');
     card.append(node('h3', provider.label), node('p', describe(status), 'muted'));
+    if (provider.detail) card.append(node('p', provider.detail));
     if (account) card.append(node('p', [account, workspace].filter(Boolean).join(' · ')));
-    const labels = { search: 'Message search', threads: 'Thread retrieval', labels: 'Labels', attachment_references: 'Attachment details',
-      attachment_download: 'Attachment downloads up to 5 MB' };
+    const labels = { search: capabilities.posts ? 'Post search' : 'Message search', threads: 'Thread retrieval',
+      labels: 'Labels', attachment_references: 'Attachment details', attachment_download: 'Attachment downloads up to 5 MB',
+      posts: 'Recent posts', inbox: 'Authorized inbox' };
     const permissions = node('ul');
     for (const [name, capabilityStatus] of Object.entries(capabilities)) {
       permissions.append(node('li', (labels[name] || name) + ' · ' + describe(capabilityStatus)));
@@ -105,8 +108,10 @@ function renderProviders(list, signedIn) {
     if (!signedIn || status === 'setup_required') return card;
     const url = '/connections/provider/' + id;
     const controls = [];
-    if (['authorization_required', 'reauthorization_required'].includes(status)) {
-      controls.push(button(account ? 'Reconnect' : 'Authorize read-only access', async () => {
+    const results = node('div');
+    const needsInbox = status === 'connected' && capabilities.inbox === 'authorization_required';
+    if (['authorization_required', 'reauthorization_required'].includes(status) || needsInbox) {
+      controls.push(button(needsInbox ? 'Authorize inbox' : account ? 'Reconnect' : 'Authorize read-only access', async () => {
         const result = await api('/connections/oauth/' + id, {});
         location.assign(result.url);
       }));
@@ -120,6 +125,22 @@ function renderProviders(list, signedIn) {
         const { labels } = await api('/connections/gmail/labels');
         notify(labels.length ? labels.map(item => item.name).join(' · ') : 'No labels returned.');
       }));
+      for (const collection of ['posts', 'inbox']) {
+        if (!['authenticated', 'supported_with_limitations'].includes(capabilities[collection])) continue;
+        const load = async (cursor, trigger) => {
+          const page = await api(url + '/' + collection, { cursor });
+          if (trigger) trigger.remove();
+          else results.replaceChildren(node('h4', labels[collection]));
+          if (!page.records.length) results.append(node('p', 'No records returned for this page.', 'muted'));
+          renderEvidence(results, page.records, results.querySelectorAll('article').length);
+          for (const note of page.limits) results.append(node('p', note, 'muted'));
+          if (page.cursor) {
+            const more = button('More results', () => load(page.cursor, more));
+            results.append(more);
+          }
+        };
+        controls.push(button(collection === 'posts' ? 'Browse posts' : 'Browse inbox', () => load()));
+      }
     }
     if (['connected', 'paused'].includes(status)) {
       controls.push(button(status === 'paused' ? 'Resume' : 'Pause', async () => {
@@ -135,7 +156,7 @@ function renderProviders(list, signedIn) {
         ? 'Lake credentials deleted. Remove the remaining authorization in your provider account settings.'
         : provider.label + ' disconnected.');
     }));
-    card.append(actions(...controls));
+    card.append(actions(...controls), results);
     return card;
   });
   $('providers').replaceChildren(...cards);
@@ -331,7 +352,7 @@ async function loadHub() {
   $('investigations').hidden = !connected.length;
   $('query-inputs').replaceChildren(...connected.map(provider => {
     const wrapper = node('div');
-    const label = node('label', provider.label + ' search');
+    const label = node('label', provider.label + (provider.capabilities.posts ? ' post search' : ' search'));
     const input = node('input');
     input.id = 'query-' + provider.id;
     input.maxLength = 500;
@@ -372,7 +393,13 @@ async function loadAudit(offset = 0) {
 
 bindForm('sign-in', async () => {
   await api('/account/link', { email: $('email').value, remember: $('remember').checked });
-  notify('Open the email sign-in link in this browser.');
+  notify('Open the newest Lake sign-in link in this browser profile. If Gmail is in another profile, copy the link here.');
+});
+bindForm('lake-package-import', async () => {
+  const file = $('lake-package-file').files[0];
+  if (!file || !/\.(zip|lake|json)$/i.test(file.name)) throw new Error('Choose a Lake ZIP, .lake, or JSON package.');
+  const id = await LakeSessionStore.stagePackage(file);
+  location.assign('/#lake-package=' + id);
 });
 $('sign-out').addEventListener('click', event => busy(event.currentTarget, async () => {
   await api('/account/logout', {});

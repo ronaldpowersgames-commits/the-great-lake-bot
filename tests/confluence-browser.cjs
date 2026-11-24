@@ -1,5 +1,6 @@
 const assert = require('node:assert/strict');
 const { chromium } = require(process.env.LAKE_PLAYWRIGHT_PATH || 'playwright');
+const JSZip = require('jszip');
 
 (async () => {
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
@@ -65,7 +66,30 @@ const { chromium } = require(process.env.LAKE_PLAYWRIGHT_PATH || 'playwright');
     await page.getByText('Older result', { exact: false }).waitFor();
     assert.equal(await page.locator('#investigation-result script').count(), 0);
     assert.deepEqual(errors, []);
-    console.log('Connection Hub passed desktop and mobile browser checks.');
+    await page.addInitScript(() => {
+      if (!localStorage.getItem('lakeUser')) localStorage.setItem('lakeUser', JSON.stringify({
+        name: 'Test owner', email: 'owner@example.com', responseLanguage: 'auto'
+      }));
+    });
+    const fixtureText = 'Private staged Tide history';
+    const zip = new JSZip();
+    zip.file('lake-backup.json', JSON.stringify({ format_version: 'lake-full-backup/1', data: {
+      conversations: [{ id: 'hub_import', name: 'Hub import', history: [{ role: 'user', content: fixtureText }] }]
+    } }));
+    const uploadBodies = [];
+    page.on('request', request => uploadBodies.push(request.postData() || ''));
+    page.on('dialog', dialog => {
+      assert.match(dialog.message(), /fixture\.zip.*Test owner/);
+      return dialog.accept();
+    });
+    await page.locator('#lake-package-file').setInputFiles({
+      name: 'fixture.zip', mimeType: 'application/zip', buffer: await zip.generateAsync({ type: 'nodebuffer' })
+    });
+    await page.getByRole('button', { name: 'Continue in The Lake' }).click();
+    await page.locator('#backupRestoreStatus').getByText('Backup merged. 1 Tides added.', { exact: false }).waitFor();
+    assert.equal(await page.evaluate(() => allSessions.find(tide => tide.id === 'hub_import')?.history[0].content), fixtureText);
+    assert.ok(uploadBodies.every(body => !body.includes(fixtureText)));
+    console.log('Connection Hub passed desktop, mobile, and browser-local package import checks.');
   } finally {
     await browser.close();
   }

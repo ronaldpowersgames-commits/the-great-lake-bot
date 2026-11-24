@@ -2543,6 +2543,7 @@ let suggestedCrew     = [];
 // SHARED SESSION CHECK
 // ============================================
 const legacyShareId = new URLSearchParams(window.location.search).get('share');
+let stagedLakePackageId = /^#lake-package=([0-9a-f-]{36})$/i.exec(location.hash)?.[1];
 if (legacyShareId) window.location.replace('/shared.html?id=' + encodeURIComponent(legacyShareId));
 
 // ============================================
@@ -3607,6 +3608,7 @@ async function enterLake() {
     renderCrew();
   }
   loadSuggestedCrew();
+  if (stagedLakePackageId) await reviewStagedLakePackage();
   if (deferredInstallPrompt) showInstallBanner();
   setTimeout(() => {
     if(window.innerWidth>768 && !crewEditor.classList.contains('show'))document.getElementById('lakeInput').focus();
@@ -3682,6 +3684,7 @@ window.addEventListener('load', async () => {
   loadBackendStatus();
   const saved = localStorage.getItem('lakeUser');
   if (saved) { try { currentUser = JSON.parse(saved); await enterLake(); } catch(e) {} }
+  else if (stagedLakePackageId) showToast('Open your local Lake profile to review the selected package.');
   await loadSessionHistory();
   loadCrew();
   loadSuggestedCrew();
@@ -5544,6 +5547,27 @@ function dropBackupFile(event,restore){
   void restore(files[0]);
 }
 
+async function reviewStagedLakePackage() {
+  const id = stagedLakePackageId;
+  stagedLakePackageId = null;
+  window.history.replaceState(null, '', location.pathname + location.search);
+  try {
+    const key = storageKey('sessions');
+    const file = await LakeSessionStore.takePackage(id);
+    if (!file) {
+      showToast('The selected Lake package is no longer available. Choose it again in the Connection Hub.');
+      return;
+    }
+    if (key !== storageKey('sessions') || !confirm('Open "' + file.name + '" in the local Lake profile for ' +
+      currentUser.name + '? This import stays on this device.')) return;
+    if (!document.getElementById('depthsPanel').classList.contains('show')) toggleDepths();
+    showDepthsTab('backup');
+    await importPortableLake(file);
+  } catch (error) {
+    showToast('Could not open the Lake package. ' + error.message);
+  }
+}
+
 async function importPortableLake(file){
   if(!file)return;
   if(/\.zip$/i.test(file.name))return restoreLakeBackup(file);
@@ -5557,6 +5581,7 @@ async function importPortableLake(file){
       if(password===null)return;
       pkg=await LakeFullBackup.decrypt(pkg,password);
     }
+    if(pkg?.format_version==='lake-full-backup/1')return restoreLakeBackup(file,pkg);
     LakeFullBackup.validatePortable(pkg);
     await sessionLoadPromise;
     if(key!==storageKey('sessions') || waveInFlight)return;
@@ -5679,13 +5704,13 @@ async function protectLakeStorage(){
   }catch{showToast('Browser storage protection could not be enabled.');}
 }
 
-async function restoreLakeBackup(file){
+async function restoreLakeBackup(file,preparedBackup){
   if(!file)return;
   const button=document.getElementById('restoreBackupButton');
   const status=document.getElementById('backupRestoreStatus');
   if(button.disabled)return;
   if(waveInFlight){status.textContent='Wait for the current reply, then restore the backup.';return;}
-  if(!/\.(zip|json)$/i.test(file.name)){
+  if(!preparedBackup && !/\.(zip|json)$/i.test(file.name)){
     status.textContent='Choose a Lake backup ZIP or JSON. To analyze a transcript, attach it to a chat.';
     return;
   }
@@ -5693,14 +5718,17 @@ async function restoreLakeBackup(file){
   button.disabled=true;
   status.textContent='Reading your backup… Large files may take a moment.';
   try{
-    let raw;
-    if(/\.zip$/i.test(file.name)){
-      const zip=await JSZip.loadAsync(await file.arrayBuffer());
-      const entry=zip.file('lake-backup.json');
-      if(!entry)throw new Error('This ZIP has no lake-backup.json. Choose the original Lake backup ZIP or its extracted JSON.');
-      raw=await entry.async('string');
-    }else raw=await file.text();
-    let backup=JSON.parse(raw);
+    let backup=preparedBackup;
+    if(!backup){
+      let raw;
+      if(/\.zip$/i.test(file.name)){
+        const zip=await JSZip.loadAsync(await file.arrayBuffer());
+        const entry=zip.file('lake-backup.json');
+        if(!entry)throw new Error('This ZIP has no lake-backup.json. Choose the original Lake backup ZIP or its extracted JSON.');
+        raw=await entry.async('string');
+      }else raw=await file.text();
+      backup=JSON.parse(raw);
+    }
     if(backup?.format_version==='lake-encrypted-backup/1'){
       const password=prompt('Enter your backup password');
       if(password===null){status.textContent='Restore canceled.';return;}

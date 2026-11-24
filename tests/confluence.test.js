@@ -60,6 +60,59 @@ function fakeServices() {
       const id = { 'Bearer lake-first': owner, 'Bearer lake-second': other }[bearer];
       return id ? json({ id, email: 'verified@example.com', email_confirmed_at: instant }) : json({}, 401);
     }
+    if (url.pathname === '/auth/v1/otp') return json({});
+    if (url.pathname === '/auth/v1/token' && url.searchParams.get('grant_type') === 'pkce') {
+      const body = JSON.parse(init.body);
+      return body.auth_code === 'latest' && /^[\w-]{43}$/.test(body.code_verifier)
+        ? json({ access_token: 'lake-first', refresh_token: 'lake-refresh', user: {
+          id: owner, email: 'verified@example.com', email_confirmed_at: instant
+        } }) : json({ error_code: 'bad_code_verifier' }, 400);
+    }
+    if (url.host === 'api.instagram.com') {
+      assert.equal(init.body.get('code'), 'instagram-code');
+      return json({ data: [{ access_token: 'ig-short', user_id: '123', permissions: 'instagram_business_basic,instagram_business_manage_messages' }] });
+    }
+    if (url.host === 'graph.instagram.com') {
+      if (url.pathname === '/access_token') {
+        assert.equal(url.searchParams.get('access_token'), 'ig-short');
+        return json({ access_token: 'ig-long', expires_in: 5184000 });
+      }
+      assert.equal(bearer, 'Bearer ig-long');
+      if (url.pathname.endsWith('/me')) return json({ user_id: '123', username: 'creator' });
+      if (url.pathname.endsWith('/me/media')) return json({
+        data: [{ id: 'ig-post', caption: 'Lake view', timestamp: instant, permalink: 'https://www.instagram.com/p/ABC/' }]
+      });
+      if (url.pathname.endsWith('/me/conversations')) return json({
+        data: [{ id: 'ig-thread', updated_time: instant, participants: { data: [{ username: 'guest' }] } }]
+      });
+      if (url.pathname.endsWith('/ig-thread')) return json({
+        messages: { data: [{ id: 'ig-message', message: 'Private reply', created_time: instant, from: { username: 'guest' } }] }
+      });
+    }
+    if (url.host === 'graph.facebook.com') {
+      if (url.pathname.endsWith('/oauth/access_token')) return json({
+        access_token: url.searchParams.has('fb_exchange_token') ? 'fb-user' : 'fb-short'
+      });
+      assert.match(url.searchParams.get('appsecret_proof'), /^[0-9a-f]{64}$/);
+      if (url.pathname.endsWith('/me/permissions')) {
+        assert.equal(bearer, 'Bearer fb-user');
+        if (method === 'DELETE') return json({ success: true });
+        return json({ data: ['pages_show_list', 'pages_read_engagement', 'pages_messaging', 'pages_manage_metadata']
+          .map(permission => ({ permission, status: 'granted' })) });
+      }
+      if (url.pathname.endsWith('/me/accounts')) {
+        assert.equal(bearer, 'Bearer fb-user');
+        return json({ data: [{ id: '999', name: 'Other Page', access_token: 'wrong' },
+          { id: '456', name: 'Lake Page', access_token: 'fb-page', tasks: ['MESSAGING'] }] });
+      }
+      assert.equal(bearer, 'Bearer fb-page');
+      if (url.pathname.endsWith('/me')) return json({ id: '456', name: 'Lake Page' });
+      if (url.pathname.endsWith('/456/published_posts')) return json({
+        data: [{ id: 'fb-post', message: 'Page update', created_time: instant, permalink_url: 'https://www.facebook.com/example/posts/1' }]
+      });
+      if (url.pathname.endsWith('/456/conversations')) return json({ data: [{ id: 'fb-thread', updated_time: instant }] });
+      if (url.pathname.endsWith('/fb-thread/messages')) return json({ data: [{ id: 'fb-message', message: 'Page reply', created_time: instant }] });
+    }
     if (url.host === 'oauth2.googleapis.com') {
       if (url.pathname === '/revoke') {
         options.revoked = true;
@@ -189,7 +242,8 @@ test('verified Lake accounts alone can authorize, retrieve and revoke Slack and 
   const slackOauth = await authorize('slack');
   assert.match(slackOauth.searchParams.get('user_scope'), /im:history/);
   const otherHub = await api('/connections', { session: 'lake-second' });
-  assert.ok(otherHub.data.provider.every(item => item.status === 'authorization_required'));
+  assert.ok(otherHub.data.provider.filter(item => ['gmail', 'slack'].includes(item.id)).every(item => item.status === 'authorization_required'));
+  assert.ok(otherHub.data.provider.filter(item => ['facebook', 'instagram'].includes(item.id)).every(item => item.status === 'setup_required'));
 
   const result = await api('/connections/investigate', { body: {
     question: 'Is the supplier rollout complete?', analyze: true,
@@ -313,4 +367,47 @@ test('WhatsApp export preserves multiline content, participant labels, source li
   assert.equal(second.timestamp, '2025-06-01T08:00:00');
   assert.equal(parseExport(content, 'mdy')[0].timestamp, null);
   assert.equal(parseExport('2024-01-09, 12:01 AM - Alex: Done.', 'ymd')[0].timestamp, '2024-01-09T00:01:00');
+});
+
+test('an older or failed callback preserves the newest Lake browser proof', async t => {
+  const { api } = await fixture(t);
+  const started = await api('/account/link', { session: null, body: { email: 'verified@example.com' } });
+  assert.equal(started.status, 200);
+  const proof = started.headers.get('set-cookie').split(';')[0];
+  const without = await api('/account/callback?code=latest', { session: null });
+  assert.match(without.headers.get('location'), /sign-in-browser-required/);
+  const older = await api('/account/callback?code=earlier', { session: null, cookies: proof });
+  assert.match(older.headers.get('location'), /sign-in-failed/);
+  assert.equal(older.headers.get('set-cookie'), null);
+  const expired = await api('/account/callback?error=access_denied', { session: null, cookies: proof });
+  assert.equal(expired.headers.get('set-cookie'), null);
+  const latest = await api('/account/callback?code=latest', { session: null, cookies: proof });
+  assert.match(latest.headers.get('location'), /signed-in/);
+  assert.match(latest.headers.get('set-cookie'), /lake-access=/);
+});
+
+test('Meta connects Instagram Professional and one authorized Facebook Page with explicit inbox scopes', async t => {
+  const { api, authorize, fake } = await fixture(t, {
+    INSTAGRAM_CLIENT_ID: 'ig-client', INSTAGRAM_CLIENT_SECRET: 'ig-secret', INSTAGRAM_ENABLE_INBOX: 'true',
+    FACEBOOK_CLIENT_ID: 'fb-client', FACEBOOK_CLIENT_SECRET: 'fb-secret', FACEBOOK_LOGIN_CONFIG_ID: '781',
+    FACEBOOK_PAGE_ID: '456', FACEBOOK_ENABLE_INBOX: 'true'
+  });
+  const ig = await authorize('instagram');
+  assert.match(ig.searchParams.get('scope'), /instagram_business_manage_messages/);
+  const fb = await authorize('facebook');
+  assert.equal(fb.searchParams.get('config_id'), '781');
+
+  for (const [provider, post, message] of [['instagram', 'Lake view', 'Private reply'], ['facebook', 'Page update', 'Page reply']]) {
+    const prefix = '/connections/provider/' + provider;
+    const posts = await api(prefix + '/posts', { body: {} });
+    assert.equal(posts.status, 200);
+    assert.equal(posts.data.records[0].text, post);
+    const inbox = await api(prefix + '/inbox', { body: {} });
+    const thread = await api(prefix + '/thread', { body: { threadId: inbox.data.records[0].threadId } });
+    assert.equal(thread.data.records[0].text, message);
+    assert.equal((await api(prefix + '/inbox', { body: {}, session: 'lake-second' })).status, 409);
+  }
+  assert.equal(JSON.stringify(fake.rows).includes('fb-user'), false);
+  assert.equal(JSON.stringify(fake.rows).includes('ig-long'), false);
+  assert.equal((await api('/connections/provider/facebook/disconnect', { body: {} })).data.revocation, 'confirmed');
 });
