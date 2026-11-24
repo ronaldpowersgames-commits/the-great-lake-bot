@@ -60,7 +60,16 @@
       context:[target.context,note?`Linked from ${source.name}:\n${note}`:''].filter(Boolean).join('\n\n'),
       mergedFrom:[...(target.mergedFrom||[]),{id:source.id,name:source.name,nickname:source.nickname,role:source.role,context:source.context,hidden:source.hidden},...(source.mergedFrom||[])]};
   }
-  const api={messageTitle,transcriptTitle,titleFor,canParent,cleanFolders,folderPath,mergeCrew};
+  function consolidateCrew(target,source) {
+    const merged=mergeCrew(target,source);
+    const {revisions,mergedFrom,...prior}=source;
+    const versions=[...(target.revisions||[]),...(revisions||[]),prior];
+    return {...source,...merged,
+      codename:target.codename || source.codename || '',emoji:target.emoji || source.emoji || '',
+      context:[...new Set([target.context,source.context].filter(Boolean))].join('\n\n'),
+      revisions:[...new Map(versions.map(version=>[JSON.stringify(version),version])).values()]};
+  }
+  const api={messageTitle,transcriptTitle,titleFor,canParent,cleanFolders,folderPath,mergeCrew,consolidateCrew};
   if(typeof module!=='undefined' && module.exports)module.exports=api;
   else root.LakeOrganization=api;
 })(typeof window==='undefined'?globalThis:window);

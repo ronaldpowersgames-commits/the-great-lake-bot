@@ -14,6 +14,26 @@ function fixture(data = {}) {
 
 const note = { key: 'meetings', value: 'I prepare an agenda.', evidence: 'I prepare an agenda.', classification: 'user reported' };
 const person = { name: 'Sam Park', nickname: 'Skipper', relationship: 'Teammate', observations: [{ evidence: 'Sam joined our project.' }] };
+
+test('unified Crew restore consolidates evidenced IDs while keeping local edits and other same-name people', () => {
+  const target = { id:'desktop', name:'Alex Lee', context:'A newer desktop note.', isSelf:true };
+  const duplicate = { id:'phone', name:'Alex Lee', context:'A phone note.', isSelf:true, observations:[{ evidence:'From the phone.' }] };
+  const unrelated = { id:'unrelated', name:'Alex Lee', relationship:'A different person.' };
+  const envelope = records => ({ version:1, records, savedAt:'', deleted:[] });
+  const backup = { ...envelope([{...target, context:'Old desktop note.', revisions:[duplicate]}]),
+    reconciliations:[{keep:'desktop',remove:'phone'},{keep:'desktop',remove:'unrelated'}] };
+  const merged = memory.merge('crew',envelope([target,duplicate,unrelated]),backup);
+  assert.deepEqual(merged.records.map(record=>record.id),['desktop','unrelated']);
+  assert.equal(merged.records[0].context,'A newer desktop note.\n\nA phone note.');
+  assert.deepEqual(merged.records[0].observations,duplicate.observations);
+  assert(merged.records[0].revisions.some(record=>record.id==='phone'));
+  assert.deepEqual(memory.merge('crew',{...envelope(merged.records),deleted:merged.deleted},backup),merged);
+
+  const placeholder = { id:'stub', name:'Alex Lee', isSelf:true };
+  const restored = memory.merge('crew',envelope([placeholder]),backup);
+  assert.deepEqual(restored.records.map(record=>record.id),['desktop']);
+  assert(restored.deleted.includes('stub'));
+});
 const source = { sessionId: 'tide_123', recordedAt: '2026-11-12T16:00:00.000Z' };
 
 test('both legacy memories migrate without overwriting their original data and survive independent reopens', () => {

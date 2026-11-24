@@ -124,7 +124,8 @@ function renderTideTree() {
       parent.append(details);found=true;
     }
     const sessions=allSessions.filter(session=>parentId ? session.folderId===parentId : !session.folderId || !folderIds.has(session.folderId))
-      .sort((a,b)=>Number(Boolean(b.pinned))-Number(Boolean(a.pinned)) || Number(Boolean(b.favorite))-Number(Boolean(a.favorite)));
+      .sort((a,b)=>Number(Boolean(b.pinned))-Number(Boolean(a.pinned)) || Number(Boolean(b.favorite))-Number(Boolean(a.favorite)) ||
+        (Date.parse(b.time)||0)-(Date.parse(a.time)||0));
     if(!parentId && tideFolders.length && sessions.some(session=>!query || matches(session))) {
       const heading=document.createElement('div');heading.className='unfiled-title';heading.textContent='Unfiled';parent.append(heading);
     }

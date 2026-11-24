@@ -150,7 +150,40 @@
       known.add(record[id]);
       records.push(record);
     }
-    return { records, deleted: [...new Set([...current.deleted, ...backup.deleted])]
+    const consolidated=[];
+    if (kind==='crew' && Array.isArray(backup.reconciliations)) {
+      const organization=typeof module!=='undefined' && module.exports ? require('./organization') : root.LakeOrganization;
+      // Apply explicit, evidenced ID matches from a unified backup. Names alone never select a record.
+      for(const entry of backup.reconciliations){
+        if(typeof entry?.keep!=='string' || typeof entry.remove!=='string' || entry.keep===entry.remove)continue;
+        const archived=backup.records.find(record=>record.id===entry?.keep);
+        const targetIndex=records.findIndex(record=>record.id===entry?.keep);
+        const sourceIndex=records.findIndex(record=>record.id===entry?.remove);
+        if(!archived || targetIndex<0 || targetIndex===sourceIndex)continue;
+        const proof=archived.revisions?.find(record=>record.id===entry.remove && normalize(record.name)===normalize(archived.name));
+        if(!proof)continue;
+        if(sourceIndex>=0){
+          if(normalize(records[sourceIndex].name)!==normalize(proof.name) ||
+            normalize(records[targetIndex].name)!==normalize(archived.name))continue;
+          records[targetIndex]=organization.consolidateCrew(records[targetIndex],records[sourceIndex]);
+          records.splice(sourceIndex,1);
+        }
+        consolidated.push(entry.remove);
+      }
+      const self=backup.records.find(record=>record.isSelf===true);
+      const target=records.findIndex(record=>record.id===self?.id);
+      if(target>=0){
+        const aliases=[self.name,self.codename,...String(self.nickname||'').split(/[,;/|]+/)].map(normalize).filter(Boolean);
+        const placeholder=records.findIndex((record,index)=>index!==target && record.isSelf===true &&
+          aliases.includes(normalize(record.name)) && Object.keys(record).every(key=>['id','name','isSelf','updatedAt'].includes(key)));
+        if(placeholder>=0){
+          records[target]=organization.consolidateCrew(records[target],records[placeholder]);
+          consolidated.push(records[placeholder].id);
+          records.splice(placeholder,1);
+        }
+      }
+    }
+    return { records, deleted: [...new Set([...current.deleted, ...backup.deleted,...consolidated])]
       .filter(idValue => !records.some(record => record[id] === idValue)) };
   }
 
