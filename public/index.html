@@ -1998,6 +1998,8 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
     <div id="depthsBackupView" role="tabpanel" aria-labelledby="backupTab" hidden>
     <div class="depths-section">
       <h4>💾 Backup &amp; Transfer</h4>
+      <button class="depths-option backup-export" onclick="exportFullBackup()">⬇ Export Full Lake ZIP<small>Includes your profile, memory, Tides, and stored attachments.</small></button>
+      <button type="button" id="restoreBackupButton" class="depths-option backup-drop-target" onclick="document.getElementById('lakeBackupInput').click()" ondragover="allowBackupDrop(event)" ondragleave="this.classList.remove('drop-ready')" ondrop="dropBackupFile(event, restoreLakeBackup)">⬆ Restore Lake backup<small>Choose or drop the ZIP to merge into this Lake.</small></button>
       <details class="portable-disclosure">
         <summary><span class="portable-disclosure-label">Your Lake · Portable context<small>Tap to expand import and export options</small></span></summary>
         <button type="button" class="depths-option" onclick="exportPortableLake('profile')">🧠 Export My Profile</button>
@@ -2008,12 +2010,10 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
         <button type="button" class="depths-option" onclick="undoPortableLake()">Undo last Lake import</button>
       </details>
       <button type="button" class="depths-option" onclick="exportFullBackup(true)">🔒 Export password-protected backup</button>
-      <button type="button" id="restoreBackupButton" class="depths-option backup-drop-target" onclick="document.getElementById('lakeBackupInput').click()" ondragover="allowBackupDrop(event)" ondragleave="this.classList.remove('drop-ready')" ondrop="dropBackupFile(event, restoreLakeBackup)">⬆ Restore Lake backup<small>Choose the whole backup ZIP. No need to unzip.</small></button>
       <p class="mode-continuity">Already unzipped? Choose <strong>lake-backup.json</strong>. For a password-protected backup, choose the encrypted JSON. To analyze a transcript PDF, attach it to a chat with <strong>Drop a Chat-Log</strong>.</p>
       <p class="mode-continuity" id="backupRestoreStatus" role="status"></p>
       <button type="button" class="depths-option" onclick="protectLakeStorage()">🛡 Protect browser storage</button>
       <input type="file" id="lakeBackupInput" accept=".json,.zip,application/json,application/zip" hidden onchange="restoreLakeBackup(this.files[0]);this.value=''">
-      <button class="depths-option backup-export" onclick="exportFullBackup()" title="Private backup ZIP with original stored attachments, PDF transcripts and the latest Total Snapshot">⬇ Export Backup ZIP</button>
       <a class="depths-option" href="/transcript-splitter.html" target="_blank" rel="noopener" style="display:block;text-decoration:none">📄 Transcript Splitter</a>
       <a class="depths-option" href="/meeting-studio/" target="_blank" rel="noopener" style="display:block;text-decoration:none">🎙️ Meeting Studio</a>
     </div>
@@ -4657,10 +4657,13 @@ function memoryBackupData(){
   return {format_version:'lake-memory/1',createdAt:new Date().toISOString(),
     profile:{name:currentUser?.name||'',aliases:currentUser?.aliases||'',email:currentUser?.email||''},anchors,relationships};
 }
-function restoreMemoryBackup(data){
+function validateMemoryBackup(data){
   if(data?.format_version!=='lake-memory/1' || !data.anchors ||
     !['captain','crew'].some(kind=>data.anchors[kind]))throw new Error('Choose a Lake memory backup.');
   for(const kind of ['captain','crew'])if(data.anchors[kind])LakeMemoryAnchors.validate(kind,data.anchors[kind]);
+}
+function restoreMemoryBackup(data){
+  validateMemoryBackup(data);
   const failed=[];
   for(const kind of ['captain','crew']){
     if(!data.anchors[kind])continue;
@@ -5496,18 +5499,21 @@ function portableLakeProfile(){
   return {observations,preferences:localStorage.getItem(storageKey('personalNotes'))||'',
     crew:crewMembers.map(({name,nickname,codename,role,context,observations})=>({name,nickname,codename,role,context,observations}))};
 }
+async function collectPortableLake(key,kind='profile'){
+  let id=localStorage.getItem(key+':profile-origin');
+  if(!id){id=crypto.randomUUID();localStorage.setItem(key+':profile-origin',id);}
+  const imported=await LakeSessionStore.read(key+':portable');
+  if(key!==storageKey('sessions'))throw new Error('The active profile changed. Try exporting again.');
+  const profile=[{id,data:portableLakeProfile()},...imported.flatMap(item=>item.profiles)];
+  return {format_version:'great-lake-context/1',id:crypto.randomUUID(),kind,created_at:new Date().toISOString(),
+    profiles:[...new Map(profile.map(item=>[JSON.stringify([item.id,item.data]),item])).values()],
+    sessions:kind==='complete'?await LakeSessionStore.read(key):[]};
+}
 async function exportPortableLake(kind){
   try{
     await sessionLoadPromise;
     await saveSession();
-    const key=storageKey('sessions');
-    let id=localStorage.getItem(key+':profile-origin');
-    if(!id){id=crypto.randomUUID();localStorage.setItem(key+':profile-origin',id);}
-    const imported=await LakeSessionStore.read(key+':portable');
-    const profile=[{id,data:portableLakeProfile()},...imported.flatMap(item=>item.profiles)];
-    let payload={format_version:'great-lake-context/1',id:crypto.randomUUID(),kind,created_at:new Date().toISOString(),
-      profiles:[...new Map(profile.map(item=>[item.id+JSON.stringify(item.data),item])).values()],
-      sessions:kind==='complete'?await LakeSessionStore.read(key):[]};
+    let payload=await collectPortableLake(storageKey('sessions'),kind);
     if(document.getElementById('protectPortableLake').checked){
       const password=prompt('Choose a password of at least 12 characters for this Lake package.');
       if(password===null)return;
@@ -5549,12 +5555,7 @@ async function importPortableLake(file){
       if(password===null)return;
       pkg=await LakeFullBackup.decrypt(pkg,password);
     }
-    if(pkg?.format_version!=='great-lake-context/1' || !['profile','complete'].includes(pkg.kind) ||
-       typeof pkg.id!=='string' || !/^[a-z0-9-]{1,64}$/i.test(pkg.id) || !Array.isArray(pkg.profiles) ||
-       pkg.profiles.length>50 || JSON.stringify(pkg.profiles).length>500000 ||
-       pkg.profiles.some(item=>!item || typeof item.id!=='string' || !item.data || typeof item.data!=='object') ||
-       (pkg.kind==='profile' && pkg.sessions?.length))throw new Error('Invalid or unsupported Lake package.');
-    LakeFullBackup.validate({format_version:'lake-full-backup/1',data:{conversations:pkg.sessions}});
+    LakeFullBackup.validatePortable(pkg);
     await sessionLoadPromise;
     if(key!==storageKey('sessions') || waveInFlight)return;
     const existing=await LakeSessionStore.read(key);
@@ -5584,19 +5585,26 @@ async function undoPortableLake(){
   }catch(error){showToast('Could not undo the Lake import: '+error.message);}
 }
 
+const LAKE_BACKUP_PREFERENCES=['learnedProfile','learnProfile','personalNotes','speechVoice','speechRate','moodTriggers',
+  'customPrompts','emojiCommands','exportAudioVoice','exportAudioLocale','exportAudioDelivery','exportAudioCharacter'];
+
 async function exportFullBackup(encrypted=false) {
   try {
     await sessionLoadPromise;
     await saveSession();
+    const key=storageKey('sessions');
+    const [sessions,profile]=await Promise.all([LakeSessionStore.read(key),collectPortableLake(key)]);
+    if(key!==storageKey('sessions'))throw new Error('The active profile changed. Try exporting again.');
     const current = { id: currentSessionId, name: allSessions.find(session => session.id === currentSessionId)?.name || getSessionName(), history: chatHistory, mood: currentMood };
     const backup = LakeFullBackup.build({
-      user: currentUser, sessions: await LakeSessionStore.read(storageKey('sessions')), current, crew: crewMembers, suggestedCrew,folders:tideFolders,
+      user: currentUser, sessions, current, crew: crewMembers, suggestedCrew,folders:tideFolders,
       profilePic: currentProfilePic,
       settings: { mood: currentMood, responseLanguage: currentUser?.responseLanguage || 'en-US', defaultPromptBatch: localStorage.getItem('defaultBatch'), requestInProgress: waveInFlight,dockSplit }
     });
     const memory=memoryBackupData();
     if(Object.keys(memory.anchors).length)backup.data.memory=memory;
-    backup.data.preferences=Object.fromEntries(['learnProfile','personalNotes','speechVoice','speechRate','moodTriggers','customPrompts','emojiCommands'].map(name=>[name,localStorage.getItem(storageKey(name))]).filter(([,value])=>value!==null));
+    backup.data.portable_profile=profile;
+    backup.data.preferences=Object.fromEntries(LAKE_BACKUP_PREFERENCES.map(name=>[name,localStorage.getItem(storageKey(name))]).filter(([,value])=>value!==null));
     let payload=backup;
     if(encrypted){
       const password=prompt('Choose a backup password (at least 12 characters). You will need it to restore the file.');
@@ -5613,12 +5621,14 @@ async function exportFullBackup(encrypted=false) {
     }else{
       const zip=new JSZip();
       zip.file('lake-backup.json',JSON.stringify(backup));
+      zip.file('my-profile.lake',JSON.stringify(profile));
       zip.file('START-HERE.txt',[
         'RESTORE YOUR GREAT LAKE BACKUP',
         '',
         'Open The Lake and go to Settings > Backup & Data > Restore Lake backup.',
         'Choose the entire backup ZIP. If you already extracted it, choose lake-backup.json.',
-        'Review the restore prompt. Tides with matching IDs are kept as they already exist on this device.',
+        'Restore merges missing Tides, memory and portable profile context. Matching Tide IDs keep the version on this device.',
+        'my-profile.lake is a standalone copy of the portable profile for profile-only transfer.',
         '',
         'PDFs in transcripts/ are for reading or attaching to a chat with Drop a Chat-Log.',
         'The PDF font may substitute characters. The JSON backup keeps the original text and stored attachments.',
@@ -5695,37 +5705,38 @@ async function restoreLakeBackup(file){
       backup=await LakeFullBackup.decrypt(backup,password);
     }
     const data=LakeFullBackup.validate(backup);
+    if(data.memory)validateMemoryBackup(data.memory);
     await sessionLoadPromise;
     if(key!==storageKey('sessions') || waveInFlight)throw new Error('The active chat or profile changed. Try restoring again once it is ready.');
-    const existing=await LakeSessionStore.read(key);
-    const ids=new Set(existing.map(item=>item.id));
-    const incoming=data.conversations.filter(item=>!ids.has(item.id));
-    const skipped=data.conversations.length-incoming.length;
-    if(!confirm('Restore this Lake backup?\n'+incoming.length+' Tides to add. '+skipped+' already on this device and will be kept.')){
-      status.textContent='Restore canceled.';
-      return;
-    }
-    if(key!==storageKey('sessions') || waveInFlight)throw new Error('The active chat or profile changed. Try restoring again once it is ready.');
     status.textContent='Restoring your backup on this device…';
-    const merged=[...existing,...incoming];
-    const folders=LakeOrganization.cleanFolders([...tideFolders,...(Array.isArray(data.folders)?data.folders:[])]);
-    await LakeSessionStore.write(storageKey('folders'),folders);
-    await LakeSessionStore.write(key,merged);
+    const profileOrigin=localStorage.getItem(key+':profile-origin');
+    const localProfile=profileOrigin?{id:profileOrigin,data:portableLakeProfile()}:null;
+    const result=await LakeSessionStore.mergeBackup(key,storageKey('folders'),data,LakeOrganization.cleanFolders,localProfile);
     if(key!==storageKey('sessions'))return;
-    allSessions=merged;
-    tideFolders=folders;
+    allSessions=result.sessions;
+    tideFolders=result.folders;
     if(data.memory)restoreMemoryBackup(data.memory);
     const knownCrew=new Set(crewMembers.map(item=>String(item.name||'').toLowerCase()));
     if(!data.memory?.anchors?.crew && Array.isArray(data.crew))crewMembers.push(...data.crew.filter(item=>typeof item?.name==='string' && !knownCrew.has(item.name.toLowerCase())));
     if(!data.memory?.anchors?.crew)saveCrew();
-    for(const name of ['learnedProfile','learnProfile','personalNotes','speechVoice','speechRate','moodTriggers','customPrompts','emojiCommands']){
+    if(Array.isArray(data.suggested_crew)){
+      const knownNames=new Set([...crewMembers.flatMap(getCrewAliases),...suggestedCrew.map(item=>normalizePersonKey(item.name))]);
+      const added=data.suggested_crew.filter(item=>{
+        if(typeof item?.name!=='string')return false;
+        const name=normalizePersonKey(item.name);
+        return name && !knownNames.has(name) && knownNames.add(name);
+      });
+      if(added.length){suggestedCrew.push(...added);saveSuggestedCrew();}
+    }
+    for(const name of LAKE_BACKUP_PREFERENCES){
       const value=data.preferences?.[name];
       if(typeof value==='string' && localStorage.getItem(storageKey(name))===null)localStorage.setItem(storageKey(name),value);
     }
     restoreSpeechRate();
     renderCrew();
     renderTides();
-    status.textContent='Backup restored. '+incoming.length+' Tides added. '+skipped+' existing Tides kept.';
+    status.textContent='Backup merged. '+result.added+' Tides added. '+result.kept+' existing Tides kept.'+
+      (data.portable_profile?' '+result.profiles+' portable profile records added.':'');
     showToast(status.textContent);
   }catch(error){
     status.textContent='Backup restore failed. '+(error instanceof SyntaxError?'Choose the original Lake backup ZIP or its lake-backup.json.':error.message);

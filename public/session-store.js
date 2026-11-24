@@ -147,5 +147,53 @@
     });
   }
 
-  window.LakeSessionStore = { read, write, upsert, portableImport };
+  async function mergeBackup(key, foldersKey, backup, cleanFolders, localProfile){
+    const journalKey=key+':portable';
+    // Read through legacy storage before merging the latest IndexedDB values in one transaction.
+    await Promise.all([read(key),read(foldersKey),read(journalKey)]);
+    const database=await openDatabase();
+    return new Promise((resolve,reject)=>{
+      const tx=database.transaction('accounts','readwrite');
+      const store=tx.objectStore('accounts');
+      const history=store.get(key);
+      const folderRead=store.get(foldersKey);
+      const journal=store.get(journalKey);
+      let result, failure;
+      const current=(request,name)=>request.result ?? readRecovery(name) ?? [];
+      journal.onsuccess=()=>{
+        try{
+          const existing=current(history,key);
+          const ids=new Set(existing.map(tide=>tide.id));
+          const added=backup.conversations.filter(tide=>!ids.has(tide.id));
+          const sessions=[...existing,...added.map(tide=>{
+            const {portableImportId,...restored}=tide;
+            return restored;
+          })];
+          const folders=cleanFolders([...current(folderRead,foldersKey),...(Array.isArray(backup.folders)?backup.folders:[])]);
+          const packages=current(journal,journalKey);
+          const bundle=backup.portable_profile;
+          const seenProfiles=new Set(packages.flatMap(item=>item.profiles).map(record=>JSON.stringify([record.id,record.data])));
+          if(localProfile)seenProfiles.add(JSON.stringify([localProfile.id,localProfile.data]));
+          const profiles=bundle && !packages.some(item=>item.id===bundle.id)
+            ? bundle.profiles.filter(record=>!seenProfiles.has(JSON.stringify([record.id,record.data]))) : [];
+          if(profiles.length){
+            packages.push({id:bundle.id,kind:'profile',profiles,importedAt:Date.now()});
+            store.put(packages,journalKey);
+          }
+          if(added.length)store.put(sessions,key);
+          store.put(folders,foldersKey);
+          result={sessions,folders,packages,added:added.length,kept:backup.conversations.length-added.length,profiles:profiles.length};
+        }catch(error){failure=error;tx.abort();}
+      };
+      tx.oncomplete=()=>{
+        mirror(key,result.sessions);
+        mirror(foldersKey,result.folders);
+        mirror(journalKey,result.packages);
+        resolve(result);
+      };
+      tx.onabort=()=>reject(failure || tx.error || new Error('Backup restore interrupted.'));
+    });
+  }
+
+  window.LakeSessionStore = { read, write, upsert, portableImport, mergeBackup };
 })();

@@ -87,10 +87,24 @@
     for(const offset of offsets.slice(1))pdf+=String(offset).padStart(10,'0')+' 00000 n \n';
     return pdf+'trailer\n<< /Size '+offsets.length+' /Root 1 0 R >>\nstartxref\n'+xref+'\n%%EOF\n';
   }
+  function validatePortable(backup){
+    if(backup?.format_version!=='great-lake-context/1' || !['profile','complete'].includes(backup.kind) ||
+       typeof backup.id!=='string' || !/^[a-z0-9-]{1,64}$/i.test(backup.id) ||
+       !Array.isArray(backup.profiles) || backup.profiles.some(item=>!item || typeof item.id!=='string' ||
+         !item.data || typeof item.data!=='object' || Array.isArray(item.data)) ||
+       !Array.isArray(backup.sessions) || (backup.kind==='profile' && backup.sessions.length)){
+      throw new Error('Invalid or unsupported Lake package.');
+    }
+    validate({format_version:'lake-full-backup/1',data:{conversations:backup.sessions}});
+    return backup;
+  }
   function validate(backup){
     const data=backup?.data;
     const ids=new Set();
     if(backup?.format_version!=='lake-full-backup/1' || !Array.isArray(data?.conversations))throw new Error('Choose a Lake full backup JSON file.');
+    if(data.portable_profile!==undefined && validatePortable(data.portable_profile).kind!=='profile'){
+      throw new Error('Invalid portable profile in backup.');
+    }
     for(const session of data.conversations){
       if(typeof session?.id!=='string' || !/^[a-z0-9_-]+$/i.test(session.id) || ids.has(session.id) ||
          !Array.isArray(session.history) || (session.name!=null && typeof session.name!=='string'))throw new Error('Invalid Tide in backup.');
@@ -106,6 +120,6 @@
     }
     return data;
   }
-  if (typeof module !== 'undefined' && module.exports) module.exports = { build, encrypt, decrypt, validate, snapshotPdf };
-  else root.LakeFullBackup = { build, encrypt, decrypt, validate, snapshotPdf };
+  if (typeof module !== 'undefined' && module.exports) module.exports = { build, encrypt, decrypt, validate, validatePortable, snapshotPdf };
+  else root.LakeFullBackup = { build, encrypt, decrypt, validate, validatePortable, snapshotPdf };
 })(typeof window === 'undefined' ? globalThis : window);
