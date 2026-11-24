@@ -27,6 +27,9 @@ const crewRoutes = require('./routes/crew');
 const emailRoutes = require('./routes/email');
 const shareRoutes = require('./routes/share'); // ✅ NEW
 const audioRoutes = require('./routes/audio');
+const { createAccountRouter } = require('./routes/account');
+const { createConfluenceRouter } = require('./routes/confluence');
+const { createSynthesis } = require('./confluence/synthesis');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -64,6 +67,8 @@ app.use(
   })
 );
 
+morgan.token('url', req => req.originalUrl.split('?')[0]);
+morgan.token('referrer', req => (req.get('referer') || '').split('?')[0]);
 app.use(morgan(config.nodeEnv === 'production' ? 'combined' : 'dev'));
 
 // ============================================
@@ -122,6 +127,9 @@ app.use('/api/email', emailRoutes);
 // ✅ Shared sessions - PUBLIC - anyone with link can view
 app.use('/share', shareRoutes);
 app.use('/audio', audioRoutes);
+const account = createAccountRouter();
+app.use('/account', account);
+app.use(createConfluenceRouter({ authenticate: account.useSession, synthesize: createSynthesis() }));
 
 // Health check - includes OpenAI model info
 app.get('/health', (req, res) => {

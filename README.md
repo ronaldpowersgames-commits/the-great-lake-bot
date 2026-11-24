@@ -11,6 +11,12 @@ cp .env.example .env
 npm run dev
 ```
 
+## Project Confluence
+
+Open **Depths → Settings → Connection Hub** to manage direct connections,
+investigate authorized communications, or search a local WhatsApp text export.
+See the [deployment setup](docs/confluence.md) and [SOURCE protocol](docs/source-protocol.md).
+
 ## Conversation Analysis
 
 For reflection and decisions, The Lake defaults to Socratic coaching: briefly

@@ -1,0 +1,68 @@
+# Project Confluence
+
+Open **Depths → Settings → Connection Hub** in The Great Lake. Existing Waves, Tides, Captain’s Profile, Crew, audio, meetings and exports keep their existing entry points and storage.
+
+## Enable a Lake deployment
+
+1. In the Lake’s Supabase project, run [the Confluence SQL](../supabase/confluence.sql). Configure Email Auth and allow the exact Lake callback, such as https://the-great-lake-bot.onrender.com/account/callback. The default Supabase sender has recipient and rate limits. Use an authorized test address or configure SMTP.
+2. On Render set APP_ORIGIN to the exact HTTPS origin without a trailing slash. Set SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, CONFLUENCE_SUPABASE_SECRET and CONFLUENCE_ENCRYPTION_KEY. The Supabase secret is a server-only secret API key or legacy service-role key. Generate the encryption key with the command below and keep it with the deployment secrets. Back it up before storing any connections. Existing rows require the same key to decrypt.
+3. Register the Slack and Google apps using the instructions below, then set their client IDs and secrets. Start with a private test workspace and mailbox. Open Connection Hub, sign in through the email link in the same browser, and authorize one account per provider. Run **Test connection** and then a known historical query for each.
+4. Keep the account and connector secrets separate for each deployment. Preview callback URLs must correspond to that preview’s APP_ORIGIN.
+
+Generate a 32-byte token or key with:
+
+    node -e "console.log(require('node:crypto').randomBytes(32).toString('base64url'))"
+
+### Slack
+
+Create a Slack app using the OAuth authorization code flow. Register APP_ORIGIN + /connections/oauth/slack/callback. Add these **user** scopes: search:read, channels:history, groups:history, im:history and mpim:history. Configure SLACK_CLIENT_ID and SLACK_CLIENT_SECRET. An administrator may need to approve the app. Access depends on the connecting user’s workspace and the conversation type. Look up a historical phrase, open its thread and follow the pagination when available.
+
+The implementation uses the Slack Web API search.messages and conversations.replies. This is an on-demand user-token route for a registered Slack app. The Real-time Search API offers granular search permissions, and Slack MCP offers a distinct installation and tool surface. These routes were evaluated for later adapters. Slack may impose distribution-specific limits on thread retrieval.
+
+- [Installing via Slack OAuth](https://docs.slack.dev/authentication/installing-with-oauth/)
+- [Message search](https://docs.slack.dev/reference/methods/search.messages/)
+- [Thread retrieval](https://docs.slack.dev/reference/methods/conversations.replies/)
+- [Real-time Search API](https://docs.slack.dev/apis/web-api/real-time-search-api/)
+- [Slack MCP](https://docs.slack.dev/ai/slack-mcp-server/)
+
+### Gmail
+
+Enable the Gmail API in Google Cloud. Configure the OAuth consent screen and a Web application client. Register APP_ORIGIN + /connections/oauth/gmail/callback and add an authorized test user if the app is in Testing. Configure GMAIL_CLIENT_ID and GMAIL_CLIENT_SECRET. The adapter requests gmail.readonly for server-side message search, thread detail, labels and attachment downloads up to 5 MB. A Google app in external Testing ordinarily receives Gmail refresh tokens that expire after seven days.
+
+Complete the applicable Google verification and review the Limited Use, hosting and processor requirements before broad rollout. Enable CONFLUENCE_GMAIL_SYNTHESIS=true only after confirming the intended processing is approved. Search, thread retrieval and downloads work with this value unset. Publishing a public OAuth app also requires the deployment’s privacy disclosures. The Gmail MCP transport has separate authorization/configuration and has not been activated for the Lake.
+
+- [Google web-server OAuth](https://developers.google.com/identity/protocols/oauth2/web-server)
+- [Gmail search](https://developers.google.com/workspace/gmail/api/reference/rest/v1/users.messages/list)
+- [Gmail attachments](https://developers.google.com/workspace/gmail/api/reference/rest/v1/users.messages.attachments/get)
+- [Google API Services User Data Policy](https://developers.google.com/terms/api-services-user-data-policy)
+- [Gmail MCP setup](https://developers.google.com/workspace/gmail/api/guides/configure-mcp-server)
+
+### Other platforms
+
+Microsoft Graph and Google Workspace APIs are candidates for separate delegated adapters with their own consent scopes. Personal WhatsApp has a browser-local text-export workflow. Meta’s WhatsApp Business Platform is a distinct business messaging integration. Android SMS/MMS permissions are subject to the device and Google Play requirements, and RCS access depends on the device and messaging platform. Apple Messages extensions run in the supported Messages app context.
+
+- [Microsoft Graph](https://learn.microsoft.com/en-us/graph/)
+- [Google Drive API](https://developers.google.com/workspace/drive/api/guides/about-sdk)
+- [Google Calendar API](https://developers.google.com/workspace/calendar/api/guides/overview)
+- [Google People API](https://developers.google.com/people)
+- [WhatsApp Business Platform](https://developers.facebook.com/documentation/business-messaging/whatsapp/overview/)
+- [Android default handlers](https://developer.android.com/guide/topics/permissions/default-handlers)
+- [Apple Messages](https://developer.apple.com/documentation/messages)
+
+## Investigation and retention
+
+Enter terms and applicable date operators for each participating provider, then enter the question to answer. The initial investigation examines up to two pages per selected source and can include the first page of a matching thread. The coverage panel reports the accounts, pages, continuation and errors. Expand relevant threads or search result pages individually. Evidence links open the originating record when available. Gmail uses plain-text excerpts or the provider snippet for HTML-only email. Downloaded attachments go directly to the requesting browser.
+
+Optional synthesis sends the question and up to 24 bounded, numbered excerpts from the selected sources to the configured OpenAI API. The retrieval UI works independently of model analysis. Source content enters the model as quoted data and the synthesis request has no tools or outbound action permissions. Imported WhatsApp exports are parsed and searched in memory in the current browser tab.
+
+The Lake retains encrypted OAuth credentials while connected. Disconnect deletes local credentials and attempts provider revocation. Check the reported result to confirm provider revocation. Activity history records operation, scope, time, outcome and whether information was shared or retained. It omits queries, excerpts and tokens. The current deployment retains activity records until the owning Lake account is deleted or the deployment operator removes records. SOURCE records are retained separately and support review and removal. Confluence does not migrate existing browser storage to cloud accounts.
+
+## SOURCE protocol version 1
+
+See [the Lake-side protocol](./source-protocol.md). Live pairing requires a deployed SOURCE counterpart on that contract. The portable JavaScript adapter module in confluence/providers.js accepts injected configuration and a fetch implementation. SOURCE can reuse it independently with its own authorization, account and token storage.
+
+## Validation
+
+Run npm test. The Confluence HTTP integration suite runs the real Lake routers and encrypted vault against simulated OAuth providers, Supabase PostgREST and a simulated SOURCE peer. The optional Chrome smoke test uses the running Lake and local fixtures. Set LAKE_PLAYWRIGHT_PATH or install Playwright in your test environment and run node tests/confluence-browser.cjs with LAKE_TEST_URL pointing to your test server.
+
+Before enabling live credentials, use a preview or isolated pilot. Validate sign-in after a redirect, one historical Slack and Gmail query, both thread paths, Gmail attachment download, and pause/revocation. Check both directions against a deployed SOURCE peer before reporting the integration as operational. Scheduled jobs, background monitoring, outbound messages, model-directed tool execution, incremental sync, identity resolution across providers and a general MCP transport are outside this implementation.

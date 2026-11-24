@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta name="color-scheme" content="dark">
+  <title>Connections · The Great Lake</title>
+  <link rel="icon" href="/icon.svg">
+  <link rel="stylesheet" href="/connections.css">
+  <script defer src="/whatsapp-export.js"></script>
+  <script defer src="/connections.js"></script>
+</head>
+<body>
+<main>
+  <header>
+    <a href="/">← The Great Lake</a>
+    <h1>Connection Hub</h1>
+    <p id="notice" role="status" aria-live="polite"></p>
+  </header>
+  <section id="account" aria-labelledby="account-title">
+    <h2 id="account-title">Lake account</h2>
+    <p id="account-status">Checking account…</p>
+    <form id="sign-in" hidden>
+      <label for="email">Email address</label>
+      <div class="actions">
+        <input id="email" type="email" autocomplete="email" maxlength="254" required>
+        <button>Send sign-in link</button>
+      </div>
+      <label class="check"><input id="remember" type="checkbox"> Stay signed in on this device</label>
+    </form>
+    <button id="sign-out" type="button" hidden>Sign out</button>
+  </section>
+  <section aria-labelledby="providers-title">
+    <h2 id="providers-title">Direct connections</h2>
+    <p>Slack and Gmail access is read-only. Searches run on demand. Message excerpts are displayed for this session, and activity records omit search terms and message content.</p>
+    <div id="providers" class="cards"></div>
+  </section>
+  <section id="investigations" hidden aria-labelledby="investigation-title">
+    <h2 id="investigation-title">Investigate</h2>
+    <form id="investigate">
+      <label for="question">Question</label>
+      <textarea id="question" maxlength="2500" rows="3" required></textarea>
+      <div id="query-inputs" class="cards"></div>
+      <label class="check"><input type="checkbox" id="include-threads"> Include the first matching thread from each source</label>
+      <label id="analyze-label" class="check" hidden><input type="checkbox" id="analyze"> Send selected search excerpts to OpenAI for this answer</label>
+      <button>Run investigation</button>
+    </form>
+    <div id="investigation-result"></div>
+  </section>
+  <section id="source" hidden aria-labelledby="source-title">
+    <h2 id="source-title">SOURCE</h2>
+    <p id="source-status"></p>
+    <div id="source-controls" hidden>
+      <div id="source-actions" class="actions"></div>
+      <form id="publish">
+        <h3>Share selected context</h3>
+        <p>SOURCE can retrieve these records while the pairing is enabled.</p>
+        <label for="context-type">Type</label>
+        <select id="context-type">
+          <option value="preference">Preference</option><option value="goal">Goal</option>
+          <option value="boundary">Boundary</option><option value="priority">Priority</option>
+          <option value="decision">Decision</option><option value="correction">Correction</option>
+        </select>
+        <label for="context-subject">Subject</label>
+        <input id="context-subject" maxlength="200" required>
+        <label for="context-observation">Context to share</label>
+        <textarea id="context-observation" maxlength="2000" rows="3" required></textarea>
+        <label for="context-replaces">Replace existing context</label>
+        <select id="context-replaces"><option value="">None</option></select>
+        <button>Save for SOURCE</button>
+      </form>
+      <div id="source-records"></div>
+    </div>
+  </section>
+  <section id="activity" hidden aria-labelledby="activity-title">
+    <h2 id="activity-title">Recent access</h2>
+    <button id="show-activity" type="button">Load activity</button>
+    <div id="audit-log"></div>
+  </section>
+  <section aria-labelledby="import-title">
+    <h2 id="import-title">Import a WhatsApp conversation</h2>
+    <form id="import">
+      <p>Search a personal WhatsApp text export in this tab. The file stays in your browser.</p>
+      <label for="export-file">WhatsApp text export</label>
+      <input type="file" id="export-file" accept=".txt,text/plain" required>
+      <label for="export-date-order">Date order in the export</label>
+      <select id="export-date-order"><option value="mdy">Month / day / year</option><option value="dmy">Day / month / year</option><option value="ymd">Year / month / day</option></select>
+      <label for="export-query">Find a person or phrase</label>
+      <input id="export-query" maxlength="500">
+      <div class="actions"><button>Search export</button><button type="reset">Clear export</button></div>
+    </form>
+    <div id="import-results"></div>
+  </section>
+  <section id="restricted" aria-labelledby="restricted-title">
+    <h2 id="restricted-title">Other applications</h2>
+    <ul id="restricted-list"></ul>
+  </section>
+</main>
+</body>
+</html>

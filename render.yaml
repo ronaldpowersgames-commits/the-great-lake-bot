@@ -9,6 +9,8 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: APP_ORIGIN
+        value: https://the-great-lake-bot.onrender.com
       - key: APP_NAME
         value: The Great Lake Bot
       - key: OPENAI_API_KEY
