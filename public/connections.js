@@ -20,6 +20,13 @@ const messages = {
   analysis_unavailable: 'Analysis unavailable. The retrieved evidence is shown below.'
 };
 let hub;
+const lakeAccountEvents = typeof BroadcastChannel === 'function' ? new BroadcastChannel('lake-account') : null;
+lakeAccountEvents?.addEventListener('message', event => {
+  if (event.data === 'signed-out') location.reload();
+});
+window.addEventListener('pageshow', event => {
+  if (event.persisted) location.reload();
+});
 
 function node(tag, value, className) {
   const element = document.createElement(tag);
@@ -403,6 +410,7 @@ bindForm('lake-package-import', async () => {
 });
 $('sign-out').addEventListener('click', event => busy(event.currentTarget, async () => {
   await api('/account/logout', {});
+  lakeAccountEvents?.postMessage('signed-out');
   location.replace('/connections.html');
 }));
 bindForm('investigate', async () => {

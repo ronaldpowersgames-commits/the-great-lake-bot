@@ -83,8 +83,12 @@ function createAccountRouter({ url = process.env.SUPABASE_URL, key = process.env
       await request('otp?redirect_to=' + encodeURIComponent(origin + '/account/callback'), {
         email, create_user: true, data: { name }, code_challenge: challenge, code_challenge_method: 's256'
       });
-      res.cookie(pendingName, JSON.stringify({ verifier, remember: req.body.remember === true, created: Date.now() }),
-        { ...pendingOptions, maxAge: 60 * 60 * 1000 });
+      const launch = req.body.surface === 'launch';
+      const packageId = launch && typeof req.body.packageId === 'string' && /^[0-9a-f-]{36}$/i.test(req.body.packageId)
+        ? req.body.packageId : undefined;
+      res.cookie(pendingName, JSON.stringify({
+        verifier, remember: req.body.remember === true, created: Date.now(), launch, packageId
+      }), { ...pendingOptions, maxAge: 60 * 60 * 1000 });
       res.json({ ok: true });
     } catch (error) {
       console.info('Account email delivery failed:', error.status || 'network', error.providerCode || 'unavailable');
@@ -103,16 +107,20 @@ function createAccountRouter({ url = process.env.SUPABASE_URL, key = process.env
     const code = typeof req.query.code === 'string' ? req.query.code : '';
     let pending;
     try { pending = JSON.parse(cookies(req)[pendingName] || 'null'); } catch {}
+    const launch = pending?.launch === true;
+    const packageHash = launch && typeof pending.packageId === 'string' && /^[0-9a-f-]{36}$/i.test(pending.packageId)
+      ? '#lake-package=' + pending.packageId : '';
+    const destination = status => (launch ? '/?account=' : '/connections.html?status=') + status + packageHash;
     const age = Date.now() - pending?.created;
     const validProof = /^[A-Za-z0-9_-]{43}$/.test(pending?.verifier || '') && Number.isFinite(age) && age >= 0 && age <= 60 * 60 * 1000;
     if (!validProof) {
       console.info('Account callback: missing or expired browser proof.');
       res.clearCookie(pendingName, pendingOptions);
-      return res.redirect(303, '/connections.html?status=sign-in-browser-required');
+      return res.redirect(303, destination('sign-in-browser-required'));
     }
     if (req.query.error || !code || code.length > 1024) {
       console.info('Account callback: missing code or provider rejected the link.');
-      return res.redirect(303, '/connections.html?status=sign-in-failed');
+      return res.redirect(303, destination('sign-in-failed'));
     }
     try {
       const session = await request('token?grant_type=pkce', { auth_code: code, code_verifier: pending.verifier });
@@ -121,11 +129,11 @@ function createAccountRouter({ url = process.env.SUPABASE_URL, key = process.env
       save(res, session, pending.remember === true);
       res.clearCookie(pendingName, pendingOptions);
       console.info('Account callback: verified session created.');
-      return res.redirect(303, '/connections.html?status=signed-in');
+      return res.redirect(303, destination('signed-in'));
     } catch (error) {
       // Categories only: never log callback codes, tokens, emails or response bodies.
       console.info('Account callback failed:', error.status || 'local-validation', error.providerCode || error.message);
-      return res.redirect(303, '/connections.html?status=sign-in-failed');
+      return res.redirect(303, destination('sign-in-failed'));
     }
   });
   router.post('/code', limiter, async (req, res) => {

@@ -145,7 +145,11 @@ body {
 }
 .login-field input:focus { border-color: var(--lake-glow); box-shadow: 0 0 0 3px rgba(45,140,240,0.1); }
 .login-field input::placeholder { color: var(--text-dim); }
-.login-field input + input { margin-top: 8px; }
+.login-remember { display: flex; align-items: center; gap: 8px; color: var(--text-secondary); font-size: 13px; }
+.login-remember input { accent-color: var(--lake-light); }
+.login-status { margin: 12px 0; color: var(--text-secondary); font-size: 13px; line-height: 1.5; }
+.login-status:empty { display: none; }
+.login-guest-btn + .login-guest-btn { margin-top: 8px; }
 .login-btn {
   width: 100%; padding: 16px;
   background: linear-gradient(135deg, var(--lake-glow), var(--lake-light));
@@ -154,6 +158,7 @@ body {
   cursor: pointer; margin-top: 8px; transition: all 0.2s;
 }
 .login-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(45,140,240,0.3); }
+.login-btn:disabled { opacity: .7; cursor: wait; transform: none; }
 .login-divider {
   text-align: center; color: var(--text-dim); font-size: 12px;
   margin: 16px 0; position: relative;
@@ -1546,27 +1551,38 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
   <div class="login-title">The Great Lake</div>
   <div class="login-sub">Leadership Clarity Engine</div>
   <div class="login-card">
-    <h3>🪶 Enter the Water</h3>
-    <div class="profile-pic-upload" onclick="document.getElementById('profilePicInput').click()">
-      <div class="profile-pic-preview" id="loginProfilePreview">
-        <span id="loginProfileEmoji">🪶</span>
-        <div class="profile-pic-overlay">📷</div>
+    <h3>Sign in to The Great Lake</h3>
+    <p class="login-status" id="loginStatus" role="status" aria-live="polite">Checking your Lake account…</p>
+    <form id="lakeAccountLogin" hidden>
+      <div class="login-field">
+        <label for="loginEmail">Email address</label>
+        <input type="email" id="loginEmail" placeholder="you@example.com" autocomplete="email" maxlength="254" required>
       </div>
-      <div class="profile-pic-hint">Tap to add photo (optional)</div>
-    </div>
+      <label class="login-remember"><input type="checkbox" id="loginRemember"> Stay signed in on this device</label>
+      <button class="login-btn" id="sendLakeLink" type="submit">Send sign-in link</button>
+    </form>
+    <form id="localLakeLogin" hidden>
+      <div class="profile-pic-upload" onclick="document.getElementById('profilePicInput').click()">
+        <div class="profile-pic-preview" id="loginProfilePreview">
+          <span id="loginProfileEmoji">🪶</span>
+          <div class="profile-pic-overlay">📷</div>
+        </div>
+        <div class="profile-pic-hint">Tap to add photo (optional)</div>
+      </div>
+      <div class="login-field">
+        <label for="loginName">Your name</label>
+        <input type="text" id="loginName" autocomplete="name" required>
+      </div>
+      <div class="login-field">
+        <label for="localLoginEmail">Local profile email</label>
+        <input type="email" id="localLoginEmail" autocomplete="email" required>
+      </div>
+      <button class="login-btn" type="submit">Open a local profile</button>
+    </form>
     <input type="file" id="profilePicInput" accept="image/*" onchange="handleProfilePic(event)">
-    <div class="login-field">
-      <label>Your Name</label>
-      <input type="text" id="loginName" placeholder="Enter your name..." autocomplete="name">
-      <input type="email" id="loginEmail" placeholder="Your email address" autocomplete="email">
-    </div>
-    <div class="login-field">
-      <label>Passphrase (optional)</label>
-      <input type="password" id="loginPass" placeholder="Leave blank for guest access..." autocomplete="current-password">
-    </div>
-    <button class="login-btn" onclick="doLogin()">🌊 Enter The Lake</button>
     <div class="login-divider">or</div>
-    <button class="login-guest-btn" onclick="doGuestLogin()">👤 Continue as Guest</button>
+    <button class="login-guest-btn" id="resumeLocalLake" type="button" hidden>Open saved local profile</button>
+    <button class="login-guest-btn" type="button" onclick="doGuestLogin()">Continue as Guest</button>
   </div>
   <div class="login-install-hint" id="installHint" style="display:none">
     📱 <strong>Install as App:</strong> Tap your browser's share button → "Add to Home Screen"
@@ -2013,7 +2029,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
       <div class="depths-info">The Great Lake Bot v1.3.0</div>
       <div class="depths-info">Leadership Clarity Platform</div>
     </div>
-    <button class="logout-btn" onclick="doLogout()">🚪 Leave The Lake</button>
+    <button class="logout-btn" id="lakeLogout" onclick="doLogout()">🚪 Leave The Lake</button>
     </div>
     <div id="depthsBackupView" role="tabpanel" aria-labelledby="backupTab" hidden>
     <div class="depths-section">
@@ -2549,6 +2565,8 @@ let tideFolders = [];
 let tideQuery = '';
 let currentSessionId  = null;
 let currentUser       = null;
+let verifiedLakeAccount = null;
+const lakeAccountEvents = typeof BroadcastChannel === 'function' ? new BroadcastChannel('lake-account') : null;
 let currentProfilePic = null;
 let deferredInstallPrompt = null;
 let allSessions       = [];
@@ -3583,23 +3601,125 @@ function getUserAvatarHTML() {
 // ============================================
 // LOGIN
 // ============================================
-function doLogin() {
-  const name  = document.getElementById('loginName').value.trim();
-  const email = document.getElementById('loginEmail').value.trim().toLowerCase();
-  if (!name) {
-    const i = document.getElementById('loginName');
-    i.focus(); i.style.borderColor = 'var(--danger)';
-    setTimeout(() => i.style.borderColor = '', 1500); return;
+function readLocalLakeProfile() {
+  try {
+    const profile = JSON.parse(localStorage.getItem('lakeUser') || 'null');
+    return profile?.name && typeof profile.email === 'string' ? profile : null;
+  } catch { return null; }
+}
+
+function saveLakeProfile() {
+  if (!currentUser || currentUser.guest) return;
+  const { name, email, aliases, responseLanguage } = currentUser;
+  const key = verifiedLakeAccount ? storageKey('accountProfile') : 'lakeUser';
+  localStorage.setItem(key, JSON.stringify({ name, email, aliases, responseLanguage }));
+}
+
+function setLakeLoginStatus(message) {
+  document.getElementById('loginStatus').textContent = message;
+}
+
+async function lakeAccountRequest(path, data) {
+  const response = await fetch('/account/' + path, data === undefined ? { cache: 'no-store' } : {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
+  });
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.error || 'The Lake account service is unavailable. Try again.');
+  return result;
+}
+
+document.getElementById('lakeAccountLogin').addEventListener('submit', async event => {
+  event.preventDefault();
+  const send = document.getElementById('sendLakeLink');
+  if (send.disabled) return;
+  send.disabled = true;
+  setLakeLoginStatus('Sending your sign-in link…');
+  try {
+    await lakeAccountRequest('link', {
+      email: document.getElementById('loginEmail').value,
+      remember: document.getElementById('loginRemember').checked,
+      surface: 'launch', packageId: stagedLakePackageId
+    });
+    setLakeLoginStatus('Open the newest Lake sign-in link in this browser profile. If you read email in another profile, copy the link here.');
+  } catch (error) {
+    setLakeLoginStatus(error.message);
+  } finally {
+    send.disabled = false;
   }
-  if (!email) {
-    const i = document.getElementById('loginEmail');
-    i.focus(); i.style.borderColor = 'var(--danger)';
-    setTimeout(() => i.style.borderColor = '', 1500); return;
-  }
+});
+
+document.getElementById('localLakeLogin').addEventListener('submit', event => {
+  event.preventDefault();
+  const name = document.getElementById('loginName').value.trim();
+  const email = document.getElementById('localLoginEmail').value.trim().toLowerCase();
+  if (!name || !email) return;
   currentUser = { name, email, guest: false, responseLanguage: 'en-US' };
-  try { localStorage.setItem('lakeUser', JSON.stringify(currentUser)); }
-  catch { showToast('Signed in for this visit. This device could not save the profile.'); }
-  enterLake();
+  try { saveLakeProfile(); }
+  catch { showToast('This device could not save the profile.'); }
+  void enterLake();
+});
+
+async function restoreLakeAccount() {
+  const local = readLocalLakeProfile();
+  const resume = document.getElementById('resumeLocalLake');
+  if (local) {
+    resume.textContent = 'Open local profile for ' + local.name;
+    resume.onclick = () => { currentUser = local; void enterLake(); };
+    document.getElementById('loginEmail').value = local.email;
+  }
+  const url = new URL(location.href);
+  const status = url.searchParams.get('account');
+  if (status) {
+    url.searchParams.delete('account');
+    history.replaceState(null, '', url);
+  }
+  try {
+    const config = await lakeAccountRequest('config');
+    if (!config.enabled) {
+      setLakeLoginStatus('Open a profile stored on this device.');
+      document.getElementById('localLakeLogin').hidden = false;
+      if (local && !currentUser) {
+        currentUser = local;
+        await enterLake();
+      }
+      return;
+    }
+
+    const { user } = await lakeAccountRequest('session');
+    if (currentUser) return;
+    if (user?.id && user.email) {
+      const email = user.email.toLowerCase();
+      verifiedLakeAccount = user.id;
+      currentUser = { name: user.name || email, email, guest: false, responseLanguage: 'en-US' };
+      const matchingProfile = local?.email.toLowerCase() === email ? local : null;
+      let preferences = matchingProfile;
+      try { preferences = JSON.parse(localStorage.getItem(storageKey('accountProfile')) || 'null') || preferences; } catch {}
+      if (preferences) {
+        currentUser.name = preferences.name || currentUser.name;
+        currentUser.aliases = preferences.aliases;
+        currentUser.responseLanguage = preferences.responseLanguage || currentUser.responseLanguage;
+      }
+      if (matchingProfile) {
+        try {
+          saveLakeProfile();
+          localStorage.removeItem('lakeUser');
+        } catch { showToast('This device could not save the account profile.'); }
+      }
+      await enterLake();
+      return;
+    }
+    const messages = {
+      'signed-in': 'The Lake could not confirm your session. Request a fresh link in this browser.',
+      'sign-in-failed': 'The sign-in link could not be used. Request a fresh link in this browser.',
+      'sign-in-browser-required': 'Open the newest sign-in link in the browser profile that requested it.'
+    };
+    setLakeLoginStatus(Object.hasOwn(messages, status) ? messages[status] : '');
+    document.getElementById('lakeAccountLogin').hidden = false;
+    resume.hidden = !local;
+  } catch {
+    setLakeLoginStatus('Lake sign-in is temporarily unavailable. Reload to try again, or continue as a guest.');
+    resume.hidden = !local;
+  }
 }
 
 function doGuestLogin() {
@@ -3609,6 +3729,7 @@ function doGuestLogin() {
 
 async function enterLake() {
   document.getElementById('loginScreen').classList.add('hidden');
+  if (verifiedLakeAccount) document.getElementById('lakeLogout').textContent = 'Sign out of The Lake';
   document.getElementById('dockUserName').textContent    = currentUser.name;
   document.getElementById('depthsProfileName').textContent = currentUser.name;
   document.getElementById('myChatAliases').value = currentUser.aliases || '';
@@ -3635,23 +3756,34 @@ async function enterLake() {
   },300);
 }
 
-function doLogout() {
-  closeCrewCard();
-  closeFolderDialog();showDepthsTab('settings');
-  localStorage.removeItem('lakeUser');
-  currentUser = null; currentProfilePic = null; chatHistory = []; currentSessionId = null;
-  document.getElementById('depthsPanel').classList.remove('show');
-  document.getElementById('loginScreen').classList.remove('hidden');
-  closePostCards();document.getElementById('postCardsTab').hidden=true;
-  document.getElementById('loginName').value = '';
-  document.getElementById('loginPass').value = '';
-  newSession();
+async function doLogout() {
+  const logout = document.getElementById('lakeLogout');
+  logout.disabled = true;
+  try {
+    if (verifiedLakeAccount) {
+      await lakeAccountRequest('logout', {});
+      lakeAccountEvents?.postMessage('signed-out');
+    } else if (!currentUser?.guest) {
+      localStorage.removeItem('lakeUser');
+    }
+    location.replace('/');
+  } catch (error) {
+    logout.disabled = false;
+    showToast(error.message);
+  }
 }
+
+lakeAccountEvents?.addEventListener('message', event => {
+  if (event.data === 'signed-out' && verifiedLakeAccount) location.reload();
+});
+window.addEventListener('pageshow', event => {
+  if (event.persisted && verifiedLakeAccount) location.reload();
+});
 
 function saveMyChatAliases() {
   if (!currentUser) return;
   currentUser.aliases = document.getElementById('myChatAliases').value.trim();
-  try { localStorage.setItem('lakeUser', JSON.stringify(currentUser)); }
+  try { saveLakeProfile(); }
   catch { showToast('Names updated for this visit, but could not be saved on this device.'); }
 }
 
@@ -3660,7 +3792,7 @@ function saveResponseLanguage() {
   const allowed=['auto','en-US','en-GB','en-CA','en-AU','es','fr','de','it','pt-BR'];
   const selected=document.getElementById('responseLanguage').value;
   currentUser.responseLanguage=allowed.includes(selected)?selected:'en-US';
-  try { if(!currentUser.guest)localStorage.setItem('lakeUser',JSON.stringify(currentUser)); }
+  try { saveLakeProfile(); }
   catch { showToast('Language updated for this visit, but could not be saved on this device.'); }
   showToast(currentUser.responseLanguage==='auto'?'Language set to Auto.':'Response language updated.');
 }
@@ -3702,9 +3834,8 @@ function showBackendModel(model) {
 window.addEventListener('load', async () => {
   if (legacyShareId) return;
   loadBackendStatus();
-  const saved = localStorage.getItem('lakeUser');
-  if (saved) { try { currentUser = JSON.parse(saved); await enterLake(); } catch(e) {} }
-  else if (stagedLakePackageId) showToast('Open your local Lake profile to review the selected package.');
+  await restoreLakeAccount();
+  if (!currentUser && stagedLakePackageId) showToast('Open your Lake profile to review the selected package.');
   await loadSessionHistory();
   loadCrew();
   loadSuggestedCrew();
@@ -3936,19 +4067,15 @@ function filterTides(query) {
 // EMAIL SESSIONS
 // ============================================
 async function loadEmailSessions() {
+  if (!verifiedLakeAccount) return;
   try {
     await sessionLoadPromise;
     const res = await fetch('/email/sessions');
-    if (!res.ok) return;
+    if (!res.ok || res.headers.get('X-Lake-Account') !== verifiedLakeAccount) return;
     const emailSessions = await res.json();
     if (!emailSessions.length) return;
-    const myEmail = currentUser?.email?.toLowerCase() || '';
-    const mySessions = myEmail
-      ? emailSessions.filter(es => (es.from || '').toLowerCase().includes(myEmail))
-      : [];
-    if (!mySessions.length) return;
     let changed = false;
-    mySessions.forEach(es => {
+    emailSessions.forEach(es => {
       const exists = allSessions.find(s => s.id === es.id);
       if (!exists) {
         const emailBody = es.messages?.[0]?.content || '';

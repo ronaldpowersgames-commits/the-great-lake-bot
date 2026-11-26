@@ -44,7 +44,7 @@ router.post('/inbound', express.json(), (req, res) => {
       else break;
     }
 
-    console.log(`📧 Email received from ${from}: ${subject} | attachments: ${attachments.length}`);
+    console.log(`📧 Lake email queued | attachments: ${attachments.length}`);
     res.status(200).json({ ok: true });
 
   } catch (err) {
@@ -55,7 +55,17 @@ router.post('/inbound', express.json(), (req, res) => {
 
 // Frontend polls this — gets new emails then stores them locally
 router.get('/sessions', (req, res) => {
-  res.json(emailQueue);
+  res.set('Cache-Control', 'no-store');
+  const email = req.lakeAccount?.email.toLowerCase();
+  if (!email) return res.status(401).json({ error: 'Sign in to read queued Lake email.' });
+  res.set('X-Lake-Account', req.lakeAccount.id);
+  const cutoff = Date.now() - 5 * 60 * 1000;
+  res.json(emailQueue.filter(session => {
+    if (typeof session.from !== 'string' || Date.parse(session.date) < cutoff) return false;
+    const from = session.from.trim();
+    const sender = /<([^<>]+)>$/.exec(from)?.[1] || from;
+    return sender.trim().toLowerCase() === email;
+  }));
 });
 
 module.exports = router;

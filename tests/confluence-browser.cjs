@@ -35,7 +35,9 @@ const JSZip = require('jszip');
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.route('**/account/config', route => route.fulfill({ json: { enabled: true } }));
-    await page.route('**/account/session', route => route.fulfill({ json: { user: { email: 'verified@example.com' } } }));
+    await page.route('**/account/session', route => route.fulfill({ json: {
+      user: { id: 'lake-account-id', name: 'Verified name', email: 'verified@example.com' }
+    } }));
     await page.route('**/connections/catalog', route => route.fulfill({ json: { ready: true, provider: [provider], restricted: [] } }));
     await page.route('**/connections', route => route.fulfill({
       json: { provider: [provider], synthesisProviders: ['gmail'], restricted: [], source: { status: 'setup_required' } }
@@ -68,7 +70,7 @@ const JSZip = require('jszip');
     assert.deepEqual(errors, []);
     await page.addInitScript(() => {
       if (!localStorage.getItem('lakeUser')) localStorage.setItem('lakeUser', JSON.stringify({
-        name: 'Test owner', email: 'owner@example.com', responseLanguage: 'auto'
+        name: 'Test owner', email: 'verified@example.com', responseLanguage: 'auto'
       }));
     });
     const fixtureText = 'Private staged Tide history';
@@ -90,6 +92,65 @@ const JSZip = require('jszip');
     assert.equal(await page.evaluate(() => allSessions.find(tide => tide.id === 'hub_import')?.history[0].content), fixtureText);
     assert.ok(uploadBodies.every(body => !body.includes(fixtureText)));
     console.log('Connection Hub passed desktop, mobile, and browser-local package import checks.');
+
+    const context = await browser.newContext();
+    const user = { id: 'launch-account', name: 'Verified name', email: 'captain@example.com' };
+    let signedIn = false;
+    let linkRequested = false;
+    await context.route('**/account/config', route => route.fulfill({ json: { enabled: true } }));
+    await context.route('**/account/session', route => route.fulfill({ json: { user: signedIn ? user : null } }));
+    await context.route('**/account/link', route => {
+      assert.deepEqual(route.request().postDataJSON(), { email: user.email, remember: true, surface: 'launch' });
+      linkRequested = true;
+      return route.fulfill({ json: { ok: true } });
+    });
+    await context.route('**/account/logout', route => {
+      signedIn = false;
+      return route.fulfill({ json: { ok: true } });
+    });
+    const launch = await context.newPage();
+    launch.on('pageerror', error => errors.push(error.message));
+    await launch.goto(root);
+    await launch.evaluate(() => {
+      localStorage.setItem('lakeUser', JSON.stringify({
+        email: 'captain@example.com', name: 'Saved Captain', aliases: 'Cap', responseLanguage: 'auto'
+      }));
+      localStorage.setItem('lake_captain@example.com_sessions', JSON.stringify([
+        { id: 'prior_tide', name: 'Prior Tide', history: [{ role: 'user', content: 'Existing Tide' }] }
+      ]));
+    });
+    const launchReload = await launch.reload();
+    assert.ok(launchReload.ok(), 'Launch returned HTTP ' + launchReload.status());
+    await launch.getByLabel('Email address').fill(user.email);
+    await launch.getByLabel('Stay signed in on this device').check();
+    await launch.getByRole('button', { name: 'Send sign-in link' }).click();
+    await launch.getByRole('status').filter({ hasText: 'Open the newest Lake sign-in link' }).waitFor();
+    assert.equal(linkRequested, true);
+    assert.equal(await launch.locator('#loginScreen').isVisible(), true);
+    signedIn = true;
+    await launch.goto(root + '/?account=signed-in');
+    await launch.locator('#loginScreen').waitFor({ state: 'hidden' });
+    await launch.waitForFunction(() => allSessions.some(tide => tide.id === 'prior_tide'));
+    assert.equal(await launch.locator('#dockUserName').textContent(), 'Saved Captain');
+    assert.equal(await launch.locator('#myChatAliases').inputValue(), 'Cap');
+    assert.equal(await launch.locator('#responseLanguage').inputValue(), 'auto');
+    assert.equal(await launch.evaluate(() => localStorage.getItem('lakeUser')), null);
+    const hub = await context.newPage();
+    await hub.goto(root + '/connections.html');
+    await hub.getByRole('button', { name: 'Sign out', exact: true }).click();
+    await launch.getByRole('button', { name: 'Send sign-in link' }).waitFor();
+    signedIn = true;
+    await launch.reload();
+    await launch.locator('#loginScreen').waitFor({ state: 'hidden' });
+    await hub.reload();
+    await hub.getByRole('button', { name: 'Sign out', exact: true }).waitFor();
+    await launch.evaluate(() => toggleDepths());
+    await launch.getByRole('button', { name: 'Sign out of The Lake', exact: true }).click();
+    await hub.getByRole('button', { name: 'Send sign-in link' }).waitFor();
+    await launch.getByRole('button', { name: 'Send sign-in link' }).waitFor();
+    assert.deepEqual(errors, []);
+    await context.close();
+    console.log('Launch sign-in, saved profile, and sign-out from both entry points passed.');
   } finally {
     await browser.close();
   }

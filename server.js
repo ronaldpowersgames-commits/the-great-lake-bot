@@ -120,15 +120,17 @@ app.use('/chat', chatRoutes);
 // Public crew endpoint
 app.use('/crew', crewRoutes);
 
-// ✅ Email webhook - PUBLIC - both paths covered
+const account = createAccountRouter();
+app.use('/account', account);
+
+// The webhook can submit mail. Reading queued mail requires a verified account.
+app.get(['/email/sessions', '/api/email/sessions'], account.useSession);
 app.use('/email', emailRoutes);
 app.use('/api/email', emailRoutes);
 
 // ✅ Shared sessions - PUBLIC - anyone with link can view
 app.use('/share', shareRoutes);
 app.use('/audio', audioRoutes);
-const account = createAccountRouter();
-app.use('/account', account);
 app.use(createConfluenceRouter({ authenticate: account.useSession, synthesize: createSynthesis() }));
 
 // Health check - includes OpenAI model info

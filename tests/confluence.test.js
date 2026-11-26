@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const express = require('express');
 const { createAccountRouter } = require('../routes/account');
 const { createConfluenceRouter } = require('../routes/confluence');
+const emailRoutes = require('../routes/email');
 const { createVault } = require('../confluence/vault');
 const { parseExport } = require('../public/whatsapp-export');
 
@@ -58,7 +59,7 @@ function fakeServices() {
     }
     if (url.pathname === '/auth/v1/user') {
       const id = { 'Bearer lake-first': owner, 'Bearer lake-second': other }[bearer];
-      return id ? json({ id, email: 'verified@example.com', email_confirmed_at: instant }) : json({}, 401);
+      return id ? json({ id, email: id === owner ? 'verified@example.com' : 'other@example.com', email_confirmed_at: instant }) : json({}, 401);
     }
     if (url.pathname === '/auth/v1/otp') return json({});
     if (url.pathname === '/auth/v1/token' && url.searchParams.get('grant_type') === 'pkce') {
@@ -198,6 +199,8 @@ async function fixture(t, changes = {}) {
   const vault = createVault(env, fake.fetchImpl);
   const runs = [];
   app.use('/account', account);
+  app.get('/email/sessions', account.useSession);
+  app.use('/email', emailRoutes);
   app.use(createConfluenceRouter({ authenticate: account.useSession, env, vault, fetchImpl: fake.fetchImpl,
     synthesize: async input => { runs.push(input); return 'The supplier confirmed execution [1].'; } }));
   app.use((error, _req, res, _next) => res.status(500).json({ error: error.message }));
@@ -384,6 +387,38 @@ test('an older or failed callback preserves the newest Lake browser proof', asyn
   const latest = await api('/account/callback?code=latest', { session: null, cookies: proof });
   assert.match(latest.headers.get('location'), /signed-in/);
   assert.match(latest.headers.get('set-cookie'), /lake-access=/);
+});
+
+test('launch sign-in uses the shared account session and returns to the staged package', async t => {
+  const { api } = await fixture(t);
+  const packageId = '3a0bf2df-300a-4444-8bac-b4d0197ec641';
+  const started = await api('/account/link', { session: null, body: {
+    email: 'verified@example.com', surface: 'launch', remember: true, packageId
+  } });
+  const proof = started.headers.get('set-cookie').split(';')[0];
+  const callback = await api('/account/callback?code=latest', { session: null, cookies: proof });
+  assert.equal(callback.headers.get('location'), '/?account=signed-in#lake-package=' + packageId);
+  const access = callback.headers.getSetCookie().find(cookie => cookie.startsWith('lake-access='));
+  assert.match(access, /HttpOnly; SameSite=Strict/);
+  assert.match(access, /Max-Age=/);
+  const cookies = access.split(';')[0];
+  assert.equal((await api('/account/session', { session: null, cookies })).data.user.id, owner);
+  assert.equal((await api('/connections', { session: null, cookies })).status, 200);
+  const signedOut = await api('/account/logout', { session: null, cookies, body: {} });
+  assert.match(signedOut.headers.get('set-cookie'), /lake-access=;/);
+});
+
+test('queued email stays scoped to the verified sender even with similar addresses', async t => {
+  const { api } = await fixture(t);
+  await api('/email/inbound', { body: { from: 'Ron <VERIFIED@example.com>', subject: 'Mine' } });
+  await api('/email/inbound', { body: { from: 'not-verified@example.com', subject: 'Someone else' } });
+  await api('/email/inbound', { body: { from: 'other@example.com', subject: 'Other account' } });
+  assert.equal((await api('/email/sessions', { session: null })).status, 401);
+  const mine = await api('/email/sessions');
+  assert.deepEqual(mine.data.map(item => item.title), ['Mine']);
+  assert.equal(mine.headers.get('x-lake-account'), owner);
+  const theirs = await api('/email/sessions', { session: 'lake-second' });
+  assert.deepEqual(theirs.data.map(item => item.title), ['Other account']);
 });
 
 test('Meta connects Instagram Professional and one authorized Facebook Page with explicit inbox scopes', async t => {

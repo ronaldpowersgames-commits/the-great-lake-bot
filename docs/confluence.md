@@ -2,6 +2,8 @@
 
 Open **Depths → Settings → Connection Hub** in The Great Lake. Existing Waves, Tides, Captain’s Profile, Crew, audio, meetings and exports keep their existing entry points and storage.
 
+The launch screen and Connection Hub use the same verified email session. Follow the sign-in link in the browser profile where you requested it. A verified email opens existing Lake data stored under that address on this device. Tides, Crew and settings remain browser-local. To move them to another device, export and import a Lake package. Guest access and existing local profiles can still be used on this device. Queued inbound email is available only to the verified Lake account matching the sender address.
+
 ## Enable a Lake deployment
 
 1. In the Lake’s Supabase project, run [the Confluence SQL](../supabase/confluence.sql). Configure Email Auth and allow the exact Lake callback, such as https://the-great-lake-bot.onrender.com/account/callback. The default Supabase sender has recipient and rate limits. Use an authorized test address or configure SMTP.
