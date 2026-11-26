@@ -10,6 +10,7 @@ const globalLimiter = rateLimit({
   max: config.rateLimit.maxRequests,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: req => /^\/account\/sync(?:\/|$)/.test(req.path),
   message: {
     error: 'Rate limit exceeded',
     details: 'The Great Lake Bot allows a maximum of ' + config.rateLimit.maxRequests + ' requests per ' + (config.rateLimit.windowMs / 60000) + ' minutes.',

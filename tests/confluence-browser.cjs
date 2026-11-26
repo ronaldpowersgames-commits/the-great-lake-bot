@@ -151,6 +151,76 @@ const JSZip = require('jszip');
     assert.deepEqual(errors, []);
     await context.close();
     console.log('Launch sign-in, saved profile, and sign-out from both entry points passed.');
+
+    const syncAccount = { ...user, id: '3a0bf2df-300a-4444-8bac-b4d0197ec641' };
+    let head = { version: null, entries: {} };
+    const parts = new Map();
+    const syncDevice = async () => {
+      const device = await browser.newContext();
+      await device.route('**/account/config', route => route.fulfill({ json: { enabled: true } }));
+      await device.route('**/account/session', route => route.fulfill({ json: { user: syncAccount } }));
+      await device.route('**/account/sync**', route => {
+        const path = new URL(route.request().url()).pathname;
+        assert.equal(route.request().headers()['x-lake-account'], syncAccount.id);
+        if (route.request().method() === 'GET') return route.fulfill({ json: head });
+        const data = route.request().postDataJSON();
+        if (path.endsWith('/parts')) {
+          for (const part of data.parts) parts.set(part.id, part.data);
+          return route.fulfill({ json: { ok: true } });
+        }
+        if (path.endsWith('/read')) return route.fulfill({ json: { parts: data.ids.map(id => parts.get(id)) } });
+        if (data.version !== head.version) return route.fulfill({ status: 409, json: { error: 'stale' } });
+        head = { version: String(Number(head.version || 0) + 1), entries: data.entries };
+        return route.fulfill({ json: { version: head.version } });
+      });
+      const tab = await device.newPage();
+      tab.on('pageerror', error => errors.push(error.message));
+      await tab.goto(root);
+      await tab.locator('#loginScreen').waitFor({ state: 'hidden' });
+      await tab.evaluate(() => { toggleDepths(); showDepthsTab('backup'); });
+      return { device, tab };
+    };
+    const first = await syncDevice();
+    await first.tab.getByText('Account sync is off.', { exact: true }).waitFor();
+    assert.equal(parts.size, 0);
+    await first.tab.evaluate(async () => {
+      const crew = crewMembers.find(member => member.isSelf);
+      crew.role = 'Captain';
+      saveCrew();
+      localStorage.setItem(storageKey('personalNotes'), 'Account notes');
+      localStorage.setItem(storageKey('customPrompts'), '');
+      await LakeSessionStore.upsert(storageKey('sessions'), { id: 'shared_tide', name: 'Shared Tide', nameSource: 'manual',
+        time: '2026-01-01T00:00:00.000Z', history: [{ role: 'user', content: 'Across devices',
+          attachments: [{ name: 'example.txt', data: 'data:text/plain;base64,' + 'A'.repeat(300000) }] }] });
+    });
+    first.tab.once('dialog', dialog => dialog.accept());
+    await first.tab.getByRole('button', { name: 'Turn on account sync' }).click();
+    await first.tab.getByText('Last synced', { exact: false }).waitFor();
+    assert.equal(head.entries['tide:shared_tide'].parts.length, 2);
+    const second = await syncDevice();
+    await second.tab.getByText('Last synced', { exact: false }).waitFor();
+    assert.deepEqual(await second.tab.evaluate(async () => {
+      const [tide] = await LakeSessionStore.read(storageKey('sessions'));
+      return [tide.name, tide.history[0].attachments[0].data.length, crewMembers.find(member => member.isSelf)?.role,
+        localStorage.getItem(storageKey('personalNotes')), localStorage.getItem(storageKey('customPrompts'))];
+    }), ['Shared Tide', 300023, 'Captain', 'Account notes', '']);
+    const autoUpload = second.tab.waitForResponse(response => new URL(response.url()).pathname === '/account/sync' &&
+      response.request().method() === 'POST' && response.ok());
+    await second.tab.evaluate(async () => {
+      const [tide] = await LakeSessionStore.read(storageKey('sessions'));
+      tide.history.push({ role: 'assistant', content: 'Edited on the second device' });
+      await LakeSessionStore.upsert(storageKey('sessions'), tide);
+    });
+    await autoUpload;
+    await second.tab.getByText('Last synced', { exact: false }).waitFor();
+    await first.tab.reload();
+    await first.tab.locator('#loginScreen').waitFor({ state: 'hidden' });
+    await first.tab.waitForFunction(async () => (await LakeSessionStore.read(storageKey('sessions')))
+      .find(tide => tide.id === 'shared_tide')?.history.length === 2);
+    assert.deepEqual(errors, []);
+    await first.device.close();
+    await second.device.close();
+    console.log('Two independent profiles automatically synced a Tide, a multi-part attachment, Crew, preferences, and a later edit.');
   } finally {
     await browser.close();
   }

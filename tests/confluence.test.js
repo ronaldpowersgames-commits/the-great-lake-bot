@@ -6,6 +6,7 @@ const { createConfluenceRouter } = require('../routes/confluence');
 const emailRoutes = require('../routes/email');
 const { createVault } = require('../confluence/vault');
 const { parseExport } = require('../public/whatsapp-export');
+const { plan } = require('../public/lake-sync');
 
 const owner = '3a0bf2df-300a-4444-8bac-b4d0197ec641';
 const other = 'e2fac2df-300a-4444-8bac-b4d0197ec642';
@@ -195,8 +196,9 @@ async function fixture(t, changes = {}) {
   t.after(() => new Promise(resolve => server.close(resolve)));
   const root = 'http://127.0.0.1:' + server.address().port;
   env.APP_ORIGIN = root;
-  const account = createAccountRouter({ url: env.SUPABASE_URL, key: 'public-key', appOrigin: root, fetchImpl: fake.fetchImpl });
   const vault = createVault(env, fake.fetchImpl);
+  const account = createAccountRouter({ url: env.SUPABASE_URL, key: 'public-key', appOrigin: root,
+    fetchImpl: fake.fetchImpl, syncVault: vault });
   const runs = [];
   app.use('/account', account);
   app.get('/email/sessions', account.useSession);
@@ -205,11 +207,11 @@ async function fixture(t, changes = {}) {
     synthesize: async input => { runs.push(input); return 'The supplier confirmed execution [1].'; } }));
   app.use((error, _req, res, _next) => res.status(500).json({ error: error.message }));
 
-  async function api(path, { body, session = 'lake-first', bearer, origin = root, cookies = '' } = {}) {
+  async function api(path, { body, session = 'lake-first', bearer, origin = root, cookies = '', headers = {} } = {}) {
     const response = await fetch(root + path, {
       method: body === undefined ? 'GET' : 'POST', redirect: 'manual',
       headers: {
-        Cookie: (session ? 'lake-access=' + session + '; ' : '') + cookies,
+        ...headers, Cookie: (session ? 'lake-access=' + session + '; ' : '') + cookies,
         ...(bearer && { Authorization: 'Bearer ' + bearer }),
         ...(body !== undefined && { Origin: origin, 'Content-Type': 'application/json' })
       },
@@ -419,6 +421,46 @@ test('queued email stays scoped to the verified sender even with similar address
   assert.equal(mine.headers.get('x-lake-account'), owner);
   const theirs = await api('/email/sessions', { session: 'lake-second' });
   assert.deepEqual(theirs.data.map(item => item.title), ['Other account']);
+});
+
+test('account sync encrypts stored data, isolates accounts and rejects stale commits', async t => {
+  const { api, fake } = await fixture(t);
+  const headers = { 'X-Lake-Account': owner };
+  const part = { id: '98fef087-ff54-42cf-9eb4-a1c14153452b', data: Buffer.from('private Tide attachment').toString('base64') };
+  assert.equal((await api('/account/sync', { headers, session: null })).status, 401);
+  assert.equal((await api('/account/sync/parts', { headers, session: 'lake-second', body: { parts: [part] } })).status, 401);
+  assert.equal((await api('/account/sync/parts', { headers, body: { parts: [part] } })).status, 200);
+  assert.equal((await api('/account/sync/parts', { headers, body: { parts: [part] } })).status, 200);
+  const entries = { 'tide:saved': { hash: 'a'.repeat(64), parts: [part.id] } };
+  const saved = await api('/account/sync', { headers, body: { version: null, entries } });
+  assert.equal(saved.status, 200);
+  assert.deepEqual((await api('/account/sync', { headers })).data.entries, entries);
+  assert.equal((await api('/account/sync', { headers, body: { version: null, entries: {} } })).status, 409);
+  assert.deepEqual((await api('/account/sync/read', { headers, body: { ids: [part.id] } })).data.parts, [part.data]);
+  assert.deepEqual((await api('/account/sync', { session: 'lake-second', headers: { 'X-Lake-Account': other } })).data.entries, {});
+  assert.equal((await api('/account/sync/read', { session: 'lake-second', headers: { 'X-Lake-Account': other },
+    body: { ids: [part.id] } })).status, 409);
+  assert.ok(fake.rows.filter(row => row.bucket === 'lake-sync').every(row =>
+    !row.sealed.includes(part.data) && !row.sealed.includes('tide:saved')));
+  assert.equal((await api('/account/sync', { headers, body: { version: saved.data.version, entries: { 'tide:saved': null } } })).status, 200);
+  assert.deepEqual((await api('/account/sync', { headers })).data.entries, { 'tide:saved': null });
+});
+
+test('sync plans first-time merges, edits, deletions and simultaneous changes without replacing unrelated records', () => {
+  const local = new Map([['local', { hash: 'one' }], ['edited', { hash: 'new' }], ['collision', { hash: 'mine' }],
+    ['priorDeletion', { hash: 'old' }]]);
+  const remote = { remote: { hash: 'two' }, edited: { hash: 'old' }, deletedHere: { hash: 'old' },
+    collision: { hash: 'theirs' }, priorDeletion: null };
+  const base = { edited: 'old', deletedHere: 'old', collision: 'original' };
+  const result = plan(local, remote, base);
+  assert.deepEqual(new Map(result.decisions), new Map([
+    ['local', 'local'], ['edited', 'local'], ['remote', 'remote'], ['deletedHere', 'local']
+  ]));
+  assert.deepEqual(result.conflicts.map(item => item.id), ['collision', 'priorDeletion']);
+  const choices = new Map([['collision', { here: 'mine', there: 'theirs', side: 'remote' }]]);
+  assert.equal(new Map(plan(local, remote, base, choices).decisions).get('collision'), 'remote');
+  local.set('collision', { hash: 'changed again' });
+  assert.equal(plan(local, remote, base, choices).conflicts[0].id, 'collision');
 });
 
 test('Meta connects Instagram Professional and one authorized Facebook Page with explicit inbox scopes', async t => {

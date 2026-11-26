@@ -2,7 +2,13 @@
 
 Open **Depths → Settings → Connection Hub** in The Great Lake. Existing Waves, Tides, Captain’s Profile, Crew, audio, meetings and exports keep their existing entry points and storage.
 
-The launch screen and Connection Hub use the same verified email session. Follow the sign-in link in the browser profile where you requested it. A verified email opens existing Lake data stored under that address on this device. Tides, Crew and settings remain browser-local. To move them to another device, export and import a Lake package. Guest access and existing local profiles can still be used on this device. Queued inbound email is available only to the verified Lake account matching the sender address.
+The launch screen and Connection Hub use the same verified email session. Follow the sign-in link in the browser profile where you requested it. A verified email opens existing Lake data stored under that address on this device. Guest access and existing local profiles can still be used on this device. Queued inbound email is available only to the verified Lake account matching the sender address.
+
+### Account sync
+
+In **Depths → Backup & Data**, choose **Turn on account sync** once. Verified sign-ins on other devices automatically load that account’s Tides, saved attachments, folders, Crew, Captain’s Profile and supported preferences. The app checks at launch, while open, when revisiting the tab, and after local saves. The device keeps its copy while offline. Use **Sync now** to check immediately or pause this device without removing its files or stopping other devices. For an item edited in two places, choose the version to keep in the sync panel. Other items can continue to sync while you decide.
+
+Saved Lake data passes through the Lake server and is encrypted before storage in the account’s Supabase vault. The server holds the encryption key. Sync covers saved data in the main Lake app. Unsent drafts, device-specific settings, connector credentials, and Meeting Studio recordings stay outside the sync copy. Lake packages remain available as independent backups.
 
 ## Enable a Lake deployment
 

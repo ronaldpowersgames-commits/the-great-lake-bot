@@ -1110,6 +1110,9 @@ button.depths-option { width:100%; text-align:start; font-family:inherit; backgr
 .backup-drop-target.drop-ready { border-color:var(--lake-glow); box-shadow:0 0 10px var(--lake-glow); }
 .depths-option:hover  { background: rgba(45,140,240,0.08); }
 .depths-option.active { background: rgba(45,140,240,0.12); color: var(--lake-light); }
+.account-sync > p { margin: 8px 0; color: var(--text-secondary); font-size: 13px; line-height: 1.5; }
+.account-sync-conflict { padding: 8px; margin-top: 8px; border: 1px solid var(--dock-border); border-radius: 9px; }
+.account-sync-conflict p { margin: 0 0 6px; font-size: 13px; overflow-wrap: anywhere; }
 .depths-hub-link {
   justify-content: space-between;
   min-height: 44px;
@@ -2032,6 +2035,14 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
     <button class="logout-btn" id="lakeLogout" onclick="doLogout()">🚪 Leave The Lake</button>
     </div>
     <div id="depthsBackupView" role="tabpanel" aria-labelledby="backupTab" hidden>
+    <section class="depths-section account-sync" id="accountSync" hidden>
+      <h4>Account sync</h4>
+      <p>Keep your Tides, saved attachments, Crew and Lake preferences up to date across devices. Your account copy is encrypted in cloud storage.</p>
+      <p id="accountSyncStatus" class="mode-continuity" role="status" aria-live="polite"></p>
+      <button class="depths-option backup-export" id="accountSyncRun" type="button">Turn on account sync</button>
+      <button class="depths-option" id="accountSyncPause" type="button" hidden>Pause on this device</button>
+      <div id="accountSyncConflicts"></div>
+    </section>
     <div class="depths-section">
       <h4>💾 Backup &amp; Transfer</h4>
       <button class="depths-option backup-export" onclick="exportFullBackup()">⬇ Export Full Lake ZIP<small>Includes your profile, memory, Tides, and stored attachments.</small></button>
@@ -2540,6 +2551,7 @@ body.dock-resizing { user-select: none; cursor: row-resize; }
 
 <script src="/mirror-mode.js"></script>
 <script src="/session-store.js"></script>
+<script src="/lake-sync.js"></script>
 <script src="/snapshot-context.js"></script>
 <script src="/full-backup.js"></script>
 <script src="/memory-anchors.js"></script>
@@ -3492,7 +3504,10 @@ function chooseAdaptiveSuggestion(index) {
   saveSession().catch(error=>console.warn('Suggestion choice could not be saved:',error));
   return sendWave({visibleText:suggestion.prompt,requestText:suggestion.prompt,reuseAttachments:false,suggestionKind:suggestion.kind});
 }
-function saveSuggestedCrew() { localStorage.setItem(storageKey('suggestedCrew'), JSON.stringify(suggestedCrew)); }
+function saveSuggestedCrew() {
+  localStorage.setItem(storageKey('suggestedCrew'), JSON.stringify(suggestedCrew));
+  document.dispatchEvent(new Event('lake-data-saved'));
+}
 function loadSuggestedCrew() {
   try { suggestedCrew = JSON.parse(localStorage.getItem(storageKey('suggestedCrew')) || '[]'); }
   catch(e) { suggestedCrew = []; }
@@ -3741,6 +3756,17 @@ async function enterLake() {
   updateAllProfilePics(savedPic);
   await loadSessionHistory();
   loadCrew();
+  if (verifiedLakeAccount) startAccountSync();
+  else ensureLakeSelf();
+  loadSuggestedCrew();
+  if (stagedLakePackageId) await reviewStagedLakePackage();
+  if (deferredInstallPrompt) showInstallBanner();
+  setTimeout(() => {
+    if(window.innerWidth>768 && !crewEditor.classList.contains('show'))document.getElementById('lakeInput').focus();
+  },300);
+}
+
+function ensureLakeSelf() {
   if(!crewMembers.some(member=>member.isSelf) && currentUser.name){
     const self=crewMembers.find(member=>normalizePersonKey(member.name)===normalizePersonKey(currentUser.name));
     if(self)self.isSelf=true;
@@ -3748,12 +3774,156 @@ async function enterLake() {
     saveCrew();
     renderCrew();
   }
-  loadSuggestedCrew();
-  if (stagedLakePackageId) await reviewStagedLakePackage();
-  if (deferredInstallPrompt) showInstallBanner();
-  setTimeout(() => {
-    if(window.innerWidth>768 && !crewEditor.classList.contains('show'))document.getElementById('lakeInput').focus();
-  },300);
+}
+
+const LAKE_SYNC_VALUES = [
+  'accountProfile', 'profilePic', 'avatarChoice', 'crew', 'suggestedCrew', 'crewMemoryV1', 'captainMemoryV1',
+  'learnedProfile', 'learnProfile', 'personalNotes', 'profileReset', 'clearedProfile', 'crewSort', 'suggestionProfile',
+  'speechRate', 'moodTriggers', 'customPrompts', 'emojiCommands', 'exportAudioVoice', 'exportAudioLocale',
+  'exportAudioDelivery', 'exportAudioCharacter', 'postCards', 'deletedTides', 'deletedPostCards'
+];
+
+function startAccountSync() {
+  const owner = verifiedLakeAccount;
+  const tideKey = storageKey('sessions');
+  const foldersKey = storageKey('folders');
+  const pauseKey = storageKey('syncPaused');
+  const values = new Map(LAKE_SYNC_VALUES.map(name => ['value:' + name, storageKey(name)]));
+  const status = document.getElementById('accountSyncStatus');
+  const run = document.getElementById('accountSyncRun');
+  const pause = document.getElementById('accountSyncPause');
+  const conflicts = document.getElementById('accountSyncConflicts');
+  let prepared = false;
+  let timer;
+  const canSync = () => verifiedLakeAccount === owner && navigator.onLine && !waveInFlight &&
+    !crewEditor.classList.contains('show') && !document.getElementById('memoryCabin').open;
+
+  document.getElementById('accountSync').hidden = false;
+  const controller = LakeAccountSync.create({
+    owner, canSync,
+    getBase: () => LakeSessionStore.getSyncBase(tideKey + ':' + owner),
+    saveBase: base => LakeSessionStore.saveSyncBase(tideKey + ':' + owner, base),
+    prepare() {
+      if (!prepared) { prepared = true; ensureLakeSelf(); }
+    },
+    async capture() {
+      await sessionLoadPromise;
+      const [tides, folders, portable] = await Promise.all([
+        LakeSessionStore.read(tideKey), LakeSessionStore.read(foldersKey), LakeSessionStore.read(tideKey + ':portable')
+      ]);
+      const result = new Map(tides.map(tide => ['tide:' + tide.id, JSON.stringify(tide)]));
+      if (folders.length) result.set('folders', JSON.stringify(folders));
+      if (portable.length) result.set('portable', JSON.stringify(portable));
+      for (const [id, storage] of values) {
+        const value = localStorage.getItem(storage);
+        if (value !== null) result.set(id, value);
+      }
+      return result;
+    },
+    async apply(edits) {
+      const stored = [...edits].filter(([id]) => values.has(id));
+      if (!canSync() || stored.some(([id, edit]) => localStorage.getItem(values.get(id)) !== edit.previous)) {
+        throw new Error('This device changed during sync. Changes will retry automatically.');
+      }
+      for (const [id, edit] of edits) {
+        if (edit.next === null) continue;
+        if (id === 'value:profilePic' && !/^data:image\/[a-z0-9.+-]+;base64,[a-z0-9+/=]+$/i.test(edit.next)) {
+          throw new Error('A synced profile picture was invalid. Your local data was kept.');
+        }
+        if (values.has(id)) continue;
+        const value = JSON.parse(edit.next);
+        if (id.startsWith('tide:') ? value?.id !== id.slice(5) || !Array.isArray(value.history) : !Array.isArray(value)) {
+          throw new Error('A synced item was invalid. Your local data was kept.');
+        }
+      }
+      await LakeSessionStore.applySync(tideKey, foldersKey, edits);
+      for (const [id, edit] of stored) {
+        const key = values.get(id);
+        if (localStorage.getItem(key) !== edit.previous) throw new Error('A preference changed during sync. Changes will retry automatically.');
+        if (edit.next === null) localStorage.removeItem(key);
+        else localStorage.setItem(key, edit.next);
+      }
+      if (stored.some(([id]) => id === 'value:accountProfile')) {
+        const profile = JSON.parse(localStorage.getItem(storageKey('accountProfile')) || '{}');
+        if (typeof profile.name === 'string' && profile.name) currentUser.name = profile.name;
+        currentUser.aliases = profile.aliases || '';
+        currentUser.responseLanguage = profile.responseLanguage || 'en-US';
+        document.getElementById('dockUserName').textContent = currentUser.name;
+        document.getElementById('depthsProfileName').textContent = currentUser.name;
+        document.getElementById('myChatAliases').value = currentUser.aliases;
+        document.getElementById('responseLanguage').value = currentUser.responseLanguage;
+      }
+      currentProfilePic = localStorage.getItem(storageKey('profilePic'));
+      updateAllProfilePics(currentProfilePic);
+      restoreSpeechRate();
+      loadCrew();
+      loadSuggestedCrew();
+      const active = currentSessionId;
+      sessionHistoryKey = null;
+      await loadSessionHistory();
+      if (active === currentSessionId && edits.has('tide:' + active)) {
+        if (allSessions.some(tide => tide.id === active)) loadTide(active);
+        else newSession();
+      }
+      renderTides();
+    },
+    report(state) {
+      run.textContent = state.enabled ? 'Sync now' : 'Turn on account sync';
+      run.disabled = state.busy || state.paused || !state.ready;
+      pause.hidden = !state.enabled && !state.paused;
+      pause.disabled = state.busy;
+      pause.textContent = state.paused ? 'Resume on this device' : 'Pause on this device';
+      status.textContent = state.message || (state.paused ? 'Sync paused on this device.' : state.busy ?
+        'Syncing your Lake…' : state.conflicts.length ? 'These items changed in two places. Choose the version to keep.' :
+        state.lastSync ? 'Last synced ' + state.lastSync.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) :
+        state.ready ? 'Account sync is off.' : 'Checking account sync…');
+      conflicts.replaceChildren();
+      for (const conflict of state.conflicts) {
+        const item = document.createElement('div');
+        item.className = 'account-sync-conflict';
+        const label = document.createElement('p');
+        const tide = allSessions.find(session => 'tide:' + session.id === conflict.id);
+        label.textContent = tide?.name || (conflict.id.startsWith('tide:') ? 'Tide ' + conflict.id.slice(5) :
+          { 'value:crewMemoryV1': 'Crew Memory', 'value:captainMemoryV1': 'Captain’s Profile', folders: 'Folders',
+            portable: 'Imported Lake packages', 'value:accountProfile': 'Lake profile' }[conflict.id] || conflict.id.slice(6));
+        item.append(label);
+        for (const [side, text] of [['local', 'Keep this device'], ['remote', 'Use account version']]) {
+          const button = document.createElement('button');
+          button.className = 'depths-option';
+          button.type = 'button';
+          button.textContent = text;
+          button.disabled = state.busy || state.paused || state.choices.get(conflict.id)?.side === side;
+          button.onclick = () => controller.resolve(conflict.id, side);
+          item.append(button);
+        }
+        conflicts.append(item);
+      }
+    }
+  });
+
+  run.onclick = () => {
+    if (run.textContent === 'Sync now') return void controller.sync();
+    if (confirm('Turn on sync for this Lake account? Your saved Tides, attachments, Crew and Lake preferences will be stored in an encrypted account copy and available when you sign in on another device.')) {
+      void controller.sync(true);
+    }
+  };
+  pause.onclick = () => {
+    const paused = localStorage.getItem(pauseKey) !== '1';
+    if (paused) localStorage.setItem(pauseKey, '1');
+    else localStorage.removeItem(pauseKey);
+    controller.pause(paused);
+  };
+  const scheduleSync = () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => { if (!document.hidden) void controller.sync(); }, 5000);
+  };
+  document.addEventListener('change', scheduleSync);
+  document.addEventListener('lake-data-saved', scheduleSync);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) void controller.sync(); });
+  window.addEventListener('online', () => void controller.sync());
+  setInterval(() => { if (!document.hidden) void controller.sync(); }, 45000);
+  if (localStorage.getItem(pauseKey) === '1') { ensureLakeSelf(); controller.pause(true); }
+  else void controller.sync();
 }
 
 async function doLogout() {
@@ -4361,6 +4531,7 @@ function saveCrew() {
       return LakeMemoryAnchors.crewUpdate(current,crewMembers);
     }).records;
     crewMemoryBaseline=JSON.stringify(crewMembers);
+    document.dispatchEvent(new Event('lake-data-saved'));
     return true;
   } catch(error) {
     loadCrew();

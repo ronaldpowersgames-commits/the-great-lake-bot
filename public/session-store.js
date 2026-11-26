@@ -74,7 +74,7 @@
       const store = transaction.objectStore('accounts');
       let result;
       if(mode==='readonly')readCollection(store,key,items=>{result=items;});
-      else if(key==='sessions' || key.endsWith('_sessions')){
+      else if(typeof key === 'string' && (key==='sessions' || key.endsWith('_sessions'))){
         const previous=store.get(key);
         previous.onsuccess=()=>putTides(store,key,value,previous.result?.tideIds);
       }else store.put(value,key);
@@ -116,7 +116,10 @@
 
   function write(key, sessions) {
     const snapshot = structuredClone(sessions);
-    const pending = (writes.get(key) || Promise.resolve()).catch(() => {}).then(() => transact(key, snapshot, 'readwrite')).then(()=>mirror(key,snapshot));
+    const pending = (writes.get(key) || Promise.resolve()).catch(() => {}).then(() => transact(key, snapshot, 'readwrite')).then(() => {
+      mirror(key, snapshot);
+      document.dispatchEvent(new Event('lake-data-saved'));
+    });
     writes.set(key, pending);
     return pending.finally(() => { if (writes.get(key) === pending) writes.delete(key); });
   }
@@ -173,7 +176,7 @@
         else sessions[index]=snapshot;
         putTides(store,key,sessions,previousIds,new Set([snapshot.id]));
       });
-      transaction.oncomplete=()=>{mirror(key,sessions);resolve();};
+      transaction.oncomplete=()=>{mirror(key,sessions);document.dispatchEvent(new Event('lake-data-saved'));resolve();};
       transaction.onabort=()=>reject(transaction.error || new Error('Chat save interrupted'));
     });
   }
@@ -209,7 +212,7 @@
         result={sessions,packages};
       });
       tx.oncomplete=()=>{
-        if(result){mirror(key,result.sessions);mirror(journalKey,result.packages);}
+        if(result){mirror(key,result.sessions);mirror(journalKey,result.packages);document.dispatchEvent(new Event('lake-data-saved'));}
         resolve(result);
       };
       tx.onabort=()=>reject(tx.error || new Error('Import transaction interrupted'));
@@ -257,11 +260,59 @@
         mirror(key,result.sessions);
         mirror(foldersKey,result.folders);
         mirror(journalKey,result.packages);
+        document.dispatchEvent(new Event('lake-data-saved'));
         resolve(result);
       };
       tx.onabort=()=>reject(failure || tx.error || new Error('Backup restore interrupted.'));
     });
   }
 
-  window.LakeSessionStore = { read, write, upsert, portableImport, mergeBackup, stagePackage, takePackage };
+  function getSyncBase(key) { return transact([key, 'sync-base'], undefined, 'readonly'); }
+  function saveSyncBase(key, base) { return transact([key, 'sync-base'], base, 'readwrite'); }
+
+  async function applySync(key, foldersKey, changes) {
+    const database = await openDatabase();
+    return new Promise((resolve, reject) => {
+      const tx = database.transaction('accounts', 'readwrite');
+      const store = tx.objectStore('accounts');
+      const mirrors = new Map();
+      let failure;
+      const changed = () => {
+        failure = new Error('This device changed during sync. Changes will retry automatically.');
+        tx.abort();
+      };
+      for (const [id, edit] of changes) {
+        if (id !== 'folders' && id !== 'portable') continue;
+        const name = id === 'folders' ? foldersKey : key + ':portable';
+        const request = store.get(name);
+        request.onsuccess = () => {
+          const previous = request.result || [];
+          const original = previous.length ? JSON.stringify(previous) : null;
+          if (original !== edit.previous) return changed();
+          const next = edit.next === null ? [] : JSON.parse(edit.next);
+          store.put(next, name);
+          mirrors.set(name, next);
+        };
+      }
+      const tides = [...changes].filter(([id]) => id.startsWith('tide:'));
+      if (tides.length) readCollection(store, key, (stored, previousIds) => {
+        const items = new Map((stored || []).map(item => [item.id, item]));
+        for (const [ref, edit] of tides) {
+          const id = ref.slice(5);
+          const original = items.has(id) ? JSON.stringify(items.get(id)) : null;
+          if (original !== edit.previous) return changed();
+          if (edit.next === null) items.delete(id);
+          else items.set(id, JSON.parse(edit.next));
+        }
+        const next = [...items.values()].sort((a, b) => String(b.time).localeCompare(String(a.time)));
+        putTides(store, key, next, previousIds, new Set(tides.map(([id]) => id.slice(5))));
+        mirrors.set(key, next);
+      });
+      tx.oncomplete = () => { for (const [name, value] of mirrors) mirror(name, value); resolve(); };
+      tx.onabort = () => reject(failure || tx.error || new Error('Lake sync was interrupted.'));
+    });
+  }
+
+  window.LakeSessionStore = { read, write, upsert, portableImport, mergeBackup, stagePackage, takePackage,
+    getSyncBase, saveSyncBase, applySync };
 })();

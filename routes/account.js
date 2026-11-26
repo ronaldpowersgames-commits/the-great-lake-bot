@@ -2,9 +2,10 @@
 const express = require('express');
 const rateLimit = require('express-rate-limit');
 const { randomBytes, createHash } = require('node:crypto');
+const { createLakeSyncRouter } = require('./lake-sync');
 
 function createAccountRouter({ url = process.env.SUPABASE_URL, key = process.env.SUPABASE_PUBLISHABLE_KEY,
-  appOrigin = process.env.APP_ORIGIN, secure = process.env.NODE_ENV === 'production', fetchImpl = fetch } = {}) {
+  appOrigin = process.env.APP_ORIGIN, secure = process.env.NODE_ENV === 'production', fetchImpl = fetch, syncVault } = {}) {
   const router = express.Router();
   const enabled = Boolean(url && key);
   const prefix = secure ? '__Host-lake-' : 'lake-';
@@ -194,6 +195,9 @@ function createAccountRouter({ url = process.env.SUPABASE_URL, key = process.env
       res.status(503).json({ error: 'Cannot check your account right now. Try again or use local-only mode.' });
     }
   });
+  const syncLimit = rateLimit({ windowMs: 15 * 60 * 1000, max: 240, standardHeaders: true, legacyHeaders: false,
+    message: { error: 'Sync is temporarily limited. Your local changes will retry automatically.' } });
+  router.use('/sync', syncLimit, router.useSession, createLakeSyncRouter(syncVault));
   router.post('/logout', async (req, res) => {
     const stored = cookies(req);
     try { if (stored[names.access]) await request('logout?scope=local', {}, stored[names.access]); }
