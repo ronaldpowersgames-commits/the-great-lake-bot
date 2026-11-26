@@ -182,6 +182,7 @@ const JSZip = require('jszip');
     };
     const first = await syncDevice();
     await first.tab.getByText('Account sync is off.', { exact: true }).waitFor();
+    assert.equal(await first.tab.getByRole('button', { name: 'Pause on this device' }).count(), 0);
     assert.equal(parts.size, 0);
     await first.tab.evaluate(async () => {
       const crew = crewMembers.find(member => member.isSelf);
